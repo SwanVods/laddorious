@@ -35,6 +35,12 @@ importers:
 
   packages/core: {}
 
+  packages/sim:
+    dependencies:
+      '@laddorious/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@cacheable/memory@2.2.0':
