@@ -1,6 +1,8 @@
+import { challengePickInput, closePickRound } from './challenge';
 import { bonusChoiceInput, diceComplete, diceTimeout, finishDicePhase, inputError, rollInput } from './dice';
 import { assertInvariants } from './invariants';
 import { endRound } from './round';
+import { runSettle } from './settle';
 import type { GameEvent, Input, InputError, MatchState, StepResult } from './types';
 import { clonePlain } from './util';
 
@@ -29,19 +31,28 @@ function dispatch(s: MatchState, ev: GameEvent[], input: Input): InputError | nu
       return rollInput(s, ev, input.player);
     case 'bonusChoice':
       return bonusChoiceInput(s, ev, input.player, input.rollAgain);
+    case 'challengePick':
+      return challengePickInput(s, ev, input.player, input.challengeId, input.choice);
     case 'timeout':
       return timeout(s, ev, input.windowId);
     default:
-      // Challenges arrive in Task 10, Mystery cards in Task 11.
+      // Mystery cards arrive in Task 11.
       return inputError('WRONG_PHASE', `${input.type} is not possible in the ${s.phase.kind} phase`);
   }
 }
 
 function timeout(s: MatchState, ev: GameEvent[], windowId: number): InputError | null {
   if (windowId !== s.windowId) return inputError('STALE_TIMEOUT', `window ${windowId} is not the current window ${s.windowId}`);
-  if (s.phase.kind !== 'dice') return inputError('WRONG_PHASE', 'no open window to time out');
-  diceTimeout(s, ev);
-  return null;
+  switch (s.phase.kind) {
+    case 'dice':
+      diceTimeout(s, ev);
+      return null;
+    case 'settle':
+      closePickRound(s, ev);
+      return null;
+    default:
+      return inputError('WRONG_PHASE', 'no open window to time out');
+  }
 }
 
 /** Run the state machine forward until it needs player input or the match ends. */
@@ -54,7 +65,8 @@ export function advance(s: MatchState, ev: GameEvent[]): void {
         finishDicePhase(s, ev);
         break;
       case 'settle':
-        // Task 10 replaces this with the settle loop (snakes, ladders, collisions).
+        if (runSettle(s, ev) === 'waiting') return;
+        // Task 11 inserts Mystery detection and card resolution here.
         endRound(s, ev);
         break;
       case 'mysterySelect':
