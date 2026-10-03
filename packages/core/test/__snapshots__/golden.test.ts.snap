@@ -1,0 +1,85 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden matches > golden-1 (2 players) 1`] = `
+{
+  "counts": {
+    "BonusChosen": 5,
+    "CardResolved": 7,
+    "CardSelected": 7,
+    "DiceTotaled": 36,
+    "DieRolled": 39,
+    "EffectAdded": 3,
+    "EffectRemoved": 3,
+    "MatchWon": 1,
+    "Moved": 45,
+    "MysteryOffered": 7,
+    "RoundEnded": 18,
+    "RoundStarted": 17,
+    "WindowOpened": 27,
+  },
+  "hash": "630f724ab62adf5c50ed1a5332ec609e",
+  "rounds": 18,
+  "steps": 43,
+  "winner": "p2",
+}
+`;
+
+exports[`golden matches > golden-2 (3 players) 1`] = `
+{
+  "counts": {
+    "BoardEditExpired": 1,
+    "BoardEdited": 1,
+    "BonusChosen": 10,
+    "CardResolved": 13,
+    "CardSelected": 13,
+    "ChallengePickEcho": 1,
+    "ChallengePickLocked": 1,
+    "ChallengeResolved": 1,
+    "ChallengeStarted": 1,
+    "DiceTotaled": 72,
+    "DieRolled": 78,
+    "EffectAdded": 5,
+    "EffectExpired": 2,
+    "EffectRemoved": 3,
+    "MatchWon": 1,
+    "Moved": 94,
+    "MysteryOffered": 13,
+    "RoundEnded": 24,
+    "RoundStarted": 23,
+    "WindowOpened": 39,
+  },
+  "hash": "5d3954480b3f26031a4e793622be62a4",
+  "rounds": 24,
+  "steps": 99,
+  "winner": "p2",
+}
+`;
+
+exports[`golden matches > golden-3 (4 players) 1`] = `
+{
+  "counts": {
+    "BonusChosen": 14,
+    "CardResolved": 20,
+    "CardSelected": 20,
+    "ChallengePickEcho": 4,
+    "ChallengePickLocked": 4,
+    "ChallengeResolved": 5,
+    "ChallengeStarted": 5,
+    "DiceTotaled": 84,
+    "DieRolled": 86,
+    "EffectAdded": 8,
+    "EffectExpired": 5,
+    "EffectRemoved": 3,
+    "MatchWon": 1,
+    "Moved": 116,
+    "MysteryOffered": 20,
+    "RoundEnded": 21,
+    "RoundStarted": 20,
+    "WindowOpened": 48,
+  },
+  "hash": "9e57a3401ef837c9f830c4a53c100ee4",
+  "rounds": 21,
+  "steps": 102,
+  "winner": "p4",
+}
+`;
