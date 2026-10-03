@@ -9,6 +9,7 @@ import {
   drawCard,
   resolveConfig,
   validateCards,
+  type CardDef,
 } from '../src/index';
 
 const EQUAL = { movement: 1, defense: 1, attack: 1, risky: 1, misc: 1 };
@@ -73,5 +74,44 @@ describe('drawCard', () => {
     const s = createStream('types');
     const onlyAttack = { movement: 0, defense: 0, attack: 1, risky: 0, misc: 0 };
     for (let i = 0; i < 50; i++) expect(cardById(STARTER_CARDS, drawCard(STARTER_CARDS, 'common', onlyAttack, s)).type).toBe('attack');
+  });
+});
+
+describe('deep config validation (review I3)', () => {
+  const card = (overrides: Partial<CardDef>): CardDef[] => [...STARTER_CARDS, { ...STARTER_CARDS[0]!, id: 'extra', ...overrides }];
+
+  it('rejects an afterMove effect that re-triggers on its own movement without charges', () => {
+    const runaway = card({
+      effects: [{ op: 'conditional', trigger: { cause: 'effect', condition: 'landedOnSnakeHead' }, amount: 10, lifetime: { rounds: 5 } }],
+    });
+    expect(() => validateCards(runaway)).toThrow(ConfigError);
+  });
+
+  it.each<[string, CardDef[]]>([
+    ['a die face outside 1..6', card({ effects: [{ op: 'addEffect', template: { params: { hook: 'diceFace', die: 'first', set: 7 }, lifetime: { charges: 1 } } }] })],
+    ['a fractional move', card({ effects: [{ op: 'moveRelative', amount: 1.5 }] })],
+    ['a gamble with no outcomes', card({ effects: [{ op: 'gamble', outcomes: [] }] })],
+    ['a gamble with a zero weight', card({ effects: [{ op: 'gamble', outcomes: [{ weight: 0, ops: [] }] }] })],
+    ['a board edit range that is backwards', card({ effects: [{ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: 6, maxAhead: 2, length: 8, lifetime: { rounds: 3 } }] })],
+    ['a zero-round lifetime', card({ effects: [{ op: 'addEffect', template: { params: { hook: 'beforeSnake' }, lifetime: { rounds: 0 } } }] })],
+    ['an unknown card type', card({ type: 'bogus' as CardDef['type'] })],
+  ])('rejects %s', (_, cards) => {
+    expect(() => validateCards(cards)).toThrow(ConfigError);
+  });
+
+  it('rejects type weights that can never pick a card', () => {
+    const zero = { movement: 0, defense: 0, attack: 0, risky: 0, misc: 0 };
+    expect(() => resolveConfig({ seed: 's', mystery: { typeWeights: zero } })).toThrow(ConfigError);
+  });
+
+  it('deep-merges nested board settings instead of dropping their defaults', () => {
+    const cfg = resolveConfig({ seed: 's', board: { analysis: { median4pRounds: [15, 30] } } });
+    expect(cfg.board.analysis).toEqual({ median4pRounds: [15, 30], maxRounds2p: 60, maxTailProbability: 0.01 });
+  });
+
+  it('rejects invalid board settings', () => {
+    expect(() => resolveConfig({ seed: 's', board: { mysteryDensity: 2 } })).toThrow(ConfigError);
+    expect(() => resolveConfig({ seed: 's', board: { ladders: { count: [10, 8] } } })).toThrow(ConfigError);
+    expect(() => resolveConfig({ seed: 's', board: { maxAttempts: 0 } })).toThrow(ConfigError);
   });
 });

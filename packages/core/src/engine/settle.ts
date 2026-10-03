@@ -8,6 +8,9 @@ import { bounce, getPlayer, movePlayer, openWindow, pub, seatOrder, sharedTiles 
 
 type SettlePhase = Extract<MatchState['phase'], { kind: 'settle' }>;
 
+/** Far above any legal chain (a few movers × a few afterMove effects). */
+const MAX_MOVES_PER_STEP = 1000;
+
 /**
  * Step 1 of the settle loop: every mover follows snake/ladder chains, then its
  * afterMove conditionals fire. Returns all players who moved in this step.
@@ -15,7 +18,10 @@ type SettlePhase = Extract<MatchState['phase'], { kind: 'settle' }>;
 export function resolveJumps(s: MatchState, ev: GameEvent[], movers: Mover[]): Mover[] {
   const queue = [...movers];
   const moved = new Map<PlayerId, Mover>();
+  let processed = 0;
   while (queue.length > 0) {
+    // Valid cards cannot chain forever (validateCards); this guards hand-built effects.
+    if (++processed > MAX_MOVES_PER_STEP) throw new InvariantError('runaway afterMove chain while settling');
     const m = queue.shift()!;
     moved.set(m.player, m);
     const p = getPlayer(s, m.player);

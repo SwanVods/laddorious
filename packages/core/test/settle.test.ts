@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { awaiting, step, type EffectTemplate, type MatchState } from '../src/index';
+import { InvariantError, awaiting, step, type EffectTemplate, type MatchState } from '../src/index';
 import { addEffect } from '../src/engine/effects';
 import { again, choose, makeBoard, ofType, play, positions, roll, setup, timeout } from './support/fixtures';
 
@@ -39,6 +39,17 @@ describe('snakes and ladders', () => {
     const { state } = play(s, [roll('p1'), roll('p2')]);
     expect(positions(state)).toEqual([9, 2]); // 5 → snake to 1 → +8
     expect(state.effects).toHaveLength(0);
+  });
+});
+
+describe('runaway protection (review I3)', () => {
+  it('a self-retriggering afterMove chain throws InvariantError instead of looping', () => {
+    // 45 → 50 (snake → 40) → +10 → 50 (snake → 40) → +10 … driven by an 'effect'-keyed conditional.
+    const board = makeBoard(100, [[50, 40]]);
+    let s = setup({ board, positions: [45, 0], dice: [[5], [1]] });
+    s = withEffect(s, 'p1', { params: { hook: 'afterMove', cause: 'dice', condition: 'landedOnSnakeHead', amount: 10 }, lifetime: { charges: 1 } });
+    s = withEffect(s, 'p1', { params: { hook: 'afterMove', cause: 'effect', condition: 'landedOnSnakeHead', amount: 10 }, lifetime: { charges: 100_000 } });
+    expect(() => play(s, [roll('p1'), roll('p2')])).toThrow(InvariantError);
   });
 });
 
