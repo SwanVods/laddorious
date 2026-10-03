@@ -47,4 +47,15 @@ describe('createMatch', () => {
     expect(b.rng.dice[0]).toEqual(a.rng.dice[0]);
     expect(a.rng.dice[0]).not.toEqual(a.rng.dice[1]);
   });
+
+  it('draws dice, cards and misc from rngSeed, so a public board seed predicts none of them (review C1)', () => {
+    const a = createMatch({ seed: 'daily', rngSeed: 'secret-a' }, seats(2));
+    const b = createMatch({ seed: 'daily', rngSeed: 'secret-b' }, seats(2));
+    expect(a.board).toEqual(b.board);
+    expect(a.rng.dice[0]).not.toEqual(b.rng.dice[0]);
+    expect(a.rng.cards[0]).not.toEqual(b.rng.cards[0]);
+    expect(a.rng.misc).not.toEqual(b.rng.misc);
+    // Without an rngSeed the seed drives everything, as before.
+    expect(createMatch({ seed: 'daily', rngSeed: 'daily' }, seats(2))).toEqual(createMatch({ seed: 'daily' }, seats(2)));
+  });
 });

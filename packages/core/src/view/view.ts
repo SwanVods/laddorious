@@ -36,7 +36,8 @@ export type PublicPhase =
 export interface PlayerView {
   me: PlayerId;
   round: number;
-  board: Board;
+  /** The board without its seed: the seed can drive the RNG streams (see MatchConfig.rngSeed). */
+  board: Omit<Board, 'seed'>;
   players: PlayerState[];
   effects: ActiveEffect[];
   boardEdits: BoardEdit[];
@@ -46,6 +47,11 @@ export interface PlayerView {
   /** My own locked pick in each open challenge. */
   myPicks: Record<string, string>;
   awaiting: Awaiting;
+}
+
+/** Allowlist, so a field added to Board later is not exposed by default. */
+function publicBoard(board: Board): Omit<Board, 'seed'> {
+  return { size: board.size, jumps: clonePlain(board.jumps), mystery: clonePlain(board.mystery), generatorVersion: board.generatorVersion };
 }
 
 /** What one player may see (spec §3.6): public state plus only their own private data. */
@@ -92,7 +98,7 @@ export function viewFor(s: MatchState, me: PlayerId): PlayerView {
   return {
     me,
     round: s.round,
-    board: clonePlain(s.board),
+    board: publicBoard(s.board),
     players: clonePlain(s.players),
     effects: clonePlain(s.effects),
     boardEdits: clonePlain(s.boardEdits),

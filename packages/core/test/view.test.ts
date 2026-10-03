@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eventsFor, viewFor } from '../src/index';
+import { createMatch, eventsFor, viewFor } from '../src/index';
 import { choose, makeBoard, offerValues, pick, play, roll, setup, stop } from './support/fixtures';
 
 const board = makeBoard(100, [], { 4: 'common', 6: 'common' });
@@ -27,6 +27,11 @@ describe('viewFor', () => {
     expect(v2.phase.kind === 'settle' && v2.phase.challenges[0]!.picked).toEqual(['p1']);
     expect(JSON.stringify(v2)).not.toContain('rock');
     expect(viewFor(s, 'p1').myPicks).toEqual({ c1: 'rock' });
+  });
+
+  it('never reveals the seed that drives dice, hands and gambles (review C1)', () => {
+    const s = createMatch({ seed: 'server-secret-8f3a' }, [{ id: 'p1' }, { id: 'p2' }]);
+    for (const me of ['p1', 'p2']) expect(JSON.stringify(viewFor(s, me))).not.toContain('server-secret-8f3a');
   });
 
   it('never exposes locked card targets or the resolution queue', () => {

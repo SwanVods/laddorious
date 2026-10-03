@@ -32,9 +32,9 @@ export function createMatch(input: MatchConfigInput, seats: PlayerSeat[], board?
     windowId: 0,
     phase: { kind: 'dice', window: 'dice', seqs: {} },
     rng: {
-      dice: seats.map((_, seat) => createStream(`${config.seed}|dice|${seat}`)),
-      cards: seats.map((_, seat) => createStream(`${config.seed}|cards|${seat}`)),
-      misc: createStream(`${config.seed}|misc`),
+      dice: seats.map((_, seat) => createStream(`${config.rngSeed}|dice|${seat}`)),
+      cards: seats.map((_, seat) => createStream(`${config.rngSeed}|cards|${seat}`)),
+      misc: createStream(`${config.rngSeed}|misc`),
     },
     effects: [],
     boardEdits: [],

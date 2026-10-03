@@ -5,7 +5,14 @@ import { CARD_TYPES, type CardDef, type CardType } from '../cards/types';
 import { ConfigError } from './errors';
 
 export interface MatchConfig {
+  /** Board seed — may be public (daily challenges, shared replays). */
   seed: string;
+  /**
+   * Seed for the dice, card and misc streams. Keep it secret whenever `seed` is
+   * public: anyone who knows it can predict every roll, hand and gamble.
+   * Defaults to `seed`.
+   */
+  rngSeed: string;
   board: BoardConfig;
   windows: { diceMs: number; bonusGraceMs: number; challengeMs: number; mysteryMs: number };
   mystery: { typeWeights: Record<CardType, number>; maxRerolls: number };
@@ -17,6 +24,7 @@ export interface MatchConfig {
 
 export interface MatchConfigInput {
   seed: string;
+  rngSeed?: string;
   board?: Partial<BoardConfig>;
   windows?: Partial<MatchConfig['windows']>;
   mystery?: Partial<MatchConfig['mystery']>;
@@ -34,8 +42,12 @@ export const DEFAULT_WINDOWS: MatchConfig['windows'] = {
 
 export function resolveConfig(input: MatchConfigInput): MatchConfig {
   if (typeof input.seed !== 'string' || input.seed.length === 0) throw new ConfigError('seed must be a non-empty string');
+  if (input.rngSeed !== undefined && (typeof input.rngSeed !== 'string' || input.rngSeed.length === 0)) {
+    throw new ConfigError('rngSeed must be a non-empty string');
+  }
   const cfg: MatchConfig = {
     seed: input.seed,
+    rngSeed: input.rngSeed ?? input.seed,
     board: { ...DEFAULT_BOARD_CONFIG, ...input.board },
     windows: { ...DEFAULT_WINDOWS, ...input.windows },
     mystery: {
