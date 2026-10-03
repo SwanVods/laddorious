@@ -1,7 +1,7 @@
 import { challengePickInput, closePickRound } from './challenge';
 import { bonusChoiceInput, diceComplete, diceTimeout, finishDicePhase, inputError, rollInput } from './dice';
 import { assertInvariants } from './invariants';
-import { endRound } from './round';
+import { beginResolution, continueResolution, mysteryAwaited, mysteryTimeout, pickCardInput, rerollInput, startMysteryOrEndRound } from './mystery';
 import { runSettle } from './settle';
 import type { GameEvent, Input, InputError, MatchState, StepResult } from './types';
 import { clonePlain } from './util';
@@ -33,11 +33,12 @@ function dispatch(s: MatchState, ev: GameEvent[], input: Input): InputError | nu
       return bonusChoiceInput(s, ev, input.player, input.rollAgain);
     case 'challengePick':
       return challengePickInput(s, ev, input.player, input.challengeId, input.choice);
+    case 'reroll':
+      return rerollInput(s, ev, input.player, input.slot);
+    case 'pickCard':
+      return pickCardInput(s, ev, input.player, input.slot);
     case 'timeout':
       return timeout(s, ev, input.windowId);
-    default:
-      // Mystery cards arrive in Task 11.
-      return inputError('WRONG_PHASE', `${input.type} is not possible in the ${s.phase.kind} phase`);
   }
 }
 
@@ -50,8 +51,11 @@ function timeout(s: MatchState, ev: GameEvent[], windowId: number): InputError |
     case 'settle':
       closePickRound(s, ev);
       return null;
-    default:
-      return inputError('WRONG_PHASE', 'no open window to time out');
+    case 'mysterySelect':
+      mysteryTimeout(s);
+      return null;
+    case 'finished':
+      return inputError('MATCH_FINISHED', 'the match is over');
   }
 }
 
@@ -66,10 +70,13 @@ export function advance(s: MatchState, ev: GameEvent[]): void {
         break;
       case 'settle':
         if (runSettle(s, ev) === 'waiting') return;
-        // Task 11 inserts Mystery detection and card resolution here.
-        endRound(s, ev);
+        if (phase.after === 'mysteryDetect') startMysteryOrEndRound(s, ev);
+        else continueResolution(s, ev);
         break;
       case 'mysterySelect':
+        if (mysteryAwaited(phase).length > 0) return;
+        beginResolution(s, ev);
+        break;
       case 'finished':
         return;
     }

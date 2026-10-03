@@ -1,5 +1,6 @@
 import { challengeAwaited } from './challenge';
 import { diceAwaited } from './dice';
+import { mysteryAwaited } from './mystery';
 import type { Awaiting, MatchState } from './types';
 import { windowDuration } from './util';
 
@@ -11,8 +12,9 @@ export function awaiting(s: MatchState): Awaiting {
       return { windowId: s.windowId, window: phase.window, players: diceAwaited(phase), durationMs: windowDuration(s, phase.window) };
     case 'settle':
       return { windowId: s.windowId, window: 'challenge', players: challengeAwaited(s), durationMs: windowDuration(s, 'challenge') };
-    default:
-      // The Mystery window is added in Task 11.
+    case 'mysterySelect':
+      return { windowId: s.windowId, window: 'mystery', players: mysteryAwaited(phase), durationMs: windowDuration(s, 'mystery') };
+    case 'finished':
       return { windowId: s.windowId, window: 'none', players: [], durationMs: 0 };
   }
 }
