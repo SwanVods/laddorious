@@ -117,7 +117,7 @@ describe('collisions', () => {
 
   it('rejects picks for unknown challenges and invalid choices', () => {
     const s = play(setup({ dice: [[5], [5]] }), [roll('p1'), roll('p2')]).state;
-    expect(step(s, { type: 'challengePick', player: 'p1', challengeId: 'nope', choice: 'rock' })).toMatchObject({ ok: false, error: { code: 'UNKNOWN_CHALLENGE' } });
+    expect(step(s, { type: 'challengePick', player: 'p1', challengeId: 'nope', choice: 'rock', windowId: s.windowId })).toMatchObject({ ok: false, error: { code: 'UNKNOWN_CHALLENGE' } });
     expect(step(s, choose('p1', 'A')(s))).toMatchObject({ ok: false, error: { code: 'INVALID_CHOICE' } });
   });
 });

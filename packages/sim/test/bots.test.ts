@@ -7,8 +7,8 @@ const seats = [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }, { id: 'p4' }];
 describe('bots', () => {
   it('only see their own view and roll in the dice phase', () => {
     const s = createMatch({ seed: 'b' }, seats);
-    expect(new HeuristicBot(createStream('h'), STARTER_CARDS).decide(viewFor(s, 'p1'))).toEqual({ type: 'roll', player: 'p1' });
-    expect(new RandomBot(createStream('r')).decide(viewFor(s, 'p2'))).toEqual({ type: 'roll', player: 'p2' });
+    expect(new HeuristicBot(createStream('h'), STARTER_CARDS).decide(viewFor(s, 'p1'))).toEqual({ type: 'roll', player: 'p1', windowId: 1 });
+    expect(new RandomBot(createStream('r')).decide(viewFor(s, 'p2'))).toEqual({ type: 'roll', player: 'p2', windowId: 1 });
   });
 
   it('heuristic declines a bonus roll that could overshoot', () => {
@@ -16,9 +16,9 @@ describe('bots', () => {
     if (s.phase.kind === 'dice') s.phase.seqs['p1'] = { faces: [6], status: 'bonusPending' };
     const bot = () => new HeuristicBot(createStream('h'), STARTER_CARDS);
     s.players[0]!.position = 90;
-    expect(bot().decide(viewFor(s, 'p1'))).toEqual({ type: 'bonusChoice', player: 'p1', rollAgain: false });
+    expect(bot().decide(viewFor(s, 'p1'))).toEqual({ type: 'bonusChoice', player: 'p1', rollAgain: false, windowId: 1 });
     s.players[0]!.position = 50;
-    expect(bot().decide(viewFor(s, 'p1'))).toEqual({ type: 'bonusChoice', player: 'p1', rollAgain: true });
+    expect(bot().decide(viewFor(s, 'p1'))).toEqual({ type: 'bonusChoice', player: 'p1', rollAgain: true, windowId: 1 });
   });
 
   it('scoreCard values cards in rough tiles', () => {

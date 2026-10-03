@@ -70,11 +70,12 @@ export function play(s: MatchState, inputs: Array<Input | ((cur: MatchState) => 
   return { state: cur, events };
 }
 
-export const roll = (player: string): Input => ({ type: 'roll', player });
-export const stop = (player: string): Input => ({ type: 'bonusChoice', player, rollAgain: false });
-export const again = (player: string): Input => ({ type: 'bonusChoice', player, rollAgain: true });
-export const pick = (player: string, slot: number): Input => ({ type: 'pickCard', player, slot });
-export const reroll = (player: string, slot: number): Input => ({ type: 'reroll', player, slot });
+// Player inputs carry the window they answer; these helpers stamp the current one when applied.
+export const roll = (player: string) => (cur: MatchState): Input => ({ type: 'roll', player, windowId: cur.windowId });
+export const stop = (player: string) => (cur: MatchState): Input => ({ type: 'bonusChoice', player, rollAgain: false, windowId: cur.windowId });
+export const again = (player: string) => (cur: MatchState): Input => ({ type: 'bonusChoice', player, rollAgain: true, windowId: cur.windowId });
+export const pick = (player: string, slot: number) => (cur: MatchState): Input => ({ type: 'pickCard', player, slot, windowId: cur.windowId });
+export const reroll = (player: string, slot: number) => (cur: MatchState): Input => ({ type: 'reroll', player, slot, windowId: cur.windowId });
 /** Timeout for whatever window is current when the input is applied. */
 export const timeout = (cur: MatchState): Input => ({ type: 'timeout', windowId: cur.windowId });
 
@@ -85,7 +86,7 @@ export const choose =
     if (cur.phase.kind !== 'settle') throw new Error('no challenge open');
     const ch = cur.phase.ctx.challenges.find((c) => c.winner === null && c.contesting.includes(player));
     if (!ch) throw new Error(`${player} is not in an open challenge`);
-    return { type: 'challengePick', player, challengeId: ch.id, choice };
+    return { type: 'challengePick', player, challengeId: ch.id, choice, windowId: cur.windowId };
   };
 
 export function ofType<T extends GameEvent['type']>(events: GameEvent[], type: T): Array<Extract<GameEvent, { type: T }>> {

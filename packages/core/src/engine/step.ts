@@ -16,7 +16,8 @@ export function validateInput(input: unknown): InputError | null {
   }
   const i = input as Record<string, unknown>;
   const isString = (k: string) => typeof i[k] === 'string';
-  const ok = (valid: boolean) => (valid ? null : inputError('INVALID_INPUT', `malformed ${String(i.type)} input`));
+  const ok = (valid: boolean) =>
+    valid && Number.isInteger(i.windowId) ? null : inputError('INVALID_INPUT', `malformed ${String(i.type)} input`);
   switch (i.type) {
     case 'roll':
       return ok(isString('player'));
@@ -28,7 +29,7 @@ export function validateInput(input: unknown): InputError | null {
     case 'pickCard':
       return ok(isString('player') && typeof i.slot === 'number');
     case 'timeout':
-      return ok(Number.isInteger(i.windowId));
+      return ok(true);
     default:
       return inputError('INVALID_INPUT', 'unknown input type');
   }
@@ -55,6 +56,9 @@ export function step(state: MatchState, input: Input): StepResult {
 function dispatch(s: MatchState, ev: GameEvent[], input: Input): InputError | null {
   if (input.type !== 'timeout' && !s.players.some((p) => p.id === input.player)) {
     return inputError('UNKNOWN_PLAYER', `unknown player ${input.player}`);
+  }
+  if (input.type !== 'timeout' && input.windowId !== s.windowId) {
+    return inputError('STALE_INPUT', `window ${input.windowId} is not the current window ${s.windowId}`);
   }
   switch (input.type) {
     case 'roll':

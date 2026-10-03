@@ -11,20 +11,20 @@ export function chooseInput(s: MatchState, choice: number): Input {
   switch (phase.kind) {
     case 'dice':
       return phase.seqs[player]!.status === 'ready'
-        ? { type: 'roll', player }
-        : { type: 'bonusChoice', player, rollAgain: bit % 2 === 0 };
+        ? { type: 'roll', player, windowId: aw.windowId }
+        : { type: 'bonusChoice', player, rollAgain: bit % 2 === 0, windowId: aw.windowId };
     case 'settle': {
       const ch = phase.ctx.challenges.find((c) => c.winner === null && c.contesting.includes(player) && c.picks[player] === undefined)!;
       const options = ch.kind === 'rps' ? (['rock', 'paper', 'scissors'] as const) : (['A', 'B'] as const);
-      return { type: 'challengePick', player, challengeId: ch.id, choice: options[bit % options.length]! };
+      return { type: 'challengePick', player, challengeId: ch.id, choice: options[bit % options.length]!, windowId: aw.windowId };
     }
     case 'mysterySelect': {
       const offer = phase.offers[player]!;
       const freeSlot = [0, 1, 2].find((i) => !offer.rerolled[i]);
       if (bit % 4 === 3 && offer.rerollsUsed < s.config.mystery.maxRerolls && freeSlot !== undefined) {
-        return { type: 'reroll', player, slot: freeSlot };
+        return { type: 'reroll', player, slot: freeSlot, windowId: aw.windowId };
       }
-      return { type: 'pickCard', player, slot: bit % 3 };
+      return { type: 'pickCard', player, slot: bit % 3, windowId: aw.windowId };
     }
     case 'finished':
       throw new Error('match is finished');

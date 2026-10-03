@@ -50,15 +50,15 @@ describe('rerolls', () => {
 
   it('allow each slot once and at most 2 in total', () => {
     const s = play(start(), [reroll('p1', 1)]).state;
-    expect(step(s, reroll('p1', 1))).toMatchObject({ ok: false, error: { code: 'SLOT_ALREADY_REROLLED' } });
+    expect(step(s, reroll('p1', 1)(s))).toMatchObject({ ok: false, error: { code: 'SLOT_ALREADY_REROLLED' } });
     const s2 = play(s, [reroll('p1', 2)]).state;
-    expect(step(s2, reroll('p1', 0))).toMatchObject({ ok: false, error: { code: 'REROLL_LIMIT' } });
-    expect(step(s, reroll('p1', 3))).toMatchObject({ ok: false, error: { code: 'INVALID_SLOT' } });
+    expect(step(s2, reroll('p1', 0)(s2))).toMatchObject({ ok: false, error: { code: 'REROLL_LIMIT' } });
+    expect(step(s, reroll('p1', 3)(s))).toMatchObject({ ok: false, error: { code: 'INVALID_SLOT' } });
   });
 
   it('are refused after the player picked, and for players without an encounter', () => {
     const s = start();
-    expect(step(s, reroll('p2', 0))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
+    expect(step(s, reroll('p2', 0)(s))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
   });
 });
 
@@ -73,7 +73,7 @@ describe('selection and reveal', () => {
     const s = twoEncounters();
     const first = play(s, [pick('p1', 0)]);
     expect(ofType(first.events, 'CardSelected')).toEqual([]);
-    expect(step(first.state, pick('p1', 1))).toMatchObject({ ok: false, error: { code: 'ALREADY_PICKED' } });
+    expect(step(first.state, pick('p1', 1)(first.state))).toMatchObject({ ok: false, error: { code: 'ALREADY_PICKED' } });
     const second = play(first.state, [pick('p2', 2)]);
     expect(ofType(second.events, 'CardSelected').map((e) => [e.player, e.cardId, e.auto])).toEqual([
       ['p1', 'sprint', false],

@@ -34,8 +34,8 @@ describe('dice phase', () => {
 
   it('rejects rolls and bonus choices that are not awaited', () => {
     const s = play(setup({ dice: [[2], [1]] }), [roll('p1')]).state;
-    expect(step(s, roll('p1'))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
-    expect(step(s, again('p2'))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
+    expect(step(s, roll('p1')(s))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
+    expect(step(s, again('p2')(s))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
   });
 
   it('auto-rolls on timeout, then gives auto-rolled 6s a grace window that ends in Stop', () => {

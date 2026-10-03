@@ -17,7 +17,7 @@ describe('victory', () => {
     });
     expect(ofType(events, 'MatchWon')).toHaveLength(1);
     expect(awaiting(state)).toMatchObject({ window: 'none', players: [] });
-    expect(step(state, roll('p2'))).toMatchObject({ ok: false, error: { code: 'MATCH_FINISHED' } });
+    expect(step(state, roll('p2')(state))).toMatchObject({ ok: false, error: { code: 'MATCH_FINISHED' } });
   });
 });
 

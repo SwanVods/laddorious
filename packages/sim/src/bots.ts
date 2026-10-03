@@ -31,7 +31,7 @@ function challengeInput(view: PlayerView, rng: RngStream): Input | 'idle' {
   const ch = pendingChallenge(view);
   if (!ch) return 'idle';
   const options = ch.kind === 'rps' ? RPS : MINORITY;
-  return { type: 'challengePick', player: view.me, challengeId: ch.id, choice: options[nextInt(rng, options.length)]! };
+  return { type: 'challengePick', player: view.me, challengeId: ch.id, choice: options[nextInt(rng, options.length)]!, windowId: view.awaiting.windowId };
 }
 
 /** Uniformly random legal actions; idles for a whole window with probability afkPercent%. */
@@ -55,8 +55,8 @@ export class RandomBot implements Bot {
     const phase = view.phase;
     if (phase.kind === 'dice') {
       const seq = phase.seqs[me];
-      if (seq?.status === 'ready') return { type: 'roll', player: me };
-      if (seq?.status === 'bonusPending') return { type: 'bonusChoice', player: me, rollAgain: nextInt(this.rng, 2) === 0 };
+      if (seq?.status === 'ready') return { type: 'roll', player: me, windowId: view.awaiting.windowId };
+      if (seq?.status === 'bonusPending') return { type: 'bonusChoice', player: me, rollAgain: nextInt(this.rng, 2) === 0, windowId: view.awaiting.windowId };
       return 'idle';
     }
     if (phase.kind === 'settle') return challengeInput(view, this.rng);
@@ -64,9 +64,9 @@ export class RandomBot implements Bot {
       const offer = view.myOffer;
       const free = [0, 1, 2].filter((i) => !offer.rerolled[i]);
       if (offer.rerollsUsed < 2 && free.length > 0 && nextInt(this.rng, 10) < 3) {
-        return { type: 'reroll', player: me, slot: free[nextInt(this.rng, free.length)]! };
+        return { type: 'reroll', player: me, slot: free[nextInt(this.rng, free.length)]!, windowId: view.awaiting.windowId };
       }
-      return { type: 'pickCard', player: me, slot: nextInt(this.rng, 3) };
+      return { type: 'pickCard', player: me, slot: nextInt(this.rng, 3), windowId: view.awaiting.windowId };
     }
     return 'idle';
   }
@@ -124,11 +124,11 @@ export class HeuristicBot implements Bot {
     const phase = view.phase;
     if (phase.kind === 'dice') {
       const seq = phase.seqs[me];
-      if (seq?.status === 'ready') return { type: 'roll', player: me };
+      if (seq?.status === 'ready') return { type: 'roll', player: me, windowId: view.awaiting.windowId };
       if (seq?.status === 'bonusPending') {
         const pos = view.players.find((p) => p.id === me)!.position;
         const total = seq.faces.reduce((a, b) => a + b, 0);
-        return { type: 'bonusChoice', player: me, rollAgain: pos + total + 6 <= view.board.size };
+        return { type: 'bonusChoice', player: me, rollAgain: pos + total + 6 <= view.board.size, windowId: view.awaiting.windowId };
       }
       return 'idle';
     }
@@ -138,9 +138,9 @@ export class HeuristicBot implements Bot {
       const scores = offer.cards.map((id) => scoreCard(cardById(this.cards, id), view));
       const worst = scores.indexOf(Math.min(...scores));
       if (scores[worst]! < this.rerollBelow && offer.rerollsUsed < 2 && !offer.rerolled[worst]) {
-        return { type: 'reroll', player: me, slot: worst };
+        return { type: 'reroll', player: me, slot: worst, windowId: view.awaiting.windowId };
       }
-      return { type: 'pickCard', player: me, slot: scores.indexOf(Math.max(...scores)) };
+      return { type: 'pickCard', player: me, slot: scores.indexOf(Math.max(...scores)), windowId: view.awaiting.windowId };
     }
     return 'idle';
   }

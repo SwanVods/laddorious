@@ -120,12 +120,16 @@ export interface MatchState {
   counter: number;
 }
 
+/**
+ * Every input names the window it answers (`awaiting(state).windowId`), so a
+ * network retry that arrives after its window closed is rejected as stale.
+ */
 export type Input =
-  | { type: 'roll'; player: PlayerId }
-  | { type: 'bonusChoice'; player: PlayerId; rollAgain: boolean }
-  | { type: 'challengePick'; player: PlayerId; challengeId: string; choice: ChallengeChoice }
-  | { type: 'reroll'; player: PlayerId; slot: number }
-  | { type: 'pickCard'; player: PlayerId; slot: number }
+  | { type: 'roll'; player: PlayerId; windowId: number }
+  | { type: 'bonusChoice'; player: PlayerId; rollAgain: boolean; windowId: number }
+  | { type: 'challengePick'; player: PlayerId; challengeId: string; choice: ChallengeChoice; windowId: number }
+  | { type: 'reroll'; player: PlayerId; slot: number; windowId: number }
+  | { type: 'pickCard'; player: PlayerId; slot: number; windowId: number }
   | { type: 'timeout'; windowId: number };
 
 export type Visibility = 'public' | { private: PlayerId };
@@ -175,6 +179,7 @@ export type InputErrorCode =
   | 'UNKNOWN_PLAYER'
   | 'NOT_AWAITED'
   | 'STALE_TIMEOUT'
+  | 'STALE_INPUT'
   | 'UNKNOWN_CHALLENGE'
   | 'INVALID_CHOICE'
   | 'INVALID_SLOT'
