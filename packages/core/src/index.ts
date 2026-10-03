@@ -11,3 +11,4 @@ export * from './cards/starter';
 export * from './cards/catalog';
 export * from './engine/errors';
 export * from './engine/config';
+export * from './cards/targeting';
