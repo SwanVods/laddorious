@@ -18,3 +18,4 @@ export * from './engine/step';
 export * from './engine/awaiting';
 export * from './engine/invariants';
 export * from './engine/hash';
+export * from './view/view';
