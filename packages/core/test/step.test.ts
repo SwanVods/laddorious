@@ -1,5 +1,6 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { assertInvariants, hashState, InvariantError, step, stableStringify } from '../src/index';
+import { assertInvariants, hashState, InvariantError, step, stableStringify, type Input } from '../src/index';
 import { again, makeBoard, pick, play, roll, setup } from './support/fixtures';
 
 describe('step', () => {
@@ -59,5 +60,40 @@ describe('assertInvariants', () => {
   it('throws on an out-of-range position', () => {
     const s = setup({ positions: [101, 0] });
     expect(() => assertInvariants(s)).toThrow(InvariantError);
+  });
+});
+
+describe('malformed input (review I1)', () => {
+  it('returns INVALID_INPUT for non-objects, unknown types and wrongly typed fields', () => {
+    const s = setup();
+    const bad: unknown[] = [
+      null,
+      undefined,
+      42,
+      'roll',
+      [],
+      { type: 'hack', player: 'p1' },
+      { type: 'roll' },
+      { type: 'roll', player: { toString: 1 } },
+      { type: 'bonusChoice', player: 'p1', rollAgain: 'no' },
+      { type: 'challengePick', player: 'p1', challengeId: 7, choice: 'rock' },
+      { type: 'challengePick', player: 'p1', challengeId: 'c1', choice: { x: 1 } },
+      { type: 'reroll', player: 'p1', slot: '1' },
+      { type: 'pickCard', player: 'p1', slot: null },
+      { type: 'timeout', windowId: '1' },
+    ];
+    for (const input of bad) {
+      expect(step(s, input as Input)).toMatchObject({ ok: false, error: { code: 'INVALID_INPUT' } });
+    }
+  });
+
+  it('never throws, whatever a client sends', () => {
+    const s = setup();
+    fc.assert(
+      fc.property(fc.anything(), (input) => {
+        expect(() => step(s, input as Input)).not.toThrow();
+      }),
+      { numRuns: 500 },
+    );
   });
 });

@@ -169,6 +169,7 @@ export type EventBody =
 export type GameEvent = EventBody & { visibility: Visibility };
 
 export type InputErrorCode =
+  | 'INVALID_INPUT'
   | 'MATCH_FINISHED'
   | 'WRONG_PHASE'
   | 'UNKNOWN_PLAYER'

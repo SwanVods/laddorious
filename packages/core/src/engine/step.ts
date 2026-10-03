@@ -6,8 +6,38 @@ import { runSettle } from './settle';
 import type { GameEvent, Input, InputError, MatchState, StepResult } from './types';
 import { clonePlain } from './util';
 
+/**
+ * Check an input's shape before anything reads it. Inputs come from untrusted
+ * clients, so bad shapes must be rejected, never thrown on or echoed into events.
+ */
+export function validateInput(input: unknown): InputError | null {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    return inputError('INVALID_INPUT', 'input must be an object');
+  }
+  const i = input as Record<string, unknown>;
+  const isString = (k: string) => typeof i[k] === 'string';
+  const ok = (valid: boolean) => (valid ? null : inputError('INVALID_INPUT', `malformed ${String(i.type)} input`));
+  switch (i.type) {
+    case 'roll':
+      return ok(isString('player'));
+    case 'bonusChoice':
+      return ok(isString('player') && typeof i.rollAgain === 'boolean');
+    case 'challengePick':
+      return ok(isString('player') && isString('challengeId') && isString('choice'));
+    case 'reroll':
+    case 'pickCard':
+      return ok(isString('player') && typeof i.slot === 'number');
+    case 'timeout':
+      return ok(Number.isInteger(i.windowId));
+    default:
+      return inputError('INVALID_INPUT', 'unknown input type');
+  }
+}
+
 /** Apply one input. Pure from the outside: the given state is never mutated (spec §3.2). */
 export function step(state: MatchState, input: Input): StepResult {
+  const invalid = validateInput(input);
+  if (invalid) return { ok: false, error: invalid };
   if (state.phase.kind === 'finished') {
     return { ok: false, error: inputError('MATCH_FINISHED', 'the match is over') };
   }
