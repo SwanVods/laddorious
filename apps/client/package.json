@@ -1,0 +1,10 @@
+{
+  "name": "@laddorious/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@laddorious/bots": "workspace:*",
+    "@laddorious/core": "workspace:*"
+  }
+}
