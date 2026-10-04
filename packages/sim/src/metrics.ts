@@ -13,7 +13,6 @@ import type { MatchRun } from './runner';
 /** Seconds per activity — estimates until real playtests (spec §8.4). */
 export interface TimeModel {
   diceSec: number;
-  bonusSec: number;
   moveSec: number;
   challengeWindowSec: number;
   mysterySelectSec: number;
@@ -24,7 +23,6 @@ export interface TimeModel {
 
 export const DEFAULT_TIME_MODEL: TimeModel = {
   diceSec: 6,
-  bonusSec: 2,
   moveSec: 2,
   challengeWindowSec: 6,
   mysterySelectSec: 10,
@@ -57,12 +55,10 @@ export function matchMetrics(run: MatchRun, tm: TimeModel = DEFAULT_TIME_MODEL):
   const winner: PlayerId = state.phase.winner;
   const count = (type: GameEvent['type']) => events.filter((e) => e.type === type).length;
 
-  const roundsWithBonus = new Set<number>();
   const roundsWithEncounter = new Set<number>();
   let round = 1;
   for (const e of events) {
     if (e.type === 'RoundStarted') round = e.round;
-    if (e.type === 'BonusChosen' && e.rollAgain) roundsWithBonus.add(round);
     if (e.type === 'CardSelected') roundsWithEncounter.add(round);
   }
 
@@ -81,7 +77,6 @@ export function matchMetrics(run: MatchRun, tm: TimeModel = DEFAULT_TIME_MODEL):
   const cardsResolved = count('CardResolved');
   const estimatedSeconds =
     state.round * (tm.roundOverheadSec + tm.diceSec + tm.moveSec) +
-    roundsWithBonus.size * tm.bonusSec +
     challengeWindows * tm.challengeWindowSec +
     roundsWithEncounter.size * (tm.mysterySelectSec + tm.revealSec) +
     cardsResolved * tm.perCardSec;

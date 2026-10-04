@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { awaiting, step, type EffectTemplate, type MatchState } from '../src/index';
+import { awaiting, step, type EffectTemplate, type Input, type MatchState } from '../src/index';
 import { addEffect } from '../src/engine/effects';
-import { again, ofType, play, positions, roll, setup, stop, timeout } from './support/fixtures';
+import { ofType, play, positions, roll, setup, timeout } from './support/fixtures';
 
 function withEffect(s: MatchState, owner: string, template: EffectTemplate): MatchState {
   addEffect(s, [], owner, template, 'test', owner);
@@ -19,39 +19,32 @@ describe('dice phase', () => {
     expect(state.round).toBe(2);
   });
 
-  it('makes the bonus roll after a 6 optional', () => {
-    const stopped = play(setup({ dice: [[6], [1]] }), [roll('p1'), stop('p1'), roll('p2')]);
-    expect(positions(stopped.state)).toEqual([6, 1]);
-    const rolled = play(setup({ dice: [[6, 2], [1]] }), [roll('p1'), again('p1'), roll('p2')]);
-    expect(positions(rolled.state)).toEqual([8, 1]);
+  it('ends a roll after one die, even when it shows 6 (no bonus roll)', () => {
+    const s = play(setup({ dice: [[6], [1]] }), [roll('p1')]).state;
+    expect(s.phase.kind === 'dice' && s.phase.seqs['p1']).toEqual({ faces: [6], status: 'done' });
+    expect(awaiting(s)).toMatchObject({ window: 'dice', players: ['p2'] });
+    const { state, events } = play(s, [roll('p2')]);
+    expect(positions(state)).toEqual([6, 1]);
+    expect(ofType(events, 'DiceTotaled')[0]).toMatchObject({ player: 'p1', faces: [6], total: 6 });
   });
 
-  it('ends the sequence after a second consecutive 6', () => {
-    const s = play(setup({ dice: [[6, 6], [1]] }), [roll('p1'), again('p1')]).state;
-    expect(s.phase.kind === 'dice' && s.phase.seqs['p1']!.status).toBe('done');
-    expect(positions(play(s, [roll('p2')]).state)).toEqual([12, 1]);
-  });
-
-  it('rejects rolls and bonus choices that are not awaited', () => {
+  it('rejects a second roll from a player who already rolled', () => {
     const s = play(setup({ dice: [[2], [1]] }), [roll('p1')]).state;
     expect(step(s, roll('p1')(s))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
-    expect(step(s, again('p2')(s))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
   });
 
-  it('auto-rolls on timeout, then gives auto-rolled 6s a grace window that ends in Stop', () => {
-    const s = setup({ dice: [[2], [6]] });
-    const afterTimeout = play(s, [roll('p1'), timeout]);
-    expect(ofType(afterTimeout.events, 'DieRolled').at(-1)).toMatchObject({ player: 'p2', face: 6, auto: true });
-    expect(awaiting(afterTimeout.state)).toMatchObject({ window: 'bonusGrace', players: ['p2'], durationMs: 5_000 });
-    const { state, events } = play(afterTimeout.state, [timeout]);
-    expect(ofType(events, 'BonusChosen')).toMatchObject([{ player: 'p2', rollAgain: false, auto: true }]);
+  it('rejects the removed bonusChoice input as an unknown input type', () => {
+    const s = play(setup({ dice: [[6], [1]] }), [roll('p1')]).state;
+    const legacy = { type: 'bonusChoice', player: 'p1', rollAgain: true, windowId: s.windowId } as unknown as Input;
+    expect(step(s, legacy)).toMatchObject({ ok: false, error: { code: 'INVALID_INPUT', message: 'unknown input type' } });
+  });
+
+  it('auto-rolls anyone who has not rolled when the window expires, then ends the phase', () => {
+    const { state, events } = play(setup({ dice: [[2], [6]] }), [roll('p1'), timeout]);
+    expect(ofType(events, 'DieRolled').at(-1)).toMatchObject({ player: 'p2', face: 6, auto: true });
     expect(positions(state)).toEqual([2, 6]);
-  });
-
-  it('lets a player still deciding at expiry use the grace window to roll again', () => {
-    const s = play(setup({ dice: [[6, 3], [4]] }), [roll('p1'), timeout]).state;
-    expect(awaiting(s)).toMatchObject({ window: 'bonusGrace', players: ['p1'] });
-    expect(positions(play(s, [again('p1')]).state)).toEqual([9, 4]);
+    expect(ofType(events, 'WindowOpened').map((e) => e.window)).toEqual(['dice']); // only round 2's dice window
+    expect(state.round).toBe(2);
   });
 
   it('bounces off the final tile', () => {
@@ -60,13 +53,13 @@ describe('dice phase', () => {
     expect(ofType(events, 'Moved')[0]).toMatchObject({ player: 'p1', from: 98, to: 97, bounced: true });
   });
 
-  it('applies FACE effects before the 6-check (a forced 6 earns the bonus roll)', () => {
-    const s = withEffect(setup({ dice: [[2, 3], [1]] }), 'p1', { params: { hook: 'diceFace', die: 'first', set: 6 }, lifetime: { charges: 1 } });
+  it('applies FACE effects to the die as it is rolled (a forced 6 also ends the roll)', () => {
+    const s = withEffect(setup({ dice: [[2], [1]] }), 'p1', { params: { hook: 'diceFace', die: 'first', set: 6 }, lifetime: { charges: 1 } });
     const { state, events } = play(s, [roll('p1')]);
     expect(ofType(events, 'DieRolled')[0]).toMatchObject({ natural: 2, face: 6, forced: true });
-    expect(state.phase.kind === 'dice' && state.phase.seqs['p1']!.status).toBe('bonusPending');
+    expect(state.phase.kind === 'dice' && state.phase.seqs['p1']!.status).toBe('done');
     expect(state.effects).toHaveLength(0); // its single charge was spent
-    expect(positions(play(state, [again('p1'), roll('p2')]).state)).toEqual([9, 1]);
+    expect(positions(play(state, [roll('p2')]).state)).toEqual([6, 1]);
   });
 
   it('applies TOTAL effects in order Replace (newest) → Multiply → Add', () => {

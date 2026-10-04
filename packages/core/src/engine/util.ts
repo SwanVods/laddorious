@@ -57,8 +57,6 @@ export function windowDuration(s: MatchState, window: WindowKind): number {
   switch (window) {
     case 'dice':
       return s.config.windows.diceMs;
-    case 'bonusGrace':
-      return s.config.windows.bonusGraceMs;
     case 'challenge':
       return s.config.windows.challengeMs;
     case 'mystery':

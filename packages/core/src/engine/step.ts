@@ -1,5 +1,5 @@
 import { challengePickInput, closePickRound } from './challenge';
-import { bonusChoiceInput, diceComplete, diceTimeout, finishDicePhase, inputError, rollInput } from './dice';
+import { diceComplete, diceTimeout, finishDicePhase, inputError, rollInput } from './dice';
 import { assertInvariants } from './invariants';
 import { beginResolution, continueResolution, mysteryAwaited, mysteryTimeout, pickCardInput, rerollInput, startMysteryOrEndRound } from './mystery';
 import { runSettle } from './settle';
@@ -21,8 +21,6 @@ export function validateInput(input: unknown): InputError | null {
   switch (i.type) {
     case 'roll':
       return ok(isString('player'));
-    case 'bonusChoice':
-      return ok(isString('player') && typeof i.rollAgain === 'boolean');
     case 'challengePick':
       return ok(isString('player') && isString('challengeId') && isString('choice'));
     case 'reroll':
@@ -63,8 +61,6 @@ function dispatch(s: MatchState, ev: GameEvent[], input: Input): InputError | nu
   switch (input.type) {
     case 'roll':
       return rollInput(s, ev, input.player);
-    case 'bonusChoice':
-      return bonusChoiceInput(s, ev, input.player, input.rollAgain);
     case 'challengePick':
       return challengePickInput(s, ev, input.player, input.challengeId, input.choice);
     case 'reroll':

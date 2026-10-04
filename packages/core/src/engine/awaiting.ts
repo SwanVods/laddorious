@@ -9,7 +9,7 @@ export function awaiting(s: MatchState): Awaiting {
   const phase = s.phase;
   switch (phase.kind) {
     case 'dice':
-      return { windowId: s.windowId, window: phase.window, players: diceAwaited(phase), durationMs: windowDuration(s, phase.window) };
+      return { windowId: s.windowId, window: 'dice', players: diceAwaited(phase), durationMs: windowDuration(s, 'dice') };
     case 'settle':
       return { windowId: s.windowId, window: 'challenge', players: challengeAwaited(s), durationMs: windowDuration(s, 'challenge') };
     case 'mysterySelect':

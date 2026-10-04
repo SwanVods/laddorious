@@ -4,6 +4,7 @@ import type {
   Awaiting,
   BoardEdit,
   Challenge,
+  DiceSeq,
   GameEvent,
   MatchState,
   Offer,
@@ -28,7 +29,7 @@ export interface PublicChallenge {
 }
 
 export type PublicPhase =
-  | { kind: 'dice'; window: 'dice' | 'bonusGrace'; seqs: Record<PlayerId, { faces: number[]; status: string }> }
+  | { kind: 'dice'; seqs: Record<PlayerId, { faces: number[]; status: DiceSeq['status'] }> }
   | { kind: 'settle'; challenges: PublicChallenge[] }
   | { kind: 'mysterySelect'; picked: Record<PlayerId, boolean> }
   | { kind: 'finished'; winner: PlayerId; rankings: Ranking[] };

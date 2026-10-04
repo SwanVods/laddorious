@@ -11,7 +11,7 @@ export const STARTER_CARDS: CardDef[] = [
     effects: [{ op: 'moveRelative', amount: 3 }],
   },
   {
-    id: 'loaded-die', name: 'Loaded Die', text: 'The first die of your next roll shows 6.',
+    id: 'loaded-die', name: 'Loaded Die', text: 'Your next die shows 6.',
     type: 'movement', rarity: 'rare', weight: 1, target: SELF,
     effects: [{ op: 'addEffect', template: { params: { hook: 'diceFace', die: 'first', set: 6 }, lifetime: { charges: 1 } } }],
   },

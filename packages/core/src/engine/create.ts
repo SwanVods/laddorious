@@ -30,7 +30,7 @@ export function createMatch(input: MatchConfigInput, seats: PlayerSeat[], board?
     players: seats.map((p, seat) => ({ id: p.id, seat, position: 0 })),
     round: 0,
     windowId: 0,
-    phase: { kind: 'dice', window: 'dice', seqs: {} },
+    phase: { kind: 'dice', seqs: {} },
     rng: {
       dice: seats.map((_, seat) => createStream(`${config.rngSeed}|dice|${seat}`)),
       cards: seats.map((_, seat) => createStream(`${config.rngSeed}|cards|${seat}`)),

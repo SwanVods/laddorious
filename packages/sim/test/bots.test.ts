@@ -11,14 +11,13 @@ describe('bots', () => {
     expect(new RandomBot(createStream('r')).decide(viewFor(s, 'p2'))).toEqual({ type: 'roll', player: 'p2', windowId: 1 });
   });
 
-  it('heuristic declines a bonus roll that could overshoot', () => {
+  it('both policies roll when awaited and idle once they have rolled', () => {
     const s: MatchState = createMatch({ seed: 'b' }, seats);
-    if (s.phase.kind === 'dice') s.phase.seqs['p1'] = { faces: [6], status: 'bonusPending' };
-    const bot = () => new HeuristicBot(createStream('h'), STARTER_CARDS);
-    s.players[0]!.position = 90;
-    expect(bot().decide(viewFor(s, 'p1'))).toEqual({ type: 'bonusChoice', player: 'p1', rollAgain: false, windowId: 1 });
-    s.players[0]!.position = 50;
-    expect(bot().decide(viewFor(s, 'p1'))).toEqual({ type: 'bonusChoice', player: 'p1', rollAgain: true, windowId: 1 });
+    if (s.phase.kind === 'dice') s.phase.seqs['p1'] = { faces: [6], status: 'done' };
+    for (const bot of [new RandomBot(createStream('r')), new HeuristicBot(createStream('h'), STARTER_CARDS)]) {
+      expect(bot.decide(viewFor(s, 'p1'))).toBe('idle');
+      expect(bot.decide(viewFor(s, 'p2'))).toEqual({ type: 'roll', player: 'p2', windowId: 1 });
+    }
   });
 
   it('scoreCard values cards in rough tiles', () => {

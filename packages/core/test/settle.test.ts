@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { InvariantError, awaiting, step, type EffectTemplate, type MatchState } from '../src/index';
 import { addEffect } from '../src/engine/effects';
-import { again, choose, makeBoard, ofType, play, positions, roll, setup, timeout } from './support/fixtures';
+import { choose, makeBoard, ofType, play, positions, roll, setup, timeout } from './support/fixtures';
 
 function withEffect(s: MatchState, owner: string, template: EffectTemplate): MatchState {
   addEffect(s, [], owner, template, 'test', owner);
@@ -110,8 +110,8 @@ describe('collisions', () => {
 
   it('the safety cap steps arrivals back to the nearest free tile after maxWaves', () => {
     // maxWaves 1: the first wave's loser lands on an occupied tile, which is not fought.
-    const s = setup({ players: 3, positions: [5, 6, 0], dice: [[5], [4], [6, 1]], config: { collision: { maxWaves: 1 } } });
-    const afterDice = play(s, [roll('p1'), roll('p2'), roll('p3'), again('p3')]).state;
+    const s = setup({ players: 3, positions: [5, 6, 1], dice: [[5], [4], [6]], config: { collision: { maxWaves: 1 } } });
+    const afterDice = play(s, [roll('p1'), roll('p2'), roll('p3')]).state;
     expect(positions(afterDice)).toEqual([10, 10, 7]);
     const { state, events } = play(afterDice, [choose('p1', 'rock'), choose('p2', 'scissors')]);
     expect(ofType(events, 'SafetyCapApplied')).toMatchObject([{ tile: 7, steppedBack: ['p2'] }]);

@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { assertInvariants, hashState, InvariantError, step, stableStringify, type Input } from '../src/index';
-import { again, choose, makeBoard, pick, play, roll, setup } from './support/fixtures';
+import { choose, makeBoard, pick, play, roll, setup } from './support/fixtures';
 
 describe('step', () => {
   it('never mutates the state it is given', () => {
@@ -28,9 +28,9 @@ describe('step', () => {
   });
 
   it('continues identically after the state is persisted as JSON mid-match', () => {
-    const s = play(setup({ board: makeBoard(100, [], { 50: 'rare' }), dice: [[4, 2, 6, 3], [5, 3, 1]] }), [roll('p1'), roll('p2')]).state;
+    const s = play(setup({ board: makeBoard(100, [], { 50: 'rare' }), dice: [[4, 2, 6], [5, 3, 1]] }), [roll('p1'), roll('p2')]).state;
     const resumed = JSON.parse(JSON.stringify(s)) as typeof s;
-    const next = [roll('p1'), roll('p2'), roll('p1'), again('p1'), roll('p2')];
+    const next = [roll('p1'), roll('p2'), roll('p1'), roll('p2')];
     expect(hashState(play(resumed, next).state)).toBe(hashState(play(s, next).state));
   });
 
@@ -77,6 +77,7 @@ describe('malformed input (review I1)', () => {
       { type: 'roll', player: { toString: 1 }, windowId: 1 },
       { type: 'roll', player: 'p1', windowId: '1' },
       { type: 'bonusChoice', player: 'p1', rollAgain: 'no', windowId: 1 },
+      { type: 'bonusChoice', player: 'p1', rollAgain: true, windowId: 1 }, // removed input type (bonus roll is gone)
       { type: 'challengePick', player: 'p1', challengeId: 7, choice: 'rock', windowId: 1 },
       { type: 'challengePick', player: 'p1', challengeId: 'c1', choice: { x: 1 }, windowId: 1 },
       { type: 'reroll', player: 'p1', slot: '1', windowId: 1 },

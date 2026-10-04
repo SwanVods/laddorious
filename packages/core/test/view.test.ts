@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createMatch, eventsFor, viewFor } from '../src/index';
-import { choose, makeBoard, offerValues, pick, play, roll, setup, stop } from './support/fixtures';
+import { choose, makeBoard, offerValues, pick, play, roll, setup } from './support/fixtures';
 
 const board = makeBoard(100, [], { 4: 'common', 6: 'common' });
 
@@ -8,7 +8,7 @@ describe('viewFor', () => {
   it('shows a player only their own Mystery hand', () => {
     const { state, events } = play(
       setup({ players: 3, board, dice: [[4], [6], [1]], cards: [offerValues('sprint', 'sprint', 'sprint'), offerValues('cleanse', 'cleanse', 'cleanse')] }),
-      [roll('p1'), roll('p2'), stop('p2'), roll('p3')],
+      [roll('p1'), roll('p2'), roll('p3')],
     );
     const v1 = viewFor(state, 'p1');
     const v3 = viewFor(state, 'p3');
@@ -37,7 +37,7 @@ describe('viewFor', () => {
   it('never exposes locked card targets or the resolution queue', () => {
     const { state } = play(
       setup({ players: 3, board, dice: [[4], [6], [1]], cards: [offerValues('shove', 'shove', 'shove'), offerValues('cleanse', 'cleanse', 'cleanse')] }),
-      [roll('p1'), roll('p2'), stop('p2'), roll('p3'), pick('p1', 0)],
+      [roll('p1'), roll('p2'), roll('p3'), pick('p1', 0)],
     );
     const view = viewFor(state, 'p1') as unknown as Record<string, unknown>;
     expect('resolution' in view).toBe(false);

@@ -72,8 +72,6 @@ export function play(s: MatchState, inputs: Array<Input | ((cur: MatchState) => 
 
 // Player inputs carry the window they answer; these helpers stamp the current one when applied.
 export const roll = (player: string) => (cur: MatchState): Input => ({ type: 'roll', player, windowId: cur.windowId });
-export const stop = (player: string) => (cur: MatchState): Input => ({ type: 'bonusChoice', player, rollAgain: false, windowId: cur.windowId });
-export const again = (player: string) => (cur: MatchState): Input => ({ type: 'bonusChoice', player, rollAgain: true, windowId: cur.windowId });
 export const pick = (player: string, slot: number) => (cur: MatchState): Input => ({ type: 'pickCard', player, slot, windowId: cur.windowId });
 export const reroll = (player: string, slot: number) => (cur: MatchState): Input => ({ type: 'reroll', player, slot, windowId: cur.windowId });
 /** Timeout for whatever window is current when the input is applied. */

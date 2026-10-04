@@ -54,10 +54,7 @@ export class RandomBot implements Bot {
     const me = view.me;
     const phase = view.phase;
     if (phase.kind === 'dice') {
-      const seq = phase.seqs[me];
-      if (seq?.status === 'ready') return { type: 'roll', player: me, windowId: view.awaiting.windowId };
-      if (seq?.status === 'bonusPending') return { type: 'bonusChoice', player: me, rollAgain: nextInt(this.rng, 2) === 0, windowId: view.awaiting.windowId };
-      return 'idle';
+      return phase.seqs[me]?.status === 'ready' ? { type: 'roll', player: me, windowId: view.awaiting.windowId } : 'idle';
     }
     if (phase.kind === 'settle') return challengeInput(view, this.rng);
     if (phase.kind === 'mysterySelect' && view.myOffer && view.myOffer.picked === null) {
@@ -111,7 +108,7 @@ export function scoreCard(card: CardDef, view: PlayerView): number {
   return card.effects.reduce((a, op) => a + value(op), 0);
 }
 
-/** Avoids overshooting with bonus rolls, rerolls weak cards, picks the best-scoring card. */
+/** Rerolls weak cards and picks the best-scoring card. */
 export class HeuristicBot implements Bot {
   constructor(
     private readonly rng: RngStream,
@@ -123,14 +120,7 @@ export class HeuristicBot implements Bot {
     const me = view.me;
     const phase = view.phase;
     if (phase.kind === 'dice') {
-      const seq = phase.seqs[me];
-      if (seq?.status === 'ready') return { type: 'roll', player: me, windowId: view.awaiting.windowId };
-      if (seq?.status === 'bonusPending') {
-        const pos = view.players.find((p) => p.id === me)!.position;
-        const total = seq.faces.reduce((a, b) => a + b, 0);
-        return { type: 'bonusChoice', player: me, rollAgain: pos + total + 6 <= view.board.size, windowId: view.awaiting.windowId };
-      }
-      return 'idle';
+      return phase.seqs[me]?.status === 'ready' ? { type: 'roll', player: me, windowId: view.awaiting.windowId } : 'idle';
     }
     if (phase.kind === 'settle') return challengeInput(view, this.rng);
     if (phase.kind === 'mysterySelect' && view.myOffer && view.myOffer.picked === null) {

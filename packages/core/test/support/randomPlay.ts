@@ -10,9 +10,7 @@ export function chooseInput(s: MatchState, choice: number): Input {
   const bit = Math.floor(choice / 7);
   switch (phase.kind) {
     case 'dice':
-      return phase.seqs[player]!.status === 'ready'
-        ? { type: 'roll', player, windowId: aw.windowId }
-        : { type: 'bonusChoice', player, rollAgain: bit % 2 === 0, windowId: aw.windowId };
+      return { type: 'roll', player, windowId: aw.windowId };
     case 'settle': {
       const ch = phase.ctx.challenges.find((c) => c.winner === null && c.contesting.includes(player) && c.picks[player] === undefined)!;
       const options = ch.kind === 'rps' ? (['rock', 'paper', 'scissors'] as const) : (['A', 'B'] as const);

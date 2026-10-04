@@ -47,9 +47,14 @@ describe('resolveConfig', () => {
     expect(() => resolveConfig({ seed: 's', windows })).toThrow(/windows\.fooMs is not a known window/);
   });
 
+  it('rejects the removed bonusGraceMs window', () => {
+    const windows = { bonusGraceMs: 5_000 } as unknown as MatchConfigInput['windows'];
+    expect(() => resolveConfig({ seed: 's', windows })).toThrow(/windows\.bonusGraceMs is not a known window/);
+  });
+
   it('fills spec §9 defaults', () => {
     const cfg = resolveConfig({ seed: 's' });
-    expect(cfg.windows).toEqual({ diceMs: 12_000, bonusGraceMs: 5_000, challengeMs: 8_000, mysteryMs: 15_000 });
+    expect(cfg.windows).toEqual({ diceMs: 12_000, challengeMs: 8_000, mysteryMs: 15_000 });
     expect(cfg.collision).toEqual({ knockback: 3, maxReplays: 3, maxWaves: 3 });
     expect(cfg.mystery.maxRerolls).toBe(2);
     expect(cfg.board.size).toBe(100);

@@ -15,11 +15,12 @@ export interface PlayerState {
   position: number;
 }
 
-export type WindowKind = 'dice' | 'bonusGrace' | 'challenge' | 'mystery' | 'none';
+export type WindowKind = 'dice' | 'challenge' | 'mystery' | 'none';
 
 export interface DiceSeq {
+  /** One face per die rolled this round: always one today, a list so a future card can add dice. */
   faces: number[];
-  status: 'ready' | 'bonusPending' | 'done';
+  status: 'ready' | 'done';
 }
 
 export interface Mover {
@@ -84,7 +85,7 @@ export interface Ranking {
 }
 
 export type Phase =
-  | { kind: 'dice'; window: 'dice' | 'bonusGrace'; seqs: Record<PlayerId, DiceSeq> }
+  | { kind: 'dice'; seqs: Record<PlayerId, DiceSeq> }
   | { kind: 'settle'; ctx: SettleCtx; after: AfterSettle }
   | { kind: 'mysterySelect'; offers: Record<PlayerId, Offer> }
   | { kind: 'finished'; winner: PlayerId; rankings: Ranking[] };
@@ -126,7 +127,6 @@ export interface MatchState {
  */
 export type Input =
   | { type: 'roll'; player: PlayerId; windowId: number }
-  | { type: 'bonusChoice'; player: PlayerId; rollAgain: boolean; windowId: number }
   | { type: 'challengePick'; player: PlayerId; challengeId: string; choice: ChallengeChoice; windowId: number }
   | { type: 'reroll'; player: PlayerId; slot: number; windowId: number }
   | { type: 'pickCard'; player: PlayerId; slot: number; windowId: number }
@@ -140,7 +140,6 @@ export type EventBody =
   | { type: 'RoundStarted'; round: number }
   | { type: 'WindowOpened'; windowId: number; window: WindowKind; players: PlayerId[]; durationMs: number }
   | { type: 'DieRolled'; player: PlayerId; natural: number; face: number; forced: boolean; auto: boolean }
-  | { type: 'BonusChosen'; player: PlayerId; rollAgain: boolean; auto: boolean }
   | { type: 'DiceTotaled'; player: PlayerId; faces: number[]; total: number }
   | { type: 'Moved'; player: PlayerId; from: number; to: number; cause: MoveCause; bounced: boolean }
   | { type: 'SnakeBlocked'; player: PlayerId; tile: number; effectId: string }

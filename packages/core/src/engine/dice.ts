@@ -12,7 +12,7 @@ export function inputError(code: InputError['code'], message: string): InputErro
 export function startDicePhase(s: MatchState, ev: GameEvent[]): void {
   const seqs: Record<PlayerId, DiceSeq> = {};
   for (const p of s.players) seqs[p.id] = { faces: [], status: 'ready' };
-  s.phase = { kind: 'dice', window: 'dice', seqs };
+  s.phase = { kind: 'dice', seqs };
   openWindow(s, ev, 'dice', s.players.map((p) => p.id));
 }
 
@@ -20,7 +20,7 @@ function dicePhase(s: MatchState): DicePhase | null {
   return s.phase.kind === 'dice' ? s.phase : null;
 }
 
-/** Roll one die for the player; a first-die 6 opens the bonus choice (spec §4.3). */
+/** Roll the player's one die for this round (spec §4.3, amended 2026-10-04: a 6 grants nothing extra). */
 function rollOne(s: MatchState, ev: GameEvent[], player: PlayerId, auto: boolean): void {
   const phase = dicePhase(s)!;
   const seq = phase.seqs[player]!;
@@ -29,7 +29,7 @@ function rollOne(s: MatchState, ev: GameEvent[], player: PlayerId, auto: boolean
   const { face, forced } = applyFaceEffects(s, ev, player, seq.faces.length, natural);
   seq.faces.push(face);
   ev.push(pub({ type: 'DieRolled', player, natural, face, forced, auto }));
-  seq.status = face === 6 && seq.faces.length === 1 ? 'bonusPending' : 'done';
+  seq.status = 'done';
 }
 
 export function rollInput(s: MatchState, ev: GameEvent[], player: PlayerId): InputError | null {
@@ -37,50 +37,20 @@ export function rollInput(s: MatchState, ev: GameEvent[], player: PlayerId): Inp
   if (!phase) return inputError('WRONG_PHASE', 'not in the dice phase');
   const seq = phase.seqs[player];
   if (!seq) return inputError('UNKNOWN_PLAYER', `unknown player ${player}`);
-  if (phase.window !== 'dice' || seq.status !== 'ready') return inputError('NOT_AWAITED', `${player} cannot roll now`);
+  if (seq.status !== 'ready') return inputError('NOT_AWAITED', `${player} cannot roll now`);
   rollOne(s, ev, player, false);
   return null;
 }
 
-export function bonusChoiceInput(s: MatchState, ev: GameEvent[], player: PlayerId, rollAgain: boolean): InputError | null {
-  const phase = dicePhase(s);
-  if (!phase) return inputError('WRONG_PHASE', 'not in the dice phase');
-  const seq = phase.seqs[player];
-  if (!seq) return inputError('UNKNOWN_PLAYER', `unknown player ${player}`);
-  if (seq.status !== 'bonusPending') return inputError('NOT_AWAITED', `${player} has no bonus roll pending`);
-  ev.push(pub({ type: 'BonusChosen', player, rollAgain, auto: false }));
-  if (rollAgain) rollOne(s, ev, player, false);
-  else seq.status = 'done';
-  return null;
-}
-
-/**
- * Dice window expiry: auto-roll anyone who has not rolled, then open one
- * bonusGrace window if any bonus choice is pending. Grace expiry = Stop.
- */
+/** Dice window expiry: auto-roll everyone who has not rolled. The phase then ends; there is no grace window. */
 export function diceTimeout(s: MatchState, ev: GameEvent[]): void {
   const phase = dicePhase(s)!;
-  if (phase.window === 'dice') {
-    for (const p of s.players) if (phase.seqs[p.id]!.status === 'ready') rollOne(s, ev, p.id, true);
-    const pending = s.players.filter((p) => phase.seqs[p.id]!.status === 'bonusPending').map((p) => p.id);
-    if (pending.length > 0) {
-      phase.window = 'bonusGrace';
-      openWindow(s, ev, 'bonusGrace', pending);
-    }
-    return;
-  }
-  for (const p of s.players) {
-    const seq = phase.seqs[p.id]!;
-    if (seq.status === 'bonusPending') {
-      ev.push(pub({ type: 'BonusChosen', player: p.id, rollAgain: false, auto: true }));
-      seq.status = 'done';
-    }
-  }
+  for (const p of s.players) if (phase.seqs[p.id]!.status === 'ready') rollOne(s, ev, p.id, true);
 }
 
 export function diceAwaited(phase: DicePhase): PlayerId[] {
   return Object.entries(phase.seqs)
-    .filter(([, seq]) => (phase.window === 'dice' ? seq.status !== 'done' : seq.status === 'bonusPending'))
+    .filter(([, seq]) => seq.status === 'ready')
     .map(([id]) => id);
 }
 

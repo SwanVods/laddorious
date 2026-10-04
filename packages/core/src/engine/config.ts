@@ -15,7 +15,7 @@ export interface MatchConfig {
    */
   rngSeed: string;
   board: BoardConfig;
-  windows: { diceMs: number; bonusGraceMs: number; challengeMs: number; mysteryMs: number };
+  windows: { diceMs: number; challengeMs: number; mysteryMs: number };
   mystery: { typeWeights: Record<CardType, number>; maxRerolls: number };
   /** maxReplays: replays/continuations after the initial pick round (spec §4.7: 3 → at most 4 pick rounds). */
   collision: { knockback: number; maxReplays: number; maxWaves: number };
@@ -41,7 +41,6 @@ export interface MatchConfigInput {
 
 export const DEFAULT_WINDOWS: MatchConfig['windows'] = {
   diceMs: 12_000,
-  bonusGraceMs: 5_000,
   challengeMs: 8_000,
   mysteryMs: 15_000,
 };

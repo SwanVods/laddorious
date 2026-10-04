@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { awaiting, step, type EffectTemplate, type MatchState } from '../src/index';
 import { addEffect } from '../src/engine/effects';
-import { again, drawValues, makeBoard, ofType, offerValues, pick, play, positions, reroll, roll, setup, stop, timeout } from './support/fixtures';
+import { drawValues, makeBoard, ofType, offerValues, pick, play, positions, reroll, roll, setup, timeout } from './support/fixtures';
 
 function withEffect(s: MatchState, owner: string, template: EffectTemplate): MatchState {
   addEffect(s, [], owner, template, 'test', owner);
@@ -23,7 +23,7 @@ describe('Mystery detection and offers', () => {
   it('does not re-trigger a Mystery tile for a player who did not move this round (D20)', () => {
     let s = setup({ board, positions: [4, 0], dice: [[2], [6]], cards: [[], offerValues('sprint', 'sprint', 'sprint')] });
     s = withEffect(s, 'p1', { params: { hook: 'diceTotal', op: 'replace', value: 0 }, lifetime: { charges: 1 } });
-    const { state, events } = play(s, [roll('p1'), roll('p2'), stop('p2')]);
+    const { state, events } = play(s, [roll('p1'), roll('p2')]);
     expect(positions(state)).toEqual([4, 6]);
     expect(ofType(events, 'MysteryOffered').map((e) => e.player)).toEqual(['p2']);
   });
@@ -66,7 +66,7 @@ describe('selection and reveal', () => {
   const twoEncounters = () =>
     play(
       setup({ board, dice: [[4], [6]], cards: [offerValues('sprint', 'sprint', 'sprint'), [...offerValues('cleanse', 'cleanse', 'cleanse'), 2]] }),
-      [roll('p1'), roll('p2'), stop('p2')],
+      [roll('p1'), roll('p2')],
     ).state;
 
   it('reveals all picks together once everyone has picked (D21)', () => {
@@ -90,8 +90,8 @@ describe('selection and reveal', () => {
 
   it('resolves an epic Ladder Warp: move to the ladder foot, then climb', () => {
     const s = play(
-      setup({ board, dice: [[6, 3], [1]], cards: [offerValues('ladder-warp', 'ladder-warp', 'ladder-warp')] }),
-      [roll('p1'), again('p1'), roll('p2')],
+      setup({ board, positions: [3, 0], dice: [[6], [1]], cards: [offerValues('ladder-warp', 'ladder-warp', 'ladder-warp')] }),
+      [roll('p1'), roll('p2')],
     ).state;
     expect(positions(s)).toEqual([9, 1]);
     const { state } = play(s, [pick('p1', 0)]);
