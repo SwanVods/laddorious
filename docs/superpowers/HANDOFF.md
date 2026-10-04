@@ -16,7 +16,8 @@
 | Spec #2 split into six phases | `docs/superpowers/plans/2026-10-04-3d-client-phases.md` |
 | **Phase 1** (restructure and bots package): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-1-restructure.md`; commits `089ef8c`, `56888ee` |
 | **Phase 2** (client scaffold, local host, match service): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
-| **Phase 3** (director and presentation state): **done on `client/phase-3`**, merged locally at the end of the phase | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
+| **Phase 3** (director and presentation state): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
+| **Phase 4** (the 3D scene): **plan written**, being executed on `client/phase-4` | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md` |
 
 After Phase 3 the full suite is 33 test files, 248 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean. There is no git remote.
 
@@ -25,6 +26,8 @@ After Phase 3 the full suite is 33 test files, 248 tests, all passing. `pnpm typ
 **Phase 4: the 3D scene.** Spec sections: §5.3 (camera), §6 (scene, assets, performance).
 
 **It ends with:** a full bot match animated in 3D (board, pieces, slides, pads, dice, camera rules, asset slots, quality levels, dev overlay) with a minimal ROLL button.
+
+**Status:** the plan is written (`docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`) and being executed on `client/phase-4`. Its ledger is at `.superpowers/sdd/2026-10-04-client-phase-4-3d-scene/progress.md`.
 
 How to run it: the user asked on 2026-10-04 to continue through Phase 6 without stopping (memory `continue-through-phase-6`). Branch `client/phase-4` from `main`, write the plan with `superpowers:writing-plans`, execute it inline with `superpowers:executing-plans` (TDD, commit per task), self-review the branch, merge it locally, then go on to Phase 5.
 
