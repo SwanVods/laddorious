@@ -1,3 +1,4 @@
+import eslintReact from '@eslint-react/eslint-plugin';
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
@@ -27,5 +28,10 @@ export default defineConfig(
         { patterns: [{ group: ['node:*'], message: 'packages/* must stay browser-safe: no Node built-ins' }] },
       ],
     },
+  },
+  {
+    // React and React Hooks rules for the client (spec #2 §3).
+    files: ['apps/client/**/*.{ts,tsx}'],
+    extends: [eslintReact.configs['recommended-typescript']],
   },
 );
