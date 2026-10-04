@@ -1,8 +1,8 @@
-# Handoff — 3D client, after Phase 3
+# Handoff — 3D client, after Phase 4
 
-**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2 and 3.
+**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4.
 **For:** the next Claude Code session on this repo. Read this file, then the spec and the phase index, before doing anything.
-**Keep it current:** when Phase 4 starts, update the "Where things stand" and "Next step" sections or delete this file.
+**Keep it current:** when Phase 5 starts, update the "Where things stand" and "Next step" sections or delete this file.
 
 ---
 
@@ -17,27 +17,26 @@
 | **Phase 1** (restructure and bots package): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-1-restructure.md`; commits `089ef8c`, `56888ee` |
 | **Phase 2** (client scaffold, local host, match service): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
 | **Phase 3** (director and presentation state): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
-| **Phase 4** (the 3D scene): **plan written**, being executed on `client/phase-4` | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md` |
+| **Phase 4** (the 3D scene): **done on `client/phase-4`**, merged locally at the end of the phase | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`; commits `3d9c934`, `91f41fe`, `2d00e81`, `69b79e2`, `7a7db45`, `625cd48`, `c607d59`, `809436b`, `5151604` |
 
-After Phase 3 the full suite is 33 test files, 248 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean. There is no git remote.
+After Phase 4 the full suite is 41 test files, 293 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote.
 
-## Next step: Phase 4
+## Next step: Phase 5
 
-**Phase 4: the 3D scene.** Spec sections: §5.3 (camera), §6 (scene, assets, performance).
+**Phase 5: HUD and screens.** Spec sections: §7 (screens, HUD, input, palette and type), §8 (error handling).
 
-**It ends with:** a full bot match animated in 3D (board, pieces, slides, pads, dice, camera rules, asset slots, quality levels, dev overlay) with a minimal ROLL button.
+**It ends with:** the whole game per the spec, in Tangerine Dusk, on desktop and landscape phones: menu, matchmaking, match HUD and popups, end screen, settings, rotate screen, error screen and leave dialog.
 
-**Status:** the plan is written (`docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`) and being executed on `client/phase-4`. Its ledger is at `.superpowers/sdd/2026-10-04-client-phase-4-3d-scene/progress.md`.
+How to run it: per the user's standing order (memory `continue-through-phase-6`), branch `client/phase-5` from `main`, write the plan with `superpowers:writing-plans`, execute it inline (TDD, commit per task), self-review, merge locally, then go on to Phase 6.
 
-How to run it: the user asked on 2026-10-04 to continue through Phase 6 without stopping (memory `continue-through-phase-6`). Branch `client/phase-4` from `main`, write the plan with `superpowers:writing-plans`, execute it inline with `superpowers:executing-plans` (TDD, commit per task), self-review the branch, merge it locally, then go on to Phase 5.
+What Phase 4 left for Phase 5:
 
-What Phase 3 left for Phase 4:
-
-- The director's store (`src/director/director.ts`) is what the scene renders. `presentation` is the board between beats. `beat` is the step on stage, with `startedAt`, `durationMs` and `after`; animate from `presentation` towards `beat.after`. `settled` is the latest finished update, for the HUD.
-- `src/app/DevBoard.tsx` shows the mapping the scene needs: the serpentine tile layout, stack offsets (`stackOn`), side-by-side face-offs and the start row.
-- Beat kinds and durations are in `src/director/beats.ts` (`BEAT_MS`, the §5.1 starting values). Tune them against the 3D animations.
-- Board colours are in `src/app/theme.ts` (`BOARD_COLORS`); the sky, fog and podium tokens of §7.4 join it.
-- The user okayed making the 3D objects with the Blender MCP (memory `blender-for-3d-objects`), but asked to keep the plan unchanged. Spec §6.3 has code-built defaults behind asset slots, with `.glb` overrides for the Spec #4 art pass.
+- `src/scene/MatchScene.tsx` is the 3D board. It takes `watch` (watch mode) and `reducedMotion` (settings) props that the HUD should feed, and a `setting` that needs a remount (`key`) to change.
+- The dev page (`src/app/DevMatchPage.tsx`) is the harness to replace: its ROLL button, status line and log are stand-ins for the HUD.
+- The menu podium and its colours (§7.4 Podium tokens) still need adding to `src/app/theme.ts` (`WORLD_COLORS`).
+- The dev overlay reads `src/scene/stats.ts`; e2e (Phase 6) can read the same store for the draw-call check.
+- Fonts (Lilita One, Fredoka) are not loaded yet; the board overlay paints numbers in the system font and may want a repaint once fonts load.
+- Asset slots (`src/assets/slots.tsx`, `SLOT_URLS`) are empty: Spec #4's `.glb` models, possibly made with the Blender MCP, go there.
 
 ## How this user works (follow these)
 
@@ -69,6 +68,7 @@ What Phase 3 left for Phase 4:
 - **Bots** (`@laddorious/bots`): `RandomBot`, `HeuristicBot`, `makeBots(seats, policy, seed, afkPercent)` and `scoreCard`. They are browser-safe.
 - **Client tests and lint:** component tests start with `// @vitest-environment jsdom`; every other test runs in Node. React and React Hooks rules come from `@eslint-react/eslint-plugin` (`eslint-plugin-react` stops at ESLint 9). jsdom stays on 29 while this machine's Node is 24.14 (jsdom 30 needs 24.15). The local, untracked `.claude/launch.json` has `client` (dev server) and `client-build` (serves `dist`) entries for the preview pane.
 - **Director:** `src/director/` is plain TypeScript (presentation state, beat timelines, the `Director` on a `zustand/vanilla` store). Its whole-match test plays a real match through the director and fails on any presentation drift, so run it after changing beat or presentation rules.
+- **Scene:** `src/scene/` holds the 3D scene. Rules are pure and unit-tested (`layout.ts`, `quality.ts`, `motion.ts`, `camera.ts`); the components read the director's store once per frame. `test/scene.test.tsx` renders the scene graph with `@react-three/test-renderer` and fails above 100 draw calls or 150k triangles, so run it after adding anything to the scene.
 - **Environment:** Windows 11. Both PowerShell and Git Bash are available. The repo is at `E:\AI Project\laddorious`.
 - **Superpowers ledger:** executing-plans keeps its ledger at `.superpowers/sdd/<plan-basename>/progress.md` (scratch, not committed). Delete it when a phase finishes.
 
