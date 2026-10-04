@@ -1,8 +1,8 @@
-# Handoff — 3D client, after Phase 2
+# Handoff — 3D client, after Phase 3
 
-**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phase 2.
+**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2 and 3.
 **For:** the next Claude Code session on this repo. Read this file, then the spec and the phase index, before doing anything.
-**Keep it current:** when Phase 3 starts, update the "Where things stand" and "Next step" sections or delete this file.
+**Keep it current:** when Phase 4 starts, update the "Where things stand" and "Next step" sections or delete this file.
 
 ---
 
@@ -16,32 +16,25 @@
 | Spec #2 split into six phases | `docs/superpowers/plans/2026-10-04-3d-client-phases.md` |
 | **Phase 1** (restructure and bots package): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-1-restructure.md`; commits `089ef8c`, `56888ee` |
 | **Phase 2** (client scaffold, local host, match service): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
-| **Phase 3** (director and presentation state): **plan written**, executing on `client/phase-3` | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md` |
+| **Phase 3** (director and presentation state): **done on `client/phase-3`**, merged locally at the end of the phase | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
 
-After Phase 2 the full suite is 30 test files, 224 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean. There is no git remote.
+After Phase 3 the full suite is 33 test files, 248 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean. There is no git remote.
 
-## Next step: Phase 3
+## Next step: Phase 4
 
-**Status (2026-10-04):** in progress on `client/phase-3` from the plan `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`. The user asked to continue through Phase 6 without stopping (memory `continue-through-phase-6`): plan each phase, execute it inline, merge it locally, start the next.
+**Phase 4: the 3D scene.** Spec sections: §5.3 (camera), §6 (scene, assets, performance).
 
-**Phase 3: director and presentation state.** Spec sections: §5.1 (beats), §5.2 (presentation state).
+**It ends with:** a full bot match animated in 3D (board, pieces, slides, pads, dice, camera rules, asset slots, quality levels, dev overlay) with a minimal ROLL button.
 
-**It ends with:** the dev page plays each update as a beat timeline (text and a flat 2D board), calls `playbackDone` when the timeline ends, and the host's timers wait for it.
+How to run it: the user asked on 2026-10-04 to continue through Phase 6 without stopping (memory `continue-through-phase-6`). Branch `client/phase-4` from `main`, write the plan with `superpowers:writing-plans`, execute it inline with `superpowers:executing-plans` (TDD, commit per task), self-review the branch, merge it locally, then go on to Phase 5.
 
-How to run it, the same way as Phase 2:
+What Phase 3 left for Phase 4:
 
-1. Once the user has merged Phase 2, create `client/phase-3` from `main`.
-2. Use the `superpowers:writing-plans` skill to write `docs/superpowers/plans/<that day's date>-client-phase-3-<name>.md` against the code as it is then, in the Phase 2 plan's format. When the plan relies on new tooling, dry-run it in a scratch copy first.
-3. Show the plan to the user and **wait for approval before writing code**.
-4. Execute it with `superpowers:executing-plans`, **inline** (no subagents). TDD on every step. Commit at the end of every task.
-5. Finish with a self-review of the whole branch (say that it was a self-review), then `superpowers:finishing-a-development-branch`.
-
-What Phase 2 left for Phase 3:
-
-- `DevMatchPage.watch()` in `apps/client/src/app/DevMatchPage.tsx` is where updates arrive. Today it calls `playbackDone` at once; the director goes in between.
-- `createMatch` drops round 1's opening events, so the first update has `events: []`. The director takes round 1 from the view.
-- The director is plain TypeScript in `src/director/` (spec §4.1). Zustand arrives with the first store that needs it.
-- An update can arrive while a timeline plays: it queues, and more than 3 queued updates fast-forward to the latest view (§5.2).
+- The director's store (`src/director/director.ts`) is what the scene renders. `presentation` is the board between beats. `beat` is the step on stage, with `startedAt`, `durationMs` and `after`; animate from `presentation` towards `beat.after`. `settled` is the latest finished update, for the HUD.
+- `src/app/DevBoard.tsx` shows the mapping the scene needs: the serpentine tile layout, stack offsets (`stackOn`), side-by-side face-offs and the start row.
+- Beat kinds and durations are in `src/director/beats.ts` (`BEAT_MS`, the §5.1 starting values). Tune them against the 3D animations.
+- Board colours are in `src/app/theme.ts` (`BOARD_COLORS`); the sky, fog and podium tokens of §7.4 join it.
+- The user okayed making the 3D objects with the Blender MCP (memory `blender-for-3d-objects`), but asked to keep the plan unchanged. Spec §6.3 has code-built defaults behind asset slots, with `.glb` overrides for the Spec #4 art pass.
 
 ## How this user works (follow these)
 
@@ -72,6 +65,7 @@ What Phase 2 left for Phase 3:
   - The engine reads no clock and no unseeded randomness; lint bans `Date`, `performance` and `Math.random` in `packages/core/src`.
 - **Bots** (`@laddorious/bots`): `RandomBot`, `HeuristicBot`, `makeBots(seats, policy, seed, afkPercent)` and `scoreCard`. They are browser-safe.
 - **Client tests and lint:** component tests start with `// @vitest-environment jsdom`; every other test runs in Node. React and React Hooks rules come from `@eslint-react/eslint-plugin` (`eslint-plugin-react` stops at ESLint 9). jsdom stays on 29 while this machine's Node is 24.14 (jsdom 30 needs 24.15). The local, untracked `.claude/launch.json` has `client` (dev server) and `client-build` (serves `dist`) entries for the preview pane.
+- **Director:** `src/director/` is plain TypeScript (presentation state, beat timelines, the `Director` on a `zustand/vanilla` store). Its whole-match test plays a real match through the director and fails on any presentation drift, so run it after changing beat or presentation rules.
 - **Environment:** Windows 11. Both PowerShell and Git Bash are available. The repo is at `E:\AI Project\laddorious`.
 - **Superpowers ledger:** executing-plans keeps its ledger at `.superpowers/sdd/<plan-basename>/progress.md` (scratch, not committed). Delete it when a phase finishes.
 
