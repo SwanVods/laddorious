@@ -86,7 +86,9 @@ export function mergeBoardConfig(input: BoardConfigInput = {}): BoardConfig {
 
 export function validateConfig(cfg: MatchConfig): void {
   validateBoardConfig(cfg.board);
+  const knownWindows = Object.keys(DEFAULT_WINDOWS);
   for (const [k, v] of Object.entries(cfg.windows)) {
+    if (!knownWindows.includes(k)) throw new ConfigError(`windows.${k} is not a known window (expected ${knownWindows.join(', ')})`);
     if (!Number.isInteger(v) || v <= 0) throw new ConfigError(`windows.${k} must be a positive integer, got ${v}`);
   }
   const { knockback, maxReplays, maxWaves } = cfg.collision;

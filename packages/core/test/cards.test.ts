@@ -10,6 +10,7 @@ import {
   resolveConfig,
   validateCards,
   type CardDef,
+  type MatchConfigInput,
 } from '../src/index';
 
 const EQUAL = { movement: 1, defense: 1, attack: 1, risky: 1, misc: 1 };
@@ -40,6 +41,12 @@ describe('validateCards', () => {
 });
 
 describe('resolveConfig', () => {
+  it('rejects unknown window keys instead of ignoring them', () => {
+    const windows = { fooMs: 1_000 } as unknown as MatchConfigInput['windows'];
+    expect(() => resolveConfig({ seed: 's', windows })).toThrow(ConfigError);
+    expect(() => resolveConfig({ seed: 's', windows })).toThrow(/windows\.fooMs is not a known window/);
+  });
+
   it('fills spec §9 defaults', () => {
     const cfg = resolveConfig({ seed: 's' });
     expect(cfg.windows).toEqual({ diceMs: 12_000, bonusGraceMs: 5_000, challengeMs: 8_000, mysteryMs: 15_000 });
