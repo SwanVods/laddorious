@@ -2,8 +2,10 @@ import type { PlayerId } from '@laddorious/core';
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { Director } from '../director/director';
+import { MatchScene } from '../scene/MatchScene';
+import type { QualitySetting } from '../scene/quality';
+import { renderStats } from '../scene/stats';
 import type { Matchmaking, MatchmakingState, MatchService, MatchSession, MatchUpdate, Profile, SeatInfo } from '../service/matchService';
-import { DevBoard } from './DevBoard';
 import { formatEvent } from './devLog';
 
 /** "Play with bots" appears once a search has run this long (spec #2 C7). */
@@ -13,14 +15,14 @@ const PROFILE: Profile = { nickname: 'You', piece: 'knight' };
 const LOG_TAIL = 40;
 
 /**
- * The dev page: matchmaking, then a bot match played beat by beat on a flat board, with the
- * event log, the window timer and the final rankings. Later phases replace it with the 3D
- * board and the real screens.
+ * The dev page: matchmaking, then a bot match played in 3D with a minimal ROLL button,
+ * the event log, the window timer and the final rankings. Phase 5 replaces it with the real screens.
  */
 export function DevMatchPage({ service }: { service: MatchService }) {
   const [matchmaking, setMatchmaking] = useState<Matchmaking | null>(null);
   const [mm, setMm] = useState<MatchmakingState | null>(null);
   const [director, setDirector] = useState<Director | null>(null);
+  const [quality, setQuality] = useState<QualitySetting>('auto');
   const [log, setLog] = useState<string[]>([]);
   const session = mm?.kind === 'found' ? mm.session : null;
 
@@ -94,15 +96,53 @@ export function DevMatchPage({ service }: { service: MatchService }) {
         <section className="plate">
           <Seats seats={session.seats} />
           <MatchStatus director={director} seats={session.seats} />
-          <button type="button" onClick={leave}>
-            Leave
-          </button>
+          <div className="row">
+            <RollButton director={director} session={session} />
+            <label className="quality">
+              Quality
+              <select value={quality} onChange={(e) => setQuality(e.target.value as QualitySetting)}>
+                <option value="auto">Auto</option>
+                <option value="low">Low</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+            <button type="button" onClick={leave}>
+              Leave
+            </button>
+          </div>
+          {import.meta.env.DEV && <DevStats />}
         </section>
       )}
-      {session && director && <DevBoard director={director} seats={session.seats} />}
+      {session && director && <MatchScene key={quality} director={director} seats={session.seats} me={session.me} setting={quality} showStats={import.meta.env.DEV} />}
       {log.length > 0 && <pre className="log">{log.slice(-LOG_TAIL).join('\n')}</pre>}
     </main>
   );
+}
+
+/** A minimal ROLL button: shown in my dice window, pressed once per window. */
+function RollButton({ director, session }: { director: Director; session: MatchSession }) {
+  const settled = useStore(director.store, (s) => s.settled);
+  const [rolledIn, setRolledIn] = useState(-1);
+  const aw = settled?.view.awaiting;
+  if (!aw || aw.window !== 'dice' || !aw.players.includes(session.me) || rolledIn === aw.windowId) return null;
+  return (
+    <button
+      type="button"
+      className="primary roll"
+      onClick={() => {
+        session.send({ type: 'roll' });
+        setRolledIn(aw.windowId);
+      }}
+    >
+      ROLL
+    </button>
+  );
+}
+
+/** Frame rate, draw calls and triangles (dev builds only, spec #2 §6.4). */
+function DevStats() {
+  const { fps, calls, triangles } = useStore(renderStats);
+  return <p className="dev-stats">{`${fps} fps · ${calls} draw calls · ${(triangles / 1000).toFixed(1)}k triangles`}</p>;
 }
 
 /** The settled match (round, window, who is awaited, the countdown), the beat on stage, and the rankings at the end. */

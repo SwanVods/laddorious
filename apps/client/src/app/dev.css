@@ -93,41 +93,44 @@ body {
   font-weight: 700;
 }
 
-.board {
-  display: block;
-  width: 100%;
-  max-width: 560px;
+.scene-frame {
+  height: min(72vh, 620px);
   margin: 12px 0;
   border-radius: 14px;
+  overflow: hidden;
   background: var(--plate);
 }
 
-.board .tile-number {
-  fill: var(--ink);
-  font-size: 22px;
+.webgl-message {
+  margin: 12px 0;
+  padding: 24px 16px;
+  border-radius: 14px;
+  background: var(--plate);
   font-weight: 700;
 }
 
-.board .tile-mystery {
-  font-size: 56px;
-  font-weight: 900;
-  text-anchor: middle;
+.roll {
+  min-width: 140px;
+  font-size: 1.2em;
 }
 
-.board .snake {
-  stroke-width: 16;
-  stroke-linecap: round;
-  opacity: 0.85;
+.quality {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.board .ladder {
-  stroke: var(--highlight);
-  stroke-width: 12;
-  stroke-linecap: round;
-  stroke-dasharray: 2 22;
+.quality select {
+  min-height: 44px;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
 }
 
-.board .piece {
-  stroke: var(--ink);
-  stroke-width: 6;
+.dev-stats {
+  color: var(--muted-on-plate);
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
 }

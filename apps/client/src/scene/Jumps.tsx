@@ -36,7 +36,8 @@ export function ribbonGeometry(points: Vector3[], width: number, y: number): Buf
     uvs.push(0, along / width, 1, along / width);
     if (i > 0) {
       const a = (i - 1) * 2;
-      index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      // Counter-clockwise seen from above, so the strip's front face (and its light) points up.
+      index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
     }
   });
   const geometry = new BufferGeometry();

@@ -7,6 +7,12 @@ import { BEAT_MS } from '../src/director/beats';
 import type { Matchmaking, MatchmakingState, MatchSession, MatchUpdate } from '../src/service/matchService';
 import { SEATS, openingUpdate } from './support/fixtures';
 
+// jsdom has no WebGL: stand the 3D scene in with a labelled box that shows its quality setting.
+vi.mock('../src/scene/MatchScene', async () => {
+  const { createElement } = await import('react');
+  return { MatchScene: ({ setting }: { setting: string }) => createElement('div', { role: 'img', 'aria-label': `3D board, ${setting}` }) };
+});
+
 /** Matchmaking the test drives by hand. */
 class ScriptedMatchmaking implements Matchmaking {
   private listener: ((s: MatchmakingState) => void) | null = null;
@@ -117,17 +123,23 @@ describe('DevMatchPage', () => {
     expect(session.playbackDone).toHaveBeenCalledTimes(1);
   });
 
-  it('moves a piece on the board when its beat ends', () => {
+  it('shows the 3D board and offers ROLL once in my dice window', () => {
     const session = startMatch();
-    const opening = openingUpdate();
-    session.update(opening);
-    expect(screen.getByRole('img', { name: 'Mochi on tile 0' })).toBeTruthy();
-    const view = { ...opening.view, players: opening.view.players.map((p) => (p.id === 'p1' ? { ...p, position: 4 } : p)) };
-    const move: GameEvent = { type: 'Moved', player: 'p1', from: 0, to: 4, cause: 'dice', bounced: false, visibility: 'public' };
-    session.update({ view, events: [move], timer: null });
-    expect(screen.getByRole('img', { name: 'Mochi on tile 0' })).toBeTruthy();
-    act(() => vi.advanceTimersByTime(4 * BEAT_MS.hopPerTile + BEAT_MS.landing));
-    expect(screen.getByRole('img', { name: 'Mochi on tile 4' })).toBeTruthy();
+    session.update(openingUpdate());
+    expect(screen.getByRole('img', { name: '3D board, auto' })).toBeTruthy();
+    const roll = screen.getByRole('button', { name: 'ROLL' });
+    fireEvent.click(roll);
+    fireEvent.click(roll);
+    expect(session.send).toHaveBeenCalledTimes(1);
+    expect(session.send).toHaveBeenCalledWith({ type: 'roll' });
+    expect(screen.queryByRole('button', { name: 'ROLL' })).toBeNull();
+  });
+
+  it('switches the graphics quality', () => {
+    const session = startMatch();
+    session.update(openingUpdate());
+    fireEvent.change(screen.getByLabelText('Quality'), { target: { value: 'low' } });
+    expect(screen.getByRole('img', { name: '3D board, low' })).toBeTruthy();
   });
 
   it('shows the final rankings once the victory beat has played', () => {
@@ -149,6 +161,7 @@ describe('DevMatchPage', () => {
     expect(screen.getByText('Round 21 · match over')).toBeTruthy();
     expect(screen.getByText('1. Pip — tile 100')).toBeTruthy();
     expect(screen.getByText('4. Mochi — tile 41')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'ROLL' })).toBeNull();
     expect(session.playbackDone).not.toHaveBeenCalled();
   });
 

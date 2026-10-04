@@ -1,8 +1,9 @@
 import type { Jump } from '@laddorious/core';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import { InstancedMesh, Mesh, type BufferGeometry, type Object3D } from 'three';
+import { InstancedMesh, Mesh, Vector3, type BufferGeometry, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { Director } from '../src/director/director';
+import { ribbonGeometry } from '../src/scene/Jumps';
 import { SceneContent } from '../src/scene/MatchScene';
 import type { QualityLevel } from '../src/scene/quality';
 import { SEATS, openingUpdate } from './support/fixtures';
@@ -40,6 +41,19 @@ async function renderScene(level: QualityLevel, jumps?: Jump[]) {
 }
 
 describe('the 3D scene (spec #2 §6)', () => {
+  it('lays slide ribbons face up, so the light falls on them', () => {
+    const ribbon = ribbonGeometry([new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(2, 0, 1), new Vector3(2, 0, 3)], 0.6, 0.02);
+    const pos = ribbon.getAttribute('position');
+    const index = ribbon.index!;
+    const [a, b, c] = [new Vector3(), new Vector3(), new Vector3()];
+    for (let i = 0; i < index.count; i += 3) {
+      a.fromBufferAttribute(pos, index.getX(i));
+      b.fromBufferAttribute(pos, index.getX(i + 1));
+      c.fromBufferAttribute(pos, index.getX(i + 2));
+      expect(b.sub(a).cross(c.sub(a)).y).toBeGreaterThan(0);
+    }
+  });
+
   it('draws the 100 tiles in one instanced draw call', async () => {
     const tiles = (await renderScene('high')).getObjectByName('tiles');
     expect(tiles).toBeInstanceOf(InstancedMesh);
