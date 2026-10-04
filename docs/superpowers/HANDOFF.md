@@ -15,10 +15,13 @@
 | Spec #2 (3D client, menu, matchmaking UI, bot matches): **approved** | `docs/superpowers/specs/2026-10-04-3d-client-design.md` |
 | Spec #2 split into six phases | `docs/superpowers/plans/2026-10-04-3d-client-phases.md` |
 | **Phase 1** (restructure and bots package): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-1-restructure.md`; commits `089ef8c`, `56888ee` |
+| **Phase 2** (client scaffold, local host, match service): **plan written**, to be executed on `client/phase-2` once the user approves it | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md` |
 
 After Phase 1 the full suite is 24 test files, 180 tests, all passing. `pnpm typecheck` and `pnpm lint` are clean. The `client/spec-2` branch was merged into `main` and deleted; there is no git remote.
 
 ## Next step: Phase 2
+
+**Status (2026-10-04):** the plan is written: `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`, on branch `client/phase-2`. Its code was dry-run in a scratch copy first (all tests, typecheck, lint, build, and a full match in the browser). Once the user approves the plan, execute it task by task (steps 4 and 5 below). Where the list under "What Phase 2 has to build" and the plan differ, the plan wins.
 
 **Phase 2: client scaffold, local host and match service.** Spec sections: §3 (scripts), §4 (all), §7.4 (palette tokens only).
 
@@ -93,7 +96,7 @@ The four phases after it (director, 3D scene, HUD and screens, e2e/CI/docs) are 
 
 ## Open items
 
-- **Blender MCP** times out on connect. It is only needed for Spec #4 (the art pass). In Blender, the user should Disconnect, then Connect, in the MCP panel.
+- **Blender MCP:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`), so raise it when planning Phase 4 (the 3D scene) as well as Spec #4 (the art pass). It times out on connect: in Blender, the user should Disconnect, then Connect, in the MCP panel first.
 - **Spec #3** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started.
 - **Spec #4** (Blender art pass: `.glb` files for the asset slots in spec §6.3). Not started.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), sound and particles.
