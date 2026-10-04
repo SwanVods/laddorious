@@ -1,6 +1,6 @@
 import type { PlayerView } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Color, Object3D, type InstancedMesh } from 'three';
 import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
 import type { Director } from '../director/director';
@@ -13,7 +13,7 @@ type PublicBoard = PlayerView['board'];
 export const TILE_THICKNESS = 0.22;
 const MAX_RINGS = 4;
 
-export function tileColor(tile: number, board: PublicBoard): string {
+export function tileColor(tile: number, board: Pick<PublicBoard, 'size' | 'mystery'>): string {
   if (tile === board.size) return BOARD_COLORS.goal;
   if (board.mystery[tile]) return BOARD_COLORS.mystery;
   return BOARD_COLORS.squares[squareColorIndex(tile, BOARD_COLORS.squares.length)]!;
@@ -24,23 +24,30 @@ export function Board({ board, director }: { board: PublicBoard; director: Direc
   const tilesRef = useRef<InstancedMesh>(null);
   const ringsRef = useRef<InstancedMesh>(null);
   const place = useMemo(() => new Object3D(), []);
-  const overlay = useMemo(() => boardOverlayTexture(board.size, board.mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink), [board]);
+  // Every update brings a fresh copy of the board, so key the work on its content: size and Mystery layout
+  // (card edits only change jumps). Otherwise the 1024 px overlay is repainted, and leaked, on every update.
+  const size = board.size;
+  const mysteryKey = JSON.stringify(board.mystery);
+  const mystery = useMemo(() => JSON.parse(mysteryKey) as PublicBoard['mystery'], [mysteryKey]);
+  const overlay = useMemo(() => boardOverlayTexture(size, mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink), [size, mystery]);
+  // three.js frees a texture's GPU memory only on dispose().
+  useEffect(() => () => overlay?.dispose(), [overlay]);
 
   useLayoutEffect(() => {
     const mesh = tilesRef.current;
     if (!mesh) return;
     const at = new Object3D();
     const color = new Color();
-    for (let tile = 1; tile <= board.size; tile++) {
+    for (let tile = 1; tile <= size; tile++) {
       const [x, , z] = tileToWorld(tile);
       at.position.set(x, -TILE_THICKNESS / 2, z);
       at.updateMatrix();
       mesh.setMatrixAt(tile - 1, at.matrix);
-      mesh.setColorAt(tile - 1, color.set(tileColor(tile, board)));
+      mesh.setColorAt(tile - 1, color.set(tileColor(tile, { size, mystery })));
     }
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  }, [board]);
+  }, [size, mystery]);
 
   // A ring pulses on each "?" square with a piece on it, from the landing until the Mystery phase ends.
   useFrame(({ clock }) => {
@@ -50,7 +57,7 @@ export function Board({ board, director }: { board: PublicBoard; director: Direc
     const phase = settled?.view.phase.kind;
     const live =
       presentation && (phase === 'settle' || phase === 'mysterySelect')
-        ? [...new Set(Object.values(presentation.positions))].filter((tile) => board.mystery[tile])
+        ? [...new Set(Object.values(presentation.positions))].filter((tile) => mystery[tile])
         : [];
     const pulse = 1 + 0.08 * Math.sin(clock.elapsedTime * 6);
     for (let i = 0; i < MAX_RINGS; i++) {
