@@ -3,6 +3,7 @@
 - **Date:** 2026-10-03
 - **Status:** Draft — awaiting review
 - **Scope:** Sub-project 1 of 6 (see §1.2)
+- **Amended:** 2026-10-04 — bonus roll removed ([amendment](2026-10-04-remove-bonus-roll-design.md))
 
 ---
 
@@ -56,10 +57,10 @@ Decisions made during design, recorded so later specs do not re-litigate them.
 | D7 | Challenge timeouts | **Timeout = auto-lose.** All time out → random winner. Ties replay, max 3 replays, then random winner. |
 | D8 | Board size | **100 tiles only** in this spec. Size remains a parameter. |
 | D9 | Board edits trigger | **Only on landing.** A snake/ladder created or moved under a standing player does nothing until someone lands there. |
-| D10 | Dice modifiers | **Two stages.** FACE effects modify single dice before the 6-check; TOTAL effects apply once to the sum in fixed order Replace → Multiply → Add. Dice movement floors at 0. |
+| D10 | Dice modifiers | **Two stages.** FACE effects modify single dice as they are rolled; TOTAL effects apply once to the sum in fixed order Replace → Multiply → Add. Dice movement floors at 0. |
 | D11 | Simultaneous card conflicts | **Snapshot + clash.** Same-group cards target from one snapshot; relative moves add; conflicting absolute placements both fizzle ("Clash"). |
 | D12 | Board swinginess | **Tamed classic.** Lengths 4–30; final stretch ≤1 short snake; no run of 6 snake heads. |
-| D13 | Bonus roll | **Optional.** After a 6 the player chooses Roll again or Stop. Timeout during the choice = Stop. |
+| D13 | Bonus roll | **None** (amended 2026-10-04). Every player rolls one die per round. Extra rolls come only from cards (sub-project c). |
 | D14 | Stack | **TypeScript** monorepo. |
 | D15 | Determinism scope | **Full match**, not just board: (config, seed, input log) reproduces an entire match. |
 | D16 | Generated-board chains | Generated boards contain **no chains** (no jump ends on another jump's start). Card edits may create chains. |
@@ -117,8 +118,7 @@ type StepResult =
 
 | Input | Sent by | Meaning |
 |---|---|---|
-| `roll { player }` | player | Roll the next die of the sequence |
-| `bonusChoice { player, rollAgain }` | player | After a 6: roll again or stop |
+| `roll { player }` | player | Roll your one die for this round |
 | `challengePick { player, challengeId, choice }` | player | RPS (`rock`/`paper`/`scissors`) or Minority (`A`/`B`) |
 | `reroll { player, slot }` | player | Reroll one Mystery slot |
 | `pickCard { player, slot }` | player | Select final Mystery card |
@@ -126,7 +126,7 @@ type StepResult =
 
 ### 3.4 The core owns no clock
 
-`awaiting(state)` returns `{ windowId, window, players, durationMs }` where `window ∈ dice | bonusGrace | challenge | mystery | none`. `windowId` increments every time a new window opens. The host (simulator now, server later) runs the timer and sends `timeout { windowId }` on expiry; a timeout with a stale `windowId` is rejected (`STALE_TIMEOUT`). Timeout rules are applied inside the core.
+`awaiting(state)` returns `{ windowId, window, players, durationMs }` where `window ∈ dice | challenge | mystery | none`. `windowId` increments every time a new window opens. The host (simulator now, server later) runs the timer and sends `timeout { windowId }` on expiry; a timeout with a stale `windowId` is rejected (`STALE_TIMEOUT`). Timeout rules are applied inside the core.
 
 ### 3.5 Randomness and determinism
 
@@ -163,17 +163,13 @@ dice → settle(dice movers) → mysterySelect → mysteryResolve (groups, each 
 
 `mysterySelect`/`mysteryResolve` are skipped if no player qualifies for an encounter.
 
-### 4.3 Dice phase (window: `dice`, default 12 s)
+### 4.3 Dice phase (window: `dice`, default 12 s) — amended 2026-10-04
 
-1. Every player rolls independently and simultaneously.
-2. FACE-stage effects (§5.6) apply to each die as it is rolled, **before** the 6-check.
-3. If a die shows 6 and it is the first die of the sequence, the player chooses `rollAgain` or Stop. After a second consecutive 6 the sequence ends automatically. A sequence is therefore at most 2 dice.
-4. On `dice` window expiry:
-   - Players who have not rolled are auto-rolled once.
-   - If any player now holds a pending bonus choice (whether from a manual or auto roll), a single `bonusGrace` window opens (default 5 s). Its expiry = Stop for everyone still pending.
-   - Otherwise the phase ends.
-5. Total = sum of dice, then TOTAL-stage effects in order **Replace → Multiply → Add**, then floored at 0. "Next roll" effects are consumed here.
-6. The phase ends when every sequence has ended.
+1. Every player rolls one die, independently and simultaneously.
+2. FACE-stage effects (§5.6) apply to the die as it is rolled.
+3. On `dice` window expiry, players who have not rolled are auto-rolled once. The phase then ends; there is no grace window.
+4. Total = the die face, then TOTAL-stage effects in order **Replace → Multiply → Add**, then floored at 0. "Next roll" effects are consumed here.
+5. The phase ends when every player has rolled.
 
 ### 4.4 Movement
 
@@ -325,7 +321,7 @@ Hook points (closed set):
 
 | Hook | Fires | Used by |
 |---|---|---|
-| `diceFace` | Each die, before the 6-check | "Next die shows 6" |
+| `diceFace` | Each die, as it is rolled | "Next die shows 6" |
 | `diceTotal` | Once on the sequence total | +N, ×N, "becomes N" |
 | `beforeSnake` | When a mover is about to slide down a snake | Snake shields |
 | `beforeAttack` | When an Attack card is about to apply to the owner | Attack shields |
@@ -333,7 +329,7 @@ Hook points (closed set):
 
 ### 5.6 Dice modifier stacking (D10, D17)
 
-1. **FACE stage:** per die, before the 6-check. Multiple FACE effects apply in `seq` order.
+1. **FACE stage:** per die, as it is rolled. Multiple FACE effects apply in `seq` order.
 2. **TOTAL stage** on the summed dice:
    1. Replace — if several, the newest (`seq`) wins.
    2. Multiply — all multipliers multiply together.
@@ -361,7 +357,7 @@ Placeholder content to exercise every framework feature and give the simulator r
 | # | Name | Type | Rarity | Target | Effect | Exercises |
 |---|---|---|---|---|---|---|
 | 1 | Sprint | Movement | Common | self | Move +3 | `moveRelative` |
-| 2 | Loaded Die | Movement | Rare | self | First die of your next roll shows 6 (1 charge) | FACE stage, bonus roll |
+| 2 | Loaded Die | Movement | Rare | self | Your next die shows 6 (1 charge) | FACE stage |
 | 3 | Overdrive | Movement | Epic | self | Next dice total ×2 (1 charge) | TOTAL multiply |
 | 4 | Ladder Warp | Movement | Epic | self | Move to the nearest ladder foot ahead (fizzles if none) | `moveTo`, landing triggers |
 | 5 | Snake Charm | Defense | Common | self | Ignore the next snake (1 charge, 3 rounds) | `beforeSnake` |
@@ -420,12 +416,12 @@ A jump with `to < from` is a snake; `to > from` is a ladder.
 
 ### 7.3 Analytic validation (Markov chain)
 
-- States: positions `0..N` for one player, dice only: bonus roll always taken (max 2 dice), bounce, jumps. No cards, no collisions.
+- States: positions `0..N` for one player, dice only: one die per round (totals 1–6, p = 1/6 each), bounce, jumps. No cards, no collisions.
 - Compute `F(r)` = P(single player has finished by round `r`) exactly, by iterating the transition matrix.
 - First-finisher distribution for `n` independent players: `P(first ≤ r) = 1 − (1 − F(r))ⁿ`.
 - **Accept if:**
   - median first-finish round for 4 players ∈ `[15, 30]` (initial band), and
-  - P(first-finish > 60 rounds) for 2 players < 1%.
+  - P(first-finish > 70 rounds) for 2 players < 1% (60 before the 2026-10-04 amendment).
 - These bands are provisional and are calibrated with the simulator (§8) against the 7–12 minute target, since cards and collisions shift real match length.
 
 ### 7.4 Debug rendering
@@ -447,7 +443,7 @@ interface Policy {
 `'idle'` means "do nothing this window" (to exercise timeouts).
 
 - **`random`** — uniform over legal actions; configurable AFK probability per window.
-- **`heuristic`** — takes the bonus roll unless it could overshoot N (position + current total + 6 > N); scores cards by approximate expected tile gain; rerolls the weakest card if its score is below a threshold; RPS/Minority picks are random.
+- **`heuristic`** — scores cards by approximate expected tile gain; rerolls the weakest card if its score is below a threshold; RPS/Minority picks are random.
 
 ### 8.2 Runner
 
@@ -463,7 +459,7 @@ Loop: `awaiting(state)` → collect inputs from the awaited bots (or send `timeo
 
 ### 8.4 Metrics
 
-- **Length:** rounds per match (median, p10, p90); **estimated minutes** via a time model (config, labeled as estimates): dice phase 6 s, bonus decision 2 s, movement 2 s, 6 s per challenge wave, 10 s Mystery select when any encounter, 1 s reveal + 1.5 s per resolved card, 1 s round overhead.
+- **Length:** rounds per match (median, p10, p90); **estimated minutes** via a time model (config, labeled as estimates): dice phase 6 s, movement 2 s, 6 s per challenge wave, 10 s Mystery select when any encounter, 1 s reveal + 1.5 s per resolved card, 1 s round overhead.
 - **Collisions:** challenges and waves per match; safety-cap triggers.
 - **Mystery:** encounters per round; picks by type/rarity; reroll usage; fizzle, clash and blocked rates.
 - **Fairness:** win rate by seat; lead changes per match; comeback rate (winner not leading at round 10).
@@ -483,7 +479,7 @@ Output: table to stdout plus JSON.
 interface MatchConfig {
   seed: string;
   board: BoardConfig;           // or a pre-built Board
-  windows: { diceMs: 12000; bonusGraceMs: 5000; challengeMs: 8000; mysteryMs: 15000 };
+  windows: { diceMs: 12000; challengeMs: 8000; mysteryMs: 15000 };
   mystery: {
     rarityWeights: { common: 70; rare: 25; epic: 5 };
     typeWeights: { movement: 1; defense: 1; attack: 1; risky: 1; misc: 1 };
@@ -496,14 +492,14 @@ interface MatchConfig {
 
 interface BoardConfig {
   size: 100;
-  generatorVersion: 1;
+  generatorVersion: 2;
   ladders: { count: [8, 10]; length: [4, 30] };
   snakes: { count: [8, 10]; length: [4, 30] };
   mysteryDensity: 0.18;
   finishZone: { tiles: 9; maxSnakes: 1; maxSnakeLength: 10 };
   maxConsecutiveSnakeHeads: 5;
   mysterySpacing: { maxPerWindow: 4; window: 10; maxGap: 12 };
-  analysis: { median4pRounds: [15, 30]; maxRounds2p: 60; maxTailProbability: 0.01 };
+  analysis: { median4pRounds: [15, 30]; maxRounds2p: 70; maxTailProbability: 0.01 };
   maxAttempts: 500;
 }
 ```
@@ -537,7 +533,7 @@ Test-first, module by module (Vitest).
 **Unit tests** (hand-built boards, scripted RNG):
 - PRNG known-value vectors; stream derivation stability.
 - Bounce arithmetic, including floor at 0.
-- Dice sequences: optional bonus, max 2 dice, auto-roll, grace window, two-stage modifier order.
+- Dice: one die per player, auto-roll on expiry, two-stage modifier order.
 - Settle loop: jump chains (edit-created), knockback chain reactions, safety cap, tile-0 safe zone.
 - Challenges: RPS, Minority, replays, replay cap, timeout auto-lose, continuation as RPS, all-timeout random winner.
 - Mystery: offers, reroll limits, privacy, timeout pick, encounter qualification (§4.8).
@@ -578,7 +574,6 @@ Test-first, module by module (Vitest).
 | `RoundStarted` | public | round |
 | `WindowOpened` | public | windowId, window, players, durationMs |
 | `DieRolled` | public | player, face, natural, forced |
-| `BonusChosen` | public | player, rollAgain |
 | `DiceTotaled` | public | player, faces, modifiers applied, total |
 | `Moved` | public | player, from, to, cause: `dice` \| `bounce` \| `snake` \| `ladder` \| `knockback` \| `card` \| `stepBack` |
 | `SnakeBlocked` | public | player, effectId |

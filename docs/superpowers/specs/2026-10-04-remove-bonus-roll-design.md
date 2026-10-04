@@ -1,7 +1,7 @@
 # Laddorious — Spec #1 Amendment: Remove the Bonus Roll
 
 - **Date:** 2026-10-04
-- **Status:** Draft — awaiting review
+- **Status:** Approved and implemented
 - **Amends:** [Spec #1](2026-10-03-game-core-design.md), decision D13
 - **Scope:** `packages/core`, `packages/sim`, and the text of Spec #1
 
@@ -96,7 +96,7 @@ Today's median of 6.3 minutes is already below Spec #1's 7–12 minute target. C
 
 ## 7. Compatibility
 
-- Match logs recorded before this change will not replay, because both the rules and the board version changed. `sim replay` reports a hash mismatch for them. No logs are kept anywhere else.
+- Match logs recorded before this change will not replay, because both the rules and the board version changed. `sim replay` reports them as `FAILED` (a removed input) or `MISMATCH` (a different hash) and exits with code 1. No logs are kept anywhere else.
 - Golden snapshots are re-recorded. The changed event streams are the expected outcome.
 
 ## 8. Testing
@@ -132,3 +132,13 @@ Spec #1 stays the canonical rules document, so these sections are updated in pla
 
 - The "roll another" card itself, including whether its extra roll is automatic or the player's choice. That belongs to the card catalogue (sub-project c).
 - Tuning match length up to the 7–12 minute target.
+
+## 11. Results (1,000 four-player heuristic matches, seed `amendment-check`)
+
+| Measure | Before (400 matches, bonus roll) | After |
+|---|---|---|
+| Rounds p10 / median / p90 | 12 / 18 / 26 | 14 / 20 / 30 |
+| Estimated minutes p10 / median / p90 | 4.0 / 6.3 / 9.3 | 4.3 / 6.8 / 9.9 |
+| Board generation attempts mean / max | 1.17 / 3 | 1.23 / 5 |
+
+No `GenerationError` over 1,000 boards. The median match is still slightly below the 7-minute floor of Spec #1's target (see §10).
