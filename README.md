@@ -6,10 +6,12 @@ This repository currently holds **sub-project 1** — the deterministic rules en
 
 ## Packages
 
-| Package | What it is |
-|---|---|
-| `@laddorious/core` | Pure rules engine: `createMatch`, `step(state, input) → { state, events }`, `awaiting`, `viewFor`. No clock, no unseeded randomness — a match replays exactly from its config, seed and inputs. |
-| `@laddorious/sim` | Bots, batch runner, metrics and the `sim` CLI. |
+| Path | Package | What it is |
+|---|---|---|
+| `packages/core` | `@laddorious/core` | Pure rules engine: `createMatch`, `step(state, input) → { state, events }`, `awaiting`, `viewFor`. No clock, no unseeded randomness — a match replays exactly from its config, seed and inputs. |
+| `apps/sim` | `@laddorious/sim` | Bots, batch runner, metrics and the `sim` CLI. |
+
+Libraries live in `packages/`, deployable apps in `apps/`.
 
 ## Commands
 
