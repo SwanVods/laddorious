@@ -1,0 +1,174 @@
+import type { PlayerId } from '@laddorious/core';
+import { useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three';
+import { WORLD_COLORS } from '../app/theme';
+import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
+import { Slot, type SlotName } from '../assets/slots';
+import type { Director } from '../director/director';
+import type { SeatInfo } from '../service/matchService';
+import { clamp01, easeOut, poseAt, projectileAt, withIdle, type Pose } from './motion';
+import { dieAtlasTexture } from './textures';
+
+/** Pieces render at 1.3 × their base size (spec #2 §6.2). */
+export const PIECE_SCALE = 1.3;
+const DIE_LIFT = 2.2;
+const SHIELD_HOOKS = new Set(['beforeSnake', 'beforeAttack']);
+
+interface Roll {
+  face: number;
+  forced: boolean;
+  startedAt: number;
+  durationMs: number;
+}
+
+interface PiecesProps {
+  director: Director;
+  seats: SeatInfo[];
+  shadows: boolean;
+  reducedMotion: boolean;
+  boardSize: number;
+}
+
+/** Every seat's piece, its die and its shield bubble, and card projectiles (spec #2 §5.1, §6.2). */
+export function Pieces({ director, seats, shadows, reducedMotion, boardSize }: PiecesProps) {
+  const seatOf = useMemo(() => {
+    const index = new Map(seats.map((s, i) => [s.playerId, i]));
+    return (player: PlayerId) => index.get(player) ?? 0;
+  }, [seats]);
+  // A die shows from its roll beat until the pieces start moving.
+  const rollsRef = useRef(new Map<PlayerId, Roll>());
+  useEffect(
+    () =>
+      director.store.subscribe((s, prev) => {
+        if (!s.beat || s.beat === prev.beat) return;
+        if (s.beat.kind !== 'roll') {
+          rollsRef.current.clear();
+          return;
+        }
+        for (const e of s.beat.events) {
+          if (e.type === 'DieRolled') rollsRef.current.set(e.player, { face: e.face, forced: e.forced, startedAt: s.beat.startedAt, durationMs: s.beat.durationMs });
+        }
+      }),
+    [director],
+  );
+  return (
+    <>
+      {seats.map((seat, i) => (
+        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} reducedMotion={reducedMotion} boardSize={boardSize} rollsRef={rollsRef} />
+      ))}
+      <Projectile director={director} seatOf={seatOf} />
+    </>
+  );
+}
+
+/** One orb that carries each card from its caster to its target. */
+function Projectile({ director, seatOf }: { director: Director; seatOf: (player: PlayerId) => number }) {
+  const orbRef = useRef<Mesh>(null);
+  useFrame(() => {
+    const { beat, presentation } = director.store.getState();
+    const at = beat && presentation ? projectileAt(beat, presentation, seatOf, Date.now()) : null;
+    if (!orbRef.current) return;
+    orbRef.current.visible = at !== null;
+    if (at) orbRef.current.position.set(...at);
+  });
+  return (
+    <mesh ref={orbRef} visible={false}>
+      <icosahedronGeometry args={[0.22, 1]} />
+      <meshBasicMaterial color={WORLD_COLORS.chevron} />
+    </mesh>
+  );
+}
+
+function place(target: Group | Mesh, pose: Pose) {
+  target.position.set(...pose.position);
+  target.rotation.set(...pose.rotation);
+  target.scale.set(...pose.scale);
+}
+
+interface ActorProps extends Omit<PiecesProps, 'seats'> {
+  seat: SeatInfo;
+  index: number;
+  rollsRef: RefObject<Map<PlayerId, Roll>>;
+}
+
+function Actor({ director, seat, index, shadows, reducedMotion, boardSize, rollsRef }: ActorProps) {
+  const bodyRef = useRef<Group>(null);
+  const modelRef = useRef<Group>(null);
+  const orbRef = useRef<Mesh>(null);
+  const blobRef = useRef<Mesh>(null);
+  const dieRef = useRef<Mesh>(null);
+  const shieldRef = useRef<Mesh>(null);
+  const geometry = useMemo(() => PIECE_GEOMETRY[seat.piece](), [seat.piece]);
+  const dieShape = useMemo(() => dieGeometry(), []);
+  const atlas = useMemo(() => dieAtlasTexture(WORLD_COLORS.die, WORLD_COLORS.pip), []);
+  const slot = `piece.${seat.piece}` as SlotName;
+
+  useFrame(() => {
+    const state = director.store.getState();
+    const now = Date.now();
+    const pose = poseAt(state, seat.playerId, index, now, boardSize);
+    if (!pose || !bodyRef.current || !modelRef.current || !orbRef.current || !dieRef.current || !shieldRef.current) return;
+    const acting = state.beat?.events.some((e) => (e.type === 'Moved' && e.player === seat.playerId) || (e.type === 'MatchWon' && e.winner === seat.playerId)) ?? false;
+    place(bodyRef.current, reducedMotion || acting ? pose : withIdle(pose, now, index * 1.7));
+    modelRef.current.visible = !pose.orb;
+    orbRef.current.visible = pose.orb;
+    if (blobRef.current) {
+      const s = Math.max(0.35, 1 - pose.position[1] * 0.25);
+      blobRef.current.position.set(pose.position[0], 0.012, pose.position[2]);
+      blobRef.current.scale.set(s, s, s);
+    }
+    // The die tumbles above the piece and settles on the rolled face; forced faces flash (spec #2 §5.1).
+    const roll = rollsRef.current.get(seat.playerId);
+    dieRef.current.visible = roll !== undefined;
+    if (roll) {
+      const spin = 1 - easeOut(clamp01((now - roll.startedAt) / roll.durationMs));
+      const [rx, ry, rz] = dieRotationFor(roll.face);
+      dieRef.current.position.set(pose.position[0], pose.position[1] + DIE_LIFT + spin * 0.8, pose.position[2]);
+      dieRef.current.rotation.set(rx + spin * Math.PI * 6, ry + spin * Math.PI * 4, rz + spin * Math.PI * 5);
+      (dieRef.current.material as MeshStandardMaterial).emissiveIntensity = roll.forced ? 0.35 + 0.35 * Math.sin(now / 90) : 0;
+    }
+    // The shield bubble shows while a shield effect is up and flares when it blocks.
+    const shielded = state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false;
+    const blocking =
+      state.beat?.events.some((e) => (e.type === 'SnakeBlocked' && e.player === seat.playerId) || (e.type === 'CardResolved' && e.target === seat.playerId && e.result === 'blocked')) ?? false;
+    shieldRef.current.visible = shielded || blocking;
+    shieldRef.current.position.set(pose.position[0], pose.position[1] + 0.7, pose.position[2]);
+    (shieldRef.current.material as MeshBasicMaterial).opacity = blocking ? 0.45 + 0.3 * Math.sin(now / 60) : 0.22;
+  });
+
+  return (
+    <>
+      <group ref={bodyRef}>
+        <group ref={modelRef} scale={PIECE_SCALE}>
+          <Slot
+            name={slot}
+            color={seat.color}
+            fallback={
+              <mesh geometry={geometry} castShadow={shadows}>
+                <meshPhysicalMaterial color={seat.color} clearcoat={1} clearcoatRoughness={0.12} roughness={0.32} />
+              </mesh>
+            }
+          />
+        </group>
+        <mesh ref={orbRef} visible={false}>
+          <sphereGeometry args={[0.3, 16, 12]} />
+          <meshBasicMaterial color={WORLD_COLORS.orb} />
+        </mesh>
+      </group>
+      {!shadows && (
+        <mesh ref={blobRef} rotation-x={-Math.PI / 2}>
+          <circleGeometry args={[0.55, 20]} />
+          <meshBasicMaterial color={WORLD_COLORS.ink} transparent opacity={0.28} depthWrite={false} />
+        </mesh>
+      )}
+      <mesh ref={dieRef} geometry={dieShape} visible={false} castShadow={shadows}>
+        <meshStandardMaterial {...(atlas ? { map: atlas } : { color: WORLD_COLORS.die })} emissive={WORLD_COLORS.crown} emissiveIntensity={0} roughness={0.4} />
+      </mesh>
+      <mesh ref={shieldRef} visible={false}>
+        <sphereGeometry args={[0.95, 24, 16]} />
+        <meshBasicMaterial color={WORLD_COLORS.shield} transparent opacity={0.22} depthWrite={false} />
+      </mesh>
+    </>
+  );
+}

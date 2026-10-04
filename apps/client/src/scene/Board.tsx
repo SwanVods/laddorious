@@ -1,0 +1,90 @@
+import type { PlayerView } from '@laddorious/core';
+import { useFrame } from '@react-three/fiber';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { Color, Object3D, type InstancedMesh } from 'three';
+import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
+import type { Director } from '../director/director';
+import { COLUMNS, TILE_SIZE, squareColorIndex, tileToWorld } from './layout';
+import { boardOverlayTexture } from './textures';
+
+type PublicBoard = PlayerView['board'];
+
+/** Tiles are this thick; their top faces sit at y = 0. */
+export const TILE_THICKNESS = 0.22;
+const MAX_RINGS = 4;
+
+export function tileColor(tile: number, board: PublicBoard): string {
+  if (tile === board.size) return BOARD_COLORS.goal;
+  if (board.mystery[tile]) return BOARD_COLORS.mystery;
+  return BOARD_COLORS.squares[squareColorIndex(tile, BOARD_COLORS.squares.length)]!;
+}
+
+/** The tiles as one instanced draw call, one overlay for every number and glyph, and rings on landed "?" squares (spec #2 §6.1). */
+export function Board({ board, director }: { board: PublicBoard; director: Director }) {
+  const tilesRef = useRef<InstancedMesh>(null);
+  const ringsRef = useRef<InstancedMesh>(null);
+  const place = useMemo(() => new Object3D(), []);
+  const overlay = useMemo(() => boardOverlayTexture(board.size, board.mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink), [board]);
+
+  useLayoutEffect(() => {
+    const mesh = tilesRef.current;
+    if (!mesh) return;
+    const at = new Object3D();
+    const color = new Color();
+    for (let tile = 1; tile <= board.size; tile++) {
+      const [x, , z] = tileToWorld(tile);
+      at.position.set(x, -TILE_THICKNESS / 2, z);
+      at.updateMatrix();
+      mesh.setMatrixAt(tile - 1, at.matrix);
+      mesh.setColorAt(tile - 1, color.set(tileColor(tile, board)));
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }, [board]);
+
+  // A ring pulses on each "?" square with a piece on it, from the landing until the Mystery phase ends.
+  useFrame(({ clock }) => {
+    const mesh = ringsRef.current;
+    if (!mesh) return;
+    const { presentation, settled } = director.store.getState();
+    const phase = settled?.view.phase.kind;
+    const live =
+      presentation && (phase === 'settle' || phase === 'mysterySelect')
+        ? [...new Set(Object.values(presentation.positions))].filter((tile) => board.mystery[tile])
+        : [];
+    const pulse = 1 + 0.08 * Math.sin(clock.elapsedTime * 6);
+    for (let i = 0; i < MAX_RINGS; i++) {
+      const tile = live[i];
+      if (tile === undefined) {
+        place.scale.setScalar(0);
+      } else {
+        const [x, , z] = tileToWorld(tile);
+        place.position.set(x, 0.014, z);
+        place.rotation.set(-Math.PI / 2, 0, 0);
+        place.scale.setScalar(pulse);
+      }
+      place.updateMatrix();
+      mesh.setMatrixAt(i, place.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <group>
+      <instancedMesh ref={tilesRef} name="tiles" args={[undefined, undefined, board.size]} receiveShadow>
+        <boxGeometry args={[TILE_SIZE * 0.95, TILE_THICKNESS, TILE_SIZE * 0.95]} />
+        <meshStandardMaterial roughness={0.6} />
+      </instancedMesh>
+      {overlay && (
+        <mesh rotation-x={-Math.PI / 2} position-y={0.004}>
+          <planeGeometry args={[TILE_SIZE * COLUMNS, TILE_SIZE * COLUMNS]} />
+          <meshBasicMaterial map={overlay} transparent depthWrite={false} />
+        </mesh>
+      )}
+      <instancedMesh ref={ringsRef} args={[undefined, undefined, MAX_RINGS]}>
+        <ringGeometry args={[0.6, 0.74, 32]} />
+        <meshBasicMaterial color={WORLD_COLORS.ring} transparent opacity={0.9} />
+      </instancedMesh>
+    </group>
+  );
+}
