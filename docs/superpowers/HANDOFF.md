@@ -15,11 +15,14 @@
 | Spec #2 (3D client, menu, matchmaking UI, bot matches): **approved** | `docs/superpowers/specs/2026-10-04-3d-client-design.md` |
 | Spec #2 split into six phases | `docs/superpowers/plans/2026-10-04-3d-client-phases.md` |
 | **Phase 1** (restructure and bots package): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-1-restructure.md`; commits `089ef8c`, `56888ee` |
-| **Phase 2** (client scaffold, local host, match service): **done on `client/phase-2`**; merging is the user's call | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
+| **Phase 2** (client scaffold, local host, match service): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
+| **Phase 3** (director and presentation state): **plan written**, executing on `client/phase-3` | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md` |
 
 After Phase 2 the full suite is 30 test files, 224 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean. There is no git remote.
 
 ## Next step: Phase 3
+
+**Status (2026-10-04):** in progress on `client/phase-3` from the plan `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`. The user asked to continue through Phase 6 without stopping (memory `continue-through-phase-6`): plan each phase, execute it inline, merge it locally, start the next.
 
 **Phase 3: director and presentation state.** Spec sections: §5.1 (beats), §5.2 (presentation state).
 
