@@ -34,4 +34,20 @@ describe('cli', () => {
     expect(main(['nope'])).toBe(1);
     expect(output()).toContain('Usage:');
   });
+
+  it('replay reports a log that no longer replays instead of crashing', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sim-'));
+    const legacy = {
+      config: { seed: 'old' },
+      seats: [{ id: 'p1' }, { id: 'p2' }],
+      inputs: [
+        { type: 'roll', player: 'p1', windowId: 1 },
+        { type: 'bonusChoice', player: 'p1', rollAgain: true, windowId: 1 },
+      ],
+      finalHash: 'x',
+    };
+    writeFileSync(join(dir, 'legacy.json'), JSON.stringify(legacy));
+    expect(main(['replay', join(dir, 'legacy.json')])).toBe(1);
+    expect(output()).toMatch(/FAILED replay failed at .*bonusChoice.*INVALID_INPUT/);
+  });
 });

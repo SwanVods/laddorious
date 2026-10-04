@@ -58,7 +58,14 @@ export function main(argv: string[]): number {
       const file = rest[0];
       if (!file) throw new Error('replay needs a log file');
       const log = JSON.parse(readFileSync(file, 'utf8')) as MatchLog;
-      const result = replayLog(log);
+      let result: ReturnType<typeof replayLog>;
+      try {
+        result = replayLog(log);
+      } catch (e) {
+        // Logs recorded under older rules (e.g. with a removed input type) cannot replay at all.
+        console.log(`FAILED ${e instanceof Error ? e.message : String(e)}`);
+        return 1;
+      }
       console.log(result.ok ? `OK ${result.hash}` : `MISMATCH expected ${log.finalHash}, got ${result.hash}`);
       return result.ok ? 0 : 1;
     }
