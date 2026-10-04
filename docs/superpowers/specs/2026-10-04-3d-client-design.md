@@ -1,9 +1,9 @@
 # Laddorious — Spec #2: 3D Client (Menu, Matchmaking UI, Match vs Bots)
 
 - **Date:** 2026-10-04
-- **Status:** Draft — awaiting review
+- **Status:** Approved
 - **Builds on:** [Spec #1](2026-10-03-game-core-design.md) (engine, generator, simulator) and its [bonus-roll amendment](2026-10-04-remove-bonus-roll-design.md)
-- **Mockups** (private to the owner): in-match screen <https://claude.ai/artifact/CYCEMtcDAGqGwrFT7W3kbR>, main menu and matchmaking <https://claude.ai/artifact/7FTpDqWjPR5RFtW7ai6BJt>
+- **Mockups** (private to the owner): in-match screen <https://claude.ai/artifact/CYCEMtcDAGqGwrFT7W3kbR> (layout and behaviour; its colours predate the palette), main menu and matchmaking <https://claude.ai/artifact/7FTpDqWjPR5RFtW7ai6BJt> (use the "Tangerine Dusk" tab)
 
 ---
 
@@ -52,7 +52,8 @@ The client is built phone-ready, because native mobile apps will later be produc
 | C7 | Matchmaking in this spec | The full UI ships, and the local service never finds a real player. "Play with bots" appears after 15 s and fills the empty seats. |
 | C8 | Match size | The queue is for 4-player matches; a bot match is you plus 3 bots. |
 | C9 | Profile | A guest nickname (default `Guest` + 4 digits, 1–16 characters) and a piece choice, both saved in `localStorage`. |
-| C10 | Visual direction | Board-game pieces (knight, pawn, meeple, dragon head) in glossy plastic; classic multicoloured board; purple "?" squares; flat dark vacuum slides; launch pads; Fall Guys / Stumble Guys feel for motion and UI only. |
+| C10 | Visual direction | Board-game pieces (knight, pawn, meeple, dragon head) in glossy plastic; classic multicoloured board; purple "?" squares; flat dark vacuum slides; launch pads. A chunky, outlined, toy-like UI (Lilita One + Fredoka) with bouncy motion, in an original palette (C16), not Fall Guys' pastel candy colours. |
+| C16 | Palette | **Tangerine Dusk** (§7.4): teal sky melting into apricot, tangerine primary action, mint highlights, coral for your piece. Chosen over Lagoon Lime and Berry Forest. |
 | C11 | Decision UI | Face-off and card pick are centred popups over a dimmed board with no panel behind them, shown only to involved players. Everyone else sees a waiting pill. The card pick mirrors TFT augments. |
 | C12 | Camera | Whole board while everyone rolls; follows your own piece while moves and cards resolve; swoops only for your own moments. |
 | C13 | Timers vs animation | Window countdowns start only after the client reports that playback has finished (`playbackDone`), capped at 12 s. |
@@ -165,7 +166,7 @@ interface MatchSession {
 ### 4.4 Local service and host
 
 - **Matchmaking.** `LocalMatchService.findMatch` emits `searching` about every 250 ms with seat 0 filled and three empty seats. It never finds a real player. `playWithBots()` moves to `filling`, adds bots one seat at a time (≈420 ms apart), then emits `found` with a session.
-- **Seats.** Seat 0 is you in pink `#ff3d96`. Bots are Mochi (`#2563eb`), Pip (`#0fbcd0`) and Juno (`#0f9f6e`), and take the pieces you didn't choose, in picker order.
+- **Seats.** Seat 0 is you in coral `#ff5470`. Bots are Mochi (blue `#3b82f6`), Pip (lime `#a3e635`) and Juno (violet `#8b5cf6`), and take the pieces you didn't choose, in picker order.
 - **Worker messages** (structured-clone objects):
   - main → worker: `create { seats, seed, rngSeed }`, `action { action, windowId }`, `playbackDone { windowId }`, `pause`, `resume`, `leave`
   - worker → main: `update { update }`, `rejected { error }`, `failed { message }`
@@ -291,7 +292,7 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
   - a mini row with this round's dice, a "?" chip (on a Mystery square, until a card is picked), effect chips and the card chip (face-down until the reveal, then with a result dot);
   - a portrait of the piece with a rank badge.
 
-  Your row is larger and outlined in gold. Rows re-sort by tile with a slide animation. Tap a row to watch that piece; long-press (500 ms) or hover on desktop opens the details card.
+  Your row is larger and outlined in the mint highlight. Rows re-sort by tile with a slide animation. Tap a row to watch that piece; long-press (500 ms) or hover on desktop opens the details card.
 - **Your-piece panel, bottom left:** tile, rank, "Next roll" modifiers in order, and your effects in full. Collapsible on small screens.
 - **Bottom centre:** the ROLL button during your dice window; otherwise the waiting pill ("Waiting for Pip to roll", "Waiting for Mochi and Juno to pick a card"), the move caption, or the card resolution queue (numbered mini cards with stamps).
 - **Face-off popup** (participants only, centred, dimmed, no panel): "FACE-OFF!", tile and round, both portraits with lock states and revealed picks, Rock / Paper / Scissors buttons. With 3–4 players the buttons use the challenge's two Minority themes.
@@ -307,6 +308,28 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
 - **Touch first:** tap, long-press and the popups cover every action.
 - **Desktop extras:** Space to roll, 1–3 to pick in popups, Esc to close dialogs. These are never required.
 - **Fullscreen:** requested on the first tap where supported (Android browsers; skipped on iOS Safari).
+
+### 7.4 Palette and type (Tangerine Dusk)
+
+Every colour is a design token in the client's theme file (`app/theme.ts` for the 3D world, CSS custom properties for the HUD). Nothing else hard-codes colours. The menu mockup's "Tangerine Dusk" tab shows the palette in use.
+
+| Token | Value | Used for |
+|---|---|---|
+| Sky | `#0b4a5a` → `#2f8f8a` → `#ffc184` (top → horizon); fog `#ffc79a` | 3D background and fog |
+| Ink | `#0f2e36` | Outlines, button borders, dark text |
+| Plate | `rgba(9,38,45,.86)` | Translucent chips: feed lines, profile chip, picker tray, waiting pills |
+| Paper | `#fff7ec` (alternate `#e2f3ee`) | Light panels, buttons, piece tiles |
+| Muted / sub-text | `#46707a` on paper, `#a8d0d2` on plate | Secondary text |
+| Highlight | mint `#5ff0c5` | Selected piece, name plates, current stage, timers, the outline on your player row and name tag |
+| Primary action | tangerine `#ff7a1a` (hover `#ff9140`), ink text | PLAY and ROLL |
+| Accent | coral `#ff5470` | "Play with bots", secondary calls to action, your piece and portrait |
+| Panel header | `#147676` | Settings and dialog title bars |
+| Dimmed backdrop | `rgba(5,30,36,.5)` → `rgba(5,30,36,.86)` | Behind popups and dialogs |
+| Podium | top `#fff3e3`, band `#ff9a3d`, base `#147676`, ring `#ff5470`, island `#0f5d63` / `#ffb070` | Menu podium |
+| Seats | you `#ff5470`; bots `#3b82f6`, `#a3e635`, `#8b5cf6` | Pieces, portraits, name tags |
+| Board | squares `#ff5a5f #ffa22e #ffd83b #4fd16a #4a9dff`; "?" squares `#8f4dff` | Unchanged from §6.1 |
+
+**Type:** Lilita One for display text (titles, buttons, names, numbers) and Fredoka for body text, both from Google Fonts with system fallbacks. Display text uses the ink outline (a multi-direction text shadow) like the mockups.
 
 ---
 
