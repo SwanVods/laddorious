@@ -1,0 +1,19 @@
+/* Tangerine Dusk HUD tokens (spec #2 §7.4). Colours used from TypeScript live in theme.ts. */
+:root {
+  --sky-top: #0b4a5a;
+  --sky-mid: #2f8f8a;
+  --sky-horizon: #ffc184;
+  --ink: #0f2e36;
+  --plate: rgba(9, 38, 45, 0.86);
+  --paper: #fff7ec;
+  --paper-alt: #e2f3ee;
+  --muted-on-paper: #46707a;
+  --muted-on-plate: #a8d0d2;
+  --highlight: #5ff0c5;
+  --primary: #ff7a1a;
+  --primary-hover: #ff9140;
+  --accent: #ff5470;
+  --panel-header: #147676;
+  --backdrop-light: rgba(5, 30, 36, 0.5);
+  --backdrop-dark: rgba(5, 30, 36, 0.86);
+}
