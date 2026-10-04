@@ -21,7 +21,13 @@ describe('generateBoard', () => {
   it('gives different boards for different seeds and generator versions', () => {
     const a = generateBoard('a', cfg).board;
     expect(generateBoard('b', cfg).board.jumps).not.toEqual(a.jumps);
-    expect(generateBoard('a', { ...cfg, generatorVersion: 2 }).board.jumps).not.toEqual(a.jumps);
+    expect(generateBoard('a', { ...cfg, generatorVersion: 3 }).board.jumps).not.toEqual(a.jumps);
+  });
+
+  it('accepts boards in under 2 attempts on average under the one-die model', () => {
+    let attempts = 0;
+    for (let i = 0; i < 200; i++) attempts += generateBoard(`calib-${i}`, cfg).report.attempts;
+    expect(attempts / 200).toBeLessThan(2);
   });
 
   it('only produces boards that satisfy every hard and generator rule', () => {

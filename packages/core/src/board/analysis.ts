@@ -10,12 +10,11 @@ export interface BoardAnalysis {
 }
 
 /**
- * One round of dice-only movement (spec §7.3): a 6 always takes the bonus
- * roll, so totals 1..5 have p=1/6 and totals 7..12 have p=1/36.
+ * One round of dice-only movement (spec §7.3, amended 2026-10-04): a single
+ * die, so totals 1..6 each have p = 1/6.
  */
 const ROUND_TOTALS: ReadonlyArray<readonly [total: number, p: number]> = [
-  [1, 1 / 6], [2, 1 / 6], [3, 1 / 6], [4, 1 / 6], [5, 1 / 6],
-  [7, 1 / 36], [8, 1 / 36], [9, 1 / 36], [10, 1 / 36], [11, 1 / 36], [12, 1 / 36],
+  [1, 1 / 6], [2, 1 / 6], [3, 1 / 6], [4, 1 / 6], [5, 1 / 6], [6, 1 / 6],
 ];
 
 /** Destination tile after moving `total` from `from` with bounce and jump chains. */

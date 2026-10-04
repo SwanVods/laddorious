@@ -19,7 +19,7 @@ export interface BoardConfig {
 
 export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   size: 100,
-  generatorVersion: 1,
+  generatorVersion: 2,
   ladders: { count: [8, 10], length: [4, 30] },
   snakes: { count: [8, 10], length: [4, 30] },
   mysteryDensity: 0.18,
@@ -27,6 +27,6 @@ export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   finishZone: { tiles: 9, maxSnakes: 1, maxSnakeLength: 10 },
   maxConsecutiveSnakeHeads: 5,
   mysterySpacing: { maxPerWindow: 4, window: 10, maxGap: 12 },
-  analysis: { median4pRounds: [15, 30], maxRounds2p: 60, maxTailProbability: 0.01 },
+  analysis: { median4pRounds: [15, 30], maxRounds2p: 70, maxTailProbability: 0.01 },
   maxAttempts: 500,
 };

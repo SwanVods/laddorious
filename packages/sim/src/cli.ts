@@ -50,7 +50,7 @@ export function main(argv: string[]): number {
       console.log(renderBoardAscii(board));
       console.log(`Attempts: ${report.attempts}  Rejections: ${JSON.stringify(report.rejections)}`);
       console.log(
-        `Median first finish: 4p ${report.analysis.median4p} rounds, 2p ${report.analysis.median2p} rounds; P(2p > 60 rounds) = ${(report.analysis.tail2p * 100).toFixed(2)}%`,
+        `Median first finish: 4p ${report.analysis.median4p} rounds, 2p ${report.analysis.median2p} rounds; P(2p > ${DEFAULT_BOARD_CONFIG.analysis.maxRounds2p} rounds) = ${(report.analysis.tail2p * 100).toFixed(2)}%`,
       );
       return 0;
     }

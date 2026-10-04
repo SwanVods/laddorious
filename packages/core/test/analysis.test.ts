@@ -22,6 +22,11 @@ describe('analyzeBoard', () => {
     expect(a.tailAfter(2, 1)).toBeCloseTo((5 / 6) ** 2, 12);
   });
 
+  it('models one die per round: a 6-tile board is finished in round 1 only by rolling a 6', () => {
+    // Under the old bonus-roll model no round-1 total could land exactly on 6, so cdf[1] was 0.
+    expect(analyzeBoard(makeBoard(6)).cdf[1]).toBeCloseTo(1 / 6, 12);
+  });
+
   it('produces a non-decreasing CDF that approaches 1', () => {
     const a = analyzeBoard(makeBoard(100, [[10, 30], [50, 20]]));
     for (let r = 1; r < a.cdf.length; r++) expect(a.cdf[r]!).toBeGreaterThanOrEqual(a.cdf[r - 1]!);
@@ -50,9 +55,7 @@ describe('analyzeBoard', () => {
       let rounds = 0;
       while (pos !== board.size) {
         rounds++;
-        const d1 = rollDie(rng);
-        const t = d1 === 6 ? 6 + rollDie(rng) : d1;
-        pos = landingTile(board, pos, t);
+        pos = landingTile(board, pos, rollDie(rng));
       }
       total += rounds;
     }
