@@ -19,7 +19,7 @@
 | **Phase 3** (director and presentation state): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
 | **Phase 4** (the 3D scene): **done on `client/phase-4`**, merged locally at the end of the phase | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`; commits `3d9c934`, `91f41fe`, `2d00e81`, `69b79e2`, `7a7db45`, `625cd48`, `c607d59`, `809436b`, `5151604` |
 
-After Phase 4 the full suite is 41 test files, 293 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote.
+After Phase 4 the full suite is 42 test files, 294 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote.
 
 ## Next step: Phase 5
 
@@ -37,6 +37,7 @@ What Phase 4 left for Phase 5:
 - The dev overlay reads `src/scene/stats.ts`; e2e (Phase 6) can read the same store for the draw-call check.
 - Fonts (Lilita One, Fredoka) are not loaded yet; the board overlay paints numbers in the system font and may want a repaint once fonts load.
 - Asset slots (`src/assets/slots.tsx`, `SLOT_URLS`) are empty: Spec #4's `.glb` models, possibly made with the Blender MCP, go there.
+- Only six of the nine §6.3 slots are wired through `<Slot>`: the four pieces, `crown` and `island`. `die`, `pad` and `slide.vortex` are declared but drawn directly (the die as one mesh per seat, pads and vortices as instanced meshes for the draw-call budget), so a URL for them does nothing yet. Spec #4 should wire them, with the instanced ones taking the `.glb`'s geometry and material inside the instanced mesh so they stay one draw call.
 
 ## How this user works (follow these)
 
