@@ -11,7 +11,7 @@ This repository holds **sub-project 1** — the deterministic rules engine, the 
 | `packages/core` | `@laddorious/core` | Pure rules engine: `createMatch`, `step(state, input) → { state, events }`, `awaiting`, `viewFor`. No clock, no unseeded randomness — a match replays exactly from its config, seed and inputs. |
 | `packages/bots` | `@laddorious/bots` | Random and heuristic bots that play from a player's view. Browser-safe; shared by the simulator, and later the client and server. |
 | `apps/sim` | `@laddorious/sim` | Batch runner, metrics and the `sim` CLI. |
-| `apps/client` | `@laddorious/client` | The web client (Vite + React). For now a dev page that runs a bot match through the local match service and the Web Worker host. |
+| `apps/client` | `@laddorious/client` | The web client (Vite + React). For now a dev page that plays a bot match beat by beat on a flat board, through the local match service and the Web Worker host. |
 
 Libraries live in `packages/`, deployable apps in `apps/`.
 

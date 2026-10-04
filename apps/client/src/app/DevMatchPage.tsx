@@ -1,6 +1,9 @@
 import type { PlayerId } from '@laddorious/core';
 import { useEffect, useState } from 'react';
+import { useStore } from 'zustand';
+import { Director } from '../director/director';
 import type { Matchmaking, MatchmakingState, MatchService, MatchSession, MatchUpdate, Profile, SeatInfo } from '../service/matchService';
+import { DevBoard } from './DevBoard';
 import { formatEvent } from './devLog';
 
 /** "Play with bots" appears once a search has run this long (spec #2 C7). */
@@ -10,21 +13,16 @@ const PROFILE: Profile = { nickname: 'You', piece: 'knight' };
 const LOG_TAIL = 40;
 
 /**
- * Phase 2's dev page: matchmaking, then a bot match shown as a live text log with the
- * window timer and the final rankings. Later phases replace it with the board and the real screens.
+ * The dev page: matchmaking, then a bot match played beat by beat on a flat board, with the
+ * event log, the window timer and the final rankings. Later phases replace it with the 3D
+ * board and the real screens.
  */
 export function DevMatchPage({ service }: { service: MatchService }) {
   const [matchmaking, setMatchmaking] = useState<Matchmaking | null>(null);
   const [mm, setMm] = useState<MatchmakingState | null>(null);
-  const [latest, setLatest] = useState<MatchUpdate | null>(null);
+  const [director, setDirector] = useState<Director | null>(null);
   const [log, setLog] = useState<string[]>([]);
-  const [now, setNow] = useState(() => Date.now());
   const session = mm?.kind === 'found' ? mm.session : null;
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(id);
-  }, []);
 
   // A hidden page pauses the local match (C14).
   useEffect(() => {
@@ -35,7 +33,6 @@ export function DevMatchPage({ service }: { service: MatchService }) {
   }, [session]);
 
   function findMatch() {
-    setLatest(null);
     setLog([]);
     const next = service.findMatch(PROFILE);
     setMatchmaking(next);
@@ -48,24 +45,24 @@ export function DevMatchPage({ service }: { service: MatchService }) {
   function watch(match: MatchSession) {
     const names = new Map(match.seats.map((seat) => [seat.playerId, seat.nickname]));
     const append = (lines: string[]) => setLog((prev) => [...prev, ...lines]);
+    // The director plays each update as beats, then reports playback done (spec #2 §5.2).
+    const played = new Director(match.me, (windowId) => match.playbackDone(windowId));
+    setDirector(played);
     match.onUpdate((u) => {
-      setNow(Date.now());
-      setLatest(u);
       append(u.events.map((e) => formatEvent(e, names)));
-      // Nothing animates yet, so playback is done as soon as an update arrives (Phase 3 plays beats first).
-      if (u.timer === null && u.view.awaiting.window !== 'none') match.playbackDone(u.view.awaiting.windowId);
+      played.push(u);
     });
     match.onRejected((e) => append([`REJECTED ${e.code}: ${e.message}`]));
     match.onFailed((e) => append([`FAILED ${e.message}`]));
   }
 
   function leave() {
+    director?.dispose();
     session?.leave();
+    setDirector(null);
     setMatchmaking(null);
     setMm(null);
   }
-
-  const phase = latest?.view.phase;
 
   return (
     <main className="dev">
@@ -93,24 +90,45 @@ export function DevMatchPage({ service }: { service: MatchService }) {
           )}
         </section>
       )}
-      {session && (
+      {session && director && (
         <section className="plate">
           <Seats seats={session.seats} />
-          {latest && <p className="status">{statusLine(latest, session.seats, now)}</p>}
-          {phase?.kind === 'finished' && (
-            <ol className="rankings">
-              {phase.rankings.map((r) => (
-                <li key={r.player}>{`${r.rank}. ${nickname(session.seats, r.player)} — tile ${r.position}`}</li>
-              ))}
-            </ol>
-          )}
+          <MatchStatus director={director} seats={session.seats} />
           <button type="button" onClick={leave}>
             Leave
           </button>
         </section>
       )}
+      {session && director && <DevBoard director={director} seats={session.seats} />}
       {log.length > 0 && <pre className="log">{log.slice(-LOG_TAIL).join('\n')}</pre>}
     </main>
+  );
+}
+
+/** The settled match (round, window, who is awaited, the countdown), the beat on stage, and the rankings at the end. */
+function MatchStatus({ director, seats }: { director: Director; seats: SeatInfo[] }) {
+  const settled = useStore(director.store, (s) => s.settled);
+  const beat = useStore(director.store, (s) => s.beat);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+
+  const phase = settled?.view.phase;
+  return (
+    <>
+      {settled && <p className="status">{statusLine(settled, seats, now)}</p>}
+      {beat && <p className="beat">{`▶ ${beat.kind} · ${(beat.durationMs / 1000).toFixed(1)} s`}</p>}
+      {phase?.kind === 'finished' && (
+        <ol className="rankings">
+          {phase.rankings.map((r) => (
+            <li key={r.player}>{`${r.rank}. ${nickname(seats, r.player)} — tile ${r.position}`}</li>
+          ))}
+        </ol>
+      )}
+    </>
   );
 }
 
@@ -131,7 +149,9 @@ function statusLine(u: MatchUpdate, seats: SeatInfo[], now: number): string {
   const { round, awaiting: aw } = u.view;
   if (aw.window === 'none') return `Round ${round} · match over`;
   const who = aw.players.map((id) => nickname(seats, id)).join(', ');
-  const time = u.timer ? `${Math.max(0, Math.ceil((u.timer.endsAt - now) / 1000))} s` : 'waiting for playback';
+  // Capped at the window's length: the 250 ms tick can lag behind a countdown that just started.
+  const left = u.timer ? Math.min(Math.ceil((u.timer.endsAt - now) / 1000), Math.ceil(aw.durationMs / 1000)) : null;
+  const time = left === null ? 'waiting for playback' : `${Math.max(0, left)} s`;
   return `Round ${round} · ${aw.window} window · waiting for ${who} · ${time}`;
 }
 

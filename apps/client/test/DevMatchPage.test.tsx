@@ -3,6 +3,7 @@ import type { GameEvent } from '@laddorious/core';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DevMatchPage, PLAY_WITH_BOTS_AFTER_MS } from '../src/app/DevMatchPage';
+import { BEAT_MS } from '../src/director/beats';
 import type { Matchmaking, MatchmakingState, MatchSession, MatchUpdate } from '../src/service/matchService';
 import { SEATS, openingUpdate } from './support/fixtures';
 
@@ -97,7 +98,7 @@ describe('DevMatchPage', () => {
     expect(matchmaking.playWithBots).toHaveBeenCalledTimes(1);
   });
 
-  it('logs each update, reports playback at once and counts the window down', () => {
+  it('plays each update as beats, then reports playback done and counts the window down', () => {
     const session = startMatch();
     const opening = openingUpdate();
     session.update(opening);
@@ -107,13 +108,29 @@ describe('DevMatchPage', () => {
     const roll: GameEvent = { type: 'DieRolled', player: 'p1', natural: 5, face: 5, forced: false, auto: false, visibility: 'public' };
     session.update({ ...opening, events: [roll], timer: { windowId: 1, endsAt: 12_000 } });
     expect(screen.getByText(/DieRolled player=Mochi natural=5/)).toBeTruthy();
+    expect(screen.getByText('▶ roll · 0.9 s')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(BEAT_MS.roll));
+    expect(screen.queryByText('▶ roll · 0.9 s')).toBeNull();
     expect(screen.getByText(/waiting for You, Mochi, Pip, Juno · 12 s$/)).toBeTruthy();
     act(() => vi.advanceTimersByTime(5000));
     expect(screen.getByText(/waiting for You, Mochi, Pip, Juno · 7 s$/)).toBeTruthy();
     expect(session.playbackDone).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the final rankings when the match is over', () => {
+  it('moves a piece on the board when its beat ends', () => {
+    const session = startMatch();
+    const opening = openingUpdate();
+    session.update(opening);
+    expect(screen.getByRole('img', { name: 'Mochi on tile 0' })).toBeTruthy();
+    const view = { ...opening.view, players: opening.view.players.map((p) => (p.id === 'p1' ? { ...p, position: 4 } : p)) };
+    const move: GameEvent = { type: 'Moved', player: 'p1', from: 0, to: 4, cause: 'dice', bounced: false, visibility: 'public' };
+    session.update({ view, events: [move], timer: null });
+    expect(screen.getByRole('img', { name: 'Mochi on tile 0' })).toBeTruthy();
+    act(() => vi.advanceTimersByTime(4 * BEAT_MS.hopPerTile + BEAT_MS.landing));
+    expect(screen.getByRole('img', { name: 'Mochi on tile 4' })).toBeTruthy();
+  });
+
+  it('shows the final rankings once the victory beat has played', () => {
     const session = startMatch();
     const { view } = openingUpdate();
     const rankings = [
@@ -127,6 +144,8 @@ describe('DevMatchPage', () => {
       events: [{ type: 'MatchWon', winner: 'p2', rankings, visibility: 'public' }],
       timer: null,
     });
+    expect(screen.queryByText('1. Pip — tile 100')).toBeNull();
+    act(() => vi.advanceTimersByTime(BEAT_MS.victory));
     expect(screen.getByText('Round 21 · match over')).toBeTruthy();
     expect(screen.getByText('1. Pip — tile 100')).toBeTruthy();
     expect(screen.getByText('4. Mochi — tile 41')).toBeTruthy();
