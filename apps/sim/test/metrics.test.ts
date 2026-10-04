@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runBatch } from '../src/batch';
-import { makeBots } from '../src/bots';
+import { makeBots } from '@laddorious/bots';
 import { aggregate, formatReport, matchMetrics, quantile } from '../src/metrics';
 import { runMatch } from '../src/runner';
 

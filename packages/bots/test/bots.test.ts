@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STARTER_CARDS, cardById, createMatch, createStream, viewFor, type MatchState } from '@laddorious/core';
-import { HeuristicBot, RandomBot, makeBots, scoreCard } from '../src/bots';
+import { HeuristicBot, RandomBot, makeBots, scoreCard } from '../src/index';
 
 const seats = [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }, { id: 'p4' }];
 

@@ -35,9 +35,18 @@ importers:
 
   apps/sim:
     dependencies:
+      '@laddorious/bots':
+        specifier: workspace:*
+        version: link:../../packages/bots
       '@laddorious/core':
         specifier: workspace:*
         version: link:../../packages/core
+
+  packages/bots:
+    dependencies:
+      '@laddorious/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/core: {}
 

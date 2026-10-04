@@ -18,4 +18,14 @@ export default defineConfig(
       'no-restricted-properties': ['error', { object: 'Math', property: 'random', message: 'use a seeded RngStream' }],
     },
   },
+  {
+    // Libraries must run in browsers and on the server alike: no Node built-ins (spec #2 C6).
+    files: ['packages/*/src/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ group: ['node:*'], message: 'packages/* must stay browser-safe: no Node built-ins' }] },
+      ],
+    },
+  },
 );

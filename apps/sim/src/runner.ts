@@ -12,7 +12,7 @@ import {
   type PlayerId,
   type PlayerSeat,
 } from '@laddorious/core';
-import type { Bot } from './bots';
+import type { Bot } from '@laddorious/bots';
 
 /** Everything needed to reproduce a match exactly (spec §3.5). */
 export interface MatchLog {

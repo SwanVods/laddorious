@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/core && tsc -p apps/sim",
+    "typecheck": "tsc -p packages/core && tsc -p packages/bots && tsc -p apps/sim",
     "lint": "eslint .",
     "sim": "tsx apps/sim/src/bin.ts"
   },

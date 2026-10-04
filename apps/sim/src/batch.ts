@@ -1,5 +1,5 @@
 import { generateBoard, resolveConfig, type GenerationReport, type MatchConfigInput, type PlayerSeat } from '@laddorious/core';
-import { makeBots, type PolicyName } from './bots';
+import { makeBots, type PolicyName } from '@laddorious/bots';
 import { aggregate, matchMetrics, type BatchReport, type MatchMetrics } from './metrics';
 import { runMatch, type MatchLog } from './runner';
 

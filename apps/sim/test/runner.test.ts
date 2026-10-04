@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeBots } from '../src/bots';
+import { makeBots } from '@laddorious/bots';
 import { replayLog, runMatch } from '../src/runner';
 
 const seats = [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }, { id: 'p4' }];

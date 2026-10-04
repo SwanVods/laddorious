@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { DEFAULT_BOARD_CONFIG, generateBoard, renderBoardAscii } from '@laddorious/core';
 import { runBatch } from './batch';
-import type { PolicyName } from './bots';
+import type { PolicyName } from '@laddorious/bots';
 import { formatReport } from './metrics';
 import { replayLog, type MatchLog } from './runner';
 
