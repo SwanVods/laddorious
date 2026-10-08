@@ -1,8 +1,8 @@
-# Handoff — 3D client, Phase 5 in progress
+# Handoff — 3D client, after Phase 5
 
-**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4, and on 2026-10-08 with the Phase 5 prototype.
+**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4, and on 2026-10-08 during and at the end of Phase 5.
 **For:** the next Claude Code session on this repo. Read this file, then the spec and the phase index, before doing anything.
-**Keep it current:** after each Phase 5 prototype task, when the Phase 5 plan is written, and when Phase 5 ends, update the "Where things stand" and "Next step" sections.
+**Keep it current:** when Phase 6 starts and ends, update the "Where things stand" and "Next step" sections.
 
 ---
 
@@ -18,56 +18,32 @@
 | **Phase 2** (client scaffold, local host, match service): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
 | **Phase 3** (director and presentation state): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
 | **Phase 4** (the 3D scene): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`; commits `3d9c934`, `91f41fe`, `2d00e81`, `69b79e2`, `7a7db45`, `625cd48`, `c607d59`, `809436b`, `5151604`; review fix `5ac6f4c` |
-| **Phase 5** (HUD and screens): prototype verified by a task-by-task replay; **plan written**, being executed on `client/phase-5` | `docs/superpowers/plans/2026-10-08-client-phase-5-hud-screens.md` |
+| **Phase 5** (HUD and screens): **done on `client/phase-5`**, merged locally at the end of the phase. Built prototype-first, then a task-by-task replay verified it before the plan was generated | `docs/superpowers/plans/2026-10-08-client-phase-5-hud-screens.md`; commits `39c8487`, `09bb185`, `5983e50`, `6cb8fb7`, `1c0b7ca`, `6130160`, `635ed3e`, `6562f11`, `43806cc`, `98862b0`, `e71f77b`, `57283f2`, `1dc5e72`; browser fix `93beb3b` |
 
-After Phase 4 the full suite is 42 test files, 294 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote.
+After Phase 5 the full suite is 54 test files, 406 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote.
 
-## Next step: Phase 5, prototype then plan
+## Next step: Phase 6
 
-**Phase 5: HUD and screens.** Spec sections: §7 (screens, HUD, input, palette and type), §8 (error handling).
+**Phase 6: end-to-end tests, CI and docs.** Spec sections: §9.3–§9.5 (end-to-end tests, the manual phone check, CI) and §10 (documentation).
 
-**It ends with:** the whole game per the spec, in Tangerine Dusk, on desktop and landscape phones: menu, matchmaking, match HUD and popups, end screen, settings, rotate screen, error screen and leave dialog.
+**It ends with:**
 
-**Method (the user's choice, confirmed 2026-10-08; memory `phase5-prototype-method`):**
+- Playwright passing on desktop Chromium and on emulated landscape iPhone 12 and Pixel 7.
+- CI running the build, unit, component and e2e jobs.
+- README files for the root, the client, `packages/core` and `packages/bots`.
 
-1. Build and test every task in a scratch copy of the repo.
-2. Write a manifest and a replay script that re-verify each task in order (not written yet).
-3. Generate the Phase 5 plan from the verified files.
-4. Execute the plan on `client/phase-5` (TDD, commit per task), self-review, merge locally, then Phase 6.
+How to run it: per the user's standing order (memory `continue-through-phase-6`), branch `client/phase-6` from `main`, write the plan with `superpowers:writing-plans`, execute it inline (TDD, commit per task), self-review and merge locally.
 
-**Where the prototype lives:**
+What Phase 5 left for Phase 6:
 
-- Working copy (dependencies installed): `C:\Users\ariefg\AppData\Local\Temp\claude\E--AI-Project-laddorious\faf515b9-15ae-404c-b087-030110c7339b\scratchpad\p5`. Run `pnpm test`, `pnpm typecheck` and `pnpm lint` inside it.
-- Backup (in this repo, git-ignored): `.superpowers/p5-backup/p5.tar.gz`, refreshed after each task. If the Temp copy is gone, unpack it somewhere outside the repo and run `pnpm install`.
-- Only `apps/client` differs from `main` (`index.html`, `src/app/theme.css`, `theme.ts`, `base.css`, `prefs.ts`, `src/director/director.ts`, `src/hud/`, `src/ui/` and their tests). Other files differ only in line endings: never copy them back.
-
-**Prototype tasks:**
-
-| # | Task | State |
-|---|---|---|
-| 1 | Tokens and fonts: colours only in `app/theme.ts` and `app/theme.css` (a test enforces it); sizes in `cqh` with pixel minimums and safe-area insets | done |
-| 2 | Prefs store: profile and settings in `localStorage`, in memory if blocked; nicknames 1–16 characters, default `Guest####` | done |
-| 3 | Director event log: `LoggedEvent`, `LOG_LIMIT` 300, including zero-duration beats and fast-forwarded events | done |
-| 4 | `hud/labels.ts`: card info, target lines, fizzle warnings, effect chips, next-roll modifiers | done |
-| 5 | `hud/record.ts` and `hud/feed.ts`: this round's dice and cards; event feed lines | done |
-| 6 | `hud/model.ts`: stage bar, countdown, player rows, dock, resolution queue, face-off and card-pick popups (pure) | done |
-| 7 | `ui/` primitives: Icon, PieceIcon/Portrait, DieFace, Dialog, toasts, useMediaQuery, RotateScreen | done |
-| 8 | HUD panels: StageBar, EventFeed, PlayerColumn, YourPiece, `hud.css`, component tests (notes in the prototype's `PROTOTYPE.md`) | done |
-| 9 | Dock (ROLL with Space, waiting pill, move caption, card queue), face-off popup (keys 1–3), card-pick popup (rerolls, "Peek at the board", keys 1–3), banners | done |
-| 10 | In-world name tags; MatchScreen with watch mode and "Back to my piece", leave dialog, rejection toasts, dev stats | done (preview at `/#hud`, port 5174 via the `client-proto` launch entry) |
-| 11 | Menu scene and screen: podium, floating tiles, turntable, profile chip with rename, logo, gear, piece picker, PLAY with "4-player match", rule tips (hidden under 450 px tall), dev seed field via `findMatch(profile, opts?: { seed })` | done |
-| 12 | Matchmaking overlay ("Play with bots" after 15 s, MATCH FOUND, 3-2-1), end-screen podium, error screen, settings dialog | done |
-| 13 | App shell: routing state machine, error boundary, pause on hidden page, fullscreen on first tap (not iOS); remove `DevMatchPage` and the dev files | done (the app now runs at `/`) |
-| 14 | Phase gate and handoff | in the plan |
-
-**Rulings to carry into the plan:** `findMatch(profile, opts?: { seed })` adds an optional dev seed to the §4.3 signature. It serves §4.4's hidden seed field, and Spec #3's online service ignores it.
-
-What Phase 4 left for Phase 5:
-
-- `src/scene/MatchScene.tsx` is the 3D board. It takes `watch` (watch mode) and `reducedMotion` (settings) props that the HUD should feed, and a `setting` that needs a remount (`key`) to change.
-- The dev page (`src/app/DevMatchPage.tsx`) is the harness to replace: its ROLL button, status line and log are stand-ins for the HUD.
-- The dev overlay reads `src/scene/stats.ts`; e2e (Phase 6) can read the same store for the draw-call check.
-- The board overlay paints numbers in the system font and may want a repaint once the web fonts load.
+- **The game end to end:** `src/app/App.tsx` routes menu → matchmaking (over the menu scene) → match → end, with the error screen. The e2e flow in §9.3 (menu → PLAY → Play with bots → a full match → end → Play again) runs through these screens.
+- **The test hook:** `window.__laddoriousTest` doesn't exist yet. It should be compiled only into test builds, and should speed up animations (`BEAT_MS` in `src/director/beats.ts`), auto-pick for the human seat and shorten windows (`windows` in the engine config, used by `LocalHost`).
+- **Selectors:** e2e tests can find screens and controls by their accessible names: PLAY, Play with bots, ROLL, Leave match, Back to menu, Play again, Main menu, the "Choose One" and "FACE-OFF!" dialogs, and the "Turn your phone sideways" alert.
+- **Draw calls:** the check can read `renderStats` in `src/scene/stats.ts` (dev overlay) or `renderer.info.render.calls`.
+- **READMEs** (§10):
+  - the client README covers the Cloudflare Pages deploy step by step, with Netlify and Vercel notes; phone testing over Wi-Fi with the manual checklist; asset slots and `.glb` drop-in; the dev overlay; and the dev seed field;
+  - `packages/core` and `packages/bots` READMEs cover their exports and rules.
+- **CI:** `.github/workflows/ci.yml` already runs typecheck, lint and test. Phase 6 adds the client build and the Playwright run.
 
 ## How this user works (follow these)
 
@@ -99,6 +75,7 @@ What Phase 4 left for Phase 5:
 - **Bots** (`@laddorious/bots`): `RandomBot`, `HeuristicBot`, `makeBots(seats, policy, seed, afkPercent)` and `scoreCard`. They are browser-safe.
 - **Client tests and lint:** component tests start with `// @vitest-environment jsdom`; every other test runs in Node. React and React Hooks rules come from `@eslint-react/eslint-plugin` (`eslint-plugin-react` stops at ESLint 9). jsdom stays on 29 while this machine's Node is 24.14 (jsdom 30 needs 24.15). The local, untracked `.claude/launch.json` has `client` (dev server) and `client-build` (serves `dist`) entries for the preview pane.
 - **Director:** `src/director/` is plain TypeScript (presentation state, beat timelines, the `Director` on a `zustand/vanilla` store). Its whole-match test plays a real match through the director and fails on any presentation drift, so run it after changing beat or presentation rules.
+- **Screens:** `src/app/App.tsx` routes the screens; `src/hud/model.ts`, `labels.ts`, `record.ts` and `feed.ts` are the pure HUD model; `test/tokens.test.ts` fails on any colour outside `src/app/theme.ts` and `theme.css`; `test/support/scripted.ts` drives matchmaking and sessions in component tests.
 - **Scene:** `src/scene/` holds the 3D scene. Rules are pure and unit-tested (`layout.ts`, `quality.ts`, `motion.ts`, `camera.ts`); the components read the director's store once per frame. `test/scene.test.tsx` renders the scene graph with `@react-three/test-renderer` and fails above 100 draw calls or 150k triangles, so run it after adding anything to the scene.
 - **Environment:** Windows 11. Both PowerShell and Git Bash are available. The repo is at `E:\AI Project\laddorious`.
 - **Superpowers ledger:** executing-plans keeps its ledger at `.superpowers/sdd/<plan-basename>/progress.md` (scratch, not committed). Delete it when a phase finishes.
