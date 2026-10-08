@@ -2,7 +2,7 @@ import type { GameEvent, PlayerId } from '@laddorious/core';
 import { BEAT_MS } from '../director/beats';
 import type { DirectorState, PlayingBeat } from '../director/director';
 import { stackOn, type PresentationState } from '../director/presentation';
-import { arcPoint, slideCurve, tilePath, tileToWorld, type Vec3 } from './layout';
+import { arcPoint, slideCurve, tileCell, tilePath, tileToWorld, type Vec3 } from './layout';
 
 /** Where a piece is and how it is turned and squashed. `orb` swaps the piece for a glowing orb (inside a slide). */
 export interface Pose {
@@ -29,17 +29,26 @@ const lerp3 = (a: Vec3, b: Vec3, t: number): Vec3 => [lerp(a[0], b[0], t), lerp(
 const still = (position: Vec3, rotation: Vec3 = [0, 0, 0]): Pose => ({ position, rotation, scale: [1, 1, 1], orb: false });
 
 /** Where a piece stands between beats: on its tile, on top of earlier arrivals, or side by side facing its opponents in a face-off. */
+/**
+ * Pieces face along their row, the way the serpentine runs (+X on even rows, −X on odd ones):
+ * the camera looks along −Z, so it sees their profiles, which is how a knight reads (Phase 5).
+ */
+export function headingOf(tile: number): number {
+  return tile <= 0 || tileCell(tile).row % 2 === 0 ? Math.PI / 2 : -Math.PI / 2;
+}
+
 export function restPose(state: PresentationState, player: PlayerId, seat: number): Pose {
   const tile = state.positions[player] ?? 0;
   const at = tileToWorld(tile, seat);
-  if (tile === 0) return still(at);
+  const facing: Vec3 = [0, headingOf(tile), 0];
+  if (tile === 0) return still(at, facing);
   const faceOff = state.faceOffs.find((f) => f.tile === tile && f.players.includes(player));
   if (faceOff) {
     const offset = (faceOff.players.indexOf(player) - (faceOff.players.length - 1) / 2) * FACE_OFF_GAP;
     return still([at[0] + offset, at[1], at[2]], [0, offset < 0 ? Math.PI / 2 : -Math.PI / 2, 0]);
   }
   const level = Math.max(0, stackOn(state, tile).indexOf(player));
-  return still([at[0], at[1] + level * STACK_HEIGHT, at[2]]);
+  return still([at[0], at[1] + level * STACK_HEIGHT, at[2]], facing);
 }
 
 /**

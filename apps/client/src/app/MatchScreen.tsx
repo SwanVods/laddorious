@@ -1,0 +1,161 @@
+import type { PlayerId, Ranking } from '@laddorious/core';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useStore } from 'zustand';
+import { Director } from '../director/director';
+import { BannerView, useBanner } from '../hud/Banner';
+import { CardPickPopup } from '../hud/CardPickPopup';
+import { DevStats } from '../hud/DevStats';
+import { Dock } from '../hud/Dock';
+import { EventFeed } from '../hud/EventFeed';
+import { FaceOffPopup } from '../hud/FaceOffPopup';
+import { feedLines } from '../hud/feed';
+import { nextRollMods, rejectionText } from '../hud/labels';
+import { cardPickModel, countdown, dockModel, faceOffModel, playerRows, stageFromLog, stageIndex } from '../hud/model';
+import { NameTags } from '../hud/NameTags';
+import { PlayerColumn } from '../hud/PlayerColumn';
+import { roundRecord } from '../hud/record';
+import { StageBar } from '../hud/StageBar';
+import { YourPiece } from '../hud/YourPiece';
+import { MatchScene } from '../scene/MatchScene';
+import type { QualitySetting } from '../scene/quality';
+import { createTagRegistry } from '../scene/tags';
+import type { MatchSession } from '../service/matchService';
+import { Dialog } from '../ui/Dialog';
+import { Icon } from '../ui/Icon';
+import { ToastHost, showToast } from '../ui/toasts';
+import { useHotkeys } from '../ui/useHotkeys';
+
+/** How often the window countdown redraws. */
+const TICK_MS = 250;
+
+export interface MatchScreenProps {
+  session: MatchSession;
+  quality: QualitySetting;
+  reducedMotion: boolean;
+  /** The dev overlay: fps, draw calls, triangles (dev builds only). */
+  showStats?: boolean;
+  /** I left through the leave dialog; the session has been left. */
+  onLeave: () => void;
+  /** The host failed (spec #2 §8): the error screen takes over. */
+  onFailed: (message: string) => void;
+  /** The victory has played: the end screen takes over. */
+  onFinished: (rankings: Ranking[]) => void;
+}
+
+/**
+ * The match screen (spec #2 §7.1, §7.2): the 3D board with the HUD over it. It plays the
+ * session's updates through a Director and sends my rolls, picks and rerolls.
+ */
+export function MatchScreen({ session, quality, reducedMotion, showStats = false, onLeave, onFailed, onFinished }: MatchScreenProps) {
+  const { me, seats } = session;
+  const [director] = useState(() => new Director(me, (windowId) => session.playbackDone(windowId)));
+  const [tags] = useState(createTagRegistry);
+  const [watch, setWatch] = useState<PlayerId | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const handlersRef = useRef({ onFailed, onFinished });
+  useLayoutEffect(() => {
+    handlersRef.current = { onFailed, onFinished };
+  });
+
+  useEffect(() => {
+    const offs = [
+      session.onUpdate((u) => director.push(u)),
+      session.onRejected((e) => showToast(rejectionText(e.code))),
+      session.onFailed((e) => handlersRef.current.onFailed(e.message)),
+    ];
+    return () => {
+      for (const off of offs) off();
+      director.dispose();
+    };
+  }, [session, director]);
+
+  const settled = useStore(director.store, (s) => s.settled);
+  const presentation = useStore(director.store, (s) => s.presentation);
+  const beat = useStore(director.store, (s) => s.beat);
+  const log = useStore(director.store, (s) => s.log);
+  const banner = useBanner(beat, me, seats);
+  const record = useMemo(() => roundRecord(log), [log]);
+  const lines = useMemo(() => feedLines(log), [log]);
+
+  // The countdown redraws while a window's timer runs.
+  const timer = settled?.timer ?? null;
+  useEffect(() => {
+    if (!timer) return;
+    const id = setInterval(() => setNow(Date.now()), TICK_MS);
+    return () => clearInterval(id);
+  }, [timer]);
+
+  // The end screen takes over once the victory beat has played (the update has settled).
+  const rankings = settled?.view.phase.kind === 'finished' ? settled.view.phase.rankings : null;
+  useEffect(() => {
+    if (rankings) handlersRef.current.onFinished(rankings);
+  }, [rankings]);
+
+  const backToMine = () => setWatch(null);
+  useHotkeys({ Escape: backToMine }, watch !== null && !leaving);
+
+  const view = settled?.view;
+  const rows = view && presentation ? playerRows({ view, presentation, record, seats, me, watch }) : [];
+  const mine = rows.find((r) => r.me);
+  const faceOff = view ? faceOffModel({ beat, view, me }) : null;
+  const cardPick = view ? cardPickModel(view) : null;
+  const watched = seats.find((s) => s.playerId === watch);
+
+  const leave = () => {
+    setLeaving(false);
+    director.dispose();
+    session.leave();
+    onLeave();
+  };
+
+  return (
+    <div className="screen match">
+      <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} />
+      <div className="layer">
+        <NameTags seats={seats} me={me} tags={tags} />
+        {view && presentation && (
+          <>
+            <StageBar round={presentation.round} stage={stageIndex(beat, view.awaiting.window, stageFromLog(log))} timer={countdown(settled.timer, view.awaiting.durationMs, now)} />
+            <EventFeed lines={lines} seats={seats} />
+            <PlayerColumn rows={rows} onWatch={setWatch} reducedMotion={reducedMotion} />
+            {mine && <YourPiece row={mine} mods={nextRollMods(presentation.effects, me)} players={rows.length} boardSize={view.board.size} />}
+            <Dock model={dockModel({ beat, view, record, me })} seats={seats} onRoll={() => session.send({ type: 'roll' })} />
+          </>
+        )}
+        {watched && (
+          <div className="watch-pill pill live">
+            <Icon name="eye" />
+            <span>
+              Watching <b>{watched.nickname}</b>
+            </span>
+            <button type="button" className="btn" onClick={backToMine}>
+              Back to my piece
+            </button>
+          </div>
+        )}
+        <button type="button" className="round-btn menu-btn live" aria-label="Leave match" onClick={() => setLeaving(true)}>
+          <Icon name="menu" />
+        </button>
+        {showStats && <DevStats />}
+        <BannerView banner={banner} />
+        {faceOff && <FaceOffPopup model={faceOff} seats={seats} me={me} onPick={(choice) => session.send({ type: 'challengePick', challengeId: faceOff.challengeId, choice })} />}
+        {cardPick && <CardPickPopup model={cardPick} onPick={(slot) => session.send({ type: 'pickCard', slot })} onReroll={(slot) => session.send({ type: 'reroll', slot })} />}
+        {leaving && (
+          <Dialog title="Leave match?" onClose={() => setLeaving(false)}>
+            <p className="dialog-text">Leaving ends this match against the bots and takes you back to the menu.</p>
+            <div className="dialog-actions">
+              <button type="button" className="btn" onClick={() => setLeaving(false)}>
+                Keep playing
+              </button>
+              <button type="button" className="btn accent" onClick={leave}>
+                Leave
+              </button>
+            </div>
+          </Dialog>
+        )}
+        <ToastHost />
+      </div>
+    </div>
+  );
+}

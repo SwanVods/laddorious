@@ -30,8 +30,10 @@ export interface ShotInput {
 
 const FOLLOW: Vec3 = [0, 7.5, 8.5];
 const SWOOP: Vec3 = [0, 3.4, 4.6];
-const OVERVIEW_RADIUS = 21;
-const OVERVIEW_HEIGHT = 20;
+const OVERVIEW_RADIUS = 22;
+const OVERVIEW_HEIGHT = 22;
+/** The overview looks a little toward the start row, so the bottom dock never hides it (Phase 5). */
+const OVERVIEW_TARGET_Z = 2.5;
 
 const offset = (at: Vec3, by: Vec3): Vec3 => [at[0] + by[0], at[1] + by[1], at[2] + by[2]];
 const follow = (at: Vec3): Shot => ({ mode: 'follow', position: offset(at, FOLLOW), target: at, cut: false });
@@ -48,7 +50,12 @@ export function cameraShot(input: ShotInput): Shot {
   if (busy || input.window === 'challenge' || input.window === 'mystery') return follow(mine);
   // Everyone rolls: the whole board, drifting gently.
   const angle = input.reducedMotion ? 0 : Math.sin(input.nowMs / 9000) * 0.12;
-  return { mode: 'overview', position: [Math.sin(angle) * OVERVIEW_RADIUS, OVERVIEW_HEIGHT, Math.cos(angle) * OVERVIEW_RADIUS], target: [0, 0, 0], cut: false };
+  return {
+    mode: 'overview',
+    position: [Math.sin(angle) * OVERVIEW_RADIUS, OVERVIEW_HEIGHT, Math.cos(angle) * OVERVIEW_RADIUS + OVERVIEW_TARGET_Z],
+    target: [0, 0, OVERVIEW_TARGET_Z],
+    cut: false,
+  };
 }
 
 function swoop(at: Vec3, input: ShotInput): Shot {

@@ -6,6 +6,7 @@ import { Director } from '../src/director/director';
 import { ribbonGeometry } from '../src/scene/Jumps';
 import { SceneContent } from '../src/scene/MatchScene';
 import type { QualityLevel } from '../src/scene/quality';
+import { createTagRegistry } from '../src/scene/tags';
 import { SEATS, openingUpdate } from './support/fixtures';
 
 // The test renderer drives React through act(); React wants to know it is running in a test.
@@ -52,6 +53,29 @@ describe('the 3D scene (spec #2 §6)', () => {
       c.fromBufferAttribute(pos, index.getX(i + 2));
       expect(b.sub(a).cross(c.sub(a)).y).toBeGreaterThan(0);
     }
+  });
+
+  it('moves each name tag over its piece on screen (spec #2 §7.2)', async () => {
+    const director = new Director('p0', () => {});
+    director.push(openingUpdate());
+    const board = director.store.getState().settled!.view.board;
+    const tags = createTagRegistry();
+    const fakes = SEATS.map((seat) => {
+      const el = { style: {} as Record<string, string> };
+      tags.elements.set(seat.playerId, el as unknown as HTMLElement);
+      return el;
+    });
+    const renderer = await ReactThreeTestRenderer.create(
+      <SceneContent director={director} seats={SEATS} me="p0" board={board} level="low" watch={null} reducedMotion tags={tags} />,
+      { camera: { position: [0, 20, 21] } },
+    );
+    await renderer.advanceFrames(2, 1 / 60);
+    for (const el of fakes) {
+      expect(el.style.visibility).toBe('visible');
+      expect(el.style.transform).toMatch(/^translate\(-?\d+(\.\d+)?px, -?\d+(\.\d+)?px\)$/);
+    }
+    // The four start spots stand side by side, and so do their tags.
+    expect(new Set(fakes.map((el) => el.style.transform)).size).toBe(4);
   });
 
   it('draws the 100 tiles in one instanced draw call', async () => {

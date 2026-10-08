@@ -20,6 +20,13 @@ export function autoStartLevel(env: { coarsePointer: boolean; shortSide: number 
   return env.coarsePointer && env.shortSide < 500 ? 'low' : 'high';
 }
 
+/** What Auto looks at: a coarse pointer and the screen's short side (spec #2 §6.4). */
+export function deviceEnv(): { coarsePointer: boolean; shortSide: number } {
+  const coarsePointer = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  const shortSide = typeof screen === 'undefined' ? 1000 : Math.min(screen.width, screen.height);
+  return { coarsePointer, shortSide };
+}
+
 export function startLevel(setting: QualitySetting, env: { coarsePointer: boolean; shortSide: number }): QualityLevel {
   return setting === 'auto' ? autoStartLevel(env) : setting;
 }

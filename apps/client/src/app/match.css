@@ -1,0 +1,107 @@
+/* The match screen (spec #2 §7.1): the board fills the screen and the HUD sits over it.
+   Colours come from theme.css tokens only. */
+.screen {
+  position: absolute;
+  inset: 0;
+}
+
+.match .scene-frame {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.match .webgl-message {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: min(520px, 80cqw);
+  margin: 0;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--plate);
+  color: var(--white);
+  font: 600 max(15px, 2.6cqh) / 1.4 var(--body);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+/* In-world name tags: TagProjector moves each .tag to its piece; the label hangs above that point. */
+.tags {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.tag-name {
+  display: block;
+  padding: 4px 8px 3px;
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--seat);
+  color: var(--white);
+  font-size: max(12px, 2cqh);
+  line-height: 1;
+  text-shadow: 0 1.5px 0 var(--ink);
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+}
+
+.tag.me .tag-name {
+  box-shadow: 0 0 0 2.5px var(--highlight);
+}
+
+.menu-btn {
+  position: absolute;
+  right: calc(var(--safe-r) + var(--edge));
+  top: calc(var(--safe-t) + var(--edge));
+}
+
+.watch-pill {
+  position: absolute;
+  right: calc(var(--safe-r) + var(--edge));
+  bottom: calc(var(--safe-b) + var(--edge));
+  padding-right: 6px;
+}
+
+.watch-pill b {
+  color: var(--highlight);
+}
+
+.watch-pill .btn {
+  padding-block: 6px 5px;
+  font-size: max(13px, 2.2cqh);
+}
+
+.dev-stats {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-t) + max(52px, 9cqh));
+  margin: 0;
+  color: var(--muted-on-plate);
+  font: 12px / 1 ui-monospace, monospace;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.dialog-text {
+  margin: 0;
+  font: 500 max(14px, 2.4cqh) / 1.4 var(--body);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}

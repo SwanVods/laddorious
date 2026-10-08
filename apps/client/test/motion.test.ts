@@ -34,6 +34,12 @@ describe('rest poses', () => {
     expect(new Set(poses.map((p) => p.position[0])).size).toBe(4);
   });
 
+  it('faces each piece along its row, so the camera sees its profile', () => {
+    expect(restPose(at({ p0: 5 }), 'p0', 0).rotation[1]).toBeCloseTo(Math.PI / 2);
+    expect(restPose(at({ p0: 15 }), 'p0', 0).rotation[1]).toBeCloseTo(-Math.PI / 2);
+    expect(restPose(at(), 'p0', 0).rotation[1]).toBeCloseTo(Math.PI / 2);
+  });
+
   it('stands a later arrival on top of the stack', () => {
     const state = { ...at({ p0: 5, p1: 5 }), arrivals: ['p1', 'p0', 'p2', 'p3'] };
     expect(restPose(state, 'p0', 0).position[1] - restPose(state, 'p1', 1).position[1]).toBeCloseTo(STACK_HEIGHT);
