@@ -1,8 +1,8 @@
-# Handoff — 3D client, after Phase 5
+# Handoff — 3D client (Spec #2) complete
 
-**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4, and on 2026-10-08 during and at the end of Phase 5.
+**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4, and on 2026-10-08 at the end of Phases 5 and 6 (Spec #2 complete).
 **For:** the next Claude Code session on this repo. Read this file, then the spec and the phase index, before doing anything.
-**Keep it current:** when Phase 6 starts and ends, update the "Where things stand" and "Next step" sections.
+**Keep it current:** when the next spec starts and ends, update the "Where things stand" and "Next step" sections.
 
 ---
 
@@ -18,34 +18,20 @@
 | **Phase 2** (client scaffold, local host, match service): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
 | **Phase 3** (director and presentation state): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
 | **Phase 4** (the 3D scene): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`; commits `3d9c934`, `91f41fe`, `2d00e81`, `69b79e2`, `7a7db45`, `625cd48`, `c607d59`, `809436b`, `5151604`; review fix `5ac6f4c` |
-| **Phase 5** (HUD and screens): **done on `client/phase-5`**, merged locally at the end of the phase. Built prototype-first, then a task-by-task replay verified it before the plan was generated | `docs/superpowers/plans/2026-10-08-client-phase-5-hud-screens.md`; commits `39c8487`, `09bb185`, `5983e50`, `6cb8fb7`, `1c0b7ca`, `6130160`, `635ed3e`, `6562f11`, `43806cc`, `98862b0`, `e71f77b`, `57283f2`, `1dc5e72`; browser fix `93beb3b` |
+| **Phase 5** (HUD and screens): **done, merged to `main`**. Built prototype-first, then a task-by-task replay verified it before the plan was generated | `docs/superpowers/plans/2026-10-08-client-phase-5-hud-screens.md`; commits `39c8487`, `09bb185`, `5983e50`, `6cb8fb7`, `1c0b7ca`, `6130160`, `635ed3e`, `6562f11`, `43806cc`, `98862b0`, `e71f77b`, `57283f2`, `1dc5e72`; browser fix `93beb3b` |
+| **Phase 6** (e2e tests, CI, READMEs): **done, merged to `main`** | `docs/superpowers/plans/2026-10-08-client-phase-6-e2e-ci-docs.md`; commits `23f829b`, `fbbb65d`, `dfcff79`, `ac85eac`, `70d1b38`; review fix `795cb06` |
 
-After Phase 5 the full suite is 54 test files, 406 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote.
+After Phase 6 the full suite is 55 test files, 412 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 4 minutes). `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-## Next step: Phase 6
+## Next step: the user picks
 
-**Phase 6: end-to-end tests, CI and docs.** Spec sections: §9.3–§9.5 (end-to-end tests, the manual phone check, CI) and §10 (documentation).
+Spec #2 is complete. Ask the user which of these comes next:
 
-**It ends with:**
+- **Spec #3, the multiplayer server:** matchmaking queue, rooms, and the engine on the server, behind the same `MatchService` the local worker implements. It was suggested as next, and it is tested first on the user's own Wi-Fi (memory `multiplayer-lan-testing`).
+- **Spec #4, the Blender art pass:** `.glb` models for the asset slots (spec #2 §6.3; `apps/client/README.md` has the contract). Use the Blender MCP (memory `blender-for-3d-objects`).
+- **Fixes for the deferred minors** under Open items.
 
-- Playwright passing on desktop Chromium and on emulated landscape iPhone 12 and Pixel 7.
-- CI running the build, unit, component and e2e jobs.
-- README files for the root, the client, `packages/core` and `packages/bots`.
-
-**Status:** the plan is written (`docs/superpowers/plans/2026-10-08-client-phase-6-e2e-ci-docs.md`) and being executed on `client/phase-6`.
-
-How to run it: per the user's standing order (memory `continue-through-phase-6`), branch `client/phase-6` from `main`, write the plan with `superpowers:writing-plans`, execute it inline (TDD, commit per task), self-review and merge locally.
-
-What Phase 5 left for Phase 6:
-
-- **The game end to end:** `src/app/App.tsx` routes menu → matchmaking (over the menu scene) → match → end, with the error screen. The e2e flow in §9.3 (menu → PLAY → Play with bots → a full match → end → Play again) runs through these screens.
-- **The test hook:** `window.__laddoriousTest` doesn't exist yet. It should be compiled only into test builds, and should speed up animations (`BEAT_MS` in `src/director/beats.ts`), auto-pick for the human seat and shorten windows (`windows` in the engine config, used by `LocalHost`).
-- **Selectors:** e2e tests can find screens and controls by their accessible names: PLAY, Play with bots, ROLL, Leave match, Back to menu, Play again, Main menu, the "Choose One" and "FACE-OFF!" dialogs, and the "Turn your phone sideways" alert.
-- **Draw calls:** the check can read `renderStats` in `src/scene/stats.ts` (dev overlay) or `renderer.info.render.calls`.
-- **READMEs** (§10):
-  - the client README covers the Cloudflare Pages deploy step by step, with Netlify and Vercel notes; phone testing over Wi-Fi with the manual checklist; asset slots and `.glb` drop-in; the dev overlay; and the dev seed field;
-  - `packages/core` and `packages/bots` READMEs cover their exports and rules.
-- **CI:** `.github/workflows/ci.yml` already runs typecheck, lint and test. Phase 6 adds the client build and the Playwright run.
+Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did. The standing order to run phases back to back (memory `continue-through-phase-6`) is fulfilled and doesn't carry over.
 
 ## How this user works (follow these)
 
@@ -61,13 +47,13 @@ What Phase 5 left for Phase 6:
   - The player list is a slim TFT-style column on the right.
   - Face-off and card pick are centred popups over a dimmed board, only for involved players; everyone else sees a waiting pill.
 - **Platform** (memory `client-platform`): web first and phone-ready (touch first, landscape, phone performance budget). iOS and Android come later through Capacitor. No keyboard-only actions, no desktop-only layouts.
-- **Docs matter to the user:** they asked for README files that explain how to maintain and deploy the app. Phase 6 delivers READMEs for the root, `apps/client` (local dev, build, Cloudflare Pages deploy step by step with Netlify and Vercel notes, phone testing, asset slots), `packages/core` and `packages/bots`. Keep the root README's package table current as packages appear.
+- **Docs matter to the user:** they asked for README files that explain how to maintain and deploy the app. The root, `apps/client`, `packages/core` and `packages/bots` have them. Keep them current, and keep the root README's package table current as packages appear (`apps/server` in Spec #3).
 
 ## Repository facts
 
 - **Layout:** `apps/` holds deployables (`sim`, `client`, and `server` in Spec #3); `packages/` holds libraries (`core`, `bots`).
 - **Toolchain:** TypeScript strict, pnpm 11.5 workspaces, Node ≥ 24, Vitest, fast-check, ESLint flat config, tsx.
-- **Commands:** `pnpm install`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm dev` (client on http://localhost:5173), `pnpm build` (into `apps/client/dist`), `pnpm sim board --seed <s>`, `pnpm sim run …`, `pnpm sim replay <log>`.
+- **Commands:** `pnpm install`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm dev` (client on http://localhost:5173), `pnpm build` (into `apps/client/dist`), `pnpm e2e` (Playwright; first run `pnpm --filter @laddorious/client exec playwright install chromium`), `pnpm sim board --seed <s>`, `pnpm sim run …`, `pnpm sim replay <log>`.
 - **pnpm settings:** `pnpm-workspace.yaml` sets `allowBuilds: esbuild: true` (Vite needs it) and a `minimumReleaseAgeExclude` list. A very new dependency release can be refused until it ages; add an exclusion only when one is needed.
 - **Engine API** (`@laddorious/core`):
   - `createMatch`, `step(state, input) → { state, events }`, `awaiting`, `viewFor`, `eventsFor` and `hashState`.
@@ -79,6 +65,8 @@ What Phase 5 left for Phase 6:
 - **Director:** `src/director/` is plain TypeScript (presentation state, beat timelines, the `Director` on a `zustand/vanilla` store). Its whole-match test plays a real match through the director and fails on any presentation drift, so run it after changing beat or presentation rules.
 - **Screens:** `src/app/App.tsx` routes the screens; `src/hud/model.ts`, `labels.ts`, `record.ts` and `feed.ts` are the pure HUD model; `test/tokens.test.ts` fails on any colour outside `src/app/theme.ts` and `theme.css`; `test/support/scripted.ts` drives matchmaking and sessions in component tests.
 - **Scene:** `src/scene/` holds the 3D scene. Rules are pure and unit-tested (`layout.ts`, `quality.ts`, `motion.ts`, `camera.ts`); the components read the director's store once per frame. `test/scene.test.tsx` renders the scene graph with `@react-three/test-renderer` and fails above 100 draw calls or 150k triangles, so run it after adding anything to the scene.
+- **e2e:** `apps/client/e2e/game.spec.ts` and `apps/client/playwright.config.ts`. `pnpm e2e` builds with `vite build --mode e2e` into `apps/client/dist-e2e` and serves it on port 4180. Only that build has `window.__laddoriousTest` (`src/app/testMode.ts`): the worker plays every seat with short windows (`FAST` in `src/worker/localHost.ts`), and director beats run at 5% (`timeScale`).
+- **CI:** `.github/workflows/ci.yml` has a `check` job (typecheck, lint, test, build) and an `e2e` job (Playwright Chromium, traces uploaded on failure).
 - **Environment:** Windows 11. Both PowerShell and Git Bash are available. The repo is at `E:\AI Project\laddorious`.
 - **Superpowers ledger:** executing-plans keeps its ledger at `.superpowers/sdd/<plan-basename>/progress.md` (scratch, not committed). Delete it when a phase finishes.
 
@@ -99,6 +87,17 @@ What Phase 5 left for Phase 6:
   - `webglAvailable()` (`src/scene/MatchScene.tsx`) never releases its probe context.
   - Textures and geometries built with `useMemo` in the scene (chevrons, swirl, die atlas, sky, piece and die geometries) are not disposed on unmount; only the board overlay and slide ribbons are.
   - Only six of the nine §6.3 slots are wired: `die`, `pad` and `slide.vortex` wait for Spec #4.
-- **Spec #3** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started; suggested after Phase 5, tested first on the user's own network (memory `multiplayer-lan-testing`).
+- **Deferred Phase 5 minors** (from the self-review; not fixed):
+  - Dev builds only (React StrictMode): MatchScreen's subscription effect disposes the director in its cleanup, so updates held before the screen mounted go to the first, discarded subscription. Today only the opening update can be held, and it has no beats, so nothing is lost.
+  - On a 390 px tall screen the menu's piece picker covers part of the podium's name plate.
+  - iPadOS detection uses the deprecated `navigator.platform` (MacIntel with touch points).
+  - The board overlay paints tile numbers before the web fonts load (system font), carried from Phase 4.
+  - The rotate screen covers the match but doesn't pause it.
+  - The settings' "Right now" level doesn't reflect Auto's live step-down during a match.
+- **Deferred Phase 6 minors** (from the self-review; not fixed):
+  - e2e builds only: in fast mode ROLL and the popups stay live while a bot plays my seat, so a manual tap can race it and show a rejection toast.
+  - e2e builds only: banners (1.7 s) and CSS animations aren't time-scaled; only director beats are.
+  - The CI workflow has never run (no git remote). The deploy notes in `apps/client/README.md` were checked against the hosts' docs, not a real deploy.
+- **Spec #3** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started; suggested next, tested first on the user's own network (memory `multiplayer-lan-testing`).
 - **Spec #4** (Blender art pass: `.glb` files for the asset slots in spec §6.3). Not started.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), sound and particles.
