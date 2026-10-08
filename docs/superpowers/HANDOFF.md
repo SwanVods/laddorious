@@ -18,7 +18,7 @@
 | **Phase 2** (client scaffold, local host, match service): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-2-local-match.md`; commits `92afaa2`, `ec93aaa`, `05e8392`, `4535390`, `750a3ca`, `6e43716`, `611440a`, `19a9b80` |
 | **Phase 3** (director and presentation state): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-3-director.md`; commits `e11674d`, `f159d0e`, `437ca0f`, `ef9ddf5`, `d1cf3e3` |
 | **Phase 4** (the 3D scene): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`; commits `3d9c934`, `91f41fe`, `2d00e81`, `69b79e2`, `7a7db45`, `625cd48`, `c607d59`, `809436b`, `5151604`; review fix `5ac6f4c` |
-| **Phase 5** (HUD and screens): **in progress as a prototype** in a scratch copy of the repo (not committed); branch `client/phase-5` has no commits yet and no plan | see "Next step" below |
+| **Phase 5** (HUD and screens): prototype verified by a task-by-task replay; **plan written**, being executed on `client/phase-5` | `docs/superpowers/plans/2026-10-08-client-phase-5-hud-screens.md` |
 
 After Phase 4 the full suite is 42 test files, 294 tests, all passing. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote.
 
@@ -58,7 +58,7 @@ After Phase 4 the full suite is 42 test files, 294 tests, all passing. `pnpm typ
 | 11 | Menu scene and screen: podium, floating tiles, turntable, profile chip with rename, logo, gear, piece picker, PLAY with "4-player match", rule tips (hidden under 450 px tall), dev seed field via `findMatch(profile, opts?: { seed })` | done |
 | 12 | Matchmaking overlay ("Play with bots" after 15 s, MATCH FOUND, 3-2-1), end-screen podium, error screen, settings dialog | done |
 | 13 | App shell: routing state machine, error boundary, pause on hidden page, fullscreen on first tap (not iOS); remove `DevMatchPage` and the dev files | done (the app now runs at `/`) |
-| 14 | Phase gate and handoff | to do |
+| 14 | Phase gate and handoff | in the plan |
 
 **Rulings to carry into the plan:** `findMatch(profile, opts?: { seed })` adds an optional dev seed to the §4.3 signature. It serves §4.4's hidden seed field, and Spec #3's online service ignores it.
 
