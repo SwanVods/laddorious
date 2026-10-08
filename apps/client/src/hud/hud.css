@@ -1,0 +1,604 @@
+/* The match HUD panels (spec #2 §7.2): stage bar, event feed, player column, your-piece panel.
+   Sizes follow the viewport height (cqh of .app) with pixel minimums; colours come from
+   theme.css tokens only. */
+
+/* ---------------------------------------------------------------- stage bar, top centre */
+.stage-bar {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-t) + var(--edge));
+  display: flex;
+  align-items: center;
+  gap: max(8px, 1.4cqh);
+  padding: max(4px, 0.7cqh) max(12px, 2cqh) max(4px, 0.7cqh) max(14px, 2.2cqh);
+  border-radius: 999px;
+  background: var(--plate);
+  color: var(--white);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.stage-round {
+  font-size: max(16px, 2.8cqh);
+  line-height: 1;
+}
+
+.stage-round b {
+  font-weight: 400;
+  color: var(--gold);
+}
+
+.stage-sep {
+  flex: none;
+  width: 2px;
+  height: max(16px, 2.8cqh);
+  border-radius: 2px;
+  background: var(--faint-on-plate);
+}
+
+.stage-steps {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage-steps li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: max(24px, 3.9cqh);
+  min-width: max(24px, 3.9cqh);
+  padding: 0 6px;
+  border-radius: 999px;
+  color: var(--muted-on-plate);
+  font-size: max(14px, 2.2cqh);
+  opacity: 0.6;
+}
+
+.stage-steps li span {
+  display: none;
+  font-size: max(13px, 2cqh);
+  line-height: 1;
+}
+
+.stage-steps li.done {
+  color: var(--done);
+  opacity: 1;
+}
+
+.stage-steps li.now {
+  padding: 0 11px 0 9px;
+  background: var(--highlight);
+  color: var(--ink);
+  opacity: 1;
+}
+
+.stage-steps li.now span {
+  display: inline;
+}
+
+.stage-timer {
+  display: flex;
+  align-items: center;
+  gap: max(7px, 1.2cqh);
+}
+
+.stage-tbar {
+  width: max(80px, 15cqh);
+  height: max(8px, 1.4cqh);
+  padding: 2px;
+  border-radius: 99px;
+  background: var(--faint-on-plate);
+}
+
+.stage-tbar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--highlight);
+  transition: width 0.25s linear;
+}
+
+.stage-tbar.low i {
+  background: var(--accent);
+}
+
+.stage-timer span {
+  min-width: 2.2em;
+  font-size: max(14px, 2.3cqh);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- event feed, top left */
+.feed {
+  position: absolute;
+  left: calc(var(--safe-l) + var(--edge));
+  top: calc(var(--safe-t) + var(--edge));
+  display: flex;
+  flex-direction: column;
+  gap: max(4px, 0.7cqh);
+  width: max(220px, 42cqh);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed-line {
+  padding: max(4px, 0.7cqh) max(9px, 1.4cqh);
+  border-radius: max(9px, 1.5cqh);
+  background: var(--plate);
+  color: var(--white);
+  font: 500 max(12px, 1.9cqh) / 1.3 var(--body);
+  animation: feed-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.feed-line.private {
+  background: var(--plate-soft);
+  outline: 1.5px dashed var(--empty-seat-edge);
+  outline-offset: -3px;
+}
+
+.feed-line:nth-child(n + 4) {
+  opacity: 0.72;
+}
+
+/* Phones (short screens) keep 3 lines (§7.2). */
+@container (max-height: 500px) {
+  .feed-line:nth-child(n + 4) {
+    display: none;
+  }
+}
+
+/* A player's name in feed-style text, tinted with their seat colour (set as --seat). */
+.who {
+  font-weight: 700;
+  color: color-mix(in srgb, var(--seat, var(--white)) 55%, var(--white));
+}
+
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+/* ---------------------------------------------------------------- chips */
+.chip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: max(18px, 2.8cqh);
+  height: max(18px, 2.8cqh);
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: max(11px, 1.7cqh);
+}
+
+.chip > b {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  padding: 1px 2px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--white);
+  font: 400 max(8.5px, 1.3cqh) / 1 var(--display);
+}
+
+.chip.lg {
+  width: max(24px, 3.8cqh);
+  height: max(24px, 3.8cqh);
+  border-width: 2px;
+  border-radius: 8px;
+  font-size: max(14px, 2.2cqh);
+}
+
+.chip-q {
+  background: var(--mystery);
+  color: var(--rarity-common);
+  font-size: max(13px, 2.1cqh);
+  line-height: 1;
+  text-shadow: 0 1.5px 0 var(--ink);
+}
+
+.chip-q.rare {
+  color: var(--rarity-rare);
+}
+
+.chip-q.epic {
+  color: var(--rarity-epic);
+}
+
+.chip-card {
+  color: var(--card-type, var(--ink));
+}
+
+.chip-card.movement {
+  --card-type: var(--type-movement);
+}
+
+.chip-card.defense {
+  --card-type: var(--type-defense);
+}
+
+.chip-card.attack {
+  --card-type: var(--type-attack);
+}
+
+.chip-card.risky {
+  --card-type: var(--type-risky);
+}
+
+.chip-card.misc {
+  --card-type: var(--type-misc);
+}
+
+.chip-card.rare {
+  box-shadow: 0 0 0 2px var(--rarity-rare);
+}
+
+.chip-card.epic {
+  box-shadow: 0 0 0 2px var(--rarity-epic);
+}
+
+.chip-card.facedown {
+  background: repeating-linear-gradient(45deg, var(--mystery) 0 4px, var(--plate-soft) 4px 8px);
+  color: var(--white);
+}
+
+.chip-card > i {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+}
+
+.chip-card > i.hit {
+  background: var(--result-hit);
+}
+
+.chip-card > i.blocked {
+  background: var(--result-blocked);
+}
+
+.chip-card > i.fizzled {
+  background: var(--result-fizzled);
+}
+
+/* ---------------------------------------------------------------- player column, right edge */
+.players {
+  position: absolute;
+  right: calc(var(--safe-r) + var(--edge));
+  top: calc(var(--safe-t) + max(56px, 9.5cqh));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: max(6px, 1.3cqh);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.players > li {
+  position: relative;
+}
+
+.prow {
+  display: flex;
+  align-items: center;
+  gap: max(5px, 1cqh);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+
+.prow-status {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: max(22px, 3.4cqh);
+  height: max(22px, 3.4cqh);
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  background: var(--plate);
+  color: var(--white);
+  font-size: max(11px, 1.7cqh);
+}
+
+.prow-status.turn {
+  background: var(--accent);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+.prow-status.done {
+  background: var(--done);
+  color: var(--ink);
+}
+
+.prow-status.locked {
+  background: var(--mystery);
+}
+
+.prow-status.idle {
+  background: var(--plate-soft);
+}
+
+.prow-status .spinner {
+  width: 0.95em;
+  height: 0.95em;
+  border-width: 2px;
+}
+
+.prow-plate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: max(3px, 0.5cqh);
+}
+
+.prow-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 3px 3px max(8px, 1.4cqh);
+  border-radius: max(8px, 1.3cqh);
+  background: var(--plate);
+  color: var(--white);
+  font-size: max(13px, 2cqh);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.prow-tile {
+  min-width: 2.1em;
+  padding: 3px 5px 2px;
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--ink);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.prow-mini {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: max(18px, 2.8cqh);
+  font-size: max(13px, 2cqh);
+}
+
+.prow-mini .die-face {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.prow-total {
+  color: var(--white);
+  text-shadow: var(--o-sm);
+}
+
+.prow.first .portrait-badge {
+  background: var(--gold);
+}
+
+/* My row is larger and outlined in mint (§7.2); a watched piece's row gets a tangerine ring. */
+.prow.me .prow-name {
+  font-size: max(15px, 2.4cqh);
+}
+
+.prow.me .prow-tile {
+  background: var(--highlight);
+}
+
+.prow.me .portrait {
+  width: max(50px, 10.5cqh);
+  height: max(50px, 10.5cqh);
+  box-shadow: 0 0 0 3px var(--highlight);
+}
+
+.prow.watched .portrait {
+  box-shadow: 0 0 0 3.5px var(--primary);
+}
+
+/* The details card: left of its row, for a long press or a mouse hover. */
+.pdetail {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  z-index: 20;
+  width: max(220px, 36cqh);
+  padding: 10px 12px;
+  font: 500 max(12px, 1.8cqh) / 1.3 var(--body);
+  text-align: left;
+  transform: translateY(-50%);
+  animation: rise 0.2s ease-out;
+}
+
+.pdetail-name {
+  display: block;
+  font-size: 1.35em;
+  line-height: 1;
+}
+
+.pdetail-sub {
+  display: block;
+  margin: 3px 0 8px;
+  color: var(--muted-on-paper);
+  font-size: 0.92em;
+  font-weight: 600;
+}
+
+.pdetail-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.pdetail-key {
+  min-width: 44px;
+  color: var(--muted-on-paper);
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.pdetail-fx {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+  margin-top: 5px;
+}
+
+.pdetail-none {
+  color: var(--muted-on-paper);
+}
+
+/* ---------------------------------------------------------------- your piece, bottom left */
+.your-piece {
+  position: absolute;
+  left: calc(var(--safe-l) + var(--edge));
+  bottom: calc(var(--safe-b) + var(--edge));
+  width: max(230px, 39cqh);
+  overflow: hidden;
+}
+
+.yp-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: max(6px, 1.1cqh) 12px;
+  border: 0;
+  background: var(--accent);
+  color: var(--white);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.your-piece.open .yp-head {
+  border-bottom: 3px solid var(--ink);
+}
+
+.yp-head .portrait {
+  width: max(36px, 6cqh);
+  height: max(36px, 6cqh);
+  border-width: 2.5px;
+}
+
+.yp-name {
+  display: block;
+  font: 400 max(15px, 2.4cqh) / 1 var(--display);
+  text-shadow: 0 2px 0 var(--ink);
+}
+
+.yp-sub {
+  display: block;
+  font-size: max(11px, 1.7cqh);
+  font-weight: 600;
+}
+
+.yp-tile {
+  margin-left: auto;
+  font-size: max(24px, 4.2cqh);
+  line-height: 1;
+  text-shadow: var(--o-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-tile b {
+  font-weight: 400;
+}
+
+.yp-tile small {
+  font-size: 0.45em;
+}
+
+.yp-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 12px 6px;
+  color: var(--muted-on-paper);
+  font: 700 max(11px, 1.7cqh) / 1.2 var(--body);
+  letter-spacing: 0.3px;
+}
+
+.yp-next b {
+  padding: 5px 7px 4px;
+  border-radius: 7px;
+  background: var(--paper-alt);
+  color: var(--ink);
+  font: 400 max(12px, 1.85cqh) / 1 var(--display);
+  letter-spacing: 0;
+}
+
+.yp-next i {
+  font-style: normal;
+  font-weight: 500;
+}
+
+.yp-fx {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 2px 12px 11px;
+  list-style: none;
+}
+
+.yp-fx li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  font: 500 max(11px, 1.75cqh) / 1.25 var(--body);
+}
+
+.yp-fx strong {
+  display: block;
+  margin-bottom: 2px;
+  font: 400 max(13px, 2cqh) / 1 var(--display);
+}
+
+.yp-fx em {
+  color: var(--muted-on-paper);
+  font-size: 0.88em;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.yp-empty {
+  margin: 0;
+  padding: 2px 12px 11px;
+  color: var(--muted-on-paper);
+  font: 500 max(11px, 1.75cqh) / 1.25 var(--body);
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.12);
+  }
+}
