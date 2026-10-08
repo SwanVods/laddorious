@@ -53,7 +53,7 @@ After Phase 4 the full suite is 42 test files, 294 tests, all passing. `pnpm typ
 | 6 | `hud/model.ts`: stage bar, countdown, player rows, dock, resolution queue, face-off and card-pick popups (pure) | done |
 | 7 | `ui/` primitives: Icon, PieceIcon/Portrait, DieFace, Dialog, toasts, useMediaQuery, RotateScreen | done |
 | 8 | HUD panels: StageBar, EventFeed, PlayerColumn, YourPiece, `hud.css`, component tests (notes in the prototype's `PROTOTYPE.md`) | done |
-| 9 | Dock (ROLL with Space, waiting pill, move caption, card queue), face-off popup (keys 1–3), card-pick popup (rerolls, "Peek at the board", keys 1–3), banners | to do |
+| 9 | Dock (ROLL with Space, waiting pill, move caption, card queue), face-off popup (keys 1–3), card-pick popup (rerolls, "Peek at the board", keys 1–3), banners | done |
 | 10 | In-world name tags; MatchScreen with watch mode and "Back to my piece", leave dialog, rejection toasts, dev stats | to do |
 | 11 | Menu scene and screen: podium, floating tiles, turntable, profile chip with rename, logo, gear, piece picker, PLAY with "4-player match", rule tips (hidden under 450 px tall), dev seed field via `findMatch(profile, opts?: { seed })` | to do |
 | 12 | Matchmaking overlay ("Play with bots" after 15 s, MATCH FOUND, 3-2-1), end-screen podium, error screen, settings dialog | to do |
