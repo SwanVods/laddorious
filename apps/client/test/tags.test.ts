@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { DirectorState } from '../src/director/director';
 import { presentationFromView, type FaceOff } from '../src/director/presentation';
 import { STACK_HEIGHT, restPose } from '../src/scene/motion';
-import { TAG_HEIGHT, tagAnchor } from '../src/scene/tags';
+import { TAG_HEIGHT, keepInside, tagAnchor } from '../src/scene/tags';
 import { openingUpdate } from './support/fixtures';
 
 function state(positions: Record<PlayerId, number>, arrivals: PlayerId[] = ['p0', 'p1', 'p2', 'p3'], faceOffs: FaceOff[] = []): DirectorState {
@@ -49,5 +49,24 @@ describe('name tags (spec #2 §7.2)', () => {
 
   it('has nothing to show before the first update', () => {
     expect(tagAnchor({ presentation: null, beat: null, settled: null, log: [] }, 'p0', 0, 0, 100)).toBeNull();
+  });
+});
+
+describe('keeping a card bubble on screen (polish spec 4.4)', () => {
+  const area = { width: 800, height: 450 };
+  const margin = { side: 8, top: 60 };
+
+  it('leaves a bubble that fits alone', () => {
+    expect(keepInside({ left: 300, top: 200, right: 500, bottom: 260 }, area, margin)).toEqual({ dx: 0, dy: 0 });
+  });
+
+  it('pushes a bubble back in from the left and right edges', () => {
+    expect(keepInside({ left: -50, top: 200, right: 150, bottom: 260 }, area, margin)).toEqual({ dx: 58, dy: 0 });
+    expect(keepInside({ left: 700, top: 200, right: 900, bottom: 260 }, area, margin)).toEqual({ dx: -108, dy: 0 });
+  });
+
+  it('keeps it below the stage bar and above the bottom edge', () => {
+    expect(keepInside({ left: 300, top: -40, right: 500, bottom: 20 }, area, margin)).toEqual({ dx: 0, dy: 100 });
+    expect(keepInside({ left: 300, top: 420, right: 500, bottom: 480 }, area, margin)).toEqual({ dx: 0, dy: -38 });
   });
 });

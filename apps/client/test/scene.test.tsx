@@ -61,7 +61,7 @@ describe('the 3D scene (spec #2 §6)', () => {
     const board = director.store.getState().settled!.view.board;
     const tags = createTagRegistry();
     const fakes = SEATS.map((seat) => {
-      const el = { style: {} as Record<string, string> };
+      const el = { style: {} as Record<string, string>, querySelector: () => null };
       tags.elements.set(seat.playerId, el as unknown as HTMLElement);
       return el;
     });
