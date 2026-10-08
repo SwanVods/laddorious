@@ -32,6 +32,8 @@ After Phase 5 the full suite is 54 test files, 406 tests, all passing. `pnpm typ
 - CI running the build, unit, component and e2e jobs.
 - README files for the root, the client, `packages/core` and `packages/bots`.
 
+**Status:** the plan is written (`docs/superpowers/plans/2026-10-08-client-phase-6-e2e-ci-docs.md`) and being executed on `client/phase-6`.
+
 How to run it: per the user's standing order (memory `continue-through-phase-6`), branch `client/phase-6` from `main`, write the plan with `superpowers:writing-plans`, execute it inline (TDD, commit per task), self-review and merge locally.
 
 What Phase 5 left for Phase 6:
