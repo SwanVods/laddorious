@@ -602,3 +602,71 @@
     transform: scale(1.12);
   }
 }
+
+/* ---------------------------------------------------------------- your roll, in the centre (polish spec §4.2) */
+.center-die {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  z-index: 15;
+  display: grid;
+  justify-items: center;
+  gap: max(6px, 1.2cqh);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity 0.25s ease-out;
+}
+
+.center-die.leaving {
+  opacity: 0;
+}
+
+.center-die .die-face {
+  width: min(33cqh, 160px);
+  height: min(33cqh, 160px);
+  filter: drop-shadow(0 6px 0 var(--ink));
+}
+
+.center-die .die-face.tumbling {
+  animation: die-tumble 0.32s linear infinite;
+}
+
+.center-die .die-face.landed {
+  animation: die-land 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.center-die-badge {
+  padding: 2px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--white);
+  font-size: max(14px, 2.6cqh);
+}
+
+.center-die-move {
+  color: var(--gold);
+  font-size: max(26px, 6cqh);
+  line-height: 1;
+  text-shadow: var(--o-lg);
+  white-space: nowrap;
+  animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+@keyframes die-tumble {
+  0% {
+    transform: rotate(0deg) scale(0.92);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.06) translateY(-6%);
+  }
+  100% {
+    transform: rotate(360deg) scale(0.92);
+  }
+}
+
+@keyframes die-land {
+  from {
+    transform: scale(1.25);
+  }
+}

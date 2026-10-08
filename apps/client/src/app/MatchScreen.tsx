@@ -4,6 +4,7 @@ import { useStore } from 'zustand';
 import { Director } from '../director/director';
 import { BannerView, useBanner } from '../hud/Banner';
 import { CardPickPopup } from '../hud/CardPickPopup';
+import { CenterDie } from '../hud/CenterDie';
 import { DevStats } from '../hud/DevStats';
 import { Dock } from '../hud/Dock';
 import { EventFeed } from '../hud/EventFeed';
@@ -145,6 +146,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
           <Icon name="menu" />
         </button>
         {showStats && <DevStats />}
+        <CenterDie director={director} me={me} reducedMotion={reducedMotion} timeScale={timeScale} />
         <BannerView banner={banner} />
         {faceOff && <FaceOffPopup model={faceOff} seats={seats} me={me} onPick={(choice) => session.send({ type: 'challengePick', challengeId: faceOff.challengeId, choice })} />}
         {cardPick && view && (
