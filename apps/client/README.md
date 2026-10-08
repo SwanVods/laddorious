@@ -23,7 +23,7 @@ pnpm --filter @laddorious/client preview   # serve apps/client/dist on http://lo
 Dev builds (`pnpm dev`) add two things:
 
 - **The stats overlay** in a match: frames per second, draw calls and triangles.
-- **The board seed field** under the settings gear. A seed reproduces a board; the dice stay random.
+- **The board seed field** on the main menu, under the settings gear. A seed reproduces a board; the dice stay random.
 
 ## Where things are (`src/`)
 
@@ -50,10 +50,10 @@ The build is static files in `apps/client/dist` (HTML, JS, the worker script and
 2. In the Cloudflare dashboard, open **Workers & Pages → Create → Pages → Connect to Git**, and pick the repository.
 3. Set up the build:
    - **Framework preset:** None
-   - **Build command:** `pnpm install --frozen-lockfile && pnpm build`
+   - **Build command:** `pnpm build`
    - **Build output directory:** `apps/client/dist`
    - **Root directory:** leave empty (the repository root)
-   - **Environment variable:** `NODE_VERSION` = `24`. The build image reads the pnpm version from `packageManager` in the root `package.json`.
+   - **Environment variables:** `NODE_VERSION` = `24` and `PNPM_VERSION` = `11.5.0`. The build image installs the dependencies itself before the build command, but it doesn't read `packageManager` from `package.json`, so it needs the pnpm version spelled out.
 4. **Save and Deploy.** Every push to the production branch deploys, and other branches get preview URLs.
 
 To upload a local build instead, without Git:
@@ -65,15 +65,17 @@ npx wrangler pages deploy apps/client/dist --project-name laddorious
 
 ### Netlify
 
-New site from Git. Base directory: empty. Build command: `pnpm build`. Publish directory: `apps/client/dist`. Environment variable: `NODE_VERSION` = `24`. With the CLI: `netlify deploy --dir apps/client/dist --prod`.
+New site from Git. Base directory: empty. Build command: `pnpm build`. Publish directory: `apps/client/dist`. Environment variable: `NODE_VERSION` = `24`. Netlify uses Corepack, so it picks up pnpm 11.5.0 from `packageManager`. With the CLI: `netlify deploy --dir apps/client/dist --prod`.
 
 ### Vercel
 
 Import the repository with the framework preset **Other**, and leave the root directory empty:
 
-- **Install command:** `pnpm install --frozen-lockfile`
 - **Build command:** `pnpm build`
 - **Output directory:** `apps/client/dist`
+- **Install command:** leave the default
+- **Node.js version** (project settings): 24.x
+- **Environment variable:** `ENABLE_EXPERIMENTAL_COREPACK` = `1`, so Vercel uses the pnpm version pinned in `packageManager`. Without it, Vercel guesses pnpm 9 or 10 from the lockfile. Don't override the install command with `pnpm install` either: Vercel then uses the oldest pnpm it has.
 
 ## Testing on a real phone
 

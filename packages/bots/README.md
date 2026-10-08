@@ -8,7 +8,7 @@ Bots that play Laddorious from a player's view. The simulator (`apps/sim`) and t
 |---|---|
 | `interface Bot` | `decide(view: PlayerView): Input \| 'idle'`: the input this seat sends now, or `'idle'` to wait |
 | `RandomBot` | Uniformly random legal actions. With `afkPercent`, it sits out whole windows that often, to test timeouts |
-| `HeuristicBot` | Rolls at once, plays face-offs with a seeded mix, rerolls weak Mystery cards and picks the best-scoring card |
+| `HeuristicBot` | Rolls at once, makes a seeded random face-off pick, rerolls its weakest Mystery card when it scores low, and picks the best-scoring card |
 | `scoreCard(card, view)` | The heuristic's card score for the current board |
 | `makeBots(seats, policy, seed, afkPercent)` | One bot per seat (`'random'` or `'heuristic'`), each with its own seeded stream, so a batch of matches is reproducible |
 | `type PolicyName` | `'random' \| 'heuristic'` |
@@ -21,4 +21,4 @@ Bots that play Laddorious from a player's view. The simulator (`apps/sim`) and t
 
 ## Tests
 
-`pnpm test` from the root covers the bots' choices and full bot-only matches.
+`pnpm test` from the root covers the bots' choices, AFK idling and reproducible seating. The simulator's tests (`apps/sim/test`) play whole bot-only matches.

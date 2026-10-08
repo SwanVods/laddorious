@@ -34,7 +34,7 @@ corepack enable
 pnpm install
 ```
 
-pnpm refuses dependency releases younger than a day (a supply-chain guard set in `pnpm-workspace.yaml`). If an install says a version is too new, use the previous release or wait a day.
+pnpm 11 refuses dependency releases younger than a day by default, as a supply-chain guard. If an install says a version is too new, use the previous release or wait a day. `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` lists the few exceptions.
 
 ## Scripts
 
@@ -51,7 +51,7 @@ pnpm sim run --matches 1000 --players 4 --policy heuristic --out report.json --l
 pnpm sim replay match0.json                               # check a recorded match replays to the same hash
 ```
 
-`pnpm sim run` also takes `--seed <base>` and `--afk <percent>` (bots that sit out whole windows).
+`pnpm sim run` also takes `--seed <base>` and `--afk <percent>`. With `--afk`, random bots sit out that share of windows to exercise timeouts; heuristic bots ignore it.
 
 ## How the parts fit together
 
@@ -64,7 +64,7 @@ pnpm sim replay match0.json                               # check a recorded mat
 
 ## Changing the rules safely
 
-1. **Engine tests** (`packages/core/test`) cover each rule, with property tests (fast-check) for invariants such as no lost players and no mutated inputs.
+1. **Engine tests** (`packages/core/test`) cover each rule. Property tests (fast-check) play random matches and check three things: the invariants hold after every step, a match replays exactly, and no player's private events or hand reach another player.
 2. **Golden matches** (`packages/core/test/golden.test.ts`) snapshot whole seeded matches: rounds, winner, event counts and a state hash. Any change to rules, RNG use or event shapes shows up as a snapshot diff. Update the snapshots only for intended changes, and read the diff first:
 
    ```bash
