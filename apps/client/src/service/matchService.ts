@@ -27,8 +27,13 @@ export type MatchmakingState =
   | { kind: 'found'; session: MatchSession }
   | { kind: 'cancelled' };
 
+/** Dev builds only: a board seed to reproduce a board (spec #2 §4.4). The online service ignores it. */
+export interface FindOptions {
+  seed?: string;
+}
+
 export interface MatchService {
-  findMatch(profile: Profile): Matchmaking;
+  findMatch(profile: Profile, opts?: FindOptions): Matchmaking;
 }
 
 export interface Matchmaking {

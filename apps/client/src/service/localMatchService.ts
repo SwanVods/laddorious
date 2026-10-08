@@ -1,6 +1,6 @@
 import { SEAT_COLORS } from '../app/theme';
 import type { HostWorker } from '../worker/protocol';
-import { PIECES, type Matchmaking, type MatchmakingState, type MatchService, type Profile, type SeatInfo } from './matchService';
+import { PIECES, type FindOptions, type Matchmaking, type MatchmakingState, type MatchService, type Profile, type SeatInfo } from './matchService';
 import { WorkerMatchSession } from './workerSession';
 
 /** How often `searching` reports the elapsed time, and the pause between bots taking seats (spec #2 §4.4). */
@@ -33,8 +33,8 @@ function randomSeed(): string {
 export class LocalMatchService implements MatchService {
   constructor(private readonly createWorker: () => HostWorker) {}
 
-  findMatch(profile: Profile): Matchmaking {
-    return new LocalMatchmaking(seatsFor(profile), this.createWorker);
+  findMatch(profile: Profile, opts: FindOptions = {}): Matchmaking {
+    return new LocalMatchmaking(seatsFor(profile), this.createWorker, opts.seed ?? null);
   }
 }
 
@@ -48,6 +48,8 @@ class LocalMatchmaking implements Matchmaking {
   constructor(
     private readonly seats: SeatInfo[],
     private readonly createWorker: () => HostWorker,
+    /** A dev seed for the board; the dice (rng) seed is always random and secret. */
+    private readonly boardSeed: string | null,
   ) {
     this.table = [seats[0]!, null, null, null];
     this.state = this.searching();
@@ -84,7 +86,7 @@ class LocalMatchmaking implements Matchmaking {
         this.seatBot(seat + 1);
         return;
       }
-      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: randomSeed(), rngSeed: randomSeed() });
+      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: this.boardSeed ?? randomSeed(), rngSeed: randomSeed() });
       this.emit({ kind: 'found', session });
     }, BOT_SEAT_MS);
   }

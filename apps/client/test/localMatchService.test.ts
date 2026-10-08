@@ -1,19 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BOT_SEAT_MS, LocalMatchService, SEARCH_TICK_MS } from '../src/service/localMatchService';
-import type { MatchmakingState, Profile } from '../src/service/matchService';
+import type { FindOptions, MatchmakingState, Profile } from '../src/service/matchService';
 import { FakeWorker } from './support/fixtures';
 
 const ARI: Profile = { nickname: 'Ari', piece: 'meeple' };
 
 /** A service whose workers are fakes, with every matchmaking state recorded. */
-function startSearch(profile = ARI) {
+function startSearch(profile = ARI, opts?: FindOptions) {
   const workers: FakeWorker[] = [];
   const service = new LocalMatchService(() => {
     const worker = new FakeWorker();
     workers.push(worker);
     return worker;
   });
-  const matchmaking = service.findMatch(profile);
+  const matchmaking = service.findMatch(profile, opts);
   const states: MatchmakingState[] = [];
   matchmaking.onState((s) => states.push(s));
   const last = () => states.at(-1)!;
@@ -89,6 +89,16 @@ describe('LocalMatchService', () => {
     expect(create.seed).toMatch(/^[0-9a-f]{32}$/);
     expect(create.rngSeed).toMatch(/^[0-9a-f]{32}$/);
     expect(create.seed).not.toBe(create.rngSeed);
+  });
+
+  it('builds the board from a dev seed when one is given, keeping the dice seed random (spec #2 §4.4)', () => {
+    const { matchmaking, workers } = startSearch(ARI, { seed: 'daily-2026-10-08' });
+    matchmaking.playWithBots();
+    vi.advanceTimersByTime(3 * BOT_SEAT_MS);
+    const create = workers[0]!.posted[0];
+    if (create?.type !== 'create') throw new Error('expected a create message first');
+    expect(create.seed).toBe('daily-2026-10-08');
+    expect(create.rngSeed).toMatch(/^[0-9a-f]{32}$/);
   });
 
   it('cancels while searching, then ignores play with bots', () => {

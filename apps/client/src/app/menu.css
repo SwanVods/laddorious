@@ -1,0 +1,267 @@
+/* The main menu (spec #2 §7.1, per the menu mockup). Sizes follow the viewport height (cqh of
+   .app) with pixel minimums; colours come from theme.css tokens only. */
+.menu .scene-frame {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  background: none;
+}
+
+/* The plate and arrows follow the podium on screen (MenuScene projects them); off screen until then. */
+.menu-anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-200px, -200px);
+}
+
+.menu-plate {
+  padding: max(4px, 0.8cqh) max(12px, 2.2cqh) max(3px, 0.6cqh);
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  background: var(--highlight);
+  box-shadow: 0 3px 0 var(--ink);
+  color: var(--ink);
+  font-size: max(14px, 3cqh);
+  line-height: 1;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  translate: -50% -50%;
+}
+
+.menu .menu-anchor.round-btn {
+  translate: -50% -50%;
+}
+
+/* Profile chip, top left: portrait, nickname, tap to rename. */
+.profile-chip {
+  position: absolute;
+  left: calc(var(--safe-l) + 3cqh);
+  top: calc(var(--safe-t) + 3cqh);
+  display: flex;
+  align-items: center;
+  gap: max(8px, 1.6cqh);
+  min-height: 44px;
+  padding: max(4px, 1cqh) max(14px, 2.6cqh) max(4px, 1cqh) max(4px, 1cqh);
+  border-radius: 999px;
+  background: var(--plate);
+  color: var(--white);
+}
+
+.profile-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-name > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: max(15px, 3.4cqh);
+  line-height: 1;
+  letter-spacing: 0.3px;
+}
+
+.profile-name .icon {
+  color: var(--muted-on-plate);
+  font-size: max(13px, 2.4cqh);
+}
+
+.profile-name small {
+  margin-top: 3px;
+  color: var(--muted-on-plate);
+  font: 600 max(11px, 1.9cqh) / 1.2 var(--body);
+}
+
+.profile-input {
+  width: max(140px, 26cqh);
+  min-height: 40px;
+  padding: 4px 8px 3px;
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: max(15px, 3.4cqh);
+}
+
+/* Logo, top centre */
+.logo {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-t) + 2.6cqh);
+  margin: 0;
+  color: var(--white);
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.logo b {
+  display: block;
+  font-size: max(24px, 6.6cqh);
+  line-height: 1;
+  letter-spacing: 1px;
+  text-shadow: var(--o-lg);
+}
+
+.logo b span {
+  color: var(--highlight);
+}
+
+.logo small {
+  display: inline-block;
+  margin-top: max(5px, 1.2cqh);
+  padding: max(3px, 0.7cqh) max(9px, 1.6cqh);
+  border-radius: 99px;
+  background: var(--plate);
+  font: 600 max(11px, 2cqh) / 1 var(--body);
+  letter-spacing: 0.6px;
+}
+
+.gear-btn {
+  position: absolute;
+  right: calc(var(--safe-r) + 3cqh);
+  top: calc(var(--safe-t) + 3cqh);
+}
+
+.seed-input {
+  position: absolute;
+  right: calc(var(--safe-r) + 3cqh);
+  top: calc(var(--safe-t) + 3cqh + max(52px, 10cqh));
+  width: max(150px, 26cqh);
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 2px dashed var(--empty-seat-edge);
+  border-radius: 10px;
+  background: var(--plate-soft);
+  color: var(--white);
+  font: 500 13px / 1 ui-monospace, monospace;
+}
+
+/* Piece picker, bottom centre */
+.picker {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-b) + 3cqh);
+  display: flex;
+  gap: max(6px, 1.4cqh);
+  padding: max(5px, 1.1cqh);
+  border-radius: max(14px, 2.8cqh);
+  background: var(--plate);
+  transform: translateX(-50%);
+}
+
+.picker-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: max(2px, 0.4cqh);
+  width: max(56px, 11.5cqh);
+  height: max(60px, 13.5cqh);
+  padding: max(3px, 0.6cqh) 0 0;
+  border: 3px solid var(--ink);
+  border-radius: max(10px, 2cqh);
+  background: var(--paper);
+  box-shadow: 0 max(3px, 0.6cqh) 0 var(--ink);
+  color: var(--ink);
+  font-size: max(10px, 1.9cqh);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.picker-tile[aria-pressed='true'] {
+  background: var(--highlight);
+  transform: translateY(-0.9cqh);
+}
+
+.picker-tile:hover:not([aria-pressed='true']) {
+  background: var(--paper-alt);
+}
+
+.picker-icon {
+  display: grid;
+  place-items: center;
+  width: 64%;
+  aspect-ratio: 1;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.picker-icon .piece-icon {
+  width: 76%;
+  height: 76%;
+}
+
+/* PLAY, bottom right */
+.play-wrap {
+  position: absolute;
+  right: calc(var(--safe-r) + 3cqh);
+  bottom: calc(var(--safe-b) + 3cqh);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: max(5px, 1cqh);
+}
+
+.play-caption {
+  padding: max(4px, 0.8cqh) max(10px, 1.6cqh);
+  font-size: max(11px, 2cqh);
+}
+
+.play-btn {
+  min-width: max(150px, 34cqh);
+  height: max(56px, 14.5cqh);
+  border-width: 4px;
+  border-radius: max(16px, 3.4cqh);
+  box-shadow: 0 max(5px, 1.2cqh) 0 var(--ink);
+  font-size: max(24px, 7cqh);
+  letter-spacing: 1.5px;
+}
+
+.play-btn .icon {
+  font-size: 0.75em;
+}
+
+/* Rule tips, bottom left; hidden on short screens (§7.1). */
+.tip {
+  position: absolute;
+  left: calc(var(--safe-l) + 3cqh);
+  bottom: calc(var(--safe-b) + 3cqh);
+  display: flex;
+  align-items: flex-start;
+  gap: max(7px, 1.2cqh);
+  max-width: 25cqw;
+  margin: 0;
+  padding: max(8px, 1.4cqh) max(12px, 2cqh);
+  border-radius: max(12px, 2cqh);
+  background: var(--plate);
+  color: var(--white);
+  font: 500 max(12px, 2.3cqh) / 1.35 var(--body);
+}
+
+.tip b {
+  color: var(--highlight);
+  font-size: max(12px, 2.3cqh);
+  line-height: 1.35;
+  letter-spacing: 0.4px;
+}
+
+@container (max-height: 449px) {
+  .tip {
+    display: none;
+  }
+}
