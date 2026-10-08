@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "types": ["node", "vite/client"],
+    "noEmit": true
+  },
+  "include": [".", "../playwright.config.ts", "../src/app/testMode.ts", "../src/scene/stats.ts"]
+}

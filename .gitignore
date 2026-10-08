@@ -6,3 +6,6 @@ coverage/
 .env
 .env.*
 sim-out/
+dist-e2e/
+test-results/
+playwright-report/
