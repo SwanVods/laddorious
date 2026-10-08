@@ -6,6 +6,7 @@ export * from './board/analysis';
 export * from './board/config';
 export * from './board/generate';
 export * from './board/render';
+export * from './board/layout';
 export * from './cards/types';
 export * from './cards/starter';
 export * from './cards/catalog';
