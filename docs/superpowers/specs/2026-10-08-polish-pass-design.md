@@ -1,6 +1,6 @@
 # Polish pass: dice, cards, slides and finish — design
 
-**Status:** approved in conversation 2026-10-08; this file awaits the user's review.
+**Status:** approved 2026-10-08 and implemented the same day (plan `docs/superpowers/plans/2026-10-08-polish-pass.md`).
 **Amends:** Spec #1 (`2026-10-03-game-core-design.md`) §4.9, §5.2, §7.2, §9; Spec #2 (`2026-10-04-3d-client-design.md`) §5.1, §5.3, §6.1.
 **Comes before:** Spec #3 (multiplayer server).
 
@@ -92,7 +92,7 @@ New HUD component (`hud/CenterDie.tsx`).
 - When a roll beat contains my `DieRolled` (manual or automatic), a large die appears in the centre of the screen, above the board and below the popups.
 - It tumbles for the roll beat's length, lands on my face, and stays until 1.6 s after the beat started. Then it fades out over 0.25 s. All times follow the director's time scale.
 - A forced face (Loaded Die) shows a small "Forced" badge.
-- If my `DiceTotaled` total in the same update differs from the face (extra dice, Overdrive's ×2), a caption reads "Move {total}".
+- If my `DiceTotaled` total differs from the face (extra dice, Overdrive's ×2), a caption reads "Move {total}" for 1.2 s. The total arrives when everyone has rolled, often in a later update than my roll, so the caption may show on its own after the die has gone.
 - With reduced motion on, there's no tumble: the face shows at once.
 - Size: about a third of the screen's short side, capped at 160 px. It never covers the dock or the stage bar.
 - The 3D dice above every piece stay as they are.
@@ -110,6 +110,7 @@ New HUD component (`hud/CardBubbles.tsx`).
 - It stays until 0.8 s after that caster's `CardResolved` beat ends, then fades.
 - It is anchored above the piece's name tag, through the same screen projection as the name tags.
 - Bubbles for pieces on the same tile stack upwards. A bubble is at most 220 px wide (narrower on short screens) and never takes pointer events.
+- A bubble that would run off the screen (the follow camera puts pieces near the edges) is nudged back inside the side and bottom margins and below the stage bar.
 - With reduced motion on, bubbles appear without the pop.
 - The player-column chips and their hover details stay.
 

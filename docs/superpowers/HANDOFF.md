@@ -1,6 +1,6 @@
-# Handoff — 3D client (Spec #2) complete
+# Handoff — 3D client (Spec #2) and the polish pass complete
 
-**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4, and on 2026-10-08 at the end of Phases 5 and 6 (Spec #2 complete).
+**Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4, on 2026-10-08 at the end of Phases 5 and 6 (Spec #2 complete), and again after the polish pass the user asked for once they had played it.
 **For:** the next Claude Code session on this repo. Read this file, then the spec and the phase index, before doing anything.
 **Keep it current:** when the next spec starts and ends, update the "Where things stand" and "Next step" sections.
 
@@ -20,16 +20,19 @@
 | **Phase 4** (the 3D scene): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`; commits `3d9c934`, `91f41fe`, `2d00e81`, `69b79e2`, `7a7db45`, `625cd48`, `c607d59`, `809436b`, `5151604`; review fix `5ac6f4c` |
 | **Phase 5** (HUD and screens): **done, merged to `main`**. Built prototype-first, then a task-by-task replay verified it before the plan was generated | `docs/superpowers/plans/2026-10-08-client-phase-5-hud-screens.md`; commits `39c8487`, `09bb185`, `5983e50`, `6cb8fb7`, `1c0b7ca`, `6130160`, `635ed3e`, `6562f11`, `43806cc`, `98862b0`, `e71f77b`, `57283f2`, `1dc5e72`; browser fix `93beb3b` |
 | **Phase 6** (e2e tests, CI, READMEs): **done, merged to `main`** | `docs/superpowers/plans/2026-10-08-client-phase-6-e2e-ci-docs.md`; commits `23f829b`, `fbbb65d`, `dfcff79`, `ac85eac`, `70d1b38`; review fix `795cb06` |
+| **Polish pass** (after the user played Spec #2): your die in the centre, thinner slide lanes that never cross, the card pick closing on pick, a 30 s card window, card bubbles, hands without duplicates, and a ranks reveal after the winner cam. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-08-polish-pass-design.md`, `docs/superpowers/plans/2026-10-08-polish-pass.md`; commits `e1d0e96`, `a8ffd37`, `2bfd0c3`, `9eb4742`, `b281271`, `03a392b`, `d17b21b`, `a59c244`, `8a230bb`; browser fix `fa8b190` |
 
-After Phase 6 the full suite is 55 test files, 412 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 4 minutes). `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
+After the polish pass the full suite is 60 test files, 459 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 4 minutes). 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
 ## Next step: the user picks
 
-Spec #2 is complete. Ask the user which of these comes next:
+Spec #2 and the polish pass are complete. Ask the user which of these comes next:
 
 - **Spec #3, the multiplayer server:** matchmaking queue, rooms, and the engine on the server, behind the same `MatchService` the local worker implements. It was suggested as next, and it is tested first on the user's own Wi-Fi (memory `multiplayer-lan-testing`).
 - **Spec #4, the Blender art pass:** `.glb` models for the asset slots (spec #2 §6.3; `apps/client/README.md` has the contract). Use the Blender MCP (memory `blender-for-3d-objects`).
 - **Fixes for the deferred minors** under Open items.
+
+The user also plans other board styles and themes later, not only the 10×10 grid (memory `future-board-themes`); the layout and the lane shape already live in one module for that (`packages/core/src/board/layout.ts`).
 
 Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did. The standing order to run phases back to back (memory `continue-through-phase-6`) is fulfilled and doesn't carry over.
 
@@ -38,6 +41,7 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 - **Never use subagents.** No Agent tool, no forks, no Workflow runs, no skill step that dispatches a reviewer or implementer. Do the reviews yourself and say they were self-reviews.
 - **Commit at the end of every task.** Ask before pushing, publishing or anything destructive.
 - **Standing order (2026-10-04, memory `continue-through-phase-6`):** run Phases 3–6 back to back. For each phase: branch `client/phase-N` from `main`, write the plan, execute inline, self-review, fast-forward merge to `main` locally, delete the branch, start the next phase. Don't stop for plan approval and don't ask before these local merges. Each phase ends in something that runs.
+- **Play-test feedback:** after playing, the user sends a list of changes. For the polish pass: questions with options (`AskUserQuestion`), a visual comparison as an HTML artifact where a look was in question, a short spec, then "approved, directly execute the implementation" (a lean plan, executed inline without a plan review stop, merged locally).
 - **Approvals are short:** "approved", "proceed", "go ahead", "correct". The user often brainstorms visually: when a look or layout is in question, show an HTML artifact mockup before writing it into a spec.
 - **Visual rules** (spec §6–§7, memory `client-visual-direction`):
   - Pieces are board-game pieces (knight, pawn, meeple, dragon head), not beans.
@@ -60,9 +64,11 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - Errors are `ConfigError`, `InvariantError` and `InputErrorCode`.
   - Useful types are `PlayerView`, `GameEvent`, `ChallengeChoice`, `Awaiting` and `PlayerId`.
   - The engine reads no clock and no unseeded randomness; lint bans `Date`, `performance` and `Math.random` in `packages/core/src`.
+  - Since the polish pass: the card window is 30 s; a hand never holds the same card twice (`drawCard` takes an exclude list, `Offer.seen` records what a hand showed); the board generator is version 3 and keeps snake lanes `LANE_CLEARANCE` apart, measured on `laneCenterline` from `board/layout.ts`, the same curve the client draws (`lanesTouch` is the fast check).
 - **Bots** (`@laddorious/bots`): `RandomBot`, `HeuristicBot`, `makeBots(seats, policy, seed, afkPercent)` and `scoreCard`. They are browser-safe.
 - **Client tests and lint:** component tests start with `// @vitest-environment jsdom`; every other test runs in Node. React and React Hooks rules come from `@eslint-react/eslint-plugin` (`eslint-plugin-react` stops at ESLint 9). jsdom stays on 29 while this machine's Node is 24.14 (jsdom 30 needs 24.15). The local, untracked `.claude/launch.json` has `client` (dev server) and `client-build` (serves `dist`) entries for the preview pane.
 - **Director:** `src/director/` is plain TypeScript (presentation state, beat timelines, the `Director` on a `zustand/vanilla` store). Its whole-match test plays a real match through the director and fails on any presentation drift, so run it after changing beat or presentation rules.
+- **Polish pass client parts:** `src/hud/CenterDie.tsx` (my roll in the centre), `src/hud/bubbles.ts` (card bubble lifetimes, drawn inside the name tags by `NameTags.tsx`, kept on screen by `keepInside` in `scene/tags.ts`), `src/hud/ranks.ts` and the `ranks` beat in `director/beats.ts` (the ranks reveal; the director doesn't log it twice and `bannerFor` skips it).
 - **Screens:** `src/app/App.tsx` routes the screens; `src/hud/model.ts`, `labels.ts`, `record.ts` and `feed.ts` are the pure HUD model; `test/tokens.test.ts` fails on any colour outside `src/app/theme.ts` and `theme.css`; `test/support/scripted.ts` drives matchmaking and sessions in component tests.
 - **Scene:** `src/scene/` holds the 3D scene. Rules are pure and unit-tested (`layout.ts`, `quality.ts`, `motion.ts`, `camera.ts`); the components read the director's store once per frame. `test/scene.test.tsx` renders the scene graph with `@react-three/test-renderer` and fails above 100 draw calls or 150k triangles, so run it after adding anything to the scene.
 - **e2e:** `apps/client/e2e/game.spec.ts` and `apps/client/playwright.config.ts`. `pnpm e2e` builds with `vite build --mode e2e` into `apps/client/dist-e2e` and serves it on port 4180. Only that build has `window.__laddoriousTest` (`src/app/testMode.ts`): the worker plays every seat with short windows (`FAST` in `src/worker/localHost.ts`), and director beats run at 5% (`timeScale`).
@@ -98,6 +104,12 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - e2e builds only: in fast mode ROLL and the popups stay live while a bot plays my seat, so a manual tap can race it and show a rejection toast.
   - e2e builds only: banners (1.7 s) and CSS animations aren't time-scaled; only director beats are.
   - The CI workflow has never run (no git remote). The deploy notes in `apps/client/README.md` were checked against the hosts' docs, not a real deploy.
+- **Deferred polish-pass minors** (from the self-review; not fixed):
+  - After I pick a card, the camera keeps its "my Mystery pick" swoop until the reveal settles (it reads the settled view).
+  - A bubble nudged back on screen keeps its tail pointing straight down, not at its piece.
+  - Rank badges and bubbles live inside name tags, so a tag hidden behind the camera hides them too (rare; the reveal uses the overview).
+  - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
+  - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
 - **Spec #3** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started; suggested next, tested first on the user's own network (memory `multiplayer-lan-testing`).
 - **Spec #4** (Blender art pass: `.glb` files for the asset slots in spec §6.3). Not started.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), sound and particles.

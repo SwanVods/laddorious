@@ -187,8 +187,8 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
 
 | Engine event | Beat |
 |---|---|
-| `DieRolled` | 3D die tumbles above the piece, then settles on the face (≈0.9 s); forced faces flash |
-| `DiceTotaled` | Total shown in the player column; no wait |
+| `DieRolled` | 3D die tumbles above the piece, then settles on the face (≈0.9 s); forced faces flash. Your own die also tumbles big in the centre of the screen and stays ≈1.85 s *(polish pass, 2026-10-08)* |
+| `DiceTotaled` | Total shown in the player column; no wait. When a card makes your total differ from your face, "Move N" shows in the centre *(polish pass)* |
 | `Moved` (dice) | Tile-by-tile hops, all movers together (≈0.23 s per tile + 0.07 s landing). A piece landing on an occupied tile stands on top of the stack and wobbles. |
 | `Moved` (snake) | Vacuum: the piece is sucked into the vortex, a glowing orb travels the chute, the piece pops out at the tail (≈2.0 s) |
 | `Moved` (ladder) | Launch-pad arc with a somersault (≈1.3 s) |
@@ -200,14 +200,14 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
 | `ChallengePickLocked` | Lock badge on that player; no wait |
 | `ChallengeResolved` | Picks revealed over the portraits, result banner (≈1.1 s); a replay re-opens the popup |
 | `MysteryOffered` (private) | Card picker opens for you |
-| `CardSelected` | Face-down card chip on that player's row; once all picks are in, the cards flip together (≈1.7 s) |
+| `CardSelected` | Face-down card chip on that player's row; once all picks are in, the cards flip together (≈1.7 s), and a speech bubble with the card's effect pops over each caster until their card has played out *(polish pass)* |
 | `CardResolved` | One beat per card in resolution order (0.9–2 s): projectile, hop, shield, stamp ("Hit", "Blocked", "Fizzled") |
 | `Clash` | Clash banner over the affected players |
 | `EffectAdded` / `EffectRemoved` / `EffectExpired` | HUD chips update; shield bubble appears or disappears |
 | `BoardEdited` / `BoardEditExpired` | Launch pad or slide pops in or out (≈0.6 s) |
 | `SafetyCapApplied` | Step-back shuffle |
 | `RoundStarted` / `RoundEnded` | Stage bar updates |
-| `MatchWon` | Victory sequence (≈3 s), then the end screen |
+| `MatchWon` | Victory sequence (≈3 s), then the ranks reveal over the overview (2nd–4th pop up from last place, ≈2.7 s for four players), then the end screen *(polish pass)* |
 
 ### 5.2 Presentation state
 
@@ -222,6 +222,7 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
 - **Moves and card resolution:** follows your own piece at medium distance.
 - **Swoops** only for your own moments: your collision, your slide or launch, cards that target you, your Mystery pick.
 - **Watch mode:** tapping a player row follows that player's piece until you tap again or press "Back to my piece".
+- **Ranks reveal** *(polish pass)*: the overview, after the winner cam.
 - **Reduced motion:** swoops become cuts, and idle wobble and drift stop.
 
 ---
@@ -236,7 +237,7 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
 - Mystery squares are purple `#8f4dff` with a painted "?" whose colour shows rarity: Common white, Rare cyan `#6ff3ff`, Epic gold `#ffcc33`.
 - One transparent overlay texture paints all tile numbers and "?" glyphs.
 - When someone lands on a "?" square, it gets a pulsing ring until the Mystery phase ends.
-- Slides are flat ribbons with scrolling chevrons, dark `#2a2140` with an ink edge, plus a spinning vortex at the head and an exit ring at the tail. Nothing stands taller than a piece.
+- Slides are flat ribbons with scrolling chevrons, dark `#2a2140` with an ink edge, plus a spinning vortex at the head and an exit ring at the tail. Nothing stands taller than a piece. *(Polish pass, 2026-10-08:)* lanes are 0.30 units wide (an ink edge 0.10 wider), follow core's `laneCenterline`, and never cross: the generator keeps them `LANE_CLEARANCE` apart.
 - Launch pads are a disc with chevrons, an instanced dotted arc and a target ring.
 - A floating island with instanced bumpers, a few clouds and a gradient sky surround the board.
 
