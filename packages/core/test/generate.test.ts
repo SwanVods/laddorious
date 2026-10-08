@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_BOARD_CONFIG,
   GenerationError,
+  LANE_CLEARANCE,
   boardViolations,
   generateBoard,
   jumpKind,
   jumpLength,
+  laneCenterline,
+  laneGap,
   structuralViolations,
   type BoardConfig,
 } from '../src/index';
@@ -21,13 +24,26 @@ describe('generateBoard', () => {
   it('gives different boards for different seeds and generator versions', () => {
     const a = generateBoard('a', cfg).board;
     expect(generateBoard('b', cfg).board.jumps).not.toEqual(a.jumps);
-    expect(generateBoard('a', { ...cfg, generatorVersion: 3 }).board.jumps).not.toEqual(a.jumps);
+    expect(generateBoard('a', { ...cfg, generatorVersion: cfg.generatorVersion + 1 }).board.jumps).not.toEqual(a.jumps);
   });
 
   it('accepts boards in under 2 attempts on average under the one-die model', () => {
     let attempts = 0;
     for (let i = 0; i < 200; i++) attempts += generateBoard(`calib-${i}`, cfg).report.attempts;
     expect(attempts / 200).toBeLessThan(2);
+  });
+
+  it('is generator version 3, the one whose slide lanes never cross (polish spec 3.4)', () => {
+    expect(cfg.generatorVersion).toBe(3);
+  });
+
+  it('keeps every pair of slide lanes at least LANE_CLEARANCE apart', () => {
+    for (let i = 0; i < 200; i++) {
+      const lanes = generateBoard(`lanes-${i}`, cfg)
+        .board.jumps.filter((j) => jumpKind(j) === 'snake')
+        .map((j) => laneCenterline(j.from, j.to));
+      for (let a = 0; a < lanes.length; a++) for (let b = a + 1; b < lanes.length; b++) expect(laneGap(lanes[a]!, lanes[b]!)).toBeGreaterThanOrEqual(LANE_CLEARANCE);
+    }
   });
 
   it('only produces boards that satisfy every hard and generator rule', () => {
@@ -76,7 +92,7 @@ describe('generateBoard', () => {
 describe('structuralViolations', () => {
   const base: Array<[number, number]> = [
     [5, 20], [12, 35], [25, 40], [33, 50], [45, 60], [52, 70], [63, 80], [71, 85],
-    [30, 10], [38, 22], [48, 28], [58, 41], [67, 54], [76, 61], [83, 72], [95, 88],
+    [30, 10], [38, 22], [48, 28], [58, 41], [67, 54], [76, 61], [86, 74], [95, 88],
   ];
   const mysteryTiles = [2, 8, 13, 18, 23, 29, 35, 40, 46, 51, 56, 62, 68, 73, 79, 85, 90, 96];
   const mystery = Object.fromEntries(mysteryTiles.map((t) => [t, 'common' as const]));
@@ -84,6 +100,11 @@ describe('structuralViolations', () => {
 
   it('accepts a hand-built valid board', () => {
     expect(structuralViolations(valid, cfg)).toEqual([]);
+  });
+
+  it('flags slide lanes that cross or touch', () => {
+    // 83 -> 72 crosses 76 -> 61.
+    expect(structuralViolations(makeBoard(100, [...base, [83, 72]], mystery), cfg)).toContain('lane-crossing');
   });
 
   it('flags chains', () => {

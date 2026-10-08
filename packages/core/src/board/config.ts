@@ -19,7 +19,7 @@ export interface BoardConfig {
 
 export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   size: 100,
-  generatorVersion: 2,
+  generatorVersion: 3,
   ladders: { count: [8, 10], length: [4, 30] },
   snakes: { count: [8, 10], length: [4, 30] },
   mysteryDensity: 0.18,
