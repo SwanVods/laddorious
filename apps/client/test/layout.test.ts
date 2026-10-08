@@ -1,5 +1,6 @@
+import { LANE_CLEARANCE, laneCenterline, tileCell as coreTileCell } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
-import { COLUMNS, TILE_SIZE, slideCurve, squareColorIndex, tileCell, tilePath, tileToWorld } from '../src/scene/layout';
+import { COLUMNS, LANE, TILE_SIZE, slideCurve, squareColorIndex, tileCell, tilePath, tileToWorld } from '../src/scene/layout';
 
 function expectAt(point: number[], x: number, z: number) {
   expect(point[0]).toBeCloseTo(x);
@@ -41,5 +42,26 @@ describe('board layout (spec #2 §6.1)', () => {
     const tail = curve.getPoint(1);
     expectAt([head.x, head.y, head.z], tileToWorld(47)[0], tileToWorld(47)[2]);
     expectAt([tail.x, tail.y, tail.z], tileToWorld(26)[0], tileToWorld(26)[2]);
+  });
+
+  it('takes its layout from core, so the generator and the board agree (polish spec 3.3)', () => {
+    for (let tile = 1; tile <= 100; tile++) expect(tileCell(tile)).toEqual(coreTileCell(tile));
+  });
+
+  it('runs a slide along the lane core keeps clear of other lanes', () => {
+    const line = laneCenterline(47, 26);
+    const curve = slideCurve(47, 26);
+    line.forEach(([col, row], i) => {
+      const p = curve.getPoint(i / (line.length - 1));
+      expect(p.x).toBeCloseTo((col - (COLUMNS - 1) / 2) * TILE_SIZE, 1);
+      expect(p.z).toBeCloseTo(((COLUMNS - 1) / 2 - row) * TILE_SIZE, 1);
+    });
+  });
+
+  it('draws lanes thin enough that two lanes a clearance apart never overlap, vortices included (polish spec 4.1)', () => {
+    const halfLane = (LANE.width + LANE.edge) / 2;
+    expect(LANE.width).toBe(0.3);
+    expect(LANE.vortexRadius + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
+    expect(LANE.exitOuter + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
   });
 });

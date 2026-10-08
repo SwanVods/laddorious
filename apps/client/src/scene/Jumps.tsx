@@ -6,11 +6,10 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
 import type { Director } from '../director/director';
-import { arcPoint, slideCurve, tileToWorld, type Vec3 } from './layout';
+import { LANE, arcPoint, slideCurve, tileToWorld, type Vec3 } from './layout';
 import { clamp01, easeOutBack } from './motion';
 import { chevronTexture, swirlTexture } from './textures';
 
-const RIBBON_WIDTH = 0.62;
 /** Caps that keep a crowded board inside the draw-call and triangle budget (spec #2 §6.4). */
 const MAX_JUMPS = 24;
 const MAX_DOTS = 480;
@@ -69,8 +68,8 @@ export function Jumps({ director }: { director: Director }) {
   const snakes = useMemo(() => jumps.filter((j) => j.to < j.from).slice(0, MAX_JUMPS), [jumps]);
   const ladders = useMemo(() => jumps.filter((j) => j.to > j.from).slice(0, MAX_JUMPS), [jumps]);
   const paths = useMemo(() => snakes.map((j) => slideCurve(j.from, j.to).getPoints(40)), [snakes]);
-  const ribbons = useMemo(() => strips(paths, RIBBON_WIDTH, 0.024), [paths]);
-  const edges = useMemo(() => strips(paths, RIBBON_WIDTH + 0.16, 0.016), [paths]);
+  const ribbons = useMemo(() => strips(paths, LANE.width, 0.024), [paths]);
+  const edges = useMemo(() => strips(paths, LANE.width + LANE.edge, 0.016), [paths]);
   const dots = useMemo(() => ladders.flatMap(padArc).slice(0, MAX_DOTS), [ladders]);
   const chevrons = useMemo(() => chevronTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
   const padChevrons = useMemo(() => chevronTexture(WORLD_COLORS.pad, WORLD_COLORS.ink), []);
@@ -154,11 +153,11 @@ export function Jumps({ director }: { director: Director }) {
         </mesh>
       )}
       <instancedMesh ref={vorticesRef} args={[undefined, undefined, MAX_JUMPS]}>
-        <circleGeometry args={[0.58, 32]} />
+        <circleGeometry args={[LANE.vortexRadius, 32]} />
         <meshBasicMaterial {...(swirl ? { map: swirl } : { color: BOARD_COLORS.slide })} transparent />
       </instancedMesh>
       <instancedMesh ref={exitsRef} args={[undefined, undefined, MAX_JUMPS]}>
-        <ringGeometry args={[0.4, 0.56, 28]} />
+        <ringGeometry args={[LANE.exitInner, LANE.exitOuter, 28]} />
         <meshBasicMaterial color={WORLD_COLORS.chevron} />
       </instancedMesh>
       <instancedMesh ref={padsRef} args={[undefined, undefined, MAX_JUMPS]}>

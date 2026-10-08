@@ -1,18 +1,21 @@
+import { BOARD_COLUMNS, laneCenterline, tileCell } from '@laddorious/core';
 import { CatmullRomCurve3, Vector3 } from 'three';
 
 export type Vec3 = [number, number, number];
 
 /** World units per tile (spec #2 §6.1, §6.3). */
 export const TILE_SIZE = 1.6;
-export const COLUMNS = 10;
+export const COLUMNS = BOARD_COLUMNS;
 const HALF = (COLUMNS - 1) / 2;
 
-/** A tile's grid cell: tile 1 at the front left, rows alternating direction. */
-export function tileCell(tile: number): { col: number; row: number } {
-  const row = Math.floor((tile - 1) / COLUMNS);
-  const along = (tile - 1) % COLUMNS;
-  return { col: row % 2 === 0 ? along : COLUMNS - 1 - along, row };
-}
+/** A tile's grid cell, from core's layout (polish spec §3.3): tile 1 at the front left, rows alternating direction. */
+export { tileCell };
+
+/**
+ * Slide lane sizes in world units (polish spec §4.1): thin enough that two lanes core keeps
+ * LANE_CLEARANCE apart never overlap, head vortex and exit ring included.
+ */
+export const LANE = { width: 0.3, edge: 0.1, vortexRadius: 0.35, exitInner: 0.24, exitOuter: 0.34 } as const;
 
 /** Centre of a tile's top face; row 0 is nearest the camera (+Z). Tile 0 is a start spot in front of the board, one per seat. */
 export function tileToWorld(tile: number, seat = 0): Vec3 {
@@ -42,13 +45,9 @@ export function tilePath(from: number, to: number, bounced: boolean, size: numbe
   return path;
 }
 
-/** The flat curve a slide lies along, head to tail, with a gentle S so it reads as a chute. */
+/** The flat curve a slide lies along, head to tail: core's lane (a gentle S), in world units. */
 export function slideCurve(from: number, to: number): CatmullRomCurve3 {
-  const head = new Vector3(...tileToWorld(from));
-  const tail = new Vector3(...tileToWorld(to));
-  const along = tail.clone().sub(head);
-  const side = new Vector3(-along.z, 0, along.x).normalize().multiplyScalar(Math.min(1.2, along.length() * 0.12));
-  return new CatmullRomCurve3([head, head.clone().lerp(tail, 1 / 3).add(side), head.clone().lerp(tail, 2 / 3).sub(side), tail]);
+  return new CatmullRomCurve3(laneCenterline(from, to).map(([col, row]) => new Vector3((col - HALF) * TILE_SIZE, 0, (HALF - row) * TILE_SIZE)));
 }
 
 /** A point on an arc through the air: a parabola from one spot to another. */
