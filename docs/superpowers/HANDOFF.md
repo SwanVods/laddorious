@@ -24,7 +24,51 @@
 
 After the polish pass the full suite is 60 test files, 459 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 4 minutes). 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-## Next step: the user picks
+## Next step: card bubbles in the player column (approved 2026-10-08, not started)
+
+When the user says "continue", do this first, on branch `polish/column-bubbles` (already created from `main`). It is a bounded fix to the polish pass, and the design below is approved: implement it test-first, commit, self-review, run the gate (typecheck, lint, test, build, e2e), fast-forward merge to `main` locally, delete the branch.
+
+The user meant the card bubbles to be **one line, beside that player's row in the right-hand player column**, not above the pieces. What changes:
+
+- **Placement:** the bubble pops out to the left of the player's row in `PlayerColumn` (`src/hud/PlayerColumn.tsx`, rows are `.prow` in `hud.css`), vertically centred on the row, with a small tail pointing right at it, like the long-press details card (`.pdetail`) but one line and never taking pointer events.
+- **Content, one line:** the card's icon medal, its name in bold, then a short summary, e.g. "[shield] **Shield** · Block the next attack". Add the summaries to `src/hud/labels.ts` beside the card icons (for example `CARD_SUMMARIES` and a `summary` field on `cardInfo`), with a test that every starter card has one. Keep a max width with an ellipsis as a safety net. Approved summaries:
+
+  | Card | Summary |
+  |---|---|
+  | Sprint | Move forward 3 |
+  | Loaded Die | Next die shows 6 |
+  | Overdrive | Next dice total ×2 |
+  | Ladder Warp | Jump to the next ladder |
+  | Steady Hand | Next dice total is exactly 4 |
+  | Snake Charm | Ignore the next snake |
+  | Shield | Block the next attack |
+  | Aegis | Block attacks and snakes, 2 rounds |
+  | Shove | Nearest player ahead goes back 3 |
+  | Heavy Boots | Leader's next total −3 |
+  | Switcheroo | Swap with the furthest ahead |
+  | Coin Flip | 50/50: forward 4 or back 4 |
+  | Jackpot | 40%: forward 15 · 60%: back 8 |
+  | Snake Bait | Land on a snake head? Forward 8 after |
+  | Cleanse | Remove others' effects on you |
+  | Snake Pit | New snake ahead of the leader |
+  | Ladder Drop | New ladder ahead of you |
+
+- **Timing:** unchanged. `src/hud/bubbles.ts` (`bubbleStep`, `visibleBubbles`, `useCardBubbles`) still decides when a bubble shows: from "Cards revealed" until 0.8 s after that player's card has played out.
+- **Remove what only served bubbles over pieces:**
+  - the bubble inside `NameTags.tsx` (tags go back to the name, plus the rank badge, which stays);
+  - `bubbleLevels`;
+  - `keepInside` in `scene/tags.ts` and its per-frame use in `TagProjector.tsx` (restore the scene test's fake tags if they no longer need `querySelector`);
+  - the `.bubble` styles in `app/match.css`.
+- **Wiring:** `MatchScreen` passes the visible bubbles to `PlayerColumn` (by player id) instead of `NameTags`.
+- **Tests:**
+  - a PlayerColumn test that a revealed card shows one line, with the name and summary, in that player's row;
+  - the MatchScreen bubble test now looks in the player column;
+  - update or remove the NameTags bubble test.
+- **Docs:** polish spec §4.4 and spec #2 §5.1 (`CardSelected` row) say "beside the player's row in the player column, one line" instead of "over the caster's piece".
+
+After that: ask the user which comes next (below).
+
+## After that: the user picks
 
 Spec #2 and the polish pass are complete. Ask the user which of these comes next:
 
