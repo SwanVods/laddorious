@@ -76,18 +76,43 @@ describe('resolveConfig', () => {
 describe('drawCard', () => {
   it('only draws cards of the requested rarity', () => {
     const s = createStream('draw');
-    for (let i = 0; i < 200; i++) expect(cardById(STARTER_CARDS, drawCard(STARTER_CARDS, 'epic', EQUAL, s)).rarity).toBe('epic');
+    for (let i = 0; i < 200; i++) expect(cardById(STARTER_CARDS, drawCard(STARTER_CARDS, 'epic', EQUAL, s)!).rarity).toBe('epic');
   });
 
   it('never returns the excluded card, even from a one-card bucket', () => {
     const s = createStream('exclude');
-    for (let i = 0; i < 200; i++) expect(drawCard(STARTER_CARDS, 'rare', EQUAL, s, 'shield')).not.toBe('shield');
+    for (let i = 0; i < 200; i++) expect(drawCard(STARTER_CARDS, 'rare', EQUAL, s, ['shield'])).not.toBe('shield');
+  });
+
+  it('never returns any card on the exclude list (polish spec 3.2)', () => {
+    const s = createStream('exclude-many');
+    const exclude = ['loaded-die', 'shield', 'heavy-boots', 'snake-bait'];
+    for (let i = 0; i < 50; i++) expect(drawCard(STARTER_CARDS, 'rare', EQUAL, s, exclude)).toBe('snake-pit');
+  });
+
+  it('returns null, without using the stream, when every card of the rarity is excluded', () => {
+    const s = createStream('none-left');
+    const before = JSON.stringify(s);
+    const rares = STARTER_CARDS.filter((c) => c.rarity === 'rare').map((c) => c.id);
+    expect(drawCard(STARTER_CARDS, 'rare', EQUAL, s, rares)).toBeNull();
+    expect(JSON.stringify(s)).toBe(before);
+  });
+
+  it('falls back to the other types when the weighted ones have run out', () => {
+    const s = createStream('fallback');
+    const onlyAttack = { movement: 0, defense: 0, attack: 1, risky: 0, misc: 0 };
+    for (let i = 0; i < 50; i++) {
+      const id = drawCard(STARTER_CARDS, 'rare', onlyAttack, s, ['heavy-boots']);
+      expect(id).not.toBeNull();
+      expect(cardById(STARTER_CARDS, id!).rarity).toBe('rare');
+      expect(id).not.toBe('heavy-boots');
+    }
   });
 
   it('respects type weights', () => {
     const s = createStream('types');
     const onlyAttack = { movement: 0, defense: 0, attack: 1, risky: 0, misc: 0 };
-    for (let i = 0; i < 50; i++) expect(cardById(STARTER_CARDS, drawCard(STARTER_CARDS, 'common', onlyAttack, s)).type).toBe('attack');
+    for (let i = 0; i < 50; i++) expect(cardById(STARTER_CARDS, drawCard(STARTER_CARDS, 'common', onlyAttack, s)!).type).toBe('attack');
   });
 });
 

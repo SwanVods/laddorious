@@ -7,12 +7,12 @@ const board = makeBoard(100, [], { 4: 'common', 6: 'common' });
 describe('viewFor', () => {
   it('shows a player only their own Mystery hand', () => {
     const { state, events } = play(
-      setup({ players: 3, board, dice: [[4], [6], [1]], cards: [offerValues('sprint', 'sprint', 'sprint'), offerValues('cleanse', 'cleanse', 'cleanse')] }),
+      setup({ players: 3, board, dice: [[4], [6], [1]], cards: [offerValues('sprint', 'shove', 'coin-flip'), offerValues('cleanse', 'steady-hand', 'snake-charm')] }),
       [roll('p1'), roll('p2'), roll('p3')],
     );
     const v1 = viewFor(state, 'p1');
     const v3 = viewFor(state, 'p3');
-    expect(v1.myOffer?.cards).toEqual(['sprint', 'sprint', 'sprint']);
+    expect(v1.myOffer?.cards).toEqual(['sprint', 'shove', 'coin-flip']);
     expect(v3.myOffer).toBeNull();
     expect(JSON.stringify(v1)).not.toContain('cleanse');
     expect(JSON.stringify(v3)).not.toContain('sprint');
@@ -36,7 +36,7 @@ describe('viewFor', () => {
 
   it('never exposes locked card targets or the resolution queue', () => {
     const { state } = play(
-      setup({ players: 3, board, dice: [[4], [6], [1]], cards: [offerValues('shove', 'shove', 'shove'), offerValues('cleanse', 'cleanse', 'cleanse')] }),
+      setup({ players: 3, board, dice: [[4], [6], [1]], cards: [offerValues('shove', 'sprint', 'coin-flip'), offerValues('cleanse', 'steady-hand', 'snake-charm')] }),
       [roll('p1'), roll('p2'), roll('p3'), pick('p1', 0)],
     );
     const view = viewFor(state, 'p1') as unknown as Record<string, unknown>;

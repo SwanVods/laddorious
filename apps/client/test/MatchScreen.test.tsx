@@ -77,7 +77,7 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     session.update(
       opening({
         phase: { kind: 'mysterySelect', picked: { p0: false } },
-        myOffer: { player: 'p0', tile: 9, rarity: 'rare', cards: ['aegis', 'sprint', 'jackpot'], rerolled: [false, false, false], rerollsUsed: 0, picked: null, autoPicked: false },
+        myOffer: { player: 'p0', tile: 9, rarity: 'rare', cards: ['aegis', 'sprint', 'jackpot'], rerolled: [false, false, false], rerollsUsed: 0, seen: ['aegis', 'sprint', 'jackpot'], picked: null, autoPicked: false },
         awaiting: { windowId: 7, window: 'mystery', players: ['p0'], durationMs: 15_000 },
       }),
     );

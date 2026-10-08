@@ -66,6 +66,8 @@ export interface Offer {
   cards: [string, string, string];
   rerolled: [boolean, boolean, boolean];
   rerollsUsed: number;
+  /** Every card shown in this hand, in the order shown: rerolls avoid them while they can (polish spec §3.2). */
+  seen: string[];
   picked: number | null;
   /** True when the pick was made by the timeout rule. */
   autoPicked: boolean;

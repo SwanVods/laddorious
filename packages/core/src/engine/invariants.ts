@@ -22,6 +22,7 @@ export function assertInvariants(s: MatchState): void {
       if (o.rerollsUsed > s.config.mystery.maxRerolls || rerolledCount !== o.rerollsUsed) {
         throw new InvariantError(`offer for ${o.player} has inconsistent rerolls`);
       }
+      if (new Set(o.cards).size !== o.cards.length) throw new InvariantError(`hand of ${o.player} holds a card twice`);
     }
   }
   for (const e of s.effects) {

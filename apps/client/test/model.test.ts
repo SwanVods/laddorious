@@ -181,7 +181,7 @@ describe('the card-pick popup (spec #2 §7.2)', () => {
   const offerView = (rerolled: [boolean, boolean, boolean], rerollsUsed: number, picked: number | null = null) =>
     view({ p0: 9 }, {
       phase: { kind: 'mysterySelect', picked: { p0: picked !== null } },
-      myOffer: { player: 'p0', tile: 9, rarity: 'epic', cards: ['aegis', 'switcheroo', 'jackpot'], rerolled, rerollsUsed, picked, autoPicked: false },
+      myOffer: { player: 'p0', tile: 9, rarity: 'epic', cards: ['aegis', 'switcheroo', 'jackpot'], rerolled, rerollsUsed, seen: ['aegis', 'switcheroo', 'jackpot'], picked, autoPicked: false },
       awaiting: { windowId: 7, window: 'mystery', players: picked === null ? ['p0'] : [], durationMs: 15_000 },
     });
 

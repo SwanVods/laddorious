@@ -99,9 +99,9 @@ export function positions(s: MatchState): number[] {
  * Scripted card-stream values that make drawCard() return `cardId`
  * (type pick by weight, then card pick by weight within the bucket).
  */
-export function drawValues(cardId: string, excludeId?: string, cards: CardDef[] = STARTER_CARDS): number[] {
+export function drawValues(cardId: string, exclude: readonly string[] = [], cards: CardDef[] = STARTER_CARDS): number[] {
   const card = cards.find((c) => c.id === cardId)!;
-  const buckets = CARD_TYPES.map((t) => cards.filter((c) => c.type === t && c.rarity === card.rarity && c.id !== excludeId));
+  const buckets = CARD_TYPES.map((t) => cards.filter((c) => c.type === t && c.rarity === card.rarity && !exclude.includes(c.id)));
   const typeIdx = CARD_TYPES.indexOf(card.type);
   const typeValue = buckets.slice(0, typeIdx).filter((b) => b.length > 0).length;
   const bucket = buckets[typeIdx]!;
@@ -110,7 +110,7 @@ export function drawValues(cardId: string, excludeId?: string, cards: CardDef[] 
   return [typeValue, cardValue];
 }
 
-/** Values for three offered cards. */
+/** Values for three offered cards: each slot's draw excludes the cards dealt before it. */
 export function offerValues(...ids: [string, string, string]): number[] {
-  return ids.flatMap((id) => drawValues(id));
+  return ids.flatMap((id, i) => drawValues(id, ids.slice(0, i)));
 }

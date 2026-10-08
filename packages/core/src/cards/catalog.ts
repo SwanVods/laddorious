@@ -9,20 +9,24 @@ export function cardById(cards: readonly CardDef[], id: string): CardDef {
 }
 
 /**
- * Draw one card of `rarity` (spec §5.2): first a type by `typeWeights`, then a
- * card of that (type, rarity) bucket by card weight. `excludeId` is never drawn.
+ * Draw one card of `rarity` (spec §5.2, polish spec §3.2): first a type by `typeWeights`, then a
+ * card of that (type, rarity) bucket by card weight. Cards on `exclude` are never drawn. If the
+ * weighted types have nothing left, every type with a card left counts equally. Returns null,
+ * without using the stream, when the rarity has no card outside `exclude`.
  */
 export function drawCard(
   cards: readonly CardDef[],
   rarity: Rarity,
   typeWeights: Record<CardType, number>,
   stream: RngStream,
-  excludeId?: string,
-): string {
+  exclude: readonly string[] = [],
+): string | null {
   const buckets = CARD_TYPES.map((type) =>
-    cards.filter((c) => c.type === type && c.rarity === rarity && c.id !== excludeId),
+    cards.filter((c) => c.type === type && c.rarity === rarity && !exclude.includes(c.id)),
   );
-  const weights = CARD_TYPES.map((type, i) => (buckets[i]!.length > 0 ? typeWeights[type] : 0));
+  if (buckets.every((b) => b.length === 0)) return null;
+  let weights = CARD_TYPES.map((type, i) => (buckets[i]!.length > 0 ? typeWeights[type] : 0));
+  if (weights.every((w) => w === 0)) weights = buckets.map((b) => (b.length > 0 ? 1 : 0));
   const bucket = buckets[pickWeighted(stream, weights)]!;
   return bucket[pickWeighted(stream, bucket.map((c) => c.weight))]!.id;
 }

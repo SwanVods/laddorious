@@ -2,8 +2,10 @@ import { cardById, drawCard } from '../cards/catalog';
 import { selectTarget } from '../cards/targeting';
 import { nextInt } from '../rng/stream';
 import { inputError } from './dice';
+import { InvariantError } from './errors';
 import { groupPendingCards, resolveGroup } from './resolve';
 import { endRound } from './round';
+import type { Rarity } from '../board/types';
 import type { GameEvent, InputError, MatchState, Offer, PendingCard, PlayerId } from './types';
 import { getPlayer, openWindow, priv, pub } from './util';
 
@@ -19,14 +21,17 @@ export function startMysteryOrEndRound(s: MatchState, ev: GameEvent[]): void {
     const rarity = s.board.mystery[p.position];
     if (rarity === undefined || !s.movedThisRound.includes(p.id)) continue;
     const stream = s.rng.cards[p.seat]!;
-    const draw = () => drawCard(s.config.cards, rarity, s.config.mystery.typeWeights, stream);
+    // Three different cards: each slot's draw excludes the cards dealt before it (polish spec §3.2).
+    const dealt: string[] = [];
+    for (let i = 0; i < 3; i++) dealt.push(drawCard(s.config.cards, rarity, s.config.mystery.typeWeights, stream, dealt) ?? noCardLeft(rarity));
     const offer: Offer = {
       player: p.id,
       tile: p.position,
       rarity,
-      cards: [draw(), draw(), draw()],
+      cards: [dealt[0]!, dealt[1]!, dealt[2]!],
       rerolled: [false, false, false],
       rerollsUsed: 0,
+      seen: [...dealt],
       picked: null,
       autoPicked: false,
     };
@@ -40,6 +45,11 @@ export function startMysteryOrEndRound(s: MatchState, ev: GameEvent[]): void {
   }
   s.phase = { kind: 'mysterySelect', offers };
   openWindow(s, ev, 'mystery', players);
+}
+
+/** validateCards keeps at least one card per (type, rarity), so every rarity has 5 or more. */
+function noCardLeft(rarity: Rarity): never {
+  throw new InvariantError(`no ${rarity} card left to draw`);
 }
 
 function offerFor(s: MatchState, player: PlayerId): Offer | InputError {
@@ -61,8 +71,12 @@ export function rerollInput(s: MatchState, ev: GameEvent[], player: PlayerId, sl
   if (offer.rerollsUsed >= s.config.mystery.maxRerolls) return inputError('REROLL_LIMIT', 'no rerolls left');
   if (offer.rerolled[slot]) return inputError('SLOT_ALREADY_REROLLED', `slot ${slot} was already rerolled`);
   const from = offer.cards[slot];
-  const to = drawCard(s.config.cards, offer.rarity, s.config.mystery.typeWeights, s.rng.cards[getPlayer(s, player).seat]!, from);
+  // Never a card in the hand; a card already seen in it only once the rarity has run out (polish spec §3.2).
+  const stream = s.rng.cards[getPlayer(s, player).seat]!;
+  const draw = (exclude: readonly string[]) => drawCard(s.config.cards, offer.rarity, s.config.mystery.typeWeights, stream, exclude);
+  const to = draw([...offer.cards, ...offer.seen]) ?? draw(offer.cards) ?? noCardLeft(offer.rarity);
   offer.cards[slot] = to;
+  offer.seen.push(to);
   offer.rerolled[slot] = true;
   offer.rerollsUsed += 1;
   ev.push(priv(player, { type: 'CardRerolled', player, slot, from, to }));

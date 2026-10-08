@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { awaiting, step, type EffectTemplate, type MatchState } from '../src/index';
+import { InvariantError, awaiting, step, type EffectTemplate, type MatchState } from '../src/index';
 import { addEffect } from '../src/engine/effects';
+import { assertInvariants } from '../src/engine/invariants';
 import { drawValues, makeBoard, ofType, offerValues, pick, play, positions, reroll, roll, setup, timeout } from './support/fixtures';
 
 function withEffect(s: MatchState, owner: string, template: EffectTemplate): MatchState {
@@ -21,7 +22,7 @@ describe('Mystery detection and offers', () => {
   });
 
   it('does not re-trigger a Mystery tile for a player who did not move this round (D20)', () => {
-    let s = setup({ board, positions: [4, 0], dice: [[2], [6]], cards: [[], offerValues('sprint', 'sprint', 'sprint')] });
+    let s = setup({ board, positions: [4, 0], dice: [[2], [6]], cards: [[], offerValues('sprint', 'shove', 'coin-flip')] });
     s = withEffect(s, 'p1', { params: { hook: 'diceTotal', op: 'replace', value: 0 }, lifetime: { charges: 1 } });
     const { state, events } = play(s, [roll('p1'), roll('p2')]);
     expect(positions(state)).toEqual([4, 6]);
@@ -35,7 +36,13 @@ describe('rerolls', () => {
       setup({
         board,
         dice: [[4], [1]],
-        cards: [[...offerValues('sprint', 'shove', 'coin-flip'), ...drawValues('cleanse', 'shove'), ...drawValues('sprint', 'coin-flip')]],
+        cards: [
+          [
+            ...offerValues('sprint', 'shove', 'coin-flip'),
+            ...drawValues('cleanse', ['sprint', 'shove', 'coin-flip']),
+            ...drawValues('steady-hand', ['sprint', 'cleanse', 'coin-flip', 'shove']),
+          ],
+        ],
       }),
       [roll('p1'), roll('p2')],
     ).state;
@@ -56,6 +63,49 @@ describe('rerolls', () => {
     expect(step(s, reroll('p1', 3)(s))).toMatchObject({ ok: false, error: { code: 'INVALID_SLOT' } });
   });
 
+  it('never bring back a card in the hand or one already seen in it (polish spec 3.2)', () => {
+    const s = play(start(), [reroll('p1', 1), reroll('p1', 2)]).state;
+    const offer = s.phase.kind === 'mysterySelect' ? s.phase.offers['p1']! : null;
+    expect(offer?.cards).toEqual(['sprint', 'cleanse', 'steady-hand']);
+    expect(offer?.seen).toEqual(['sprint', 'shove', 'coin-flip', 'cleanse', 'steady-hand']);
+  });
+
+  it('deal three different cards, and each reroll brings a card not seen before while one is left', () => {
+    for (let i = 0; i < 60; i++) {
+      let s = play(setup({ board, config: { rngSeed: `deal-${i}` }, dice: [[4], [1]] }), [roll('p1'), roll('p2')]).state;
+      const hand = () => (s.phase.kind === 'mysterySelect' ? s.phase.offers['p1']! : null)!;
+      expect(new Set(hand().cards).size).toBe(3);
+      for (const slot of [0, 1]) {
+        const seenBefore = [...hand().seen];
+        s = play(s, [reroll('p1', slot)]).state;
+        expect(new Set(hand().cards).size).toBe(3);
+        expect(seenBefore).not.toContain(hand().cards[slot]);
+      }
+    }
+  });
+
+  it('fall back to a card seen earlier when the rarity has run out, never to a duplicate', () => {
+    // 5 Rare cards: a hand of 3 and 2 rerolls show them all, so the third reroll must reuse one.
+    const rare = makeBoard(100, [[20, 50]], { 4: 'rare' });
+    for (let i = 0; i < 20; i++) {
+      let s = play(setup({ board: rare, config: { rngSeed: `fallback-${i}`, mystery: { maxRerolls: 3 } }, dice: [[4], [1]] }), [roll('p1'), roll('p2')]).state;
+      const hand = () => (s.phase.kind === 'mysterySelect' ? s.phase.offers['p1']! : null)!;
+      s = play(s, [reroll('p1', 0), reroll('p1', 1)]).state;
+      expect(new Set(hand().seen).size).toBe(5);
+      const rerolledAway = hand().seen.filter((id) => !hand().cards.includes(id));
+      s = play(s, [reroll('p1', 2)]).state;
+      expect(new Set(hand().cards).size).toBe(3);
+      expect(rerolledAway).toContain(hand().cards[2]);
+    }
+  });
+
+  it('a hand holding the same card twice breaks an invariant', () => {
+    const s = start();
+    const offer = s.phase.kind === 'mysterySelect' ? s.phase.offers['p1']! : null;
+    offer!.cards[1] = offer!.cards[0];
+    expect(() => assertInvariants(s)).toThrow(InvariantError);
+  });
+
   it('are refused after the player picked, and for players without an encounter', () => {
     const s = start();
     expect(step(s, reroll('p2', 0)(s))).toMatchObject({ ok: false, error: { code: 'NOT_AWAITED' } });
@@ -65,7 +115,7 @@ describe('rerolls', () => {
 describe('selection and reveal', () => {
   const twoEncounters = () =>
     play(
-      setup({ board, dice: [[4], [6]], cards: [offerValues('sprint', 'sprint', 'sprint'), [...offerValues('cleanse', 'cleanse', 'cleanse'), 2]] }),
+      setup({ board, dice: [[4], [6]], cards: [offerValues('sprint', 'shove', 'coin-flip'), [...offerValues('snake-charm', 'steady-hand', 'cleanse'), 2]] }),
       [roll('p1'), roll('p2')],
     ).state;
 
@@ -90,7 +140,7 @@ describe('selection and reveal', () => {
 
   it('resolves an epic Ladder Warp: move to the ladder foot, then climb', () => {
     const s = play(
-      setup({ board, positions: [3, 0], dice: [[6], [1]], cards: [offerValues('ladder-warp', 'ladder-warp', 'ladder-warp')] }),
+      setup({ board, positions: [3, 0], dice: [[6], [1]], cards: [offerValues('ladder-warp', 'overdrive', 'aegis')] }),
       [roll('p1'), roll('p2')],
     ).state;
     expect(positions(s)).toEqual([9, 1]);
@@ -101,7 +151,7 @@ describe('selection and reveal', () => {
 
 describe('cards across the round', () => {
   it('a player knocked off N by an Attack card before round end does not win', () => {
-    const s = setup({ board: makeBoard(100, [], { 3: 'common' }), positions: [96, 0], dice: [[4], [3]], cards: [[], offerValues('shove', 'shove', 'shove')] });
+    const s = setup({ board: makeBoard(100, [], { 3: 'common' }), positions: [96, 0], dice: [[4], [3]], cards: [[], offerValues('shove', 'sprint', 'coin-flip')] });
     const { state } = play(s, [roll('p1'), roll('p2'), pick('p2', 0)]);
     expect(positions(state)).toEqual([97, 3]);
     expect(state.phase.kind).toBe('dice');
@@ -113,7 +163,7 @@ describe('cards across the round', () => {
       board: makeBoard(100, [], { 3: 'epic' }),
       positions: [0, 50],
       dice: [[3, 1, 1], [1, 1, 1]],
-      cards: [offerValues('ladder-drop', 'ladder-drop', 'ladder-drop')],
+      cards: [offerValues('ladder-drop', 'overdrive', 'aegis')],
     });
     const r1 = play(s, [roll('p1'), roll('p2'), pick('p1', 0)]);
     expect(r1.state.board.jumps).toEqual([{ id: expect.any(String), from: 5, to: 20 }]);
