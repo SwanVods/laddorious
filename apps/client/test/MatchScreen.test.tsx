@@ -87,6 +87,36 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     expect(session.send).toHaveBeenCalledWith({ type: 'pickCard', slot: 1 });
   });
 
+  const cardPickOpening = () =>
+    opening({
+      phase: { kind: 'mysterySelect', picked: { p0: false } },
+      myOffer: { player: 'p0', tile: 9, rarity: 'rare', cards: ['aegis', 'sprint', 'jackpot'], rerolled: [false, false, false], rerollsUsed: 0, seen: ['aegis', 'sprint', 'jackpot'], picked: null, autoPicked: false },
+      awaiting: { windowId: 7, window: 'mystery', players: ['p0'], durationMs: 30_000 },
+    });
+
+  it('closes the card pick the moment I pick, before the host answers (polish spec 4.3)', () => {
+    const session = start();
+    session.update(cardPickOpening());
+    fireEvent.click(screen.getByRole('button', { name: /^Sprint/ }));
+    expect(session.send).toHaveBeenCalledWith({ type: 'pickCard', slot: 1 });
+    expect(screen.queryByRole('dialog', { name: 'Choose One' })).toBeNull();
+  });
+
+  it('keeps the card pick open after a reroll', () => {
+    const session = start();
+    session.update(cardPickOpening());
+    fireEvent.click(screen.getByRole('button', { name: 'Reroll Jackpot' }));
+    expect(screen.getByRole('dialog', { name: 'Choose One' })).toBeTruthy();
+  });
+
+  it('brings the card pick back when the host rejects the pick', () => {
+    const session = start();
+    session.update(cardPickOpening());
+    fireEvent.click(screen.getByRole('button', { name: /^Sprint/ }));
+    session.reject('NOT_AWAITED');
+    expect(screen.getByRole('dialog', { name: 'Choose One' })).toBeTruthy();
+  });
+
   it('toasts a rejected action', () => {
     const session = start();
     session.update(opening());

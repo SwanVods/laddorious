@@ -54,6 +54,8 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const [tags] = useState(createTagRegistry);
   const [watch, setWatch] = useState<PlayerId | null>(null);
   const [leaving, setLeaving] = useState(false);
+  // The window I picked a card in: the pick closes at once, before the host's view catches up (polish spec §4.3).
+  const [pickedWindow, setPickedWindow] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const handlersRef = useRef({ onFailed, onFinished });
   useLayoutEffect(() => {
@@ -63,7 +65,10 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   useEffect(() => {
     const offs = [
       session.onUpdate((u) => director.push(u)),
-      session.onRejected((e) => showToast(rejectionText(e.code))),
+      session.onRejected((e) => {
+        setPickedWindow(null); // a refused pick brings the cards back
+        showToast(rejectionText(e.code));
+      }),
       session.onFailed((e) => handlersRef.current.onFailed(e.message)),
     ];
     return () => {
@@ -101,7 +106,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const rows = view && presentation ? playerRows({ view, presentation, record, seats, me, watch }) : [];
   const mine = rows.find((r) => r.me);
   const faceOff = view ? faceOffModel({ beat, view, me }) : null;
-  const cardPick = view ? cardPickModel(view) : null;
+  const cardPick = view && view.awaiting.windowId !== pickedWindow ? cardPickModel(view) : null;
   const watched = seats.find((s) => s.playerId === watch);
 
   const leave = () => {
@@ -142,7 +147,16 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
         {showStats && <DevStats />}
         <BannerView banner={banner} />
         {faceOff && <FaceOffPopup model={faceOff} seats={seats} me={me} onPick={(choice) => session.send({ type: 'challengePick', challengeId: faceOff.challengeId, choice })} />}
-        {cardPick && <CardPickPopup model={cardPick} onPick={(slot) => session.send({ type: 'pickCard', slot })} onReroll={(slot) => session.send({ type: 'reroll', slot })} />}
+        {cardPick && view && (
+          <CardPickPopup
+            model={cardPick}
+            onPick={(slot) => {
+              setPickedWindow(view.awaiting.windowId);
+              session.send({ type: 'pickCard', slot });
+            }}
+            onReroll={(slot) => session.send({ type: 'reroll', slot })}
+          />
+        )}
         {leaving && (
           <Dialog title="Leave match?" onClose={() => setLeaving(false)}>
             <p className="dialog-text">Leaving ends this match against the bots and takes you back to the menu.</p>
