@@ -1,0 +1,226 @@
+/* Shared UI pieces (spec #2 §7). Colours come from theme.css tokens. */
+.icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+
+.icon .icon-cut {
+  fill: var(--paper);
+}
+
+.icon .icon-cut-line {
+  fill: none;
+  stroke: var(--paper);
+}
+
+.piece-icon {
+  width: 72%;
+  height: 72%;
+}
+
+.piece-icon path,
+.piece-icon circle {
+  fill: var(--white);
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.piece-icon .piece-eye {
+  fill: var(--ink);
+  stroke: none;
+}
+
+.portrait {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: max(40px, 8.5cqh);
+  height: max(40px, 8.5cqh);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--seat);
+  box-shadow: 0 0 0 2.5px var(--white);
+}
+
+.portrait-badge {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  display: grid;
+  place-items: center;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 4px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.die-face {
+  width: 1.3em;
+  height: 1.3em;
+  flex: none;
+}
+
+.die-face rect {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 8;
+}
+
+.die-face circle {
+  fill: var(--ink);
+}
+
+.die-face.forced rect {
+  stroke: var(--accent);
+  animation: flash 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes flash {
+  to {
+    fill: var(--highlight);
+  }
+}
+
+/* Dialogs (settings, leave match): a real panel, unlike the in-match popups (§7.1). */
+.dialog-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+}
+
+.dialog {
+  position: relative;
+  width: min(92cqw, max(320px, 86cqh));
+  overflow: hidden;
+  animation: rise 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+.dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: max(8px, 1.8cqh) max(14px, 2.6cqh);
+  border-bottom: 3px solid var(--ink);
+  background: var(--panel-header);
+  color: var(--white);
+}
+
+.dialog-head h2 {
+  margin: 0;
+  font-size: max(18px, 4cqh);
+  line-height: 1;
+  text-shadow: 0 2px 0 var(--ink);
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: max(12px, 2.6cqh);
+  padding: max(12px, 2.6cqh) max(14px, 2.8cqh) max(14px, 3cqh);
+}
+
+/* A round icon button: close, settings gear, arrows (at least 44 px, §7.3). */
+.round-btn {
+  display: grid;
+  place-items: center;
+  width: max(44px, 8cqh);
+  height: max(44px, 8cqh);
+  padding: 0;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 max(3px, 0.7cqh) 0 var(--ink);
+  font-size: max(20px, 4cqh);
+  cursor: pointer;
+}
+
+.round-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-t) + max(64px, 17cqh));
+  z-index: 50;
+  max-width: min(540px, 80cqw);
+  padding: 9px 15px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--white);
+  font: 500 max(13px, 2.3cqh) / 1.35 var(--body);
+  text-align: center;
+  transform: translateX(-50%);
+  animation: rise 0.25s ease-out;
+  pointer-events: none;
+}
+
+.rotate-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 40px;
+  background: linear-gradient(var(--sky-top), var(--ink));
+  color: var(--white);
+  text-align: center;
+}
+
+.rotate-screen svg {
+  width: 96px;
+  height: 96px;
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  animation: turn 2.4s ease-in-out infinite;
+}
+
+.rotate-screen b {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.rotate-screen span {
+  max-width: 260px;
+  color: var(--muted-on-plate);
+  font: 500 16px / 1.4 var(--body);
+}
+
+@keyframes turn {
+  0%,
+  20% {
+    transform: rotate(0);
+  }
+
+  55%,
+  80% {
+    transform: rotate(-90deg);
+  }
+
+  100% {
+    transform: rotate(0);
+  }
+}
