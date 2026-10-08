@@ -57,7 +57,7 @@ After Phase 4 the full suite is 42 test files, 294 tests, all passing. `pnpm typ
 | 10 | In-world name tags; MatchScreen with watch mode and "Back to my piece", leave dialog, rejection toasts, dev stats | done (preview at `/#hud`, port 5174 via the `client-proto` launch entry) |
 | 11 | Menu scene and screen: podium, floating tiles, turntable, profile chip with rename, logo, gear, piece picker, PLAY with "4-player match", rule tips (hidden under 450 px tall), dev seed field via `findMatch(profile, opts?: { seed })` | done |
 | 12 | Matchmaking overlay ("Play with bots" after 15 s, MATCH FOUND, 3-2-1), end-screen podium, error screen, settings dialog | done |
-| 13 | App shell: routing state machine, error boundary, pause on hidden page, fullscreen on first tap (not iOS); remove `DevMatchPage` and the dev files | to do |
+| 13 | App shell: routing state machine, error boundary, pause on hidden page, fullscreen on first tap (not iOS); remove `DevMatchPage` and the dev files | done (the app now runs at `/`) |
 | 14 | Phase gate and handoff | to do |
 
 **Rulings to carry into the plan:** `findMatch(profile, opts?: { seed })` adds an optional dev seed to the §4.3 signature. It serves §4.4's hidden seed field, and Spec #3's online service ignores it.
