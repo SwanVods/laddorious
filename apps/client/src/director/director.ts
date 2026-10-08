@@ -1,4 +1,4 @@
-import type { PlayerId } from '@laddorious/core';
+import type { GameEvent, PlayerId } from '@laddorious/core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { MatchUpdate } from '../service/matchService';
 import { buildTimeline, type Beat } from './beats';
@@ -6,10 +6,18 @@ import { presentationFromView, samePresentation, type PresentationState } from '
 
 /** More updates than this waiting behind a timeline fast-forward to the latest view (spec #2 §5.2). */
 export const MAX_QUEUED_UPDATES = 3;
+/** The event log keeps this many of the newest events. */
+export const LOG_LIMIT = 300;
 
 export interface PlayingBeat extends Beat {
   /** Epoch ms when the beat started; renderers animate towards `after` over `durationMs`. */
   startedAt: number;
+}
+
+/** One shown event; `seq` counts up from 1 and never repeats, so it can key a feed line. */
+export interface LoggedEvent {
+  seq: number;
+  event: GameEvent;
 }
 
 export interface DirectorState {
@@ -19,6 +27,11 @@ export interface DirectorState {
   beat: PlayingBeat | null;
   /** The latest update whose timeline has finished: what the HUD shows. */
   settled: MatchUpdate | null;
+  /**
+   * The events shown so far, oldest first: a beat's events join when it starts (beats that
+   * take no time join at once), and a fast-forward adds the events it skips. The HUD reads it.
+   */
+  log: LoggedEvent[];
 }
 
 /**
@@ -27,10 +40,11 @@ export interface DirectorState {
  * Plain TypeScript; React reads `store` with zustand's useStore.
  */
 export class Director {
-  readonly store: StoreApi<DirectorState> = createStore<DirectorState>()(() => ({ presentation: null, beat: null, settled: null }));
+  readonly store: StoreApi<DirectorState> = createStore<DirectorState>()(() => ({ presentation: null, beat: null, settled: null, log: [] }));
   private readonly queue: MatchUpdate[] = [];
   private current: { update: MatchUpdate; beats: Beat[]; next: number } | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private seq = 0;
 
   constructor(
     private readonly me: PlayerId,
@@ -68,7 +82,8 @@ export class Director {
     const current = this.current!;
     // Beats that only change the HUD take no time.
     while (current.beats[current.next]?.durationMs === 0) {
-      this.store.setState({ presentation: current.beats[current.next]!.after });
+      const instant = current.beats[current.next]!;
+      this.store.setState({ presentation: instant.after, log: this.logged(instant.events) });
       current.next += 1;
     }
     const beat = current.beats[current.next];
@@ -76,7 +91,7 @@ export class Director {
       this.finish(current.update, true);
       return;
     }
-    this.store.setState({ beat: { ...beat, startedAt: Date.now() } });
+    this.store.setState({ beat: { ...beat, startedAt: Date.now() }, log: this.logged(beat.events) });
     this.timer = setTimeout(() => {
       this.timer = null;
       this.store.setState({ presentation: beat.after });
@@ -99,10 +114,27 @@ export class Director {
     this.startNext();
   }
 
+  /** The log with these events added at the end, trimmed to LOG_LIMIT. */
+  private logged(events: GameEvent[]): LoggedEvent[] {
+    const log = this.store.getState().log;
+    if (events.length === 0) return log;
+    const next = [...log, ...events.map((event) => ({ seq: ++this.seq, event }))];
+    return next.length > LOG_LIMIT ? next.slice(-LOG_LIMIT) : next;
+  }
+
+  /** Public events and my own private ones (spec #2 §4.2). */
+  private visible(event: GameEvent): boolean {
+    return event.visibility === 'public' || event.visibility.private === this.me;
+  }
+
   /** Too far behind: skip straight to the latest update's view. */
   private fastForward(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
+    // The skipped events still reach the log: the HUD's dice and cards come from it.
+    const playing = this.current?.beats.slice(this.current.next + (this.store.getState().beat ? 1 : 0)) ?? [];
+    const skipped = [...playing.flatMap((b) => b.events), ...this.queue.flatMap((u) => u.events.filter((e) => this.visible(e)))];
+    this.store.setState({ log: this.logged(skipped) });
     const latest = this.queue[this.queue.length - 1]!;
     this.queue.length = 0;
     this.current = null;

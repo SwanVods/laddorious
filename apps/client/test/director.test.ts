@@ -1,7 +1,7 @@
 import type { GameEvent, MoveCause, PlayerId, PlayerView, WindowKind } from '@laddorious/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BEAT_MS } from '../src/director/beats';
-import { Director, MAX_QUEUED_UPDATES } from '../src/director/director';
+import { Director, LOG_LIMIT, MAX_QUEUED_UPDATES } from '../src/director/director';
 import type { MatchUpdate } from '../src/service/matchService';
 import { WorkerMatchSession } from '../src/service/workerSession';
 import { SEATS, loopbackWorker, openingUpdate } from './support/fixtures';
@@ -117,6 +117,53 @@ describe('Director', () => {
     director.dispose();
     vi.runAllTimers();
     expect(done).toEqual([1]);
+  });
+});
+
+describe('Director event log (for the HUD)', () => {
+  const totaled = (player: PlayerId, total: number): GameEvent => ({ type: 'DiceTotaled', player, faces: [total], total, visibility: 'public' });
+  const logged = (d: Director) => d.store.getState().log.map((l) => l.event);
+
+  it('logs events that take no time at once, and a beat when it starts', () => {
+    const { director } = startDirector();
+    director.push(update([totaled('p1', 3), moved('p1', 0, 3), moved('p1', 3, 14, 'ladder')], { p1: 14 }, 2));
+    expect(logged(director)).toEqual([totaled('p1', 3), moved('p1', 0, 3)]);
+    vi.advanceTimersByTime(hops(3));
+    expect(logged(director)).toEqual([totaled('p1', 3), moved('p1', 0, 3), moved('p1', 3, 14, 'ladder')]);
+    const seqs = director.store.getState().log.map((l) => l.seq);
+    expect(seqs).toEqual([1, 2, 3]);
+  });
+
+  it('logs the events a fast-forward skips, in order', () => {
+    const { director } = startDirector();
+    director.push(update([moved('p1', 0, 20), moved('p1', 20, 30, 'ladder')], { p1: 30 }, 2));
+    for (let n = 3; n <= 6; n++) director.push(update([moved('p2', n - 3, n - 2)], { p1: 30, p2: n - 2 }, n));
+    expect(logged(director)).toEqual([
+      moved('p1', 0, 20),
+      moved('p1', 20, 30, 'ladder'),
+      moved('p2', 0, 1),
+      moved('p2', 1, 2),
+      moved('p2', 2, 3),
+      moved('p2', 3, 4),
+    ]);
+  });
+
+  it(`keeps only the newest ${LOG_LIMIT} events`, () => {
+    const { director } = startDirector();
+    const many = Array.from({ length: LOG_LIMIT + 5 }, (_, i) => totaled('p1', (i % 6) + 1));
+    director.push(update(many, {}, 2));
+    const log = director.store.getState().log;
+    expect(log).toHaveLength(LOG_LIMIT);
+    expect(log[0]!.seq).toBe(6);
+    expect(log.at(-1)!.seq).toBe(LOG_LIMIT + 5);
+  });
+
+  it("never logs another player's private events", () => {
+    const { director } = startDirector();
+    const theirs: GameEvent = { type: 'MysteryOffered', player: 'p1', tile: 4, rarity: 'common', cards: ['sprint', 'sprint', 'sprint'], visibility: { private: 'p1' } };
+    const mine: GameEvent = { ...theirs, player: 'p0', visibility: { private: 'p0' } };
+    director.push(update([theirs, mine], {}, 2));
+    expect(logged(director)).toEqual([mine]);
   });
 });
 
