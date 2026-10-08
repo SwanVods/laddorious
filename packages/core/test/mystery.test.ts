@@ -18,7 +18,7 @@ describe('Mystery detection and offers', () => {
     expect(ofType(events, 'MysteryOffered')).toEqual([
       { type: 'MysteryOffered', player: 'p1', tile: 4, rarity: 'common', cards: ['sprint', 'shove', 'coin-flip'], visibility: { private: 'p1' } },
     ]);
-    expect(awaiting(state)).toMatchObject({ window: 'mystery', players: ['p1'], durationMs: 15_000 });
+    expect(awaiting(state)).toMatchObject({ window: 'mystery', players: ['p1'], durationMs: 30_000 });
   });
 
   it('does not re-trigger a Mystery tile for a player who did not move this round (D20)', () => {

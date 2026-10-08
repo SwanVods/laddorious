@@ -86,6 +86,44 @@ export function laneGap(a: readonly LanePoint[], b: readonly LanePoint[]): numbe
   return best;
 }
 
+/**
+ * Whether two lanes come closer than `clearance`: laneGap(a, b) < clearance, but fast enough
+ * for the generator. Segment pairs whose bounding boxes are already that far apart are
+ * skipped, and the first pair inside the clearance answers.
+ */
+export function lanesTouch(a: readonly LanePoint[], b: readonly LanePoint[], clearance = LANE_CLEARANCE): boolean {
+  const boxA = box(a);
+  const boxB = box(b);
+  if (apart(boxA, boxB, clearance)) return false;
+  for (let i = 0; i + 1 < a.length; i++) {
+    const sa = box([a[i]!, a[i + 1]!]);
+    if (apart(sa, boxB, clearance)) continue;
+    for (let j = 0; j + 1 < b.length; j++) {
+      if (apart(sa, box([b[j]!, b[j + 1]!]), clearance)) continue;
+      if (segmentGap(a[i]!, a[i + 1]!, b[j]!, b[j + 1]!) < clearance) return true;
+    }
+  }
+  return false;
+}
+
+type Box = [minX: number, minY: number, maxX: number, maxY: number];
+
+function box(points: readonly LanePoint[]): Box {
+  const out: Box = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [x, y] of points) {
+    out[0] = Math.min(out[0], x);
+    out[1] = Math.min(out[1], y);
+    out[2] = Math.max(out[2], x);
+    out[3] = Math.max(out[3], y);
+  }
+  return out;
+}
+
+/** The boxes are at least `by` apart along some axis, so nothing in them is closer than that. */
+function apart(p: Box, q: Box, by: number): boolean {
+  return p[0] - q[2] >= by || q[0] - p[2] >= by || p[1] - q[3] >= by || q[1] - p[3] >= by;
+}
+
 function segmentGap(a: LanePoint, b: LanePoint, c: LanePoint, d: LanePoint): number {
   const cross = (o: LanePoint, p: LanePoint, q: LanePoint) => (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0]);
   const d1 = cross(c, d, a);

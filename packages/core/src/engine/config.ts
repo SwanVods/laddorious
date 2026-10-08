@@ -42,7 +42,7 @@ export interface MatchConfigInput {
 export const DEFAULT_WINDOWS: MatchConfig['windows'] = {
   diceMs: 12_000,
   challengeMs: 8_000,
-  mysteryMs: 15_000,
+  mysteryMs: 30_000,
 };
 
 export function resolveConfig(input: MatchConfigInput): MatchConfig {

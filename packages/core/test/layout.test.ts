@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD_COLUMNS, LANE_CLEARANCE, laneCenterline, laneGap, tileCell } from '../src/index';
+import { BOARD_COLUMNS, LANE_CLEARANCE, createStream, intBetween, laneCenterline, laneGap, lanesTouch, tileCell } from '../src/index';
 
 describe('board layout', () => {
   it('lays tiles out in a serpentine, ten to a row', () => {
@@ -37,5 +37,22 @@ describe('slide lanes', () => {
     const apart = laneGap(laneCenterline(20, 11), laneCenterline(40, 31));
     expect(apart).toBeGreaterThan(LANE_CLEARANCE);
     expect(laneGap(laneCenterline(20, 11), laneCenterline(20, 11))).toBe(0);
+  });
+
+  it('lanesTouch, the generator\'s fast check, agrees with laneGap under the clearance', () => {
+    const rng = createStream('lanes-touch');
+    const lane = () => {
+      const from = intBetween(rng, 12, 99);
+      return laneCenterline(from, from - intBetween(rng, 4, Math.min(30, from - 2)));
+    };
+    let touching = 0;
+    for (let i = 0; i < 400; i++) {
+      const [a, b] = [lane(), lane()];
+      const expected = laneGap(a, b) < LANE_CLEARANCE;
+      expect(lanesTouch(a, b)).toBe(expected);
+      if (expected) touching++;
+    }
+    expect(touching).toBeGreaterThan(40);
+    expect(touching).toBeLessThan(360);
   });
 });

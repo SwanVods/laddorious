@@ -2,7 +2,7 @@ import { createStream, intBetween, pickWeighted, type RngStream } from '../rng/s
 import { analyzeBoard, type BoardAnalysis } from './analysis';
 import type { BoardConfig } from './config';
 import { boardViolations } from './invariants';
-import { LANE_CLEARANCE, laneCenterline, laneGap, type LanePoint } from './layout';
+import { laneCenterline, lanesTouch, type LanePoint } from './layout';
 import { RARITIES, jumpKind, jumpLength, type Board, type Jump, type Rarity } from './types';
 
 export type RejectionReason =
@@ -126,7 +126,7 @@ function drawCandidate(seed: string, cfg: BoardConfig, rng: RngStream): Board | 
       if (kind === 'snake' && wouldExceedSnakeRun(jumps, from, cfg.maxConsecutiveSnakeHeads)) continue;
       if (kind === 'snake') {
         const lane = laneCenterline(from, to);
-        if (lanes.some((placed) => laneGap(placed, lane) < LANE_CLEARANCE)) continue;
+        if (lanes.some((placed) => lanesTouch(placed, lane))) continue;
         lanes.push(lane);
       }
       jumps.push({ id: `j${jumps.length + 1}`, from, to });
@@ -193,7 +193,7 @@ export function structuralViolations(board: Board, cfg: BoardConfig): RejectionR
   }
 
   const lanes = snakes.map((j) => laneCenterline(j.from, j.to));
-  if (lanes.some((a, i) => lanes.slice(i + 1).some((b) => laneGap(a, b) < LANE_CLEARANCE))) out.push('lane-crossing');
+  if (lanes.some((a, i) => lanes.slice(i + 1).some((b) => lanesTouch(a, b)))) out.push('lane-crossing');
 
   const heads = new Set(snakes.map((j) => j.from));
   let run = 0;

@@ -54,7 +54,7 @@ describe('resolveConfig', () => {
 
   it('fills spec §9 defaults', () => {
     const cfg = resolveConfig({ seed: 's' });
-    expect(cfg.windows).toEqual({ diceMs: 12_000, challengeMs: 8_000, mysteryMs: 15_000 });
+    expect(cfg.windows).toEqual({ diceMs: 12_000, challengeMs: 8_000, mysteryMs: 30_000 });
     expect(cfg.collision).toEqual({ knockback: 3, maxReplays: 3, maxWaves: 3 });
     expect(cfg.mystery.maxRerolls).toBe(2);
     expect(cfg.board.size).toBe(100);

@@ -205,7 +205,7 @@ After the dice-phase settle completes, a player qualifies for an encounter if th
 
 Movement during `mysteryResolve` (cards, knockbacks from card-caused collisions) never grants an encounter (D4).
 
-### 4.9 Mystery selection (window: `mystery`, default 15 s)
+### 4.9 Mystery selection (window: `mystery`, default 30 s) — amended 2026-10-08
 
 Simultaneous for all qualifying players; detailed in §5.2.
 
@@ -267,8 +267,8 @@ Every card has exactly one target. The target's condition is part of the card te
 
 ### 5.2 Offer, reroll, select
 
-1. Each qualifying player receives 3 cards, all of the Mystery tile's rarity. For each slot: draw a **type** by `typeWeights` (default equal), then a card from that `(type, rarity)` bucket by card `weight`, using the player's `cards` stream. Duplicates across slots are allowed.
-2. **Reroll:** max 2 per encounter, max 1 per slot. A reroll redraws that slot (type, then card), excluding the exact card being replaced.
+1. Each qualifying player receives 3 **different** cards, all of the Mystery tile's rarity. For each slot: draw a **type** by `typeWeights` (default equal), then a card from that `(type, rarity)` bucket by card `weight`, using the player's `cards` stream, excluding the cards already dealt. If the weighted types have no card left, every type with a card left counts equally. *(Amended 2026-10-08, polish spec §3.2: duplicates across slots were allowed before.)*
+2. **Reroll:** max 2 per encounter, max 1 per slot. A reroll redraws that slot (type, then card), excluding every card in the hand and every card already seen in it (`Offer.seen`). Only when the rarity has no such card left does it exclude just the hand. A hand never holds the same card twice; this is an invariant.
 3. Offers and rerolls are emitted only as private events.
 4. `pickCard` selects one card. The engine immediately **locks a hidden target** using the card's `TargetRule` against the current state.
 5. On `mystery` window expiry, a player who has not picked gets a random card from their currently displayed hand (from their `cards` stream).
@@ -407,6 +407,7 @@ A jump with `to < from` is a snake; `to > from` is a ladder.
    - No chains: no jump ends on another jump's start (D16).
    - Final stretch (tiles `N−9 .. N−1`): at most 1 snake head, with length ≤ 10.
    - No 6 consecutive tiles that are all snake heads.
+   - *(Added 2026-10-08, polish spec §3.4.)* No two snakes' lanes come within `LANE_CLEARANCE` (0.4 tiles) of each other, measured on `laneCenterline` (`board/layout.ts`), the curve the client draws. The generator enforces it while placing each snake (a snake that would touch a placed lane is redrawn); validation names it `lane-crossing`. Ladders and card-made snakes are not checked.
    - Mystery spacing: at most 4 Mystery tiles in any 10-tile window; no gap of more than 12 tiles without one.
 3. **Analytic validation** (§7.3).
 4. **Accept**, or draw the next candidate from the same stream.
@@ -479,7 +480,7 @@ Output: table to stdout plus JSON.
 interface MatchConfig {
   seed: string;
   board: BoardConfig;           // or a pre-built Board
-  windows: { diceMs: 12000; challengeMs: 8000; mysteryMs: 15000 };
+  windows: { diceMs: 12000; challengeMs: 8000; mysteryMs: 30000 };   // mystery 15000 before 2026-10-08
   mystery: {
     rarityWeights: { common: 70; rare: 25; epic: 5 };
     typeWeights: { movement: 1; defense: 1; attack: 1; risky: 1; misc: 1 };
@@ -492,7 +493,7 @@ interface MatchConfig {
 
 interface BoardConfig {
   size: 100;
-  generatorVersion: 2;
+  generatorVersion: 3;          // 3 since 2026-10-08: no-crossing slide lanes
   ladders: { count: [8, 10]; length: [4, 30] };
   snakes: { count: [8, 10]; length: [4, 30] };
   mysteryDensity: 0.18;

@@ -21,7 +21,7 @@ The Laddorious rules engine: a pure, deterministic state machine for a 2–4 pla
 | Export | What it does |
 |---|---|
 | `resolveConfig(input)`, `validateConfig` | The full config with defaults, checked |
-| `DEFAULT_WINDOWS` | The default windows: dice 12 s, challenge 8 s, Mystery 15 s |
+| `DEFAULT_WINDOWS` | The default windows: dice 12 s, challenge 8 s, Mystery 30 s |
 
 **Boards**
 
@@ -30,12 +30,13 @@ The Laddorious rules engine: a pure, deterministic state machine for a 2–4 pla
 | `generateBoard`, `DEFAULT_BOARD_CONFIG` | A seeded 100-tile board with snakes, ladders and "?" squares, rejected and retried until it passes the hard invariants and the Markov analysis |
 | `analyzeBoard`, `landingTile` | Expected match length and fairness of a board |
 | `renderBoardAscii` | A text picture of a board, used by the sim CLI |
+| `tileCell`, `laneCenterline`, `laneGap`, `LANE_CLEARANCE` | The 10×10 layout and the curve a slide's lane follows. The generator keeps lanes apart with them, and the client draws lanes along them |
 
 **Cards**
 
 | Export | What it does |
 |---|---|
-| `STARTER_CARDS`, `cardById`, `drawCard` | The card set and lookups |
+| `STARTER_CARDS`, `cardById`, `drawCard` | The card set and lookups. `drawCard` takes a list of cards to leave out, which keeps a hand free of duplicates |
 | `targetCandidates`, `selectTarget`, `isValidTarget` | The targeting rules, also used by the client's fizzle warnings |
 
 **RNG**
