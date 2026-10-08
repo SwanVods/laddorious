@@ -103,14 +103,12 @@ New HUD component (`hud/CenterDie.tsx`).
 
 ### 4.4 Card bubbles
 
-New HUD component (`hud/CardBubbles.tsx`).
+*Revised 2026-10-09: the first version hung the bubbles over the pieces; the user meant one line beside each player's row in the player column.*
 
-- When the cards flip (the `cardReveal` beat for the public `CardSelected` events), a speech bubble appears over each caster's piece, mine included.
-- Each bubble shows the card's icon medal, name, one-line text and target line (for example "The leader"). It is framed by rarity, like the pick cards.
-- It stays until 0.8 s after that caster's `CardResolved` beat ends, then fades.
-- It is anchored above the piece's name tag, through the same screen projection as the name tags.
-- Bubbles for pieces on the same tile stack upwards. A bubble is at most 220 px wide (narrower on short screens) and never takes pointer events.
-- A bubble that would run off the screen (the follow camera puts pieces near the edges) is nudged back inside the side and bottom margins and below the stage bar.
+- When the cards flip (the `cardReveal` beat for the public `CardSelected` events), a one-line bubble pops out to the left of each caster's row in the right-hand player column, mine included, with a small tail pointing at the row.
+- It shows the card's icon medal, its name in bold, and a short summary (`CARD_SUMMARIES` in `hud/labels.ts`, approved by the user; for example "Shield · Block the next attack"). It is ringed by rarity, at most `min(46cqw, 380px)` wide, with an ellipsis as a safety net.
+- It stays until 0.8 s after that caster's `CardResolved` beat ends (`hud/bubbles.ts`).
+- It hides while that row's details card is open, and never takes pointer events.
 - With reduced motion on, bubbles appear without the pop.
 - The player-column chips and their hover details stay.
 

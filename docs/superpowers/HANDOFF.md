@@ -22,55 +22,11 @@
 | **Phase 6** (e2e tests, CI, READMEs): **done, merged to `main`** | `docs/superpowers/plans/2026-10-08-client-phase-6-e2e-ci-docs.md`; commits `23f829b`, `fbbb65d`, `dfcff79`, `ac85eac`, `70d1b38`; review fix `795cb06` |
 | **Polish pass** (after the user played Spec #2): your die in the centre, thinner slide lanes that never cross, the card pick closing on pick, a 30 s card window, card bubbles, hands without duplicates, and a ranks reveal after the winner cam. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-08-polish-pass-design.md`, `docs/superpowers/plans/2026-10-08-polish-pass.md`; commits `e1d0e96`, `a8ffd37`, `2bfd0c3`, `9eb4742`, `b281271`, `03a392b`, `d17b21b`, `a59c244`, `8a230bb`; browser fix `fa8b190` |
 
-After the polish pass the full suite is 60 test files, 459 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 4 minutes). 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
+After the polish pass and the column card bubbles the full suite is 60 test files, 455 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 4 minutes). 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-## Next step: card bubbles in the player column (approved 2026-10-08, not started)
+## Next step: Spec #3, sound design
 
-When the user says "continue", do this first, on branch `polish/column-bubbles` (already created from `main`). It is a bounded fix to the polish pass, and the design below is approved: implement it test-first, commit, self-review, run the gate (typecheck, lint, test, build, e2e), fast-forward merge to `main` locally, delete the branch.
-
-The user meant the card bubbles to be **one line, beside that player's row in the right-hand player column**, not above the pieces. What changes:
-
-- **Placement:** the bubble pops out to the left of the player's row in `PlayerColumn` (`src/hud/PlayerColumn.tsx`, rows are `.prow` in `hud.css`), vertically centred on the row, with a small tail pointing right at it, like the long-press details card (`.pdetail`) but one line and never taking pointer events.
-- **Content, one line:** the card's icon medal, its name in bold, then a short summary, e.g. "[shield] **Shield** · Block the next attack". Add the summaries to `src/hud/labels.ts` beside the card icons (for example `CARD_SUMMARIES` and a `summary` field on `cardInfo`), with a test that every starter card has one. Keep a max width with an ellipsis as a safety net. Approved summaries:
-
-  | Card | Summary |
-  |---|---|
-  | Sprint | Move forward 3 |
-  | Loaded Die | Next die shows 6 |
-  | Overdrive | Next dice total ×2 |
-  | Ladder Warp | Jump to the next ladder |
-  | Steady Hand | Next dice total is exactly 4 |
-  | Snake Charm | Ignore the next snake |
-  | Shield | Block the next attack |
-  | Aegis | Block attacks and snakes, 2 rounds |
-  | Shove | Nearest player ahead goes back 3 |
-  | Heavy Boots | Leader's next total −3 |
-  | Switcheroo | Swap with the furthest ahead |
-  | Coin Flip | 50/50: forward 4 or back 4 |
-  | Jackpot | 40%: forward 15 · 60%: back 8 |
-  | Snake Bait | Land on a snake head? Forward 8 after |
-  | Cleanse | Remove others' effects on you |
-  | Snake Pit | New snake ahead of the leader |
-  | Ladder Drop | New ladder ahead of you |
-
-- **Timing:** unchanged. `src/hud/bubbles.ts` (`bubbleStep`, `visibleBubbles`, `useCardBubbles`) still decides when a bubble shows: from "Cards revealed" until 0.8 s after that player's card has played out.
-- **Remove what only served bubbles over pieces:**
-  - the bubble inside `NameTags.tsx` (tags go back to the name, plus the rank badge, which stays);
-  - `bubbleLevels`;
-  - `keepInside` in `scene/tags.ts` and its per-frame use in `TagProjector.tsx` (restore the scene test's fake tags if they no longer need `querySelector`);
-  - the `.bubble` styles in `app/match.css`.
-- **Wiring:** `MatchScreen` passes the visible bubbles to `PlayerColumn` (by player id) instead of `NameTags`.
-- **Tests:**
-  - a PlayerColumn test that a revealed card shows one line, with the name and summary, in that player's row;
-  - the MatchScreen bubble test now looks in the player column;
-  - update or remove the NameTags bubble test.
-- **Docs:** polish spec §4.4 and spec #2 §5.1 (`CardSelected` row) say "beside the player's row in the player column, one line" instead of "over the caster's piece".
-
-After that: start Spec #3, sound design (below).
-
-## After that: Spec #3, sound design
-
-Spec #2 and the polish pass are complete.
+Spec #2 and the polish pass are complete, including the column card bubbles (2026-10-09, commit `8180d2a`).
 
 The user renumbered the roadmap on 2026-10-08: **sound design is Spec #3 and comes next**, before the server (memory `sound-design-spec3`). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
 
@@ -115,7 +71,7 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 - **Bots** (`@laddorious/bots`): `RandomBot`, `HeuristicBot`, `makeBots(seats, policy, seed, afkPercent)` and `scoreCard`. They are browser-safe.
 - **Client tests and lint:** component tests start with `// @vitest-environment jsdom`; every other test runs in Node. React and React Hooks rules come from `@eslint-react/eslint-plugin` (`eslint-plugin-react` stops at ESLint 9). jsdom stays on 29 while this machine's Node is 24.14 (jsdom 30 needs 24.15). The local, untracked `.claude/launch.json` has `client` (dev server) and `client-build` (serves `dist`) entries for the preview pane.
 - **Director:** `src/director/` is plain TypeScript (presentation state, beat timelines, the `Director` on a `zustand/vanilla` store). Its whole-match test plays a real match through the director and fails on any presentation drift, so run it after changing beat or presentation rules.
-- **Polish pass client parts:** `src/hud/CenterDie.tsx` (my roll in the centre), `src/hud/bubbles.ts` (card bubble lifetimes, drawn inside the name tags by `NameTags.tsx`, kept on screen by `keepInside` in `scene/tags.ts`), `src/hud/ranks.ts` and the `ranks` beat in `director/beats.ts` (the ranks reveal; the director doesn't log it twice and `bannerFor` skips it).
+- **Polish pass client parts:** `src/hud/CenterDie.tsx` (my roll in the centre), `src/hud/bubbles.ts` (card bubble lifetimes; `PlayerColumn.tsx` draws each as one line beside the player's row, with `CARD_SUMMARIES` from `labels.ts`), `src/hud/ranks.ts` and the `ranks` beat in `director/beats.ts` (the ranks reveal; the director doesn't log it twice and `bannerFor` skips it).
 - **Screens:** `src/app/App.tsx` routes the screens; `src/hud/model.ts`, `labels.ts`, `record.ts` and `feed.ts` are the pure HUD model; `test/tokens.test.ts` fails on any colour outside `src/app/theme.ts` and `theme.css`; `test/support/scripted.ts` drives matchmaking and sessions in component tests.
 - **Scene:** `src/scene/` holds the 3D scene. Rules are pure and unit-tested (`layout.ts`, `quality.ts`, `motion.ts`, `camera.ts`); the components read the director's store once per frame. `test/scene.test.tsx` renders the scene graph with `@react-three/test-renderer` and fails above 100 draw calls or 150k triangles, so run it after adding anything to the scene.
 - **e2e:** `apps/client/e2e/game.spec.ts` and `apps/client/playwright.config.ts`. `pnpm e2e` builds with `vite build --mode e2e` into `apps/client/dist-e2e` and serves it on port 4180. Only that build has `window.__laddoriousTest` (`src/app/testMode.ts`): the worker plays every seat with short windows (`FAST` in `src/worker/localHost.ts`), and director beats run at 5% (`timeScale`).
@@ -153,11 +109,10 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - The CI workflow has never run (no git remote). The deploy notes in `apps/client/README.md` were checked against the hosts' docs, not a real deploy.
 - **Deferred polish-pass minors** (from the self-review; not fixed):
   - After I pick a card, the camera keeps its "my Mystery pick" swoop until the reveal settles (it reads the settled view).
-  - A bubble nudged back on screen keeps its tail pointing straight down, not at its piece.
-  - Rank badges and bubbles live inside name tags, so a tag hidden behind the camera hides them too (rare; the reveal uses the overview).
+  - Rank badges live inside name tags, so a tag hidden behind the camera hides its badge too (rare; the reveal uses the overview).
   - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
   - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
-- **Spec #3** (sound design, done by Claude). Not started; next after the column card bubbles.
+- **Spec #3** (sound design, done by Claude). Not started; next.
 - **Spec #4** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started; tested first on the user's own network (memory `multiplayer-lan-testing`).
 - **Spec #5** (Blender art pass: `.glb` files for the asset slots in spec #2 §6.3). Not started.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), particles.

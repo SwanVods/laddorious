@@ -202,7 +202,7 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
 | `ChallengePickLocked` | Lock badge on that player; no wait |
 | `ChallengeResolved` | Picks revealed over the portraits, result banner (≈1.1 s); a replay re-opens the popup |
 | `MysteryOffered` (private) | Card picker opens for you |
-| `CardSelected` | Face-down card chip on that player's row; once all picks are in, the cards flip together (≈1.7 s), and a speech bubble with the card's effect pops over each caster until their card has played out *(polish pass)* |
+| `CardSelected` | Face-down card chip on that player's row; once all picks are in, the cards flip together (≈1.7 s), and a one-line bubble with the card's gist pops out beside each caster's row in the player column until their card has played out *(polish pass)* |
 | `CardResolved` | One beat per card in resolution order (0.9–2 s): projectile, hop, shield, stamp ("Hit", "Blocked", "Fizzled") |
 | `Clash` | Clash banner over the affected players |
 | `EffectAdded` / `EffectRemoved` / `EffectExpired` | HUD chips update; shield bubble appears or disappears |
