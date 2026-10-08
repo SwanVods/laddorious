@@ -1,6 +1,6 @@
 # @laddorious/bots
 
-Bots that play Laddorious from a player's view. The simulator (`apps/sim`) and the client's Web Worker host use them, and the Spec #3 server will too.
+Bots that play Laddorious from a player's view. The simulator (`apps/sim`) and the client's Web Worker host use them, and the Spec #4 server will too.
 
 ## What it exports
 

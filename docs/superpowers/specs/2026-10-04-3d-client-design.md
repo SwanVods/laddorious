@@ -22,6 +22,8 @@ The client is built phone-ready, because native mobile apps will later be produc
 
 ### 1.2 Roadmap after this spec
 
+*Renumbered 2026-10-08 at the user's request: Spec #3 is now **sound design**, the multiplayer server is **Spec #4** and the Blender art pass is **Spec #5**. The rest of this spec keeps the original numbers (server = #3, art = #4).*
+
 | # | Spec | What |
 |---|---|---|
 | 2 | **this spec** | 3D client, menu, matchmaking UI, local bot matches |

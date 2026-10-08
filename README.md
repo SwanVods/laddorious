@@ -12,7 +12,7 @@ This repository holds:
 - **Spec #1:** the deterministic rules engine, the seeded board generator and a headless simulator ([design](docs/superpowers/specs/2026-10-03-game-core-design.md)).
 - **Spec #2:** the 3D web client, with the main menu, matchmaking, a full match against bots and the end screen ([design](docs/superpowers/specs/2026-10-04-3d-client-design.md)).
 
-The multiplayer server (Spec #3) and the art pass (Spec #4) come later.
+Sound design (Spec #3), the multiplayer server (Spec #4) and the art pass (Spec #5) come later.
 
 ## Repository map
 
@@ -60,7 +60,7 @@ pnpm sim replay match0.json                               # check a recorded mat
 - **The simulator** runs thousands of bot matches to measure match length, fairness and card balance.
 - **The client** runs the engine and the bots in a Web Worker. The worker's host owns the timers, and the screens talk to it through the `MatchService` interface.
 
-**The visibility rule:** the client only ever receives what a remote player would, which is `viewFor(state, me)` and `eventsFor(events, me)`. Other players' hands, picks and card targets, and the secret RNG seed, never reach the main thread. That is what lets the Spec #3 server replace the local worker without changing the screens.
+**The visibility rule:** the client only ever receives what a remote player would, which is `viewFor(state, me)` and `eventsFor(events, me)`. Other players' hands, picks and card targets, and the secret RNG seed, never reach the main thread. That is what lets the Spec #4 server replace the local worker without changing the screens.
 
 ## Changing the rules safely
 

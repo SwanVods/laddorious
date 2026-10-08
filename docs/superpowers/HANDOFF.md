@@ -66,14 +66,17 @@ The user meant the card bubbles to be **one line, beside that player's row in th
   - update or remove the NameTags bubble test.
 - **Docs:** polish spec §4.4 and spec #2 §5.1 (`CardSelected` row) say "beside the player's row in the player column, one line" instead of "over the caster's piece".
 
-After that: ask the user which comes next (below).
+After that: start Spec #3, sound design (below).
 
-## After that: the user picks
+## After that: Spec #3, sound design
 
-Spec #2 and the polish pass are complete. Ask the user which of these comes next:
+Spec #2 and the polish pass are complete.
 
-- **Spec #3, the multiplayer server:** matchmaking queue, rooms, and the engine on the server, behind the same `MatchService` the local worker implements. It was suggested as next, and it is tested first on the user's own Wi-Fi (memory `multiplayer-lan-testing`).
-- **Spec #4, the Blender art pass:** `.glb` models for the asset slots (spec #2 §6.3; `apps/client/README.md` has the contract). Use the Blender MCP (memory `blender-for-3d-objects`).
+The user renumbered the roadmap on 2026-10-08: **sound design is Spec #3 and comes next**, before the server (memory `sound-design-spec3`). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
+
+- **Spec #3, sound design (next):** the user wants Claude to do the sound design itself. Start with superpowers:brainstorming: what the game should sound like, how sounds are made (for example synthesized in code with Web Audio, or free CC0 libraries), music or not, and how sounds hook into the director's beats and the HUD.
+- **Spec #4, the multiplayer server:** matchmaking queue, rooms, and the engine on the server, behind the same `MatchService` the local worker implements. Tested first on the user's own Wi-Fi (memory `multiplayer-lan-testing`).
+- **Spec #5, the Blender art pass:** `.glb` models for the asset slots (spec #2 §6.3; `apps/client/README.md` has the contract). Use the Blender MCP (memory `blender-for-3d-objects`).
 - **Fixes for the deferred minors** under Open items.
 
 The user also plans other board styles and themes later, not only the 10×10 grid (memory `future-board-themes`); the layout and the lane shape already live in one module for that (`packages/core/src/board/layout.ts`).
@@ -99,7 +102,7 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 
 ## Repository facts
 
-- **Layout:** `apps/` holds deployables (`sim`, `client`, and `server` in Spec #3); `packages/` holds libraries (`core`, `bots`).
+- **Layout:** `apps/` holds deployables (`sim`, `client`, and `server` in Spec #4); `packages/` holds libraries (`core`, `bots`).
 - **Toolchain:** TypeScript strict, pnpm 11.5 workspaces, Node ≥ 24, Vitest, fast-check, ESLint flat config, tsx.
 - **Commands:** `pnpm install`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm dev` (client on http://localhost:5173), `pnpm build` (into `apps/client/dist`), `pnpm e2e` (Playwright; first run `pnpm --filter @laddorious/client exec playwright install chromium`), `pnpm sim board --seed <s>`, `pnpm sim run …`, `pnpm sim replay <log>`.
 - **pnpm settings:** `pnpm-workspace.yaml` sets `allowBuilds: esbuild: true` (Vite needs it) and a `minimumReleaseAgeExclude` list. A very new dependency release can be refused until it ages; add an exclusion only when one is needed.
@@ -131,12 +134,12 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 
 ## Open items
 
-- **Blender MCP:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`), for Spec #4 (the art pass). It used to time out on connect (in Blender: Disconnect, then Connect, in the MCP panel); it was reachable on 2026-10-08. Check it with `get_addon_status`.
+- **Blender MCP:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`), for Spec #5 (the art pass). It used to time out on connect (in Blender: Disconnect, then Connect, in the MCP panel); it was reachable on 2026-10-08. Check it with `get_addon_status`.
 - **Deferred Phase 4 minors** (from the self-review; not fixed):
   - The crown is placed at tile 100 directly (`src/scene/Surroundings.tsx`), not at the board's last tile.
   - `webglAvailable()` (`src/scene/MatchScene.tsx`) never releases its probe context.
   - Textures and geometries built with `useMemo` in the scene (chevrons, swirl, die atlas, sky, piece and die geometries) are not disposed on unmount; only the board overlay and slide ribbons are.
-  - Only six of the nine §6.3 slots are wired: `die`, `pad` and `slide.vortex` wait for Spec #4.
+  - Only six of the nine §6.3 slots are wired: `die`, `pad` and `slide.vortex` wait for Spec #5.
 - **Deferred Phase 5 minors** (from the self-review; not fixed):
   - Dev builds only (React StrictMode): MatchScreen's subscription effect disposes the director in its cleanup, so updates held before the screen mounted go to the first, discarded subscription. Today only the opening update can be held, and it has no beats, so nothing is lost.
   - On a 390 px tall screen the menu's piece picker covers part of the podium's name plate.
@@ -154,6 +157,7 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - Rank badges and bubbles live inside name tags, so a tag hidden behind the camera hides them too (rare; the reveal uses the overview).
   - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
   - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
-- **Spec #3** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started; suggested next, tested first on the user's own network (memory `multiplayer-lan-testing`).
-- **Spec #4** (Blender art pass: `.glb` files for the asset slots in spec §6.3). Not started.
-- **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), sound and particles.
+- **Spec #3** (sound design, done by Claude). Not started; next after the column card bubbles.
+- **Spec #4** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started; tested first on the user's own network (memory `multiplayer-lan-testing`).
+- **Spec #5** (Blender art pass: `.glb` files for the asset slots in spec #2 §6.3). Not started.
+- **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), particles.

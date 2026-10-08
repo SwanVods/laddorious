@@ -122,7 +122,7 @@ To drop one in:
 
 It loads with drei's `useGLTF` inside Suspense. If it fails to load, the built-in model stays and a warning appears in the console.
 
-Today the four pieces, `crown` and `island` are wired through `<Slot>`. `die`, `pad` and `slide.vortex` are declared but drawn directly, and the Spec #4 art pass will wire them.
+Today the four pieces, `crown` and `island` are wired through `<Slot>`. `die`, `pad` and `slide.vortex` are declared but drawn directly, and the Spec #5 art pass will wire them.
 
 ## Tests
 

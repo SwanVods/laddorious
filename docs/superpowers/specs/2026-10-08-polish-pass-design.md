@@ -2,7 +2,7 @@
 
 **Status:** approved 2026-10-08 and implemented the same day (plan `docs/superpowers/plans/2026-10-08-polish-pass.md`).
 **Amends:** Spec #1 (`2026-10-03-game-core-design.md`) §4.9, §5.2, §7.2, §9; Spec #2 (`2026-10-04-3d-client-design.md`) §5.1, §5.3, §6.1.
-**Comes before:** Spec #3 (multiplayer server).
+**Comes before:** Spec #3 (sound design), then Spec #4 (multiplayer server).
 
 ---
 

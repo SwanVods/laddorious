@@ -1,7 +1,7 @@
 import type { ChallengeChoice, GameEvent, InputErrorCode, PlayerId, PlayerView } from '@laddorious/core';
 
 // The contract between the screens and a match (spec #2 §4.3). LocalMatchService
-// implements it with a Web Worker; the online service (Spec #3) will implement it over the network.
+// implements it with a Web Worker; the online service (Spec #4) will implement it over the network.
 
 export type PieceId = 'knight' | 'pawn' | 'meeple' | 'dragon';
 

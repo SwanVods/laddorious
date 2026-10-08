@@ -4,7 +4,7 @@ import { Mesh, type Material, type MeshStandardMaterial, type Object3D } from 't
 export type SlotName = 'piece.knight' | 'piece.pawn' | 'piece.meeple' | 'piece.dragon' | 'die' | 'pad' | 'slide.vortex' | 'crown' | 'island';
 
 /**
- * Optional .glb overrides per slot (spec #2 §6.3); the Spec #4 art pass fills these in.
+ * Optional .glb overrides per slot (spec #2 §6.3); the Spec #5 art pass fills these in.
  * Contract: 1 tile = 1.6 units, origin at the feet, +Z forward, Y up, pieces under 5k
  * triangles, PBR materials, and a material named `Seat` takes the player's colour.
  */
