@@ -56,7 +56,7 @@ After Phase 4 the full suite is 42 test files, 294 tests, all passing. `pnpm typ
 | 9 | Dock (ROLL with Space, waiting pill, move caption, card queue), face-off popup (keys 1–3), card-pick popup (rerolls, "Peek at the board", keys 1–3), banners | done |
 | 10 | In-world name tags; MatchScreen with watch mode and "Back to my piece", leave dialog, rejection toasts, dev stats | done (preview at `/#hud`, port 5174 via the `client-proto` launch entry) |
 | 11 | Menu scene and screen: podium, floating tiles, turntable, profile chip with rename, logo, gear, piece picker, PLAY with "4-player match", rule tips (hidden under 450 px tall), dev seed field via `findMatch(profile, opts?: { seed })` | done |
-| 12 | Matchmaking overlay ("Play with bots" after 15 s, MATCH FOUND, 3-2-1), end-screen podium, error screen, settings dialog | to do |
+| 12 | Matchmaking overlay ("Play with bots" after 15 s, MATCH FOUND, 3-2-1), end-screen podium, error screen, settings dialog | done |
 | 13 | App shell: routing state machine, error boundary, pause on hidden page, fullscreen on first tap (not iOS); remove `DevMatchPage` and the dev files | to do |
 | 14 | Phase gate and handoff | to do |
 
