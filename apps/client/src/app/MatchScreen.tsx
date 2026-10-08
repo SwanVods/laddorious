@@ -5,6 +5,7 @@ import { Director } from '../director/director';
 import { BannerView, useBanner } from '../hud/Banner';
 import { CardPickPopup } from '../hud/CardPickPopup';
 import { CenterDie } from '../hud/CenterDie';
+import { bubbleLevels, useCardBubbles } from '../hud/bubbles';
 import { DevStats } from '../hud/DevStats';
 import { Dock } from '../hud/Dock';
 import { EventFeed } from '../hud/EventFeed';
@@ -85,6 +86,12 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const banner = useBanner(beat, me, seats);
   const record = useMemo(() => roundRecord(log), [log]);
   const lines = useMemo(() => feedLines(log), [log]);
+  // Revealed cards as speech bubbles over their casters (polish spec §4.4).
+  const shownBubbles = useCardBubbles(director, timeScale);
+  const bubbles = useMemo(() => {
+    const levels = bubbleLevels(shownBubbles, presentation?.positions ?? {}, seats.map((s) => s.playerId));
+    return Object.fromEntries(Object.entries(shownBubbles).map(([id, b]) => [id, { cardId: b.cardId, level: levels[id] ?? 0 }]));
+  }, [shownBubbles, presentation, seats]);
 
   // The countdown redraws while a window's timer runs.
   const timer = settled?.timer ?? null;
@@ -121,7 +128,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
     <div className="screen match">
       <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} />
       <div className="layer">
-        <NameTags seats={seats} me={me} tags={tags} />
+        <NameTags seats={seats} me={me} tags={tags} bubbles={bubbles} />
         {view && presentation && (
           <>
             <StageBar round={presentation.round} stage={stageIndex(beat, view.awaiting.window, stageFromLog(log))} timer={countdown(settled.timer, view.awaiting.durationMs, now)} />

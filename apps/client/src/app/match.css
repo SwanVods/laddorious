@@ -54,7 +54,113 @@
   line-height: 1;
   text-shadow: 0 1.5px 0 var(--ink);
   white-space: nowrap;
-  transform: translate(-50%, -100%);
+}
+
+/* What hangs over a piece, bottom up: its name, then a card bubble (polish spec §4.4). */
+.tag-stack {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  width: max-content;
+  transform: translateX(-50%);
+}
+
+.bubble {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max(180px, 30cqh);
+  max-width: 220px;
+  margin-bottom: calc(var(--level, 0) * max(76px, 14cqh));
+  padding: 6px 10px 6px 6px;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: 0 3px 0 var(--ink);
+  color: var(--ink);
+  font: 500 max(11px, 1.7cqh) / 1.25 var(--body);
+  text-shadow: none;
+  white-space: normal;
+  animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.bubble::after {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 11px;
+  height: 11px;
+  border-right: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--ink);
+  background: var(--paper);
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.bubble-medal {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: max(30px, 5.4cqh);
+  height: max(30px, 5.4cqh);
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--card-type, var(--rarity-common));
+  color: var(--white);
+  font-size: max(16px, 3cqh);
+}
+
+.bubble.movement {
+  --card-type: var(--type-movement);
+}
+
+.bubble.defense {
+  --card-type: var(--type-defense);
+}
+
+.bubble.attack {
+  --card-type: var(--type-attack);
+}
+
+.bubble.risky {
+  --card-type: var(--type-risky);
+}
+
+.bubble.misc {
+  --card-type: var(--type-misc);
+}
+
+.bubble.rare {
+  border-color: var(--ink);
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 3px var(--rarity-rare);
+}
+
+.bubble.epic {
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 3px var(--rarity-epic);
+}
+
+.bubble-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bubble-name {
+  font-size: max(13px, 2.2cqh);
+  line-height: 1;
+}
+
+.bubble-target {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0.75;
+  font-size: 0.92em;
 }
 
 .tag.me .tag-name {
