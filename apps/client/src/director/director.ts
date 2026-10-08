@@ -50,6 +50,8 @@ export class Director {
     private readonly me: PlayerId,
     private readonly playbackDone: (windowId: number) => void,
     private readonly warn: (message: string) => void = (message) => console.warn(message),
+    /** Beat lengths are multiplied by this: e2e builds play matches fast (spec #2 §9.3). */
+    private readonly timeScale = 1,
   ) {}
 
   push(update: MatchUpdate): void {
@@ -91,13 +93,14 @@ export class Director {
       this.finish(current.update, true);
       return;
     }
-    this.store.setState({ beat: { ...beat, startedAt: Date.now() }, log: this.logged(beat.events) });
+    const durationMs = Math.round(beat.durationMs * this.timeScale);
+    this.store.setState({ beat: { ...beat, durationMs, startedAt: Date.now() }, log: this.logged(beat.events) });
     this.timer = setTimeout(() => {
       this.timer = null;
       this.store.setState({ presentation: beat.after });
       current.next += 1;
       this.playNext();
-    }, beat.durationMs);
+    }, durationMs);
   }
 
   /** The timeline is over: the view wins, and the window the update opened may start counting down. */

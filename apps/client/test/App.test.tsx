@@ -175,6 +175,20 @@ describe('App (spec #2 §4.1, §7.1)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back to menu' }));
     expect(screen.getByRole('button', { name: 'PLAY' })).toBeTruthy();
   });
+  it('shows the render stats in e2e builds, for the draw-call check', () => {
+    const made: ScriptedMatchmaking[] = [];
+    const service: MatchService = {
+      findMatch: () => {
+        const matchmaking = new ScriptedMatchmaking();
+        made.push(matchmaking);
+        return matchmaking;
+      },
+    };
+    const prefs = createPrefsStore(null, { prefersReducedMotion: false, random: () => 0.5 });
+    render(<App service={service} prefs={prefs} dev={false} test={{ fast: true, timeScale: 0.05, drawCalls: () => 0 }} />);
+    startMatch(made);
+    expect(screen.getByText(/draw calls/)).toBeTruthy();
+  });
 });
 
 describe('fullscreen on the first tap (spec #2 §7.3)', () => {

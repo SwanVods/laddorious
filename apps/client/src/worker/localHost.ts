@@ -9,6 +9,8 @@ export const PLAYBACK_CAP_MS = 12_000;
 /** Each awaited bot acts at a random moment this far into the countdown (§4.4). */
 export const BOT_DELAY_MIN_MS = 600;
 export const BOT_DELAY_MAX_MS = 2_500;
+/** Fast mode (e2e builds, spec #2 §9.3): every seat plays itself at once and windows are short, so a match takes seconds. */
+export const FAST = { windows: { diceMs: 1500, challengeMs: 1500, mysteryMs: 1500 }, botDelayMinMs: 20, botDelayMaxMs: 80, playbackCapMs: 1500 } as const;
 
 /**
  * One local match (spec #2 §4.4): the engine state, the window timers and the bots.
@@ -22,6 +24,7 @@ export class LocalHost {
   /** The window the current timers belong to. */
   private windowId = 0;
   private stopped = false;
+  private fast = false;
   private readonly timers = new PausableTimers();
 
   constructor(private readonly post: (msg: FromHost) => void) {}
@@ -30,7 +33,7 @@ export class LocalHost {
     this.guard(() => {
       switch (msg.type) {
         case 'create':
-          this.create(msg.seats, msg.seed, msg.rngSeed);
+          this.create(msg.seats, msg.seed, msg.rngSeed, msg.fast ?? false);
           return;
         case 'action':
           this.act(msg.action, msg.windowId);
@@ -52,12 +55,15 @@ export class LocalHost {
     });
   }
 
-  private create(seats: SeatInfo[], seed: string, rngSeed: string): void {
+  private create(seats: SeatInfo[], seed: string, rngSeed: string, fast: boolean): void {
     const human = seats.find((s) => !s.bot);
     if (!human) throw new Error('a local match needs a human seat');
     this.me = human.playerId;
-    this.bots = makeBots(seats.filter((s) => s.bot).map((s) => ({ id: s.playerId })), 'heuristic', rngSeed, 0);
-    this.match = createMatch({ seed, rngSeed }, seats.map((s) => ({ id: s.playerId })));
+    this.fast = fast;
+    // In fast mode a bot plays the human seat too.
+    const played = fast ? seats : seats.filter((s) => s.bot);
+    this.bots = makeBots(played.map((s) => ({ id: s.playerId })), 'heuristic', rngSeed, 0);
+    this.match = createMatch(fast ? { seed, rngSeed, windows: FAST.windows } : { seed, rngSeed }, seats.map((s) => ({ id: s.playerId })));
     this.afterStep([]);
   }
 
@@ -86,7 +92,7 @@ export class LocalHost {
       // A new window: no countdown until the human seat has watched the events (C13).
       this.timers.clearAll();
       this.windowId = aw.windowId;
-      if (aw.window !== 'none') this.timers.set('playback', PLAYBACK_CAP_MS, () => this.guard(() => this.startCountdown()));
+      if (aw.window !== 'none') this.timers.set('playback', this.fast ? FAST.playbackCapMs : PLAYBACK_CAP_MS, () => this.guard(() => this.startCountdown()));
     } else if (this.timers.has('countdown')) {
       this.scheduleBots(); // a bot that rerolled a card still has to pick
     }
@@ -106,7 +112,8 @@ export class LocalHost {
       const bot = this.bots[id];
       const key = `bot:${id}`;
       if (!bot || this.timers.has(key)) continue;
-      const delay = BOT_DELAY_MIN_MS + Math.random() * (BOT_DELAY_MAX_MS - BOT_DELAY_MIN_MS);
+      const [min, max] = this.fast ? [FAST.botDelayMinMs, FAST.botDelayMaxMs] : [BOT_DELAY_MIN_MS, BOT_DELAY_MAX_MS];
+      const delay = min + Math.random() * (max - min);
       this.timers.set(key, delay, () =>
         this.guard(() => {
           const input = bot.decide(viewFor(this.state(), id));

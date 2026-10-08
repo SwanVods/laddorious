@@ -31,10 +31,14 @@ function randomSeed(): string {
 
 /** Matchmaking that never finds a real player; "Play with bots" fills the empty seats (spec #2 C7). */
 export class LocalMatchService implements MatchService {
-  constructor(private readonly createWorker: () => HostWorker) {}
+  constructor(
+    private readonly createWorker: () => HostWorker,
+    /** e2e builds: matches play themselves, fast (spec #2 §9.3). */
+    private readonly opts: { fast?: boolean } = {},
+  ) {}
 
   findMatch(profile: Profile, opts: FindOptions = {}): Matchmaking {
-    return new LocalMatchmaking(seatsFor(profile), this.createWorker, opts.seed ?? null);
+    return new LocalMatchmaking(seatsFor(profile), this.createWorker, opts.seed ?? null, this.opts.fast ?? false);
   }
 }
 
@@ -50,6 +54,7 @@ class LocalMatchmaking implements Matchmaking {
     private readonly createWorker: () => HostWorker,
     /** A dev seed for the board; the dice (rng) seed is always random and secret. */
     private readonly boardSeed: string | null,
+    private readonly fast: boolean,
   ) {
     this.table = [seats[0]!, null, null, null];
     this.state = this.searching();
@@ -86,7 +91,7 @@ class LocalMatchmaking implements Matchmaking {
         this.seatBot(seat + 1);
         return;
       }
-      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: this.boardSeed ?? randomSeed(), rngSeed: randomSeed() });
+      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: this.boardSeed ?? randomSeed(), rngSeed: randomSeed() }, this.fast);
       this.emit({ kind: 'found', session });
     }, BOT_SEAT_MS);
   }

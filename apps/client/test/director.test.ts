@@ -181,3 +181,17 @@ describe('Director with a real host', () => {
     expect(presentation?.positions).toEqual(Object.fromEntries(settled!.view.players.map((p) => [p.id, p.position])));
   });
 });
+
+describe('Director time scale (e2e builds)', () => {
+  it('plays each beat at a fraction of its length', () => {
+    const done: number[] = [];
+    const director = new Director('p0', (w) => done.push(w), vi.fn(), 0.1);
+    director.push(openingUpdate());
+    director.push(update([moved('p1', 0, 3)], { p1: 3 }, 2));
+    const short = Math.round(hops(3) * 0.1);
+    expect(director.store.getState().beat?.durationMs).toBe(short);
+    vi.advanceTimersByTime(short);
+    expect(director.store.getState().beat).toBeNull();
+    expect(done).toEqual([1, 2]);
+  });
+});

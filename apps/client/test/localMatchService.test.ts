@@ -133,3 +133,20 @@ describe('LocalMatchService', () => {
     expect(states).toHaveLength(1);
   });
 });
+
+describe('LocalMatchService in e2e builds', () => {
+  it('starts the worker in fast mode only when asked', () => {
+    const workers: FakeWorker[] = [];
+    const make = (fast?: boolean) =>
+      new LocalMatchService(() => {
+        const worker = new FakeWorker();
+        workers.push(worker);
+        return worker;
+      }, fast === undefined ? undefined : { fast });
+    for (const service of [make(), make(true)]) {
+      service.findMatch(ARI).playWithBots();
+      vi.advanceTimersByTime(3 * BOT_SEAT_MS);
+    }
+    expect(workers.map((w) => (w.posted[0]?.type === 'create' ? w.posted[0].fast : 'none'))).toEqual([false, true]);
+  });
+});

@@ -186,3 +186,18 @@ describe('LocalHost failures', () => {
     expect(sent).toHaveLength(count);
   });
 });
+
+describe('LocalHost fast mode (e2e builds, spec #2 §9.3)', () => {
+  it('plays every seat itself, the human one included, and finishes a match quickly', () => {
+    const sent: FromHost[] = [];
+    const host = new LocalHost((msg) => sent.push(msg));
+    host.handle({ type: 'create', seats: SEATS, seed: 'board-seed', rngSeed: SECRET, fast: true });
+    const events = () => sent.flatMap((m) => (m.type === 'update' ? m.update.events : []));
+    for (let t = 0; t < 600_000 && !events().some((e) => e.type === 'MatchWon'); t += 100) vi.advanceTimersByTime(100);
+    expect(events().some((e) => e.type === 'MatchWon')).toBe(true);
+    const myRolls = events().filter((e) => e.type === 'DieRolled' && e.player === 'p0');
+    expect(myRolls.length).toBeGreaterThan(0);
+    expect(myRolls.every((e) => e.type === 'DieRolled' && !e.auto)).toBe(true);
+    expect(sent.some((m) => m.type === 'failed' || m.type === 'rejected')).toBe(false);
+  });
+});

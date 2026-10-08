@@ -3,7 +3,7 @@ import type { MatchUpdate, PlayerAction, SeatInfo } from '../service/matchServic
 
 /** Main thread → host worker (spec #2 §4.4). Plain objects, so they survive structured cloning. */
 export type ToHost =
-  | { type: 'create'; seats: SeatInfo[]; seed: string; rngSeed: string }
+  | { type: 'create'; seats: SeatInfo[]; seed: string; rngSeed: string; /** e2e builds: every seat plays itself, fast (spec #2 §9.3). */ fast?: boolean }
   | { type: 'action'; action: PlayerAction; windowId: number }
   | { type: 'playbackDone'; windowId: number }
   | { type: 'pause' }

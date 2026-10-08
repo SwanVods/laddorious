@@ -34,6 +34,8 @@ export interface MatchScreenProps {
   reducedMotion: boolean;
   /** The dev overlay: fps, draw calls, triangles (dev builds only). */
   showStats?: boolean;
+  /** Beat lengths are multiplied by this (e2e builds). */
+  timeScale?: number;
   /** I left through the leave dialog; the session has been left. */
   onLeave: () => void;
   /** The host failed (spec #2 §8): the error screen takes over. */
@@ -46,9 +48,9 @@ export interface MatchScreenProps {
  * The match screen (spec #2 §7.1, §7.2): the 3D board with the HUD over it. It plays the
  * session's updates through a Director and sends my rolls, picks and rerolls.
  */
-export function MatchScreen({ session, quality, reducedMotion, showStats = false, onLeave, onFailed, onFinished }: MatchScreenProps) {
+export function MatchScreen({ session, quality, reducedMotion, showStats = false, timeScale = 1, onLeave, onFailed, onFinished }: MatchScreenProps) {
   const { me, seats } = session;
-  const [director] = useState(() => new Director(me, (windowId) => session.playbackDone(windowId)));
+  const [director] = useState(() => new Director(me, (windowId) => session.playbackDone(windowId), undefined, timeScale));
   const [tags] = useState(createTagRegistry);
   const [watch, setWatch] = useState<PlayerId | null>(null);
   const [leaving, setLeaving] = useState(false);

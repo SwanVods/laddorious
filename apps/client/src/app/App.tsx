@@ -12,6 +12,7 @@ import { MatchScreen } from './MatchScreen';
 import { MenuScreen } from './MenuScreen';
 import type { PrefsState } from './prefs';
 import { SettingsDialog } from './SettingsDialog';
+import type { TestHooks } from './testMode';
 
 /** Where the player is (spec #2 §4.1): the screens and what each one holds. */
 type Route =
@@ -26,6 +27,8 @@ interface AppProps {
   prefs: StoreApi<PrefsState>;
   /** Dev builds: the seed field, the stats overlay and error details. */
   dev: boolean;
+  /** e2e builds: fast matches, and the render stats for the draw-call check (spec #2 §9.3). */
+  test?: TestHooks | null;
 }
 
 /**
@@ -34,7 +37,7 @@ interface AppProps {
  * It pauses a local match while the page is hidden (C14) and asks for fullscreen on the first
  * touch where the browser allows it (§7.3).
  */
-export function App({ service, prefs, dev }: AppProps) {
+export function App({ service, prefs, dev, test = null }: AppProps) {
   const [route, setRoute] = useState<Route>({ screen: 'menu' });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [crashes, setCrashes] = useState(0);
@@ -76,7 +79,8 @@ export function App({ service, prefs, dev }: AppProps) {
             session={current}
             quality={settings.quality}
             reducedMotion={settings.reducedMotion}
-            showStats={dev}
+            showStats={dev || test !== null}
+            timeScale={test?.timeScale ?? 1}
             onLeave={toMenu}
             onFailed={(message) => {
               current.leave();

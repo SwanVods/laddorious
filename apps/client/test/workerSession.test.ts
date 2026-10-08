@@ -9,7 +9,7 @@ describe('WorkerMatchSession', () => {
   it('starts the match with a create message, and its human seat is me', () => {
     const worker = new FakeWorker();
     const session = new WorkerMatchSession(worker, SEATS, SEEDS);
-    expect(worker.posted).toEqual([{ type: 'create', seats: SEATS, seed: 'board-seed', rngSeed: 'secret-rng-seed' }]);
+    expect(worker.posted).toEqual([{ type: 'create', seats: SEATS, seed: 'board-seed', rngSeed: 'secret-rng-seed', fast: false }]);
     expect(session.me).toBe('p0');
     expect(session.seats).toBe(SEATS);
   });

@@ -37,12 +37,14 @@ export class WorkerMatchSession implements MatchSession {
     private readonly worker: HostWorker,
     readonly seats: SeatInfo[],
     seeds: { seed: string; rngSeed: string },
+    /** e2e builds: the host plays every seat itself, fast (spec #2 §9.3). */
+    fast = false,
   ) {
     this.me = seats.find((s) => !s.bot)!.playerId;
     worker.onmessage = (e) => this.receive(e.data);
     // The worker script itself failed (it could not load, or threw outside the host's guard).
     worker.onerror = (e) => this.failures.emit({ message: e.message || 'the match worker stopped' });
-    worker.postMessage({ type: 'create', seats, seed: seeds.seed, rngSeed: seeds.rngSeed });
+    worker.postMessage({ type: 'create', seats, seed: seeds.seed, rngSeed: seeds.rngSeed, fast });
   }
 
   onUpdate(cb: (u: MatchUpdate) => void): () => void {

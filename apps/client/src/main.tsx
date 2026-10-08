@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { browserStorage, createPrefsStore } from './app/prefs';
+import { testHooks } from './app/testMode';
 import { LocalMatchService } from './service/localMatchService';
 import './app/theme.css';
 import './app/base.css';
@@ -12,8 +13,11 @@ import './app/match.css';
 import './app/menu.css';
 import './app/screens.css';
 
+// e2e builds only (vite build --mode e2e): fast matches and window.__laddoriousTest (spec #2 §9.3).
+const test = import.meta.env.MODE === 'e2e' ? testHooks() : null;
 const service = new LocalMatchService(
   () => new Worker(new URL('./worker/host.worker.ts', import.meta.url), { type: 'module' }),
+  { fast: test !== null },
 );
 const prefs = createPrefsStore(browserStorage(), {
   prefersReducedMotion: typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -21,6 +25,6 @@ const prefs = createPrefsStore(browserStorage(), {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App service={service} prefs={prefs} dev={import.meta.env.DEV} />
+    <App service={service} prefs={prefs} dev={import.meta.env.DEV} test={test} />
   </StrictMode>,
 );
