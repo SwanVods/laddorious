@@ -121,7 +121,7 @@
   display: flex;
   flex-direction: column;
   gap: max(4px, 0.7cqh);
-  width: max(220px, 42cqh);
+  width: max(190px, 42cqh);
   margin: 0;
   padding: 0;
   list-style: none;

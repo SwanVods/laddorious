@@ -82,7 +82,7 @@ export function MatchScene({ director, seats, me, setting, watch = null, reduced
   return (
     <div className="scene-frame">
       {/* 'percentage' is PCF: three 0.186 dropped the soft PCF type R3F would pick for `true`. */}
-      <Canvas shadows={profile.shadows ? 'percentage' : false} dpr={[1, profile.dpr]} gl={{ antialias: profile.antialias }} camera={{ fov: 42, near: 0.5, far: 200, position: [0, 22, 24.5] }}>
+      <Canvas shadows={profile.shadows ? 'percentage' : false} dpr={[1, profile.dpr]} gl={{ antialias: profile.antialias }} camera={{ fov: 42, near: 0.5, far: 200, position: [0, 23, 26] }}>
         <SceneContent director={director} seats={seats} me={me} board={board} level={level} watch={watch} reducedMotion={reducedMotion} tags={tags} />
         {showStats && <StatsProbe />}
         {setting === 'auto' && level === 'high' && <QualityWatch onStepDown={stepDown} />}

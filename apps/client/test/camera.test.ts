@@ -17,7 +17,7 @@ function shot(over: Partial<ShotInput> = {}) {
 
 describe('camera rules (spec #2 §5.3)', () => {
   it('shows the whole board while everyone rolls, framed a little toward the start row so the dock never hides it', () => {
-    expect(shot()).toMatchObject({ mode: 'overview', target: [0, 0, 2.5], position: [0, 22, 24.5] });
+    expect(shot()).toMatchObject({ mode: 'overview', target: [0, 0, 4], position: [0, 23, 26] });
   });
 
   it('drifts gently over the overview, and holds still with reduced motion', () => {
