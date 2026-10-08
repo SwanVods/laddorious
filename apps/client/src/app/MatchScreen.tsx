@@ -5,7 +5,7 @@ import { Director } from '../director/director';
 import { BannerView, useBanner } from '../hud/Banner';
 import { CardPickPopup } from '../hud/CardPickPopup';
 import { CenterDie } from '../hud/CenterDie';
-import { bubbleLevels, useCardBubbles } from '../hud/bubbles';
+import { useCardBubbles } from '../hud/bubbles';
 import { rankBadges } from '../hud/ranks';
 import { DevStats } from '../hud/DevStats';
 import { Dock } from '../hud/Dock';
@@ -87,12 +87,9 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const banner = useBanner(beat, me, seats);
   const record = useMemo(() => roundRecord(log), [log]);
   const lines = useMemo(() => feedLines(log), [log]);
-  // Revealed cards as speech bubbles over their casters (polish spec §4.4).
+  // Revealed cards as one-line bubbles beside their players' rows (polish spec §4.4).
   const shownBubbles = useCardBubbles(director, timeScale);
-  const bubbles = useMemo(() => {
-    const levels = bubbleLevels(shownBubbles, presentation?.positions ?? {}, seats.map((s) => s.playerId));
-    return Object.fromEntries(Object.entries(shownBubbles).map(([id, b]) => [id, { cardId: b.cardId, level: levels[id] ?? 0 }]));
-  }, [shownBubbles, presentation, seats]);
+  const bubbles = useMemo(() => Object.fromEntries(Object.entries(shownBubbles).map(([id, b]) => [id, b.cardId])), [shownBubbles]);
 
   // The countdown redraws while a window's timer runs.
   const timer = settled?.timer ?? null;
@@ -129,12 +126,12 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
     <div className="screen match">
       <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} />
       <div className="layer">
-        <NameTags seats={seats} me={me} tags={tags} bubbles={bubbles} ranks={rankBadges(beat, timeScale)} />
+        <NameTags seats={seats} me={me} tags={tags} ranks={rankBadges(beat, timeScale)} />
         {view && presentation && (
           <>
             <StageBar round={presentation.round} stage={stageIndex(beat, view.awaiting.window, stageFromLog(log))} timer={countdown(settled.timer, view.awaiting.durationMs, now)} />
             <EventFeed lines={lines} seats={seats} />
-            <PlayerColumn rows={rows} onWatch={setWatch} reducedMotion={reducedMotion} />
+            <PlayerColumn rows={rows} bubbles={bubbles} onWatch={setWatch} reducedMotion={reducedMotion} />
             {mine && <YourPiece row={mine} mods={nextRollMods(presentation.effects, me)} players={rows.length} boardSize={view.board.size} />}
             <Dock model={dockModel({ beat, view, record, me })} seats={seats} onRoll={() => session.send({ type: 'roll' })} />
           </>

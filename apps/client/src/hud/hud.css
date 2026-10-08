@@ -670,3 +670,95 @@
     transform: scale(1.25);
   }
 }
+
+/* ---------------------------------------------------------------- card bubbles beside the rows (polish pass) */
+.pbubble {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(46cqw, 380px);
+  padding: 3px 12px 3px 4px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 3px 0 var(--ink);
+  color: var(--ink);
+  font: 500 max(12px, 1.9cqh) / 1.2 var(--body);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.pbubble::after {
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-top: 2.5px solid var(--ink);
+  border-right: 2.5px solid var(--ink);
+  background: var(--paper);
+  content: '';
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.pbubble.rare {
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 3px var(--rarity-rare);
+}
+
+.pbubble.epic {
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 3px var(--rarity-epic);
+}
+
+.pbubble-medal {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: max(24px, 4cqh);
+  height: max(24px, 4cqh);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--card-type, var(--rarity-common));
+  color: var(--white);
+  font-size: max(13px, 2.3cqh);
+}
+
+.pbubble.movement {
+  --card-type: var(--type-movement);
+}
+
+.pbubble.defense {
+  --card-type: var(--type-defense);
+}
+
+.pbubble.attack {
+  --card-type: var(--type-attack);
+}
+
+.pbubble.risky {
+  --card-type: var(--type-risky);
+}
+
+.pbubble.misc {
+  --card-type: var(--type-misc);
+}
+
+.pbubble-name {
+  flex: none;
+  font-size: max(13px, 2.1cqh);
+  line-height: 1;
+}
+
+.pbubble-summary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pbubble-summary::before {
+  content: '· ';
+}

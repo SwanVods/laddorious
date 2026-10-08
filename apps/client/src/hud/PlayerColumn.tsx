@@ -77,8 +77,24 @@ function Details({ row, players }: { row: PlayerRow; players: number }) {
   );
 }
 
+/** A revealed card in one line beside its player's row (polish pass): icon, name, summary. */
+function CardBubble({ cardId }: { cardId: string }) {
+  const info = cardInfo(cardId);
+  return (
+    <div className={`pbubble ${info.rarity} ${info.type}`} aria-hidden="true">
+      <span className="pbubble-medal">
+        <Icon name={info.icon} />
+      </span>
+      <b className="pbubble-name display">{info.name}</b>
+      <span className="pbubble-summary">{info.summary}</span>
+    </div>
+  );
+}
+
 interface PlayerColumnProps {
   rows: PlayerRow[];
+  /** Revealed cards by player, shown as one-line bubbles beside their rows. */
+  bubbles?: Readonly<Record<PlayerId, string>>;
   /** Watch a piece, or null to go back to my own (spec #2 §5.3). */
   onWatch: (player: PlayerId | null) => void;
   reducedMotion: boolean;
@@ -89,7 +105,7 @@ interface PlayerColumnProps {
  * with a status icon, a name plate with the tile, a mini row of dice and chips, and a portrait
  * with the rank. Tap watches that piece; a long press or a mouse hover opens the details card.
  */
-export function PlayerColumn({ rows, onWatch, reducedMotion }: PlayerColumnProps) {
+export function PlayerColumn({ rows, bubbles = {}, onWatch, reducedMotion }: PlayerColumnProps) {
   const [detail, setDetail] = useState<{ id: PlayerId; by: 'press' | 'hover' } | null>(null);
   const pressRef = useRef<{ timer: ReturnType<typeof setTimeout> | null; fired: boolean }>({ timer: null, fired: false });
   const itemsRef = useRef(new Map<PlayerId, HTMLLIElement>());
@@ -181,7 +197,7 @@ export function PlayerColumn({ rows, onWatch, reducedMotion }: PlayerColumnProps
               </span>
               <Portrait piece={row.seat.piece} color={row.seat.color} badge={row.rank} />
             </button>
-            {detail?.id === id && <Details row={row} players={rows.length} />}
+            {detail?.id === id ? <Details row={row} players={rows.length} /> : bubbles[id] && <CardBubble cardId={bubbles[id]} />}
           </li>
         );
       })}

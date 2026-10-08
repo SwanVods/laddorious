@@ -42,18 +42,3 @@ export function tagAnchor(state: DirectorState, player: PlayerId, seat: number, 
   const stagger = tile === 0 && !moving && seat % 2 === 1 ? START_STAGGER : 0;
   return [x, y + TAG_HEIGHT + stagger, z];
 }
-
-/**
- * How far to shift a card bubble so it stays on screen (polish spec §4.4): inside the side and
- * bottom margins, and below the top margin where the stage bar sits. Coordinates are relative
- * to the tag layer, with the bubble at its unshifted place.
- */
-export function keepInside(
-  rect: { left: number; top: number; right: number; bottom: number },
-  area: { width: number; height: number },
-  margin: { side: number; top: number },
-): { dx: number; dy: number } {
-  const dx = rect.left < margin.side ? margin.side - rect.left : rect.right > area.width - margin.side ? area.width - margin.side - rect.right : 0;
-  const dy = rect.top < margin.top ? margin.top - rect.top : rect.bottom > area.height - margin.side ? area.height - margin.side - rect.bottom : 0;
-  return { dx, dy };
-}

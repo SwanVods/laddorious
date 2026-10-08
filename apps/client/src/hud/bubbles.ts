@@ -2,8 +2,8 @@ import type { PlayerId } from '@laddorious/core';
 import { useEffect, useState } from 'react';
 import type { Director, PlayingBeat } from '../director/director';
 
-// Card bubbles (polish spec §4.4): when the cards flip, a speech bubble with the card's effect
-// pops over each caster's piece and stays until that caster's card has played out.
+// Card bubbles (polish spec §4.4): when the cards flip, a one-line bubble with the card's gist
+// pops out beside each caster's row in the player column and stays until their card has played out.
 
 /** How long a bubble lingers after its card's beat ends, before the director's time scale. */
 export const BUBBLE_LINGER_MS = 800;
@@ -37,20 +37,6 @@ export function bubbleStep(bubbles: Bubbles, beat: PlayingBeat | null, nowMs: nu
 /** The bubbles still up at `nowMs`. */
 export function visibleBubbles(bubbles: Bubbles, nowMs: number): Bubbles {
   return Object.fromEntries(Object.entries(bubbles).filter(([, b]) => b.leaveAt === null || nowMs < b.leaveAt));
-}
-
-/** Bubbles of pieces on the same tile stack upwards, in seat order: 0 is the lowest. */
-export function bubbleLevels(bubbles: Bubbles, positions: Readonly<Record<PlayerId, number>>, seatOrder: readonly PlayerId[]): Record<PlayerId, number> {
-  const levels: Record<PlayerId, number> = {};
-  const perTile = new Map<number, number>();
-  for (const id of seatOrder) {
-    if (!bubbles[id]) continue;
-    const tile = positions[id] ?? 0;
-    const level = perTile.get(tile) ?? 0;
-    levels[id] = level;
-    perTile.set(tile, level + 1);
-  }
-  return levels;
 }
 
 /** The bubbles up right now, following the director's beats. */

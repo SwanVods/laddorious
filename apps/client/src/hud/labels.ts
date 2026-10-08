@@ -34,6 +34,27 @@ const CARD_ICONS: Record<string, IconName> = {
   'ladder-drop': 'pad',
 };
 
+/** One line per card for its bubble beside the player column (polish pass): the gist, not the rules text. */
+const CARD_SUMMARIES: Record<string, string> = {
+  sprint: 'Move forward 3',
+  'loaded-die': 'Next die shows 6',
+  overdrive: 'Next dice total ×2',
+  'ladder-warp': 'Jump to the next ladder',
+  'steady-hand': 'Next dice total is exactly 4',
+  'snake-charm': 'Ignore the next snake',
+  shield: 'Block the next attack',
+  aegis: 'Block attacks and snakes, 2 rounds',
+  shove: 'Nearest player ahead goes back 3',
+  'heavy-boots': "Leader's next total −3",
+  switcheroo: 'Swap with the furthest ahead',
+  'coin-flip': '50/50: forward 4 or back 4',
+  jackpot: '40%: forward 15 · 60%: back 8',
+  'snake-bait': 'Land on a snake head? Forward 8 after',
+  cleanse: "Remove others' effects on you",
+  'snake-pit': 'New snake ahead of the leader',
+  'ladder-drop': 'New ladder ahead of you',
+};
+
 export interface CardInfo {
   id: string;
   name: string;
@@ -43,6 +64,8 @@ export interface CardInfo {
   /** Who it aims at, as shown before picking: the exact target stays hidden until it resolves. */
   targetLine: string;
   icon: IconName;
+  /** One line for the card's bubble; falls back to the full text for a card without one. */
+  summary: string;
 }
 
 /** The target line of a card (spec #2 §7.2). */
@@ -65,7 +88,7 @@ export function targetLine(rule: TargetRule): string {
 
 export function cardInfo(id: string): CardInfo {
   const card = cardById(STARTER_CARDS, id);
-  return { id, name: card.name, text: card.text, type: card.type, rarity: card.rarity, targetLine: targetLine(card.target), icon: CARD_ICONS[id] ?? 'card' };
+  return { id, name: card.name, text: card.text, type: card.type, rarity: card.rarity, targetLine: targetLine(card.target), icon: CARD_ICONS[id] ?? 'card', summary: CARD_SUMMARIES[id] ?? card.text };
 }
 
 /**

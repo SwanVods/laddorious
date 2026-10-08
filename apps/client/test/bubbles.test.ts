@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { BeatKind } from '../src/director/beats';
 import type { PlayingBeat } from '../src/director/director';
 import type { PresentationState } from '../src/director/presentation';
-import { BUBBLE_LINGER_MS, bubbleLevels, bubbleStep, visibleBubbles } from '../src/hud/bubbles';
+import { BUBBLE_LINGER_MS, bubbleStep, visibleBubbles } from '../src/hud/bubbles';
 
 const selected = (player: PlayerId, cardId: string): GameEvent => ({ type: 'CardSelected', player, cardId, cardType: 'movement', rarity: 'common', auto: false, visibility: 'public' });
 const resolved = (caster: PlayerId, cardId: string): GameEvent => ({ type: 'CardResolved', caster, cardId, target: null, result: 'hit', visibility: 'public' });
@@ -47,8 +47,4 @@ describe('card bubbles (polish spec §4.4)', () => {
     expect(bubbleStep(shown, beat('victory', []), 100, 1)).toEqual({});
   });
 
-  it('stacks the bubbles of pieces sharing a tile, in seat order', () => {
-    const levels = bubbleLevels({ p0: { cardId: 'a', leaveAt: null }, p2: { cardId: 'b', leaveAt: null }, p3: { cardId: 'c', leaveAt: null } }, { p0: 12, p1: 12, p2: 12, p3: 30 }, ['p0', 'p1', 'p2', 'p3']);
-    expect(levels).toEqual({ p0: 0, p2: 1, p3: 0 });
-  });
 });

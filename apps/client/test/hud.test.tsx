@@ -116,6 +116,15 @@ describe('PlayerColumn (spec #2 §7.2, §9.2)', () => {
     expect(rowOf(/^Juno/).querySelector('.chip-card i')!.className).toBe('hit');
   });
 
+  it("shows a revealed card as a one-line bubble beside its player's row (polish pass)", () => {
+    render(<PlayerColumn rows={mysteryRows()} onWatch={() => {}} reducedMotion={false} bubbles={{ p1: 'shield' }} />);
+    const bubbles = document.querySelectorAll('.pbubble');
+    expect(bubbles).toHaveLength(1);
+    expect(bubbles[0]!.closest('li')).toBe(rowOf(/^Mochi/).closest('li'));
+    expect(bubbles[0]!.querySelector('.pbubble-name')!.textContent).toBe('Shield');
+    expect(bubbles[0]!.querySelector('.pbubble-summary')!.textContent).toBe('Block the next attack');
+  });
+
   it('says what each player is doing', () => {
     render(<PlayerColumn rows={mysteryRows()} onWatch={() => {}} reducedMotion={false} />);
     expect(rowOf(/^You/).getAttribute('aria-label')).toBe('You (you), tile 5, rank 3. Your card to pick');

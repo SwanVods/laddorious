@@ -2,38 +2,27 @@ import type { PlayerId } from '@laddorious/core';
 import type { CSSProperties } from 'react';
 import type { TagRegistry } from '../scene/tags';
 import type { SeatInfo } from '../service/matchService';
-import { Icon } from '../ui/Icon';
-import { cardInfo } from './labels';
 import type { RankBadge } from './ranks';
-
-/** A revealed card shown over its caster (polish spec §4.4); `level` lifts it above bubbles lower on the same tile. */
-export interface TagBubble {
-  cardId: string;
-  level: number;
-}
 
 /**
  * In-world name tags (spec #2 §7.2): one per seat, in the seat colour, mine outlined in mint.
  * They start hidden; the scene's TagProjector places them over the pieces every frame. A tag
- * also carries its player's card bubble while one is up, and its rank badge during the ranks reveal.
+ * also carries its player's rank badge during the ranks reveal (polish spec §4.5).
  */
 export function NameTags({
   seats,
   me,
   tags,
-  bubbles = {},
   ranks = {},
 }: {
   seats: readonly SeatInfo[];
   me: PlayerId;
   tags: TagRegistry;
-  bubbles?: Readonly<Record<PlayerId, TagBubble>>;
   ranks?: Readonly<Record<PlayerId, RankBadge>>;
 }) {
   return (
     <div className="tags" aria-hidden="true">
       {seats.map((seat) => {
-        const bubble = bubbles[seat.playerId];
         const rank = ranks[seat.playerId];
         return (
           <div
@@ -46,7 +35,6 @@ export function NameTags({
             style={{ '--seat': seat.color, visibility: 'hidden' } as CSSProperties}
           >
             <div className="tag-stack">
-              {bubble && <CardBubble {...bubble} />}
               {rank && (
                 <span className="rank-badge display" style={{ animationDelay: `${rank.delayMs}ms` }}>
                   {rank.label}
@@ -57,25 +45,6 @@ export function NameTags({
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function CardBubble({ cardId, level }: TagBubble) {
-  const info = cardInfo(cardId);
-  return (
-    <div className={`bubble ${info.rarity} ${info.type}`} style={{ '--level': level } as CSSProperties}>
-      <span className="bubble-medal">
-        <Icon name={info.icon} />
-      </span>
-      <span className="bubble-body">
-        <b className="bubble-name display">{info.name}</b>
-        <span className="bubble-text">{info.text}</span>
-        <span className="bubble-target">
-          <Icon name="target" />
-          {info.targetLine}
-        </span>
-      </span>
     </div>
   );
 }

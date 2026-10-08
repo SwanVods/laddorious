@@ -117,14 +117,15 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     expect(screen.getByRole('dialog', { name: 'Choose One' })).toBeTruthy();
   });
 
-  it('pops a bubble with the card over each caster when the cards are revealed (polish spec 4.4)', () => {
+  it("pops a one-line bubble beside each caster's row when the cards are revealed (polish spec 4.4)", () => {
     const session = start();
     session.update(opening());
     session.update({
       ...opening(),
       events: [{ type: 'CardSelected', player: 'p1', cardId: 'shove', cardType: 'attack', rarity: 'common', auto: false, visibility: 'public' }],
     });
-    expect(document.querySelector('.bubble')?.textContent).toContain('Shove');
+    expect(document.querySelector('.players .pbubble .pbubble-name')?.textContent).toBe('Shove');
+    expect(document.querySelector('.tags .bubble')).toBeNull(); // not over the pieces any more
   });
 
   it('toasts a rejected action', () => {

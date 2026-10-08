@@ -1,4 +1,4 @@
-import type { ActiveEffect, EffectParams, Lifetime, PlayerView } from '@laddorious/core';
+import { STARTER_CARDS, type ActiveEffect, type EffectParams, type Lifetime, type PlayerView } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
 import { cardInfo, effectChip, fizzleWarning, nextRollMods, rejectionText, targetLine } from '../src/hud/labels';
 import { openingUpdate } from './support/fixtures';
@@ -25,7 +25,17 @@ describe('card labels (spec #2 §7.2)', () => {
       rarity: 'rare',
       targetLine: 'The leader',
       icon: 'boot',
+      summary: "Leader's next total −3",
     });
+  });
+
+  it('gives every starter card a short one-line summary for its bubble (polish pass)', () => {
+    for (const card of STARTER_CARDS) {
+      const { summary } = cardInfo(card.id);
+      expect(summary, card.id).not.toBe(card.text);
+      expect(summary.length, card.id).toBeLessThanOrEqual(40);
+    }
+    expect(cardInfo('shield').summary).toBe('Block the next attack');
   });
 
   it('writes the target line from the targeting rule', () => {
