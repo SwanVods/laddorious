@@ -19,6 +19,14 @@ describe('NameTags', () => {
     expect(container.querySelectorAll('.bubble')).toHaveLength(1);
   });
 
+  it('pops a rank badge over a non-winner during the ranks reveal, delayed by its turn (polish spec §4.5)', () => {
+    const { container } = render(<NameTags seats={SEATS} me="p0" tags={createTagRegistry()} ranks={{ p2: { label: '3rd', delayMs: 500 } }} />);
+    const badge = container.querySelector('.rank-badge') as HTMLElement | null;
+    expect(badge?.textContent).toBe('3rd');
+    expect(badge?.closest('.tag')?.textContent).toContain('Pip');
+    expect(badge?.style.animationDelay).toBe('500ms');
+  });
+
   it('shows no bubble when nobody has a card up', () => {
     const { container } = render(<NameTags seats={SEATS} me="p0" tags={createTagRegistry()} />);
     expect(container.querySelector('.bubble')).toBeNull();

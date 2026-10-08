@@ -46,6 +46,13 @@ export interface CardInfo {
 }
 
 /** The target line of a card (spec #2 §7.2). */
+const ORDINALS = ['1st', '2nd', '3rd', '4th'];
+
+/** "1st" to "4th" for a final place. */
+export function ordinal(rank: number): string {
+  return ORDINALS[rank - 1] ?? `${rank}th`;
+}
+
 export function targetLine(rule: TargetRule): string {
   if (rule.condition === 'self') return 'You';
   if (rule.condition === 'section') return `A player on tiles ${rule.section?.[0]}–${rule.section?.[1]}`;

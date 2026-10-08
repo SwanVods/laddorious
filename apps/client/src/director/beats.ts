@@ -17,6 +17,7 @@ export type BeatKind =
   | 'clash'
   | 'boardEdit'
   | 'victory'
+  | 'ranks'
   | 'info';
 
 /** One step of an update's playback (spec #2 §5.1). */
@@ -47,6 +48,9 @@ export const BEAT_MS = {
   clash: 900,
   boardEdit: 600,
   victory: 3000,
+  /** The ranks reveal: one step per place behind the winner, then a hold (polish spec §4.5). */
+  rankStep: 500,
+  rankHold: 1200,
 } as const;
 
 /** 'effect' moves come from after-move card effects; they play like card moves. */
@@ -119,6 +123,12 @@ export function buildTimeline(events: GameEvent[], start: PresentationState, me:
       beats.push({ kind, durationMs: 0, events: [event], after: state });
     }
   }
+  // The winner cam, then the other places revealed over the overview (polish spec §4.5).
+  const victory = beats.findIndex((b) => b.kind === 'victory');
+  if (victory >= 0) {
+    const won = beats[victory]!;
+    beats.splice(victory + 1, 0, { kind: 'ranks', durationMs: 0, events: won.events.filter((e) => e.type === 'MatchWon'), after: won.after });
+  }
   for (const beat of beats) beat.durationMs = durationOf(beat, boardSize);
   return beats;
 }
@@ -164,6 +174,11 @@ function durationOf(beat: Beat, boardSize: number): number {
       return BEAT_MS.boardEdit;
     case 'victory':
       return BEAT_MS.victory;
+    case 'ranks': {
+      const won = beat.events.find((e) => e.type === 'MatchWon');
+      const places = won?.type === 'MatchWon' ? new Set(won.rankings.filter((r) => r.player !== won.winner).map((r) => r.rank)).size : 0;
+      return places * BEAT_MS.rankStep + BEAT_MS.rankHold;
+    }
     case 'info':
       return 0;
   }

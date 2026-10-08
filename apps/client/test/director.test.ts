@@ -47,6 +47,15 @@ afterEach(() => {
 });
 
 describe('Director', () => {
+  it('logs the win once, although the ranks reveal replays it (polish spec 4.5)', () => {
+    const { director, state } = startDirector();
+    const won: GameEvent = { type: 'MatchWon', winner: 'p1', rankings: [{ player: 'p1', rank: 1, position: 100 }, { player: 'p0', rank: 2, position: 0 }], visibility: 'public' };
+    director.push(update([moved('p1', 0, 100), won], { p1: 100 }, 2, { window: 'none' }));
+    vi.advanceTimersByTime(100 * BEAT_MS.hopPerTile + BEAT_MS.landing + BEAT_MS.victory);
+    expect(state().beat?.kind).toBe('ranks');
+    expect(state().log.filter((l) => l.event.type === 'MatchWon')).toHaveLength(1);
+  });
+
   it('reports playback done at once for an update with nothing to play', () => {
     const { done, state } = startDirector();
     expect(done).toEqual([1]);

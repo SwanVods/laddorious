@@ -43,12 +43,18 @@ export function cameraShot(input: ShotInput): Shot {
   const { beat, me } = input;
   const won = beat?.kind === 'victory' ? beat.events.find((e) => e.type === 'MatchWon') : undefined;
   if (won?.type === 'MatchWon') return won.winner === me ? swoop(input.piece(me), input) : follow(input.piece(won.winner));
+  // After the winner cam, the whole board while the other places are revealed (polish spec §4.5).
+  if (beat?.kind === 'ranks') return overview(input);
   if (input.watch) return follow(input.piece(input.watch));
   const mine = input.piece(me);
   if (isMyMoment(input)) return swoop(mine, input);
   const busy = beat !== null && beat.kind !== 'roll' && beat.kind !== 'info';
   if (busy || input.window === 'challenge' || input.window === 'mystery') return follow(mine);
   // Everyone rolls: the whole board, drifting gently.
+  return overview(input);
+}
+
+function overview(input: ShotInput): Shot {
   const angle = input.reducedMotion ? 0 : Math.sin(input.nowMs / 9000) * 0.12;
   return {
     mode: 'overview',

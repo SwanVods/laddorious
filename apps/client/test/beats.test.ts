@@ -127,8 +127,22 @@ describe('buildTimeline', () => {
       'p0',
       SIZE,
     );
-    expect(beats.map((b) => b.kind)).toEqual(['move', 'info', 'victory']);
-    expect(beats.at(-1)!.durationMs).toBe(BEAT_MS.victory);
+    expect(beats.map((b) => b.kind)).toEqual(['move', 'info', 'victory', 'ranks']);
+    expect(beats[2]!.durationMs).toBe(BEAT_MS.victory);
+  });
+
+  it('follows the victory with the ranks reveal, one step per distinct place behind the winner (polish spec 4.5)', () => {
+    const rankings = [
+      { player: 'p0', rank: 1, position: 100 },
+      { player: 'p1', rank: 2, position: 80 },
+      { player: 'p2', rank: 2, position: 80 },
+      { player: 'p3', rank: 4, position: 12 },
+    ];
+    const won: GameEvent = { type: 'MatchWon', winner: 'p0', rankings, visibility: 'public' };
+    const beats = buildTimeline([moved('p0', 96, 100), won], start({ p0: 96, p1: 80, p2: 80, p3: 12 }), 'p0', SIZE);
+    const [victory, ranks] = beats.slice(-2);
+    expect(ranks).toMatchObject({ kind: 'ranks', events: [won], durationMs: 2 * BEAT_MS.rankStep + BEAT_MS.rankHold });
+    expect(ranks!.after).toBe(victory!.after);
   });
 
   it('adds a board edit, then reverts it when it expires', () => {

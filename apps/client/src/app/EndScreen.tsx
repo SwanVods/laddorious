@@ -1,9 +1,8 @@
 import type { PlayerId, Ranking } from '@laddorious/core';
+import { ordinal } from '../hud/labels';
 import type { SeatInfo } from '../service/matchService';
 import { Icon } from '../ui/Icon';
 import { Portrait } from '../ui/PieceIcon';
-
-const ORDINAL = ['1st', '2nd', '3rd', '4th'];
 
 interface EndScreenProps {
   rankings: Ranking[];
@@ -33,7 +32,7 @@ export function EndScreen({ rankings, seats, me, onPlayAgain, onMenu }: EndScree
             const s = seat(r.player);
             const name = s ? (r.player === me ? `${s.nickname} (you)` : s.nickname) : r.player;
             return (
-              <li key={r.player} className={`place place-${r.rank}${r.player === me ? ' me' : ''}`} aria-label={`${ORDINAL[r.rank - 1] ?? `${r.rank}th`}: ${name}, tile ${r.position}`}>
+              <li key={r.player} className={`place place-${r.rank}${r.player === me ? ' me' : ''}`} aria-label={`${ordinal(r.rank)}: ${name}, tile ${r.position}`}>
                 {s && <Portrait piece={s.piece} color={s.color} className="place-portrait" />}
                 <span className="place-name display">{s?.nickname ?? r.player}</span>
                 <span className="place-step">

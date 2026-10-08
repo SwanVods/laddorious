@@ -163,7 +163,7 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     expect(onFailed).toHaveBeenCalledWith('board corrupted');
   });
 
-  it('hands the final rankings over once the victory has played', () => {
+  it('hands the final rankings over once the victory and the ranks reveal have played (polish spec 4.5)', () => {
     const onFinished = vi.fn();
     const session = start({ onFinished });
     const rankings = [
@@ -179,7 +179,10 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
       timer: null,
     });
     expect(screen.getByText('PIP WINS!')).toBeTruthy();
-    act(() => vi.advanceTimersByTime(BEAT_MS.victory - 1));
+    expect(document.querySelectorAll('.rank-badge')).toHaveLength(0);
+    act(() => vi.advanceTimersByTime(BEAT_MS.victory));
+    expect([...document.querySelectorAll('.rank-badge')].map((b) => b.textContent)).toEqual(['2nd', '4th', '3rd']); // seat order: p0, p1, p3
+    act(() => vi.advanceTimersByTime(3 * BEAT_MS.rankStep + BEAT_MS.rankHold - 1));
     expect(onFinished).not.toHaveBeenCalled();
     act(() => vi.advanceTimersByTime(1));
     expect(onFinished).toHaveBeenCalledWith(rankings);

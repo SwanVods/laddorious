@@ -234,6 +234,7 @@ describe('banners (spec #2 §5.1)', () => {
     const won = (winner: string): GameEvent => ({ type: 'MatchWon', winner, rankings: [], visibility: 'public' });
     expect(banner('victory', [won('p0')])).toEqual({ text: 'VICTORY!', tone: 'good' });
     expect(banner('victory', [won('p2')])).toEqual({ text: 'PIP WINS!', tone: 'info' });
+    expect(banner('ranks', [won('p2')])).toBeNull(); // the ranks reveal replays the win without a second banner
     expect(KNOCKBACK).toBe(3);
   });
 });

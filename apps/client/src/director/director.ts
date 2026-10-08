@@ -94,7 +94,8 @@ export class Director {
       return;
     }
     const durationMs = Math.round(beat.durationMs * this.timeScale);
-    this.store.setState({ beat: { ...beat, durationMs, startedAt: Date.now() }, log: this.logged(beat.events) });
+    // The ranks reveal replays the win, which is already in the log.
+    this.store.setState({ beat: { ...beat, durationMs, startedAt: Date.now() }, log: this.logged(beat.kind === 'ranks' ? [] : beat.events) });
     this.timer = setTimeout(() => {
       this.timer = null;
       this.store.setState({ presentation: beat.after });

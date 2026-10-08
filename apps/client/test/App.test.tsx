@@ -76,7 +76,8 @@ function finish(session: ScriptedSession) {
     events: [{ type: 'MatchWon', winner: 'p2', rankings, visibility: 'public' }],
     timer: null,
   });
-  act(() => vi.advanceTimersByTime(BEAT_MS.victory));
+  // The winner cam, then the ranks reveal for 2nd, 3rd and 4th (polish spec 4.5).
+  act(() => vi.advanceTimersByTime(BEAT_MS.victory + 3 * BEAT_MS.rankStep + BEAT_MS.rankHold));
 }
 
 describe('App (spec #2 §4.1, §7.1)', () => {

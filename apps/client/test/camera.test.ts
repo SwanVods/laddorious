@@ -66,4 +66,9 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ beat: beatOf('victory', [won('p0')]) })).toMatchObject({ mode: 'swoop', target: SPOTS.p0 });
     expect(shot({ beat: beatOf('victory', [won('p3')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p3 });
   });
+
+  it('pulls back to the overview for the ranks reveal after the winner cam (polish spec 4.5)', () => {
+    const won: GameEvent = { type: 'MatchWon', winner: 'p0', rankings: [], visibility: 'public' };
+    expect(shot({ beat: beatOf('ranks', [won]), window: 'none' })).toMatchObject({ mode: 'overview', target: [0, 0, 4] });
+  });
 });

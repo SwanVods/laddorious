@@ -6,6 +6,7 @@ import { BannerView, useBanner } from '../hud/Banner';
 import { CardPickPopup } from '../hud/CardPickPopup';
 import { CenterDie } from '../hud/CenterDie';
 import { bubbleLevels, useCardBubbles } from '../hud/bubbles';
+import { rankBadges } from '../hud/ranks';
 import { DevStats } from '../hud/DevStats';
 import { Dock } from '../hud/Dock';
 import { EventFeed } from '../hud/EventFeed';
@@ -128,7 +129,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
     <div className="screen match">
       <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} />
       <div className="layer">
-        <NameTags seats={seats} me={me} tags={tags} bubbles={bubbles} />
+        <NameTags seats={seats} me={me} tags={tags} bubbles={bubbles} ranks={rankBadges(beat, timeScale)} />
         {view && presentation && (
           <>
             <StageBar round={presentation.round} stage={stageIndex(beat, view.awaiting.window, stageFromLog(log))} timer={countdown(settled.timer, view.awaiting.durationMs, now)} />

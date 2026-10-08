@@ -430,6 +430,8 @@ export function bannerFor(beat: Beat, me: PlayerId, seats: readonly SeatInfo[]):
         if (e.player === me) return { text: 'DODGED!', tone: 'cool' };
         break;
       case 'MatchWon':
+        // The ranks reveal replays the win: one banner is enough.
+        if (beat.kind === 'ranks') return null;
         return e.winner === me ? { text: 'VICTORY!', tone: 'good' } : { text: `${name(e.winner)} WINS!`, tone: 'info' };
     }
   }

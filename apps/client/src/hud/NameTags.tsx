@@ -4,6 +4,7 @@ import type { TagRegistry } from '../scene/tags';
 import type { SeatInfo } from '../service/matchService';
 import { Icon } from '../ui/Icon';
 import { cardInfo } from './labels';
+import type { RankBadge } from './ranks';
 
 /** A revealed card shown over its caster (polish spec §4.4); `level` lifts it above bubbles lower on the same tile. */
 export interface TagBubble {
@@ -14,13 +15,26 @@ export interface TagBubble {
 /**
  * In-world name tags (spec #2 §7.2): one per seat, in the seat colour, mine outlined in mint.
  * They start hidden; the scene's TagProjector places them over the pieces every frame. A tag
- * also carries its player's card bubble while one is up.
+ * also carries its player's card bubble while one is up, and its rank badge during the ranks reveal.
  */
-export function NameTags({ seats, me, tags, bubbles = {} }: { seats: readonly SeatInfo[]; me: PlayerId; tags: TagRegistry; bubbles?: Readonly<Record<PlayerId, TagBubble>> }) {
+export function NameTags({
+  seats,
+  me,
+  tags,
+  bubbles = {},
+  ranks = {},
+}: {
+  seats: readonly SeatInfo[];
+  me: PlayerId;
+  tags: TagRegistry;
+  bubbles?: Readonly<Record<PlayerId, TagBubble>>;
+  ranks?: Readonly<Record<PlayerId, RankBadge>>;
+}) {
   return (
     <div className="tags" aria-hidden="true">
       {seats.map((seat) => {
         const bubble = bubbles[seat.playerId];
+        const rank = ranks[seat.playerId];
         return (
           <div
             key={seat.playerId}
@@ -33,6 +47,11 @@ export function NameTags({ seats, me, tags, bubbles = {} }: { seats: readonly Se
           >
             <div className="tag-stack">
               {bubble && <CardBubble {...bubble} />}
+              {rank && (
+                <span className="rank-badge display" style={{ animationDelay: `${rank.delayMs}ms` }}>
+                  {rank.label}
+                </span>
+              )}
               <span className="tag-name display">{seat.nickname}</span>
             </div>
           </div>
