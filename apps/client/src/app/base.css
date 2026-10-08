@@ -1,0 +1,203 @@
+/* Base styles shared by every screen (spec #2 §7.3, §7.4). Colours come from theme.css tokens. */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--sky-top);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+[role='button']:focus-visible {
+  outline: 3px solid var(--highlight);
+  outline-offset: 3px;
+}
+
+/* The app fills the viewport and is the size container: HUD sizes use cqh (1% of its height)
+   with pixel minimums, so one layout works from a 390 px phone to a 1080 px desktop (§7.3). */
+.app {
+  position: fixed;
+  inset: 0;
+  container-type: size;
+  overflow: hidden;
+  background: linear-gradient(var(--sky-top), var(--sky-mid) 60%, var(--sky-horizon));
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --edge: max(10px, 2.2cqh);
+}
+
+/* A full-screen HUD layer that lets taps through to the 3D canvas, except on `.live` parts. */
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.live {
+  pointer-events: auto;
+}
+
+.display {
+  font-family: var(--display);
+  font-weight: 400;
+  letter-spacing: 0.4px;
+}
+
+.outlined {
+  color: var(--white);
+  text-shadow: var(--o);
+}
+
+/* Chunky toy buttons: ink border, ink drop shadow, at least 44 px tall (§7.3). */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: max(10px, 1.9cqh) max(16px, 3.2cqh) max(9px, 1.7cqh);
+  border: 3px solid var(--ink);
+  border-radius: max(12px, 2.4cqh);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 max(3px, 0.8cqh) 0 var(--ink);
+  font: 400 max(16px, 3.4cqh) / 1 var(--display);
+  letter-spacing: 0.4px;
+  cursor: pointer;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.btn.primary {
+  background: var(--primary);
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn.accent {
+  background: var(--accent);
+  color: var(--white);
+  text-shadow: 0 2px 0 var(--ink);
+}
+
+.btn.highlight {
+  background: var(--highlight);
+}
+
+/* A translucent chip on the sky: feed lines, waiting pills, captions (§7.4 Plate). */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: max(7px, 1.3cqh) max(14px, 2.4cqh);
+  border-radius: 999px;
+  background: var(--plate);
+  color: var(--white);
+  font: 600 max(13px, 2.3cqh) / 1.25 var(--body);
+  white-space: nowrap;
+}
+
+.panel {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: max(14px, 2.6cqh);
+  box-shadow: 0 max(4px, 0.9cqh) 0 var(--ink);
+  color: var(--ink);
+}
+
+/* The dimmed board behind popups and dialogs (§7.4 Dimmed backdrop). */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, var(--backdrop-light), var(--backdrop-dark));
+  animation: fade-in 0.25s ease-out;
+}
+
+.spinner {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  border: 3px solid var(--faint-on-plate);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* The Reduced motion setting does the same for players who turned it on in the game (§7.1). */
+.app.reduced-motion *,
+.app.reduced-motion *::before,
+.app.reduced-motion *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+}

@@ -1,10 +1,12 @@
-/* Tangerine Dusk HUD tokens (spec #2 §7.4). Colours used from TypeScript live in theme.ts. */
+/* Tangerine Dusk HUD tokens (spec #2 §7.4). Colours used from TypeScript live in theme.ts.
+   No other stylesheet hard-codes a colour: test/tokens.test.ts checks that. */
 :root {
   --sky-top: #0b4a5a;
   --sky-mid: #2f8f8a;
   --sky-horizon: #ffc184;
   --ink: #0f2e36;
   --plate: rgba(9, 38, 45, 0.86);
+  --plate-soft: rgba(9, 38, 45, 0.62);
   --paper: #fff7ec;
   --paper-alt: #e2f3ee;
   --muted-on-paper: #46707a;
@@ -16,4 +18,39 @@
   --panel-header: #147676;
   --backdrop-light: rgba(5, 30, 36, 0.5);
   --backdrop-dark: rgba(5, 30, 36, 0.86);
+  --white: #ffffff;
+  --faint-on-plate: rgba(255, 255, 255, 0.18);
+  --empty-seat: rgba(255, 255, 255, 0.08);
+  --empty-seat-edge: rgba(255, 255, 255, 0.6);
+
+  /* Board-derived accents: "?" squares and their rarity glyphs (§6.1), and the card types,
+     which reuse the classic square colours so the cards read as part of the board. */
+  --mystery: #8f4dff;
+  --rarity-common: #ffffff;
+  --rarity-rare: #6ff3ff;
+  --rarity-epic: #ffcc33;
+  --type-movement: #4a9dff;
+  --type-defense: #4fd16a;
+  --type-attack: #ff5a5f;
+  --type-risky: #ffa22e;
+  --type-misc: #8f4dff;
+  --result-hit: #ff5470;
+  --result-blocked: #6ff3ff;
+  --result-fizzled: #a8d0d2;
+  --gold: #ffcc33;
+  /* Past stages on the stage bar, and "done" status icons (§7.2): the board's green. */
+  --done: #4fd16a;
+  /* Fizzle warnings on cards (§7.2): a deep coral that reads as small text on paper. */
+  --warn-on-paper: #c2412e;
+
+  /* Type (§7.4): Lilita One for display text, Fredoka for body text, with system fallbacks. */
+  --display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+  --body: 'Fredoka', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+
+  /* The ink outline on display text, as in the mockups (a multi-direction text shadow). */
+  --o-sm: 1.5px 0 0 var(--ink), -1.5px 0 0 var(--ink), 0 1.5px 0 var(--ink), 0 -1.5px 0 var(--ink), 0 3px 0 var(--ink);
+  --o: 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 2px 0 var(--ink), 0 -2px 0 var(--ink), 2px 2px 0 var(--ink),
+    -2px 2px 0 var(--ink), 2px -2px 0 var(--ink), -2px -2px 0 var(--ink), 0 4px 0 var(--ink);
+  --o-lg: 4px 0 0 var(--ink), -4px 0 0 var(--ink), 0 4px 0 var(--ink), 0 -4px 0 var(--ink), 3px 3px 0 var(--ink),
+    -3px 3px 0 var(--ink), 3px -3px 0 var(--ink), -3px -3px 0 var(--ink), 0 8px 0 var(--ink);
 }

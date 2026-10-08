@@ -34,3 +34,13 @@ export const WORLD_COLORS = {
   shield: '#6ff3ff',
   ring: '#ffcc33',
 } as const;
+
+/** The menu podium and its floating island (spec #2 §7.4 Podium tokens). */
+export const PODIUM_COLORS = {
+  top: '#fff3e3',
+  band: '#ff9a3d',
+  base: '#147676',
+  ring: '#ff5470',
+  island: '#0f5d63',
+  chunk: '#ffb070',
+} as const;
