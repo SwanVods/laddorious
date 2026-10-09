@@ -109,6 +109,34 @@ def stack(name, outline, layers, material, top=None, smooth=True):
     return _object(name, bm, material, smooth)
 
 
+def grid(name, rows, materials, paint=lambda row, column: 0, smooth=True):
+    """A closed surface through rows of (x, y, z) loops, each joined to the next by quads (unlike loft,
+    the last row doesn't join the first); each end row is closed by a fan to its centre. One surface in
+    several materials: paint(row, column) picks the material index of the quad from row to row + 1,
+    between columns column and column + 1, so colours follow the grid's lines; each fan takes its
+    neighbouring quads' colours. For shapes drawn on a twisted grid, like a vortex's spiral ridges."""
+    bm = bmesh.new()
+    loops = [[bm.verts.new(point) for point in row] for row in rows]
+    count = len(loops[0])
+    for i, (a, b) in enumerate(zip(loops, loops[1:])):
+        for k in range(count):
+            face = bm.faces.new((a[k], a[(k + 1) % count], b[(k + 1) % count], b[k]))
+            face.material_index = paint(i, k)
+    for loop, row in ((loops[0], 0), (loops[-1], len(loops) - 2)):
+        centre = bm.verts.new(tuple(sum(v.co[n] for v in loop) / count for n in range(3)))
+        for k in range(count):
+            bm.faces.new((loop[k], loop[(k + 1) % count], centre)).material_index = paint(row, k)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    for face in bm.faces:
+        face.smooth = smooth
+    mesh = bpy.data.meshes.new(name)
+    bm.to_mesh(mesh)
+    bm.free()
+    for material in materials:
+        mesh.materials.append(material)
+    return bpy.data.objects.new(name, mesh)
+
+
 def tube(name, points, radius, material, sides=6, smooth=True):
     """A round tube along a path of (x, y, z) points, its ends open: a spring's coil, a spiral ridge.
     Open ends can't be fused (sculpt.fuse needs closed parts); fuse a chain of spheres instead."""
