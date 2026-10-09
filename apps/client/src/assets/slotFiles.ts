@@ -17,7 +17,12 @@ export type SlotName =
   | 'island';
 
 /** The model id (file name without .glb) for each slot that has a Blender model. A slot not listed keeps its code-built model. */
-export const SLOT_FILES: Partial<Record<SlotName, string>> = { 'piece.pawn': 'pawn' };
+export const SLOT_FILES: Partial<Record<SlotName, string>> = {
+  'piece.knight': 'knight',
+  'piece.pawn': 'pawn',
+  'piece.meeple': 'meeple',
+  'piece.dragon': 'dragon',
+};
 
 /** Where the game loads a model from (served from apps/client/public). */
 export function modelUrl(id: string): string {
