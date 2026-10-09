@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EndScreen } from '../src/app/EndScreen';
 import { ErrorScreen } from '../src/app/ErrorScreen';
 import { COUNT_MS, MatchmakingOverlay, PLAY_WITH_BOTS_AFTER_MS } from '../src/app/MatchmakingOverlay';
 import { createPrefsStore } from '../src/app/prefs';
 import { SettingsDialog } from '../src/app/SettingsDialog';
+import { AudioEngine } from '../src/audio/engine';
+import { SoundProvider } from '../src/audio/SoundProvider';
 import { SEATS } from './support/fixtures';
 import { ScriptedMatchmaking, ScriptedSession } from './support/scripted';
 
@@ -21,6 +24,14 @@ afterEach(() => {
 });
 
 const you = SEATS[0]!;
+
+/** Renders inside a SoundProvider whose engine never loads; returns its recorded plays as "id" or "id:arg". */
+function withSound(ui: ReactElement) {
+  const engine = new AudioEngine(() => new Promise(() => {}));
+  const playNow = vi.spyOn(engine, 'playNow');
+  render(<SoundProvider engine={engine} prefs={createPrefsStore(null, { prefersReducedMotion: false })}>{ui}</SoundProvider>);
+  return () => playNow.mock.calls.map(([id, arg]) => (arg === undefined ? id : `${id}:${arg}`));
+}
 
 describe('MatchmakingOverlay (spec #2 §7.1, C7)', () => {
   function open() {
@@ -73,6 +84,19 @@ describe('MatchmakingOverlay (spec #2 §7.1, C7)', () => {
   });
 });
 
+describe('matchmaking sounds (spec #3 §5)', () => {
+  it('pops as each bot takes a seat, then plays MATCH FOUND and the countdown', () => {
+    const matchmaking = new ScriptedMatchmaking();
+    const plays = withSound(<MatchmakingOverlay matchmaking={matchmaking} onCancelled={() => {}} onReady={() => {}} />);
+    matchmaking.emit({ kind: 'searching', elapsedMs: 1_000, seats: [you, null, null, null] });
+    matchmaking.emit({ kind: 'filling', seats: [you, SEATS[1]!, null, null] });
+    matchmaking.emit({ kind: 'filling', seats: [you, SEATS[1]!, SEATS[2]!, null] });
+    matchmaking.emit({ kind: 'filling', seats: [you, SEATS[1]!, SEATS[2]!, SEATS[3]!] });
+    matchmaking.emit({ kind: 'found', session: new ScriptedSession() });
+    expect(plays()).toEqual(['Q1:0', 'Q1:1', 'Q1:2', 'Q2', 'Q3']);
+  });
+});
+
 describe('EndScreen (spec #2 §7.1)', () => {
   const rankings = [
     { player: 'p2', rank: 1, position: 100 },
@@ -92,6 +116,11 @@ describe('EndScreen (spec #2 §7.1)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Main menu' }));
     expect(onPlayAgain).toHaveBeenCalledTimes(1);
     expect(onMenu).toHaveBeenCalledTimes(1);
+  });
+
+  it('settles with a podium chord, once (spec #3 §5)', () => {
+    const plays = withSound(<EndScreen rankings={rankings} seats={SEATS} me="p0" onPlayAgain={() => {}} onMenu={() => {}} />);
+    expect(plays()).toEqual(['W4']);
   });
 
   it('cheers when I win', () => {
@@ -131,6 +160,18 @@ describe('SettingsDialog (spec #2 §7.1, §9.2)', () => {
     expect(prefs.getState().settings.quality).toBe('low');
     expect(screen.getByRole('dialog').textContent).toContain('No live shadows and lower resolution. Best for older phones.');
     expect(screen.getByRole('dialog').textContent).toContain('Right now: Low');
+  });
+
+  it('mutes sound and sets the effects and music volumes (spec #3 §4)', () => {
+    const prefs = createPrefsStore(null, { prefersReducedMotion: false });
+    render(<SettingsDialog prefs={prefs} device={{ coarsePointer: false, shortSide: 900 }} onClose={() => {}} />);
+    const mute = screen.getByRole('switch', { name: 'Mute sound' });
+    expect(mute.getAttribute('data-sound')).toBe('U3');
+    fireEvent.click(mute);
+    expect(prefs.getState().settings.sound.muted).toBe(true);
+    fireEvent.change(screen.getByRole('slider', { name: 'Effects volume' }), { target: { value: '40' } });
+    fireEvent.change(screen.getByRole('slider', { name: 'Music volume' }), { target: { value: '25' } });
+    expect(prefs.getState().settings.sound).toEqual({ muted: true, effects: 0.4, music: 0.25 });
   });
 
   it('saves Reduced motion, and closes', () => {

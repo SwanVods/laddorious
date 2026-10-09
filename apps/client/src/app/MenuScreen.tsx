@@ -54,10 +54,9 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
     if (el) anchors.elements.set(key, el);
     else anchors.elements.delete(key);
   };
-  const cycle = (step: number) => {
-    const i = PIECES.indexOf(profile.piece);
-    prefs.getState().setPiece(PIECES[(i + step + PIECES.length) % PIECES.length]!);
-  };
+  /** The index of the piece an arrow picks: its pick sound plays that piece's note (spec #3 §5). */
+  const stepped = (step: number) => (PIECES.indexOf(profile.piece) + step + PIECES.length) % PIECES.length;
+  const cycle = (step: number) => prefs.getState().setPiece(PIECES[stepped(step)]!);
   const finishRename = (save: boolean) => {
     if (renameDoneRef.current) return;
     renameDoneRef.current = true;
@@ -72,10 +71,10 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
         <div ref={anchor('plate')} className="menu-anchor menu-plate display">
           {profile.nickname}
         </div>
-        <button ref={anchor('prev')} type="button" className="menu-anchor round-btn live" aria-label="Previous piece" onClick={() => cycle(-1)}>
+        <button ref={anchor('prev')} type="button" className="menu-anchor round-btn live" aria-label="Previous piece" data-sound="U2" data-sound-arg={stepped(-1)} onClick={() => cycle(-1)}>
           <Icon name="back" />
         </button>
-        <button ref={anchor('next')} type="button" className="menu-anchor round-btn live" aria-label="Next piece" onClick={() => cycle(1)}>
+        <button ref={anchor('next')} type="button" className="menu-anchor round-btn live" aria-label="Next piece" data-sound="U2" data-sound-arg={stepped(1)} onClick={() => cycle(1)}>
           <Icon name="next" />
         </button>
 
@@ -131,7 +130,7 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
 
         <div className="picker live" role="group" aria-label="Choose your piece">
           {PIECES.map((piece) => (
-            <button key={piece} type="button" className="picker-tile display" aria-pressed={piece === profile.piece} onClick={() => prefs.getState().setPiece(piece)}>
+            <button key={piece} type="button" className="picker-tile display" aria-pressed={piece === profile.piece} data-sound="U2" data-sound-arg={PIECES.indexOf(piece)} onClick={() => prefs.getState().setPiece(piece)}>
               <span className="picker-icon">
                 <PieceIcon piece={piece} />
               </span>

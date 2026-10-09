@@ -1,4 +1,6 @@
 import type { PlayerId, Ranking } from '@laddorious/core';
+import { useEffect, useRef } from 'react';
+import { useSound } from '../audio/SoundProvider';
 import { ordinal } from '../hud/labels';
 import type { SeatInfo } from '../service/matchService';
 import { Icon } from '../ui/Icon';
@@ -15,6 +17,14 @@ interface EndScreenProps {
 
 /** The end screen (spec #2 §7.1): final standings on a podium, 1st to 4th, then Play again or Main menu. */
 export function EndScreen({ rankings, seats, me, onPlayAgain, onMenu }: EndScreenProps) {
+  // A settling podium chord, once even under StrictMode's double effect (spec #3 §5).
+  const sound = useSound();
+  const chordRef = useRef(false);
+  useEffect(() => {
+    if (chordRef.current) return;
+    chordRef.current = true;
+    sound.playNow('W4');
+  }, [sound]);
   const seat = (id: PlayerId) => seats.find((s) => s.playerId === id);
   const ordered = [...rankings].sort((a, b) => a.rank - b.rank);
   const winner = ordered[0];

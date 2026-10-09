@@ -1,3 +1,4 @@
+import { useSound } from '../audio/SoundProvider';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { Matchmaking, MatchmakingState, MatchSession, SeatInfo } from '../service/matchService';
 import { Portrait } from '../ui/PieceIcon';
@@ -37,6 +38,15 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady }: Matchm
 
   useEffect(() => matchmaking.onState(setState), [matchmaking]);
 
+  // A pop per bot taking a seat, then MATCH FOUND and the countdown (spec #3 §5).
+  const sound = useSound();
+  const filled = state && (state.kind === 'searching' || state.kind === 'filling') ? state.seats.filter(Boolean).length : 0;
+  const seatedRef = useRef(1);
+  useEffect(() => {
+    if (state?.kind === 'filling' && filled > seatedRef.current) sound.playNow('Q1', filled - 2);
+    seatedRef.current = Math.max(seatedRef.current, filled);
+  }, [state, filled, sound]);
+
   useEffect(() => {
     if (state?.kind === 'cancelled') handlersRef.current.onCancelled();
   }, [state]);
@@ -44,6 +54,8 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady }: Matchm
   const found = state?.kind === 'found' ? state.session : null;
   useEffect(() => {
     if (!found) return;
+    sound.playNow('Q2');
+    sound.playNow('Q3');
     let left = 3;
     const id = setInterval(() => {
       left -= 1;
@@ -55,7 +67,7 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady }: Matchm
       handlersRef.current.onReady(found);
     }, COUNT_MS);
     return () => clearInterval(id);
-  }, [found]);
+  }, [found, sound]);
 
   useHotkeys({ Escape: () => matchmaking.cancel() }, state?.kind === 'searching');
 

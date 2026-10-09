@@ -76,6 +76,14 @@ describe('MenuScreen (spec #2 §7.1)', () => {
     expect(prefs.getState().profile.piece).toBe('dragon');
   });
 
+  it("gives each piece its own pick sound, on the picker and the arrows (spec #3 §5)", () => {
+    open();
+    const dragon = screen.getByRole('button', { name: 'Dragon head' });
+    expect([dragon.getAttribute('data-sound'), dragon.getAttribute('data-sound-arg')]).toEqual(['U2', '3']);
+    expect(screen.getByRole('button', { name: 'Next piece' }).getAttribute('data-sound-arg')).toBe('1');
+    expect(screen.getByRole('button', { name: 'Previous piece' }).getAttribute('data-sound-arg')).toBe('3');
+  });
+
   it('turns over the rule tips every few seconds', () => {
     vi.useFakeTimers();
     open();
