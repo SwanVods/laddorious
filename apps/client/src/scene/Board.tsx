@@ -1,5 +1,5 @@
 import type { PlayerView } from '@laddorious/core';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Color, MeshStandardMaterial, Object3D, type InstancedMesh } from 'three';
 import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
@@ -19,8 +19,16 @@ export function tileColor(tile: number, board: Pick<PublicBoard, 'size' | 'myste
   return BOARD_COLORS.squares[squareColorIndex(tile, BOARD_COLORS.squares.length)]!;
 }
 
+interface BoardProps {
+  board: PublicBoard;
+  director: Director;
+  clearcoat: boolean;
+  /** A tap or click on a tile (spec #5 A13: it peeks at the jumps that start or end there). */
+  onTap?: (tile: number) => void;
+}
+
 /** The tiles as one instanced draw call, one overlay for every number and glyph, and rings on landed "?" squares (spec #2 §6.1). */
-export function Board({ board, director, clearcoat }: { board: PublicBoard; director: Director; clearcoat: boolean }) {
+export function Board({ board, director, clearcoat, onTap }: BoardProps) {
   const tilesRef = useRef<InstancedMesh>(null);
   const ringsRef = useRef<InstancedMesh>(null);
   const place = useMemo(() => new Object3D(), []);
@@ -78,9 +86,30 @@ export function Board({ board, director, clearcoat }: { board: PublicBoard; dire
     mesh.instanceMatrix.needsUpdate = true;
   });
 
+  // A pointer over a tile that starts or ends a jump says it can be tapped.
+  const jumpTile = (e: ThreeEvent<PointerEvent>) => {
+    const tile = (e.instanceId ?? -1) + 1;
+    const jumps = director.store.getState().presentation?.jumps ?? [];
+    return jumps.some((j) => j.from === tile || j.to === tile);
+  };
   return (
     <group>
-      <instancedMesh ref={tilesRef} name="tiles" args={[tile.geometry, tile.material, board.size]} receiveShadow />
+      <instancedMesh
+        ref={tilesRef}
+        name="tiles"
+        args={[tile.geometry, tile.material, board.size]}
+        receiveShadow
+        onClick={(e: ThreeEvent<MouseEvent>) => {
+          e.stopPropagation();
+          if (e.instanceId !== undefined) onTap?.(e.instanceId + 1);
+        }}
+        onPointerMove={(e: ThreeEvent<PointerEvent>) => {
+          document.body.style.cursor = jumpTile(e) ? 'pointer' : '';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = '';
+        }}
+      />
       {overlay && (
         <mesh rotation-x={-Math.PI / 2} position-y={0.004}>
           <planeGeometry args={[TILE_SIZE * COLUMNS, TILE_SIZE * COLUMNS]} />

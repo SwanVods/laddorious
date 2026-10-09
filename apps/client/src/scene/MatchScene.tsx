@@ -1,12 +1,13 @@
 import type { PlayerId, PlayerView } from '@laddorious/core';
 import { Canvas } from '@react-three/fiber';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { Board } from './Board';
 import { CameraRig } from './CameraRig';
 import { Jumps } from './Jumps';
+import { createPeeks, type Peeks } from './paths';
 import { Pieces } from './Pieces';
 import { ContextLossWatch, QualityWatch, StatsProbe } from './Probes';
 import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
@@ -37,16 +38,21 @@ export interface SceneContentProps {
   reducedMotion: boolean;
   /** Name tags to keep over the pieces (spec #2 §7.2). */
   tags?: TagRegistry;
+  /** The paths a player tapped to see (spec #5 A13); the scene keeps its own unless a test passes one. */
+  peeks?: Peeks;
 }
 
 /** Everything inside the canvas: the world, the pieces and the camera (spec #2 §6). */
-export function SceneContent({ director, seats, me, board, level, watch, reducedMotion, tags }: SceneContentProps) {
+export function SceneContent({ director, seats, me, board, level, watch, reducedMotion, tags, peeks }: SceneContentProps) {
   const profile = QUALITY[level];
+  const own = useMemo(createPeeks, []);
+  const peeked = peeks ?? own;
+  const tap = useCallback((tile: number) => peeked.tap(tile, director.store.getState().presentation?.jumps ?? board.jumps, Date.now()), [peeked, director, board]);
   return (
     <>
       <Surroundings shadows={profile.shadows} clouds={profile.clouds} clearcoat={profile.clearcoat} />
-      <Board board={board} director={director} clearcoat={profile.clearcoat} />
-      <Jumps director={director} clearcoat={profile.clearcoat} />
+      <Board board={board} director={director} clearcoat={profile.clearcoat} onTap={tap} />
+      <Jumps director={director} clearcoat={profile.clearcoat} peeks={peeked} />
       <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} reducedMotion={reducedMotion} boardSize={board.size} />
       <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} />
       {tags && <TagProjector director={director} seats={seats} boardSize={board.size} tags={tags} />}

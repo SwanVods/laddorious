@@ -1,8 +1,7 @@
 import type { Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
-import { DoubleSide, MeshBasicMaterial, MeshStandardMaterial, Object3D, type InstancedMesh } from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { DoubleSide, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
 import { exitGeometry, padGeometry, targetGeometry, vortexGeometry } from '../assets/models';
@@ -10,8 +9,10 @@ import { useSlotMesh, type SlotMesh } from '../assets/slotMesh';
 import type { Director } from '../director/director';
 import { slideCurve, tileToWorld } from './layout';
 import { clamp01, easeOutBack } from './motion';
+import { pairStyles, type PairStyle } from './pairs';
+import { REVEAL_MS, shownPaths, type Peeks } from './paths';
 import { chevronTexture, swirlTexture } from './textures';
-import { CHANNEL, channelGeometry, padHeading, trailGeometry, trailPath } from './tracks';
+import { CHANNEL, TRAIL, channelGeometry, padHeading, trailGeometry, trailPath } from './tracks';
 
 /** A cap that keeps a crowded board inside the draw-call and triangle budget (spec #2 §6.4). */
 const MAX_JUMPS = 24;
@@ -22,25 +23,113 @@ function glowOf(mesh: SlotMesh): MeshStandardMaterial | undefined {
   return materials.find((m): m is MeshStandardMaterial => m instanceof MeshStandardMaterial && m.name === 'Glow');
 }
 
+/** A shown path's progress: when it began to grow in, and when it began to shrink away. */
+interface Reveal {
+  shownAt: number;
+  hiddenAt: number | null;
+}
+
+/** How much of a path shows, 0 to 1. */
+function revealed(r: Reveal, now: number): number {
+  return r.hiddenAt === null ? clamp01((now - r.shownAt) / REVEAL_MS) : 1 - clamp01((now - r.hiddenAt) / REVEAL_MS);
+}
+
+/** Show this much of a swept geometry along its length: whole stretches, at least the first while it shows at all. */
+function reveal(geometry: BufferGeometry, t: number, stretch: number) {
+  const whole = geometry.index!.count;
+  geometry.setDrawRange(0, t <= 0 ? 0 : Math.max(stretch, Math.min(whole, Math.ceil((whole * t) / stretch) * stretch)));
+}
+
+interface PathProps {
+  jump: Jump;
+  style: PairStyle;
+  progress: () => number;
+  clearcoat: boolean;
+  chevrons: Texture | null;
+  lights: Texture | null;
+}
+
+/** One jump's path (spec #5 A13): a slide's channel (floor and walls) or a pad's trail, in its pair colour, grown along its length. */
+function Path({ jump, style, progress, clearcoat, chevrons, lights }: PathProps) {
+  const slide = jump.to < jump.from;
+  const parts = useMemo(() => {
+    if (slide) {
+      const { floor, walls } = channelGeometry(slideCurve(jump.from, jump.to).getPoints(CHANNEL.samples));
+      return {
+        kind: 'channel' as const,
+        floor,
+        walls,
+        floorMaterial: new MeshStandardMaterial({ ...(chevrons ? { map: chevrons } : { color: BOARD_COLORS.slide }), side: DoubleSide, roughness: 0.8 }),
+        wallMaterial: new MeshStandardMaterial({ color: style.colour, roughness: 0.45 }),
+      };
+    }
+    return {
+      kind: 'trail' as const,
+      trail: trailGeometry(trailPath(jump)),
+      trailMaterial: new MeshPhysicalMaterial({
+        ...(lights ? { map: lights, emissiveMap: lights } : {}),
+        color: style.colour,
+        emissive: WORLD_COLORS.cloud,
+        emissiveIntensity: 0.45,
+        roughness: 0.3,
+        clearcoat: clearcoat ? 0.9 : 0,
+        clearcoatRoughness: 0.15,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+        side: DoubleSide,
+      }),
+    };
+  }, [slide, jump, style, clearcoat, chevrons, lights]);
+  useEffect(
+    () => () => {
+      if (parts.kind === 'channel') {
+        parts.floor.dispose();
+        parts.walls.dispose();
+        parts.floorMaterial.dispose();
+        parts.wallMaterial.dispose();
+      } else {
+        parts.trail.dispose();
+        parts.trailMaterial.dispose();
+      }
+    },
+    [parts],
+  );
+  useFrame(() => {
+    const t = progress();
+    // A stretch is the triangles between two samples along the path.
+    if (parts.kind === 'channel') {
+      reveal(parts.floor, t, parts.floor.index!.count / CHANNEL.samples);
+      reveal(parts.walls, t, parts.walls.index!.count / CHANNEL.samples);
+    } else reveal(parts.trail, t, parts.trail.index!.count / TRAIL.samples);
+  });
+  return parts.kind === 'channel' ? (
+    <>
+      <mesh geometry={parts.walls} material={parts.wallMaterial} name={`channel-walls-${jump.id}`} />
+      <mesh geometry={parts.floor} material={parts.floorMaterial} name={`channel-floor-${jump.id}`} receiveShadow />
+    </>
+  ) : (
+    <mesh geometry={parts.trail} material={parts.trailMaterial} name={`trail-${jump.id}`} />
+  );
+}
+
 /**
- * Slides and launch pads (spec #2 §6.1, spec #5 §4.2): each slide a raised channel from its vortex to
- * its exit collar, each pad an arched trail to its landing target. Parts a board edit adds or removes
- * pop in or out.
+ * Slides and launch pads (spec #2 §6.1, spec #5 §4.2, A13): the vortices, exits, pads and targets always;
+ * each path (a slide's channel, a pad's trail) only while a piece stands on its start, rides it, or a
+ * player tapped one of its ends. Parts a board edit adds or removes pop in or out.
  */
-export function Jumps({ director, clearcoat }: { director: Director; clearcoat: boolean }) {
+export function Jumps({ director, clearcoat, peeks }: { director: Director; clearcoat: boolean; peeks: Peeks }) {
   const shown = useStore(director.store, (s) => s.presentation?.jumps);
   const editing = useStore(director.store, (s) => (s.beat?.kind === 'boardEdit' ? s.beat.after.jumps : undefined));
   const jumps = useMemo(() => [...new Map([...(shown ?? []), ...(editing ?? [])].map((j) => [j.id, j])).values()], [shown, editing]);
   const snakes = useMemo(() => jumps.filter((j) => j.to < j.from).slice(0, MAX_JUMPS), [jumps]);
   const ladders = useMemo(() => jumps.filter((j) => j.to > j.from).slice(0, MAX_JUMPS), [jumps]);
-  const channels = useMemo(() => {
-    if (snakes.length === 0) return null;
-    const each = snakes.map((j) => channelGeometry(slideCurve(j.from, j.to).getPoints(CHANNEL.samples)));
-    return { floor: mergeGeometries(each.map((c) => c.floor)), walls: mergeGeometries(each.map((c) => c.walls)) };
-  }, [snakes]);
-  const trails = useMemo(() => (ladders.length === 0 ? null : mergeGeometries(ladders.map((j) => trailGeometry(trailPath(j))))), [ladders]);
+  const styles = useMemo(() => pairStyles(jumps), [jumps]);
   const chevrons = useMemo(() => chevronTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
-  const lights = useMemo(() => chevronTexture(WORLD_COLORS.pad, WORLD_COLORS.cloud), []);
+  const lights = useMemo(() => chevronTexture(WORLD_COLORS.trailMask, WORLD_COLORS.cloud), []);
+  // Shown paths and how far each has grown in or shrunk away; React redraws when the set changes.
+  const revealsRef = useRef(new Map<string, Reveal>());
+  const [paths, setPaths] = useState<string[]>([]);
   const padChevrons = useMemo(() => chevronTexture(WORLD_COLORS.pad, WORLD_COLORS.ink), []);
   const swirl = useMemo(() => swirlTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
   const vortex = useSlotMesh(
@@ -62,17 +151,21 @@ export function Jumps({ director, clearcoat }: { director: Director; clearcoat: 
   const targetsRef = useRef<InstancedMesh>(null);
   const place = useMemo(() => new Object3D(), []);
 
-  useEffect(
-    () => () => {
-      channels?.floor.dispose();
-      channels?.walls.dispose();
-      trails?.dispose();
-    },
-    [channels, trails],
-  );
-
   useFrame(({ clock }, delta) => {
     const { beat, presentation } = director.store.getState();
+    const now = Date.now();
+    const want = shownPaths({ jumps, positions: presentation?.positions ?? {}, moving: beat?.events ?? [], peeks, now });
+    for (const id of want) {
+      const r = revealsRef.current.get(id);
+      if (!r) revealsRef.current.set(id, { shownAt: now, hiddenAt: null });
+      else if (r.hiddenAt !== null) revealsRef.current.set(id, { shownAt: now - revealed(r, now) * REVEAL_MS, hiddenAt: null });
+    }
+    for (const [id, r] of revealsRef.current) {
+      if (!want.has(id) && r.hiddenAt === null) r.hiddenAt = now - (1 - revealed(r, now)) * REVEAL_MS;
+      if (r.hiddenAt !== null && now - r.hiddenAt >= REVEAL_MS) revealsRef.current.delete(id);
+    }
+    const list = [...revealsRef.current.keys()];
+    if (list.join() !== paths.join()) setPaths(list);
     const t = beat ? clamp01((Date.now() - beat.startedAt) / beat.durationMs) : 1;
     const pop = (id: string) => {
       if (beat?.kind !== 'boardEdit' || !presentation) return 1;
@@ -109,34 +202,19 @@ export function Jumps({ director, clearcoat }: { director: Director; clearcoat: 
     if (padChevrons) padChevrons.offset.y -= delta * 0.6;
   });
 
+  const byId = useMemo(() => new Map(jumps.map((j) => [j.id, j])), [jumps]);
   return (
     <group>
-      {channels && (
-        <>
-          <mesh geometry={channels.walls} name="slide-walls">
-            <meshStandardMaterial color={WORLD_COLORS.cloud} roughness={0.45} />
-          </mesh>
-          <mesh geometry={channels.floor} name="slide-floors" receiveShadow>
-            <meshStandardMaterial {...(chevrons ? { map: chevrons } : { color: BOARD_COLORS.slide })} side={DoubleSide} roughness={0.8} />
-          </mesh>
-        </>
-      )}
-      {trails && (
-        <mesh geometry={trails} name="pad-trails">
-          <meshPhysicalMaterial
-            {...(lights ? { map: lights, emissiveMap: lights } : { color: WORLD_COLORS.pad })}
-            emissive={WORLD_COLORS.cloud}
-            emissiveIntensity={0.45}
-            roughness={0.3}
-            clearcoat={clearcoat ? 0.9 : 0}
-            clearcoatRoughness={0.15}
-            transparent
-            opacity={0.85}
-            depthWrite={false}
-            side={DoubleSide}
-          />
-        </mesh>
-      )}
+      {paths.map((id) => {
+        const jump = byId.get(id);
+        const style = styles.get(id);
+        if (!jump || !style) return null;
+        const progress = () => {
+          const r = revealsRef.current.get(id);
+          return r ? revealed(r, Date.now()) : 0;
+        };
+        return <Path key={id} jump={jump} style={style} progress={progress} clearcoat={clearcoat} chevrons={chevrons} lights={lights} />;
+      })}
       <instancedMesh ref={vorticesRef} name="vortices" args={[vortex.geometry, vortex.material, MAX_JUMPS]} />
       <instancedMesh ref={exitsRef} name="exits" args={[exit.geometry, exit.material, MAX_JUMPS]} />
       <instancedMesh ref={padsRef} name="pads" args={[pad.geometry, pad.material, MAX_JUMPS]} />

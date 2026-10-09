@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { Director } from '../src/director/director';
 import { TILE_THICKNESS, tileToWorld } from '../src/scene/layout';
 import { SceneContent } from '../src/scene/MatchScene';
+import { REVEAL_MS, createPeeks, type Peeks } from '../src/scene/paths';
 import type { QualityLevel } from '../src/scene/quality';
 import { ribbonGeometry } from '../src/scene/tracks';
 import { createTagRegistry } from '../src/scene/tags';
@@ -30,17 +31,38 @@ function budget(root: Object3D, shadows: boolean): { calls: number; triangles: n
 }
 
 /** Render the opening of a match, on the fixture board or with these jumps instead. */
-async function renderScene(level: QualityLevel, jumps?: Jump[]) {
+async function renderScene(level: QualityLevel, jumps?: Jump[], peeks?: Peeks) {
+  return (await renderSceneWith(level, jumps, peeks)).root;
+}
+
+async function renderSceneWith(level: QualityLevel, jumps?: Jump[], peeks?: Peeks) {
   const director = new Director('p0', () => {});
   const opening = openingUpdate();
   director.push(jumps ? { ...opening, view: { ...opening.view, board: { ...opening.view.board, jumps } } } : opening);
   const board = director.store.getState().settled!.view.board;
   const renderer = await ReactThreeTestRenderer.create(
-    <SceneContent director={director} seats={SEATS} me="p0" board={board} level={level} watch={null} reducedMotion={false} />,
+    <SceneContent director={director} seats={SEATS} me="p0" board={board} level={level} watch={null} reducedMotion={false} peeks={peeks} />,
   );
-  await renderer.advanceFrames(2, 1 / 60);
-  return renderer.scene.instance as Object3D;
+  await frames(renderer, 2);
+  return { renderer, root: renderer.scene.instance as Object3D, board };
 }
+
+/** Run frames inside act(), so state a frame sets (the shown paths) renders, then one more for what it drew. */
+async function frames(renderer: Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>, count: number) {
+  await ReactThreeTestRenderer.act(async () => {
+    await renderer.advanceFrames(count, 1 / 60);
+  });
+  await renderer.advanceFrames(1, 1 / 60);
+}
+
+/** Every path mesh in the scene: pad trails and slide channels. */
+const pathMeshes = (root: Object3D) => {
+  const found: Mesh[] = [];
+  root.traverse((node) => {
+    if (node instanceof Mesh && /^(trail|channel-floor|channel-walls)-/.test(node.name)) found.push(node);
+  });
+  return found;
+};
 
 describe('the 3D scene (spec #2 §6)', () => {
   it('lays slide ribbons face up, so the light falls on them', () => {
@@ -79,9 +101,35 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(new Set(fakes.map((el) => el.style.transform)).size).toBe(4);
   });
 
-  it('draws every pad trail in one mesh, and every slide channel in two (spec #5 §4.2)', async () => {
-    const root = await renderScene('high');
-    for (const name of ['pad-trails', 'slide-floors', 'slide-walls']) expect(root.getObjectByName(name)).toBeInstanceOf(Mesh);
+  it('hides every path while no piece stands on a start tile (spec #5 A13)', async () => {
+    expect(pathMeshes(await renderScene('high'))).toEqual([]);
+  });
+
+  it("shows a tapped jump's path, growing it in along its length (spec #5 A13)", async () => {
+    const { jumps } = openingUpdate().view.board;
+    const ladder = jumps.find((j) => j.to > j.from)!;
+    const slide = jumps.find((j) => j.to < j.from)!;
+    const peeks = createPeeks();
+    peeks.tap(ladder.from, jumps, Date.now());
+    peeks.tap(slide.to, jumps, Date.now());
+    const root = await renderScene('high', undefined, peeks);
+    const trail = root.getObjectByName(`trail-${ladder.id}`) as Mesh;
+    for (const name of [`channel-floor-${slide.id}`, `channel-walls-${slide.id}`]) expect(root.getObjectByName(name)).toBeInstanceOf(Mesh);
+    // Two frames in, the trail has only begun: part of its length shows.
+    const whole = (trail.geometry as BufferGeometry).index!.count;
+    expect(trail.geometry.drawRange.count).toBeGreaterThan(0);
+    expect(trail.geometry.drawRange.count).toBeLessThan(whole);
+    expect(REVEAL_MS).toBeGreaterThan(0);
+  });
+
+  it("peeks at a jump's path when a player taps a tile at either end", async () => {
+    const { jumps } = openingUpdate().view.board;
+    const ladder = jumps.find((j) => j.to > j.from)!;
+    const { renderer, root } = await renderSceneWith('high');
+    const tiles = renderer.scene.find((node) => node.props.name === 'tiles');
+    await renderer.fireEvent(tiles, 'onClick', { instanceId: ladder.to - 1, stopPropagation: () => {} });
+    await frames(renderer, 2);
+    expect(root.getObjectByName(`trail-${ladder.id}`)).toBeInstanceOf(Mesh);
   });
 
   it('stands the jump parts on their tiles and turns each pad toward its landing (spec #5 §4.2)', async () => {

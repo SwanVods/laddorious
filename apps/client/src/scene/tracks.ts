@@ -1,6 +1,5 @@
 import type { Jump } from '@laddorious/core';
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LANE, arcPoint, tileToWorld } from './layout';
 
 // The jumps' tracks (spec #5 §4.2): the arched trail from a launch pad to its landing, and a slide's
@@ -122,7 +121,9 @@ export function channelGeometry(points: Vector3[]): { floor: BufferGeometry; wal
   const offset = LANE.width / 2 + CHANNEL.wall / 2;
   return {
     floor: ribbonGeometry(points, LANE.width, CHANNEL.floor),
-    walls: mergeGeometries([sweepGeometry(points, wallSection(-offset), LANE.width), sweepGeometry(points, wallSection(offset), LANE.width)]),
+    // Both walls in one sweep, so the channel grows along its length (spec #5 A13); the strip joining
+    // them runs under the floor, out of sight.
+    walls: sweepGeometry(points, [...wallSection(-offset), ...wallSection(offset)], LANE.width),
   };
 }
 

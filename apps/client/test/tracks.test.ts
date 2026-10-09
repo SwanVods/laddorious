@@ -55,11 +55,10 @@ describe('the jump tracks (spec #5 §4.2)', () => {
     const normal = walls.getAttribute('normal');
     for (let i = 0; i < normal.count; i++) expect(normal.getY(i)).toBeGreaterThan(-0.01);
     // The walls' outer feet stand either side of the head at the first section, and of the tail at the last:
-    // the left wall's first point, and the right wall's last.
+    // each section holds the left wall's points, then the right wall's (one sweep, so the channel grows along its length).
     const position = walls.getAttribute('position');
-    const perWall = (CHANNEL.samples + 1) * SECTION;
-    for (const [at, point] of [[0, points[0]!], [CHANNEL.samples * SECTION, points.at(-1)!]] as const) {
-      const right = perWall + at + SECTION - 1;
+    for (const [at, point] of [[0, points[0]!], [CHANNEL.samples * 2 * SECTION, points.at(-1)!]] as const) {
+      const right = at + 2 * SECTION - 1;
       expect((position.getX(at) + position.getX(right)) / 2).toBeCloseTo(point.x, 5);
       expect((position.getZ(at) + position.getZ(right)) / 2).toBeCloseTo(point.z, 5);
     }
