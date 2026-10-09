@@ -23,7 +23,6 @@ export const WORLD_COLORS = {
   cloud: '#fff7ec',
   ink: '#0f2e36',
   crown: '#ffcc33',
-  pad: '#5ff0c5',
   chevron: '#ff5470',
   die: '#fff7ec',
   pip: '#0f2e36',

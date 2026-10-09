@@ -1,21 +1,26 @@
 import type { Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DoubleSide, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
+import { Color, DoubleSide, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
 import { useStore } from 'zustand';
-import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
+import { BOARD_COLORS, PAIR_COLORS, WORLD_COLORS } from '../app/theme';
 import { exitGeometry, padGeometry, targetGeometry, vortexGeometry } from '../assets/models';
 import { useSlotMesh, type SlotMesh } from '../assets/slotMesh';
+import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
-import { slideCurve, tileToWorld } from './layout';
+import { PARTS, slideCurve, tileToWorld } from './layout';
 import { clamp01, easeOutBack } from './motion';
-import { pairStyles, type PairStyle } from './pairs';
+import { SYMBOLS, pairStyles, type PairStyle, type SymbolName } from './pairs';
 import { REVEAL_MS, shownPaths, type Peeks } from './paths';
 import { chevronTexture, swirlTexture } from './textures';
 import { CHANNEL, TRAIL, channelGeometry, padHeading, trailGeometry, trailPath } from './tracks';
 
 /** A cap that keeps a crowded board inside the draw-call and triangle budget (spec #2 §6.4). */
 const MAX_JUMPS = 24;
+/** Room in each symbol's instanced mesh: both ends of every jump, should one symbol take them all. */
+const MAX_MARKS = 4 * MAX_JUMPS;
+const INK = new Color(WORLD_COLORS.ink);
+const GOLD = new Color(WORLD_COLORS.crown);
 
 /** A model's material named Glow, which the game may pulse (spec #5 §3.2). */
 function glowOf(mesh: SlotMesh): MeshStandardMaterial | undefined {
@@ -130,21 +135,37 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
   // Shown paths and how far each has grown in or shrunk away; React redraws when the set changes.
   const revealsRef = useRef(new Map<string, Reveal>());
   const [paths, setPaths] = useState<string[]>([]);
-  const padChevrons = useMemo(() => chevronTexture(WORLD_COLORS.pad, WORLD_COLORS.ink), []);
   const swirl = useMemo(() => swirlTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
   const vortex = useSlotMesh(
     'slide.vortex',
     () => ({ geometry: vortexGeometry(), material: new MeshBasicMaterial(swirl ? { map: swirl, transparent: true } : { color: BOARD_COLORS.slide }) }),
     { clearcoat },
   );
-  const exit = useSlotMesh('slide.exit', () => ({ geometry: exitGeometry(), material: new MeshBasicMaterial({ color: WORLD_COLORS.chevron }) }), { clearcoat });
+  const exit = useSlotMesh('slide.exit', () => ({ geometry: exitGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
   const pad = useSlotMesh(
     'pad',
-    () => ({ geometry: padGeometry(), material: new MeshStandardMaterial(padChevrons ? { map: padChevrons, roughness: 0.5 } : { color: WORLD_COLORS.pad, roughness: 0.5 }) }),
+    () => ({ geometry: padGeometry(), material: new MeshStandardMaterial({ roughness: 0.5 }) }),
     { clearcoat },
   );
-  const target = useSlotMesh('pad.target', () => ({ geometry: targetGeometry(), material: new MeshBasicMaterial({ color: WORLD_COLORS.pad }) }), { clearcoat });
+  const target = useSlotMesh('pad.target', () => ({ geometry: targetGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
   const targetGlow = useMemo(() => glowOf(target), [target]);
+  // The pair symbols (spec #5 A13): one instanced mesh per symbol, unlit decals, and the whirlpools' still caps.
+  const symbols = useMemo(() => Object.fromEntries(SYMBOLS.map((name) => [name, symbolGeometry(name)])) as Record<SymbolName, BufferGeometry>, []);
+  const symbolMaterial = useMemo(() => new MeshBasicMaterial({ vertexColors: true, side: DoubleSide }), []);
+  const cap = useMemo(() => capGeometry(PARTS.cap.radius, PARTS.cap.top), []);
+  const capMaterial = useMemo(() => new MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }), []);
+  useEffect(
+    () => () => {
+      for (const g of Object.values(symbols)) g.dispose();
+      symbolMaterial.dispose();
+      cap.dispose();
+      capMaterial.dispose();
+    },
+    [symbols, symbolMaterial, cap, capMaterial],
+  );
+  const symbolsRef = useRef<Partial<Record<SymbolName, InstancedMesh | null>>>({});
+  const capsRef = useRef<InstancedMesh>(null);
+  const colour = useMemo(() => new Color(), []);
   const vorticesRef = useRef<InstancedMesh>(null);
   const exitsRef = useRef<InstancedMesh>(null);
   const padsRef = useRef<InstancedMesh>(null);
@@ -174,7 +195,7 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
       if (before && !after) return 1 - t;
       return !before && after ? Math.max(0, easeOutBack(t)) : 1;
     };
-    // Every part stands on its tile's top and turns only about Y.
+    // Every part stands on its tile's top, turns only about Y, and takes its pair's colour (spec #5 A13).
     const stamp = (mesh: InstancedMesh | null, list: Jump[], tile: (j: Jump) => number, turn: (j: Jump) => number) => {
       if (!mesh) return;
       list.forEach((j, i) => {
@@ -184,14 +205,66 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
         place.scale.setScalar(pop(j.id));
         place.updateMatrix();
         mesh.setMatrixAt(i, place.matrix);
+        mesh.setColorAt(i, colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud));
       });
       mesh.count = list.length;
       mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     };
     stamp(vorticesRef.current, snakes, (j) => j.from, () => clock.elapsedTime * 2.5);
     stamp(exitsRef.current, snakes, (j) => j.to, () => 0);
     stamp(padsRef.current, ladders, (j) => j.from, padHeading);
     stamp(targetsRef.current, ladders, (j) => j.to, () => 0);
+    // The symbols lie flat and upright to the camera; a landing's glowing gold breathes.
+    const marks = new Map<SymbolName, number>();
+    const breathe = 0.78 + 0.22 * Math.sin(clock.elapsedTime * 3);
+    const mark = (j: Jump, tile: number, y: number, size: number, tint: Color) => {
+      const style = styles.get(j.id);
+      const mesh = style ? symbolsRef.current[style.symbol] : null;
+      if (!style || !mesh) return;
+      const i = marks.get(style.symbol) ?? 0;
+      if (i >= MAX_MARKS) return;
+      marks.set(style.symbol, i + 1);
+      const [x, , z] = tileToWorld(tile);
+      const s = size * pop(j.id);
+      place.position.set(x, y, z);
+      place.rotation.set(0, 0, 0);
+      place.scale.set(s, 1, s);
+      place.updateMatrix();
+      mesh.setMatrixAt(i, place.matrix);
+      mesh.setColorAt(i, tint);
+    };
+    for (const j of ladders) {
+      mark(j, j.from, PARTS.padTop + 0.004, PARTS.symbol.pad, INK);
+      mark(j, j.to, PARTS.onTile, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe));
+    }
+    for (const j of snakes) {
+      const pair = styles.get(j.id)?.colour ?? WORLD_COLORS.cloud;
+      // On the cream cap a cream symbol wouldn't show: the cream pair's symbol is drawn in ink there.
+      mark(j, j.from, PARTS.cap.top + 0.002, PARTS.symbol.eye, pair === PAIR_COLORS.cap ? INK : colour.set(pair));
+      mark(j, j.to, PARTS.onTile, PARTS.symbol.exit, colour.set(pair));
+    }
+    for (const name of SYMBOLS) {
+      const mesh = symbolsRef.current[name];
+      if (!mesh) continue;
+      mesh.count = marks.get(name) ?? 0;
+      mesh.visible = mesh.count > 0;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+    const caps = capsRef.current;
+    if (caps) {
+      snakes.forEach((j, i) => {
+        const [x, , z] = tileToWorld(j.from);
+        place.position.set(x, 0, z);
+        place.rotation.set(0, 0, 0);
+        place.scale.setScalar(pop(j.id));
+        place.updateMatrix();
+        caps.setMatrixAt(i, place.matrix);
+      });
+      caps.count = snakes.length;
+      caps.instanceMatrix.needsUpdate = true;
+    }
     // The landing stars breathe (spec #5 §4.2).
     if (targetGlow) {
       const base = (targetGlow.userData.glow ??= targetGlow.emissiveIntensity) as number;
@@ -199,7 +272,6 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
     }
     if (chevrons) chevrons.offset.y -= delta * 0.8;
     if (lights) lights.offset.y -= delta * 0.9; // the trail's lights travel toward the landing
-    if (padChevrons) padChevrons.offset.y -= delta * 0.6;
   });
 
   const byId = useMemo(() => new Map(jumps.map((j) => [j.id, j])), [jumps]);
@@ -215,6 +287,17 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
         };
         return <Path key={id} jump={jump} style={style} progress={progress} clearcoat={clearcoat} chevrons={chevrons} lights={lights} />;
       })}
+      {SYMBOLS.map((name) => (
+        <instancedMesh
+          key={name}
+          ref={(mesh) => {
+            symbolsRef.current[name] = mesh;
+          }}
+          name={`symbols-${name}`}
+          args={[symbols[name], symbolMaterial, MAX_MARKS]}
+        />
+      ))}
+      <instancedMesh ref={capsRef} name="caps" args={[cap, capMaterial, MAX_JUMPS]} />
       <instancedMesh ref={vorticesRef} name="vortices" args={[vortex.geometry, vortex.material, MAX_JUMPS]} />
       <instancedMesh ref={exitsRef} name="exits" args={[exit.geometry, exit.material, MAX_JUMPS]} />
       <instancedMesh ref={padsRef} name="pads" args={[pad.geometry, pad.material, MAX_JUMPS]} />

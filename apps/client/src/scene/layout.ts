@@ -17,7 +17,27 @@ export { tileCell };
  * Slide lane sizes in world units (polish spec §4.1): thin enough that two lanes core keeps
  * LANE_CLEARANCE apart never overlap, head vortex and exit ring included.
  */
-export const LANE = { width: 0.3, edge: 0.1, vortexRadius: 0.35, exitInner: 0.24, exitOuter: 0.34 } as const;
+export const LANE = { width: 0.3, edge: 0.1 } as const;
+
+/**
+ * The jump parts' sizes, and where their pair symbols lie (spec #5 A13), in game units on the tile top.
+ * The Blender models (art/models/pad.py, target.py, vortex.py, exit.py) are built to these numbers, and
+ * art/contract.ts checks their heights; the stand-ins in assets/models.ts use them too.
+ */
+export const PARTS = {
+  /** The pad plate's top, where its symbol lies. */
+  padTop: 0.31,
+  /** At most 0.44: lanes a clearance apart never overlap, vortices and exits included (polish spec 4.1). */
+  vortexRadius: 0.43,
+  /** The still cap in a whirlpool's eye: its radius, and its top, where the symbol lies. */
+  cap: { radius: 0.18, top: 0.07 },
+  exitInner: 0.29,
+  exitOuter: 0.43,
+  /** Symbols on tile tops sit just above the board overlay. */
+  onTile: 0.012,
+  /** Each symbol's size across. */
+  symbol: { pad: 0.5, landing: 0.52, eye: 0.26, exit: 0.36 },
+} as const;
 
 /** Centre of a tile's top face; row 0 is nearest the camera (+Z). Tile 0 is a start spot in front of the board, one per seat. */
 export function tileToWorld(tile: number, seat = 0): Vec3 {

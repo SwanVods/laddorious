@@ -1,6 +1,6 @@
 import { LANE_CLEARANCE, laneCenterline, tileCell as coreTileCell } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
-import { COLUMNS, LANE, TILE_SIZE, slideCurve, squareColorIndex, tileCell, tilePath, tileToWorld } from '../src/scene/layout';
+import { COLUMNS, LANE, PARTS, TILE_SIZE, slideCurve, squareColorIndex, tileCell, tilePath, tileToWorld } from '../src/scene/layout';
 
 function expectAt(point: number[], x: number, z: number) {
   expect(point[0]).toBeCloseTo(x);
@@ -61,7 +61,7 @@ describe('board layout (spec #2 §6.1)', () => {
   it('draws lanes thin enough that two lanes a clearance apart never overlap, vortices included (polish spec 4.1)', () => {
     const halfLane = (LANE.width + LANE.edge) / 2;
     expect(LANE.width).toBe(0.3);
-    expect(LANE.vortexRadius + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
-    expect(LANE.exitOuter + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
+    expect(PARTS.vortexRadius + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
+    expect(PARTS.exitOuter + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
   });
 });

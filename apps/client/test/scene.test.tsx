@@ -1,10 +1,11 @@
 import type { Jump } from '@laddorious/core';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import { InstancedMesh, Matrix4, Mesh, Quaternion, Vector3, type BufferGeometry, type Object3D } from 'three';
+import { Color, InstancedMesh, Matrix4, Mesh, Quaternion, Vector3, type BufferGeometry, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { Director } from '../src/director/director';
 import { TILE_THICKNESS, tileToWorld } from '../src/scene/layout';
 import { SceneContent } from '../src/scene/MatchScene';
+import { SYMBOLS, pairStyles } from '../src/scene/pairs';
 import { REVEAL_MS, createPeeks, type Peeks } from '../src/scene/paths';
 import type { QualityLevel } from '../src/scene/quality';
 import { ribbonGeometry } from '../src/scene/tracks';
@@ -147,6 +148,28 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(p.y).toBeCloseTo(0, 5);
     expect(p.z).toBeCloseTo(fz, 5);
     expect(new Vector3(0, 0, 1).applyQuaternion(q).dot(new Vector3(tx - fx, 0, tz - fz).normalize())).toBeCloseTo(1, 5);
+  });
+
+  it("marks both ends of every jump with its pair's symbol, and each whirlpool's eye with a still cap (spec #5 A13)", async () => {
+    const root = await renderScene('high');
+    const { jumps } = openingUpdate().view.board;
+    let marks = 0;
+    for (const name of SYMBOLS) marks += (root.getObjectByName(`symbols-${name}`) as InstancedMesh | undefined)?.count ?? 0;
+    expect(marks).toBe(2 * jumps.length);
+    expect((root.getObjectByName('caps') as InstancedMesh).count).toBe(jumps.filter((j) => j.to < j.from).length);
+  });
+
+  it('paints each pad, landing ring, whirlpool and collar in its pair colour (spec #5 A13)', async () => {
+    const root = await renderScene('high');
+    const { jumps } = openingUpdate().view.board;
+    const styles = pairStyles(jumps);
+    const ladder = jumps.filter((j) => j.to > j.from)[0]!;
+    const slide = jumps.filter((j) => j.to < j.from)[0]!;
+    const colour = new Color();
+    for (const [name, jump] of [['pads', ladder], ['targets', ladder], ['vortices', slide], ['exits', slide]] as const) {
+      (root.getObjectByName(name) as InstancedMesh).getColorAt(0, colour);
+      expect(colour.getHex(), name).toBe(new Color(styles.get(jump.id)!.colour).getHex());
+    }
   });
 
   it('draws the 100 tiles in one instanced draw call', async () => {
