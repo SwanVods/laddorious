@@ -148,6 +148,8 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 - **Loading:** a listed slot loads its model with drei's `useGLTF`, and the menu preloads them all. While a model loads, or if it fails, the stand-in shows and a warning is logged once.
 - **Instanced slots** (`MESH_SLOTS`: tiles, pads, targets, vortices, exits) load through `useSlotMesh` (`src/assets/slotMesh.ts`): the model becomes one geometry with a group per material, so every copy draws once per material. It returns the stand-in until the model loads and never suspends, so callers re-place their instances when it changes. The stand-ins lie flat and face +Z, like the models, so pads turn the same way either way (`padHeading`).
 - **Tracks** (`src/scene/tracks.ts`): each pad's arched trail and each slide's raised channel are swept in code along the jump's arc or lane, with v running along them so their chevrons scroll.
+- **Pairs instead of paths** (spec #5 A13): a path shows only while a piece stands on its start, while a piece rides it, or for 3 s after a tap on either end's tile (`src/scene/paths.ts`), growing in along its length. Each jump's two ends share a colour and a symbol (`src/scene/pairs.ts`); the parts take the colour as their instance colour, and the symbols are flat decals (`src/assets/symbols.ts`), one instanced mesh per symbol. `PARTS` in `src/scene/layout.ts` sets the parts' sizes and where the symbols lie; the Blender models are built to it.
+- **Low quality** loads each piece's lighter file, `<id>-low.glb` (spec #5 A14), through `slotFile(name, low)`.
 - **`prepareModel`** readies each model's materials:
   - `Seat` takes the player's colour;
   - on Low quality, glossy plastic drops its clearcoat;

@@ -35,7 +35,8 @@ Both scripts also run inside an open Blender (see their docstrings), in scenes o
 - Budgets and sizes for every model are in `contract.ts`; `pnpm test` checks each built file against them.
 - Board parts stand on the tile top with their origin at the base, and face −Y; the game turns them only about the vertical.
 - A model with `Tint` has only that material: instance colours tint every material of a mesh.
-- Flat shapes drawn from above (the pad's arrow, cut with `sculpt.carve`) use `shapes.outline(…, view='top', lift=…)`. A raised flat shape (the target's star) is `shapes.stack`, one outline at several heights. A surface coloured along a twisted grid (the vortex's spiral ridges) is `shapes.grid`.
+- Flat shapes drawn from above (the pad's notch, cut with `sculpt.carve`) use `shapes.outline(…, view='top', lift=…)`. A shape stacked from one outline at several heights is `shapes.stack` (the tile, its top shaded flat with `flat_top`). A surface coloured along a twisted grid (the vortex's spiral ridges) is `shapes.grid`.
+- The jump parts (pad, target, vortex, exit) are built to `PARTS` in `apps/client/src/scene/layout.ts`, where the game lays each pair's symbol; the contract checks the pad's top against it. Their coloured parts are `Tint`, so each takes its pair colour.
 - `art/test/budget.test.ts` prices a busy match with the built models; a heavy model fails it before the browser tests do.
 
 ## Sculpting
@@ -47,6 +48,10 @@ Models are sculpted, not assembled (the user's direction at the Step 1 review): 
 - Small separate details are fine only where the real object has them (eyes and their shine).
 - The export splits shading where faces meet at more than 35°, so carved rims stay crisp; sculpted surfaces have no angles that sharp.
 - Triangle limits in `contract.ts` are guards; the whole match must stay within 150,000 triangles.
+
+## Low quality files
+
+A piece script with `LOW = 0.3` also builds `<id>-low.glb` for Low quality (spec #5 A14): `sculpt.DETAIL` scales every `fuse()` target to that share, colour boundaries are kept without their neighbours, and there's no shadow stand-in. `pnpm art knight-low` builds only that file. The contract holds it to its piece's rule with at most 40% of the triangles.
 
 ## Shadow stand-ins
 

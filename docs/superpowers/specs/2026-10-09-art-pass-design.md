@@ -43,6 +43,8 @@ Success means:
 | A10 | **Seven pieces.** Three new ones join the four: a **rook** (a chess castle tower), a **top hat** (the classic board-game token) and a **rubber duck** (with the knight's little eyes). Each has its own silhouette. | User's request at spec approval ("add more 3 random piece shapes"); Claude picked the three. |
 | A11 | **Sculpted, not assembled.** Every model is one continuous surface with real curves where its parts meet, never shapes visibly stuck together: parts become distance fields that are united, blended at the joins, carved and rounded (`art/lib/sculpt.py`). Hard objects with clean flats (the die) are carved with exact booleans instead. Per-model triangle budgets below are targets, not hard limits; the whole-match budget (§1) is the one that holds. | User's direction at the Step 1 review ("i want it like the real curve and conjoined object"; "it's okay to beyond the limit"). |
 | A12 | **Shadow stand-ins.** Every model that casts a shadow (pieces, die, crown) carries a small decimated copy of itself, about 400 triangles in one material named `Shadow`. The game casts the shadow from it and never shows it; the detailed model casts none. The board's instanced parts carry none. | Claude's ruling in Step 2: the sculpted pieces, drawn twice for shadows, filled the 150,000-triangle budget before the board's models landed. The shadow map gives a piece about 40 texels, so the stand-in's outline matches; the models on screen keep every triangle. |
+| A13 | **Pairs instead of paths.** A pad's trail and a slide's (portal's) channel are hidden; each shows only while a piece stands on its start tile, while a piece rides it, and for 3 s after a player taps or clicks either end's tile, growing in along its length. Instead, each jump's start and end share a colour and a symbol, unique on the board: six colours (pink, cyan, lime, cream, dark teal, plum; teal and plum on ladders only, since they vanish on a portal's dark bowl) and eight symbols (circle, triangle, square, diamond, heart, plus, moon, bolt). Pad, landing ring, whirlpool rim and ridges, exit collar, trail and channel walls take the pair colour through `Tint`; the symbols are a code-built decal layer: dark on the pad's plate (cream on a dark pad), glowing gold in the landing ring, on a still cream cap in the whirlpool's eye, and in the collar. Tiles are rounder on top and 0.30 tall; the pad is taller, its spring visible, with a dark notch toward its landing; the die is lighter, its one red. | The user's Step 2 review notes; the pairs mockup they approved (review page, version 4); symbols rather than tap-to-see alone, for colour-blind players. |
+| A14 | **Lighter pieces on Low quality.** Each piece also builds as `<id>-low.glb` (its sculpted parts thinned to 30%, at most 40% of the piece limit, no shadow stand-in); Low quality, where phones start, loads those in the match and the menu. A busy match on Low stays under 100,000 triangles. | The user's question about low-end phones at the Step 2 review: the sculpted pieces had made Low heavier than planned. |
 | A9 | **No mesh compression in this pass.** The models total about 2 MB, and a test keeps them under 2.5 MB. | Simpler loading with no decoder files; compression can come later if the size grows. |
 
 ## 3. The look
@@ -63,7 +65,7 @@ Success means:
 | Name | What the game does |
 |---|---|
 | `Seat` | Takes the player's colour (already in Spec #2 §6.3). |
-| `Tint` | Takes each instance's colour: tiles per square, bumpers alternating, and so on. Its base colour is white. |
+| `Tint` | Takes each instance's colour: tiles per square, each jump part its pair colour (A13), bumpers alternating, and so on. Its base colour is white. |
 | `Glow` | Keeps its emission; the game may pulse its intensity. |
 | `Shadow` | The model's shadow stand-in (A12): drawn only into the shadow map, and not at all without shadows. |
 | any other name | Drawn as exported. |
@@ -160,6 +162,8 @@ The props' exact places are settled in the step 3 review. They must stay out of 
   - `Tint` gets a white base, so instance colours show;
   - on Low quality, clearcoat is set to 0;
   - a `Shadow` mesh casts the model's shadow, unseen, and the rest casts none (A12).
+- **Pairs and paths (A13):** `scene/pairs.ts` gives each jump its colour and symbol in creation order, so a card's new jump never changes the others; `scene/paths.ts` decides which paths show; a tap on a tile peeks at the jumps that start or end there. The symbols are `assets/symbols.ts`, eight instanced meshes and the caps, sized and placed by `PARTS` in `scene/layout.ts`, which the models are built to.
+- **Low models (A14):** `slotFile(name, low)` picks `<id>-low` for the pieces when the quality profile says `lowModels`.
 - **Preload:** the menu preloads every slot model (drei's `useGLTF.preload`), so a match never pops from stand-in to model.
 - **Fallback:** a file that fails to load leaves the code-built model in place and warns once, as today.
 - **Trails and channels** are new geometry builders next to `ribbonGeometry` in `scene/Jumps.tsx`:
