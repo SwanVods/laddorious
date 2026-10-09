@@ -12,8 +12,9 @@ This repository holds:
 - **Spec #1:** the deterministic rules engine, the seeded board generator and a headless simulator ([design](docs/superpowers/specs/2026-10-03-game-core-design.md)).
 - **Spec #2:** the 3D web client, with the main menu, matchmaking, a full match against bots and the end screen ([design](docs/superpowers/specs/2026-10-04-3d-client-design.md)).
 - **Spec #3:** sound design. Every sound effect and both music loops are made in code with Tone.js, with mute and volume settings ([design](docs/superpowers/specs/2026-10-09-sound-design.md)).
+- **Spec #4:** the multiplayer server. Quick match with real players, bots on request, and rejoining within 60 s, on Cloudflare Workers and Durable Objects ([design](docs/superpowers/specs/2026-10-09-multiplayer-server-design.md)).
 
-The multiplayer server (Spec #4) and the art pass (Spec #5) come later.
+The art pass (Spec #5) comes later.
 
 ## Repository map
 
@@ -21,8 +22,10 @@ The multiplayer server (Spec #4) and the art pass (Spec #5) come later.
 |---|---|---|
 | `packages/core` | `@laddorious/core` | Pure rules engine: `createMatch`, `step(state, input) → { state, events }`, `awaiting`, `viewFor`, `eventsFor`, plus the board generator. No clock, no unseeded randomness: a match replays exactly from its config, seed and inputs. [README](packages/core/README.md) |
 | `packages/bots` | `@laddorious/bots` | Random and heuristic bots that play from a player's view. Browser-safe; used by the simulator and the client, and later the server. [README](packages/bots/README.md) |
+| `packages/host` | `@laddorious/host` | The match host: one match's engine state, timers and bots for any mix of humans and bots, plus the wire protocol. The offline worker and the server both run it. [README](packages/host/README.md) |
 | `apps/sim` | `@laddorious/sim` | Batch runner, metrics and the `sim` CLI. |
-| `apps/client` | `@laddorious/client` | The web client (Vite, React, React Three Fiber): the main menu, matchmaking, a 4-player match against the simulator's bots in 3D with the full HUD, and the end screen. The engine and bots run in a Web Worker behind the `MatchService` interface. [README](apps/client/README.md) |
+| `apps/client` | `@laddorious/client` | The web client (Vite, React, React Three Fiber): the main menu, matchmaking, a 4-player match against the simulator's bots in 3D with the full HUD, and the end screen. The engine runs in a Web Worker behind the `MatchService` interface, or on the server when `VITE_SERVER` is set. [README](apps/client/README.md) |
+| `apps/server` | `@laddorious/server` | The multiplayer server: a Cloudflare Worker with a lobby and one Durable Object per match. It also serves the built game. [README](apps/server/README.md) |
 
 Libraries live in `packages/` and deployable apps in `apps/`.
 
@@ -45,6 +48,9 @@ pnpm typecheck   # every package, the client and the e2e tests
 pnpm lint        # ESLint, including the engine's determinism rules
 pnpm dev         # the client's dev server on http://localhost:5173
 pnpm build       # the client's production build into apps/client/dist
+pnpm serve       # play on your Wi-Fi: the game and server on port 8787 (see apps/server/README.md)
+pnpm dev:online  # the dev server against a local multiplayer server
+pnpm deploy:cloudflare  # build and deploy to Cloudflare (needs `wrangler login`; see apps/server/README.md)
 pnpm e2e         # Playwright end-to-end tests (see apps/client/README.md)
 
 pnpm sim board --seed daily-2026-10-03                   # print a generated board and its analysis
@@ -59,9 +65,10 @@ pnpm sim replay match0.json                               # check a recorded mat
 - **`@laddorious/core`** is a pure state machine. A host feeds it inputs (rolls, picks, timeouts) and gets back the new state and the events that happened. All randomness comes from seeded streams stored in the state.
 - **`@laddorious/bots`** decides what a seat would do, looking only at `viewFor(state, seat)`.
 - **The simulator** runs thousands of bot matches to measure match length, fairness and card balance.
-- **The client** runs the engine and the bots in a Web Worker. The worker's host owns the timers, and the screens talk to it through the `MatchService` interface.
+- **`@laddorious/host`** runs one match: it feeds the engine bot moves, timeouts and players' actions, and sends each human only their own view.
+- **The client** runs the host in a Web Worker for offline play, or talks to **the server** (a Cloudflare Worker running the same host) for online play, through the `MatchService` interface.
 
-**The visibility rule:** the client only ever receives what a remote player would, which is `viewFor(state, me)` and `eventsFor(events, me)`. Other players' hands, picks and card targets, and the secret RNG seed, never reach the main thread. That is what lets the Spec #4 server replace the local worker without changing the screens.
+**The visibility rule:** the client only ever receives what a remote player would, which is `viewFor(state, me)` and `eventsFor(events, me)`. Other players' hands, picks and card targets, and the secret RNG seed, never reach the main thread. That is why the Spec #4 server could replace the local worker without changing the screens.
 
 ## Changing the rules safely
 
@@ -80,7 +87,7 @@ pnpm sim replay match0.json                               # check a recorded mat
 GitHub Actions (`.github/workflows/ci.yml`):
 
 - a `check` job runs typecheck, lint, test and the client build;
-- an `e2e` job installs Playwright's Chromium and runs `pnpm e2e`, uploading traces when it fails.
+- an `e2e` job installs Playwright's Chromium and runs `pnpm e2e`, uploading traces when it fails. The e2e run also starts `wrangler dev` for the two-player tests; no Cloudflare account is needed.
 
 ## Specs, plans and handoff
 

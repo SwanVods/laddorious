@@ -3,7 +3,7 @@
 The Laddorious web client:
 
 - the main menu, with your piece on a podium;
-- matchmaking, which offers "Play with bots" after 15 s;
+- matchmaking with real players when online, or bots; "Play with bots" appears after 15 s;
 - a 4-player match in 3D with the full HUD;
 - the end screen.
 
@@ -25,6 +25,18 @@ Dev builds (`pnpm dev`) add two things:
 - **The stats overlay** in a match: frames per second, draw calls and triangles.
 - **The board seed field** on the main menu, under the settings gear. A seed reproduces a board; the dice stay random.
 
+## Playing online
+
+`VITE_SERVER`, read at build time (spec #4 M11), picks where matches run:
+
+| Value | What happens |
+|---|---|
+| unset | Offline only: the engine and bots run in a Web Worker. `pnpm dev` and `pnpm build` work this way. |
+| `same-origin` | Online, against the Worker that served the page. `pnpm serve` and `pnpm deploy:cloudflare` build this way. |
+| `ws://…` or `wss://…` | Online, against that server: for hosting the game on Pages or Netlify while the Worker runs elsewhere. |
+
+Online builds keep the offline bots as a fallback. If the server can't be reached within 5 s, matchmaking offers **Try again** and **Play offline with bots**. A reload during a match rejoins it: the seat is kept in the tab's `sessionStorage`, and the server holds it for 60 s after a drop. See [apps/server/README.md](../server/README.md) for running the server.
+
 ## Where things are (`src/`)
 
 | Folder | What it holds |
@@ -41,6 +53,8 @@ Dev builds (`pnpm dev`) add two things:
 Every colour is a token in `app/theme.ts` or `app/theme.css`, and `test/tokens.test.ts` fails on a colour written anywhere else.
 
 ## Deploying
+
+These steps host the offline game. For online play, deploy the Worker instead, which serves the game too: see [apps/server/README.md](../server/README.md).
 
 The build is static files in `apps/client/dist` (HTML, JS, the worker script and assets). There is no server and no client-side routing, so no rewrite rules are needed.
 
@@ -163,6 +177,11 @@ pnpm --filter @laddorious/client exec playwright install chromium
 - play menu → PLAY → Play with bots (with the page clock advanced 16 s) → a whole match → the end screen → Play again;
 - check that a portrait viewport shows the rotate screen;
 - check that a match stays within 100 draw calls.
+
+A fourth project, `online`, runs `e2e/online.spec.ts` (spec #4 §10). Playwright also builds an online e2e build (`VITE_SERVER=same-origin`) into `dist-online-e2e/` and serves it with `wrangler dev` on port 8788, with `FAST=1`. Two browser contexts:
+
+- find each other, fill the table with bots and play to the end;
+- drop one player and bring them back with a reload, checking the Away badge.
 
 Only e2e builds have the test hook, `window.__laddoriousTest`. It turns on a fast mode:
 

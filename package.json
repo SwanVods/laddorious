@@ -12,6 +12,9 @@
     "lint": "eslint .",
     "sim": "tsx apps/sim/src/bin.ts",
     "dev": "pnpm --filter @laddorious/client dev",
+    "serve": "node apps/server/scripts/online.mjs serve",
+    "dev:online": "node apps/server/scripts/online.mjs dev",
+    "deploy:cloudflare": "node apps/server/scripts/online.mjs deploy",
     "build": "pnpm --filter @laddorious/client build",
     "e2e": "pnpm --filter @laddorious/client e2e"
   },
