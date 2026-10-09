@@ -38,9 +38,33 @@ describe('MatchmakingOverlay (spec #2 §7.1, C7)', () => {
     const matchmaking = new ScriptedMatchmaking();
     const onCancelled = vi.fn();
     const onReady = vi.fn();
-    render(<MatchmakingOverlay matchmaking={matchmaking} onCancelled={onCancelled} onReady={onReady} />);
-    return { matchmaking, onCancelled, onReady };
+    const onRetry = vi.fn();
+    const onOffline = vi.fn();
+    render(<MatchmakingOverlay matchmaking={matchmaking} onCancelled={onCancelled} onReady={onReady} onRetry={onRetry} onOffline={onOffline} />);
+    return { matchmaking, onCancelled, onReady, onRetry, onOffline };
   }
+
+  it("says when the server can't be reached, with Try again, Play offline with bots and Cancel (spec #4 §3.3)", () => {
+    const { matchmaking, onRetry, onOffline } = open();
+    matchmaking.emit({ kind: 'unreachable', message: "Can't reach the game server." });
+    expect(screen.getByRole('dialog', { name: "CAN'T CONNECT" })).toBeTruthy();
+    expect(screen.getByText("Can't reach the game server.")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Play offline with bots' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onOffline).toHaveBeenCalledTimes(1);
+    expect(matchmaking.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('tags bots BOT and real players nothing (spec #4 §4)', () => {
+    const { matchmaking } = open();
+    const bo = { ...SEATS[1]!, nickname: 'Bo', bot: false };
+    matchmaking.emit({ kind: 'searching', elapsedMs: 1_000, seats: [you, bo, null, null] });
+    expect(screen.queryByText('BOT')).toBeNull();
+    matchmaking.emit({ kind: 'filling', seats: [you, bo, SEATS[2]!, null] });
+    expect(screen.getAllByText('BOT')).toHaveLength(1);
+  });
 
   it('searches with my seat and three open ones, offering bots only after 15 s', () => {
     const { matchmaking } = open();

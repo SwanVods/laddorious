@@ -16,7 +16,8 @@ export type MatchmakingState =
   | { kind: 'searching'; elapsedMs: number; seats: Array<SeatInfo | null> } // index 0 = you
   | { kind: 'filling'; seats: Array<SeatInfo | null> } // bots taking empty seats
   | { kind: 'found'; session: MatchSession }
-  | { kind: 'cancelled' };
+  | { kind: 'cancelled' }
+  | { kind: 'unreachable'; message: string }; // the server can't be reached, or runs another version (spec #4 §3.3)
 
 /** Dev builds only: a board seed to reproduce a board (spec #2 §4.4). The online service ignores it. */
 export interface FindOptions {
@@ -25,6 +26,8 @@ export interface FindOptions {
 
 export interface MatchService {
   findMatch(profile: Profile, opts?: FindOptions): Matchmaking;
+  /** Online only: after a reload, the saved seat's match, or null (spec #4 §3.3). */
+  rejoin?(): MatchSession | null;
 }
 
 export interface Matchmaking {

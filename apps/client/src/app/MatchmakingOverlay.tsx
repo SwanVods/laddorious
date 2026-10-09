@@ -20,6 +20,10 @@ interface MatchmakingOverlayProps {
   onCancelled: () => void;
   /** MATCH FOUND and the countdown are over: the match screen takes over. */
   onReady: (session: MatchSession) => void;
+  /** Online: ask the server again after it couldn't be reached (spec #4 §3.3). */
+  onRetry?: () => void;
+  /** Online: play offline with bots instead. */
+  onOffline?: () => void;
 }
 
 /**
@@ -27,7 +31,7 @@ interface MatchmakingOverlayProps {
  * seat and three searching ones, Cancel, and after 15 s "Play with bots". Then the bots take
  * their seats, MATCH FOUND!, a 3-2-1 countdown, and the match.
  */
-export function MatchmakingOverlay({ matchmaking, onCancelled, onReady }: MatchmakingOverlayProps) {
+export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry, onOffline }: MatchmakingOverlayProps) {
   const titleId = useId();
   const [state, setState] = useState<MatchmakingState | null>(null);
   const [count, setCount] = useState(3);
@@ -69,9 +73,37 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady }: Matchm
     return () => clearInterval(id);
   }, [found, sound]);
 
-  useHotkeys({ Escape: () => matchmaking.cancel() }, state?.kind === 'searching');
+  useHotkeys({ Escape: () => matchmaking.cancel() }, state?.kind === 'searching' || state?.kind === 'unreachable');
 
   if (!state || state.kind === 'cancelled') return null;
+  if (state.kind === 'unreachable') {
+    return (
+      <div className="popup live matchmaking" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="backdrop" />
+        <div className="popup-content">
+          <h2 id={titleId} className="popup-title display">
+            {"CAN'T CONNECT"}
+          </h2>
+          <p className="popup-hint">{state.message}</p>
+          <div className="mm-buttons">
+            {onRetry && (
+              <button type="button" className="btn accent" onClick={onRetry}>
+                Try again
+              </button>
+            )}
+            {onOffline && (
+              <button type="button" className="btn" onClick={onOffline}>
+                Play offline with bots
+              </button>
+            )}
+            <button type="button" className="btn" onClick={() => matchmaking.cancel()}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const seats = state.kind === 'found' ? found!.seats : state.seats;
   const title = state.kind === 'searching' ? 'FINDING PLAYERS' : state.kind === 'filling' ? 'ADDING BOTS' : 'MATCH FOUND!';
   const offerBots = state.kind === 'searching' && state.elapsedMs >= PLAY_WITH_BOTS_AFTER_MS;
@@ -141,7 +173,7 @@ function SeatSlot({ seat, me }: { seat: SeatInfo | null; me: boolean }) {
     <li className={me ? 'mm-seat me' : 'mm-seat'}>
       <Portrait piece={seat.piece} color={seat.color} className="mm-portrait" />
       <span className="mm-name display">{seat.nickname}</span>
-      <span className="mm-tag">{me ? 'YOU' : 'BOT'}</span>
+      {(me || seat.bot) && <span className="mm-tag">{me ? 'YOU' : 'BOT'}</span>}
     </li>
   );
 }

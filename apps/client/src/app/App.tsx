@@ -26,6 +26,10 @@ type Route =
 
 interface AppProps {
   service: MatchService;
+  /** Online builds: the offline bots, offered when the server can't be reached (spec #4 §3.3). */
+  offline?: MatchService;
+  /** Online builds: a match rejoined after a reload; the app starts in it (spec #4 §3.3). */
+  resume?: MatchSession | null;
   prefs: StoreApi<PrefsState>;
   /** Dev builds: the seed field, the stats overlay and error details. */
   dev: boolean;
@@ -39,8 +43,8 @@ interface AppProps {
  * It pauses a local match while the page is hidden (C14) and asks for fullscreen on the first
  * touch where the browser allows it (§7.3).
  */
-export function App({ service, prefs, dev, test = null }: AppProps) {
-  const [route, setRoute] = useState<Route>({ screen: 'menu' });
+export function App({ service, offline, resume = null, prefs, dev, test = null }: AppProps) {
+  const [route, setRoute] = useState<Route>(() => (resume ? { screen: 'match', session: resume } : { screen: 'menu' }));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [crashes, setCrashes] = useState(0);
   const settings = useStore(prefs, (s) => s.settings);
@@ -63,6 +67,12 @@ export function App({ service, prefs, dev, test = null }: AppProps) {
 
   const toMenu = () => setRoute({ screen: 'menu' });
   const play = (opts: FindOptions = {}) => setRoute({ screen: 'matchmaking', matchmaking: service.findMatch(prefs.getState().profile, opts) });
+  const playOffline = () => {
+    if (!offline) return;
+    const matchmaking = offline.findMatch(prefs.getState().profile);
+    matchmaking.playWithBots();
+    setRoute({ screen: 'matchmaking', matchmaking });
+  };
   const session = route.screen === 'match' || route.screen === 'end' ? route.session : null;
 
   let screen: ReactNode;
@@ -73,7 +83,13 @@ export function App({ service, prefs, dev, test = null }: AppProps) {
         <>
           <MenuScreen prefs={prefs} onPlay={play} onSettings={() => setSettingsOpen(true)} showSeed={dev} />
           {route.screen === 'matchmaking' && (
-            <MatchmakingOverlay matchmaking={route.matchmaking} onCancelled={toMenu} onReady={(s) => setRoute({ screen: 'match', session: s })} />
+            <MatchmakingOverlay
+              matchmaking={route.matchmaking}
+              onCancelled={toMenu}
+              onReady={(s) => setRoute({ screen: 'match', session: s })}
+              onRetry={() => play()}
+              onOffline={offline ? playOffline : undefined}
+            />
           )}
         </>
       );

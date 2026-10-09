@@ -228,3 +228,48 @@ describe('fullscreen on the first tap (spec #2 §7.3)', () => {
     expect(wantsFullscreen({ ...android, pointerType: 'mouse' })).toBe(false);
   });
 });
+
+describe('App online (spec #4 §3.3)', () => {
+  function setupOnline(resume: ScriptedSession | null = null) {
+    const made: ScriptedMatchmaking[] = [];
+    const findMatch = vi.fn(() => {
+      const matchmaking = new ScriptedMatchmaking();
+      made.push(matchmaking);
+      return matchmaking;
+    });
+    const offlineMade: ScriptedMatchmaking[] = [];
+    const offline: MatchService = {
+      findMatch: vi.fn(() => {
+        const matchmaking = new ScriptedMatchmaking();
+        offlineMade.push(matchmaking);
+        return matchmaking;
+      }),
+    };
+    const prefs = createPrefsStore(null, { prefersReducedMotion: false, random: () => 0.5 });
+    render(<App service={{ findMatch }} offline={offline} resume={resume} prefs={prefs} dev={false} />);
+    return { findMatch, made, offline, offlineMade };
+  }
+
+  it('tries the server again on Try again', () => {
+    const { findMatch, made } = setupOnline();
+    fireEvent.click(screen.getByRole('button', { name: 'PLAY' }));
+    made[0]!.emit({ kind: 'unreachable', message: "Can't reach the game server." });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(findMatch).toHaveBeenCalledTimes(2);
+  });
+
+  it('plays offline with bots straight away when asked', () => {
+    const { made, offline, offlineMade } = setupOnline();
+    fireEvent.click(screen.getByRole('button', { name: 'PLAY' }));
+    made[0]!.emit({ kind: 'unreachable', message: "Can't reach the game server." });
+    fireEvent.click(screen.getByRole('button', { name: 'Play offline with bots' }));
+    expect(offline.findMatch).toHaveBeenCalledTimes(1);
+    expect(offlineMade[0]!.playWithBots).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts in the match when a reload rejoined one', () => {
+    setupOnline(new ScriptedSession());
+    expect(screen.getByRole('button', { name: 'Leave match' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'PLAY' })).toBeNull();
+  });
+});
