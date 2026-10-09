@@ -4,6 +4,7 @@ import { Color, Fog, Object3D, Vector3, type Group, type InstancedMesh } from 't
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BOARD_COLORS, PODIUM_COLORS, SEAT_COLORS, WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY } from '../assets/models';
+import { preloadSlotMeshes } from '../assets/slotMesh';
 import { Slot, preloadModels, type SlotName } from '../assets/slots';
 import type { PieceId } from '../service/matchService';
 import type { Vec3 } from './layout';
@@ -74,7 +75,10 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
 
   useEffect(() => () => geometry.dispose(), [geometry]);
   // Load every model while the menu shows, so the match never pops in (spec #5 §6).
-  useEffect(() => preloadModels(), []);
+  useEffect(() => {
+    preloadModels();
+    preloadSlotMeshes();
+  }, []);
   // A new piece pops in (spec #2 §6.2 bounce).
   useEffect(() => {
     swapAtRef.current = performance.now();

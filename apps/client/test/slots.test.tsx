@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { BoxGeometry, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SlotBoundary, prepareModel, setEmissive, slotUrl } from '../src/assets/slots';
+import { SlotBoundary, prepareMaterial, prepareModel, setEmissive, slotUrl } from '../src/assets/slots';
 
 afterEach(() => {
   cleanup();
@@ -59,6 +59,13 @@ describe('asset slots (spec #2 §6.3, spec #5 §6)', () => {
     const flat = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
     prepareModel(flat, {});
     expect(flat.castShadow).toBe(false);
+  });
+
+  it('turns Tint white on a copy, so instance colours show (spec #5 §3.2)', () => {
+    const grey = new MeshStandardMaterial({ name: 'Tint', color: '#808080' });
+    const ready = prepareMaterial(grey, {}) as MeshStandardMaterial;
+    expect(ready.color.getHexString()).toBe('ffffff');
+    expect(grey.color.getHexString()).toBe('808080');
   });
 
   it('keeps the code-built models in unit tests', () => {

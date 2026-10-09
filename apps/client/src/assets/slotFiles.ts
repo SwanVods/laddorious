@@ -14,7 +14,10 @@ export type SlotName =
   | 'pad'
   | 'slide.vortex'
   | 'crown'
-  | 'island';
+  | 'island'
+  | 'tile'
+  | 'pad.target'
+  | 'slide.exit';
 
 /** The model id (file name without .glb) for each slot that has a Blender model. A slot not listed keeps its code-built model. */
 export const SLOT_FILES: Partial<Record<SlotName, string>> = {
@@ -28,6 +31,9 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   die: 'die',
   crown: 'crown',
 };
+
+/** Slots drawn many times through instancing (spec #5 §6): useSlotMesh loads them as one mesh each. */
+export const MESH_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['tile', 'pad', 'pad.target', 'slide.vortex', 'slide.exit']);
 
 /** Where the game loads a model from (served from apps/client/public). */
 export function modelUrl(id: string): string {

@@ -1,6 +1,6 @@
 import { Component, Suspense, lazy, type ReactNode } from 'react';
-import { Mesh, MeshPhysicalMaterial, MeshStandardMaterial, type Material, type Object3D } from 'three';
-import { SLOT_FILES, modelUrl, type SlotName } from './slotFiles';
+import { Color, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, type Material, type Object3D } from 'three';
+import { MESH_SLOTS, SLOT_FILES, modelUrl, type SlotName } from './slotFiles';
 
 export type { SlotName } from './slotFiles';
 
@@ -28,26 +28,36 @@ export interface ModelOptions {
   shadows?: boolean;
 }
 
-/** Ready a loaded model's materials and shadows. Changed materials are copies, so shared ones stay as they were. */
-export function prepareModel(root: Object3D, { seat, clearcoat = true, emissive, shadows = false }: ModelOptions): void {
-  const prepare = (material: Material): Material => {
-    if (!(material instanceof MeshStandardMaterial)) return material;
-    const tint = seat !== undefined && material.name === 'Seat';
-    const uncoat = !clearcoat && material instanceof MeshPhysicalMaterial && material.clearcoat > 0;
-    if (!tint && !uncoat && emissive === undefined) return material;
-    const copy = material.clone();
-    if (tint) copy.color.set(seat);
-    if (uncoat) (copy as MeshPhysicalMaterial).clearcoat = 0;
-    if (emissive !== undefined) {
-      copy.emissive.set(emissive);
-      copy.emissiveIntensity = 0;
-    }
-    return copy;
-  };
+const WHITE = new Color(1, 1, 1);
+
+/**
+ * Ready one material for the game (spec #5 §3.2, §6): Seat takes the seat colour, Tint turns white so
+ * instance colours show, Low quality drops the clearcoat, and `emissive` readies it to flash. A changed
+ * material is a copy, so shared ones stay as they were.
+ */
+export function prepareMaterial(material: Material, { seat, clearcoat = true, emissive }: ModelOptions): Material {
+  if (!(material instanceof MeshStandardMaterial)) return material;
+  const tint = seat !== undefined && material.name === 'Seat';
+  const white = material.name === 'Tint' && !material.color.equals(WHITE);
+  const uncoat = !clearcoat && material instanceof MeshPhysicalMaterial && material.clearcoat > 0;
+  if (!tint && !white && !uncoat && emissive === undefined) return material;
+  const copy = material.clone();
+  if (tint) copy.color.set(seat);
+  if (white) copy.color.copy(WHITE);
+  if (uncoat) (copy as MeshPhysicalMaterial).clearcoat = 0;
+  if (emissive !== undefined) {
+    copy.emissive.set(emissive);
+    copy.emissiveIntensity = 0;
+  }
+  return copy;
+}
+
+/** Ready a loaded model's materials and shadows. */
+export function prepareModel(root: Object3D, options: ModelOptions): void {
   root.traverse((node) => {
     if (!(node instanceof Mesh)) return;
-    node.castShadow = shadows;
-    node.material = Array.isArray(node.material) ? node.material.map(prepare) : prepare(node.material);
+    node.castShadow = options.shadows ?? false;
+    node.material = Array.isArray(node.material) ? node.material.map((m) => prepareMaterial(m, options)) : prepareMaterial(node.material, options);
   });
 }
 
@@ -100,8 +110,9 @@ export function Slot({ name, fallback, ...options }: { name: SlotName; fallback:
   );
 }
 
-/** Start loading every model the game uses (the menu calls this), so a match never pops from stand-in to model. */
+/** Start loading every whole model the game uses (the menu calls this), so a match never pops from stand-in to model. */
 export function preloadModels(): void {
-  const urls = (Object.keys(SLOT_FILES) as SlotName[]).map(slotUrl).filter((url): url is string => url !== null);
+  const names = (Object.keys(SLOT_FILES) as SlotName[]).filter((name) => !MESH_SLOTS.has(name));
+  const urls = names.map(slotUrl).filter((url): url is string => url !== null);
   if (urls.length > 0) void import('./GltfModel').then((m) => m.preload(urls));
 }
