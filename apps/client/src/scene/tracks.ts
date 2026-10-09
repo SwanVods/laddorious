@@ -125,3 +125,10 @@ export function channelGeometry(points: Vector3[]): { floor: BufferGeometry; wal
     walls: mergeGeometries([sweepGeometry(points, wallSection(-offset), LANE.width), sweepGeometry(points, wallSection(offset), LANE.width)]),
   };
 }
+
+/** The turn about Y that points a pad's front (+Z, like every model's) at its landing tile. */
+export function padHeading(jump: Jump): number {
+  const [fx, , fz] = tileToWorld(jump.from);
+  const [tx, , tz] = tileToWorld(jump.to);
+  return Math.atan2(tx - fx, tz - fz);
+}

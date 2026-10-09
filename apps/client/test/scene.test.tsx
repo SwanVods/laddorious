@@ -1,9 +1,9 @@
 import type { Jump } from '@laddorious/core';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import { InstancedMesh, Matrix4, Mesh, Vector3, type BufferGeometry, type Object3D } from 'three';
+import { InstancedMesh, Matrix4, Mesh, Quaternion, Vector3, type BufferGeometry, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { Director } from '../src/director/director';
-import { TILE_THICKNESS } from '../src/scene/layout';
+import { TILE_THICKNESS, tileToWorld } from '../src/scene/layout';
 import { SceneContent } from '../src/scene/MatchScene';
 import type { QualityLevel } from '../src/scene/quality';
 import { ribbonGeometry } from '../src/scene/tracks';
@@ -82,6 +82,23 @@ describe('the 3D scene (spec #2 §6)', () => {
   it('draws every pad trail in one mesh, and every slide channel in two (spec #5 §4.2)', async () => {
     const root = await renderScene('high');
     for (const name of ['pad-trails', 'slide-floors', 'slide-walls']) expect(root.getObjectByName(name)).toBeInstanceOf(Mesh);
+  });
+
+  it('stands the jump parts on their tiles and turns each pad toward its landing (spec #5 §4.2)', async () => {
+    const root = await renderScene('high');
+    for (const name of ['vortices', 'exits', 'pads', 'targets']) expect(root.getObjectByName(name)).toBeInstanceOf(InstancedMesh);
+    const pads = root.getObjectByName('pads') as InstancedMesh;
+    const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
+    const at = new Matrix4();
+    pads.getMatrixAt(0, at);
+    const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
+    at.decompose(p, q, s);
+    const [fx, , fz] = tileToWorld(ladder.from);
+    const [tx, , tz] = tileToWorld(ladder.to);
+    expect(p.x).toBeCloseTo(fx, 5);
+    expect(p.y).toBeCloseTo(0, 5);
+    expect(p.z).toBeCloseTo(fz, 5);
+    expect(new Vector3(0, 0, 1).applyQuaternion(q).dot(new Vector3(tx - fx, 0, tz - fz).normalize())).toBeCloseTo(1, 5);
   });
 
   it('draws the 100 tiles in one instanced draw call', async () => {

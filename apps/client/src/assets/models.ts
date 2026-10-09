@@ -1,8 +1,8 @@
-import { ConeGeometry, CylinderGeometry, ExtrudeGeometry, LatheGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
+import { CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeometry, LatheGeometry, RingGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { PieceId } from '../service/matchService';
-import { TILE_SIZE, TILE_THICKNESS, type Vec3 } from '../scene/layout';
+import { LANE, TILE_SIZE, TILE_THICKNESS, type Vec3 } from '../scene/layout';
 
 // Code-built defaults for the asset slots (spec #2 §6.2, §6.3): about one unit tall,
 // origin at the feet, +Z forward, Y up. The scene scales pieces by 1.3.
@@ -195,4 +195,23 @@ export function crownGeometry(): BufferGeometry {
 /** A board tile's stand-in (spec #5 §4.2): a rounded slab 0.95 of a tile across, standing on its base. Instancing paints it. */
 export function tileGeometry(): BufferGeometry {
   return new RoundedBoxGeometry(TILE_SIZE * 0.95, TILE_THICKNESS, TILE_SIZE * 0.95, 1, 0.05).translate(0, TILE_THICKNESS / 2, 0);
+}
+
+// The jumps' stand-ins (spec #5 §4.2): lying flat a hair above the tile top, facing +Z like the models.
+
+/** A launch pad: its chevrons' tips (+v) point forward (+Z), where the model's arrow points. */
+export function padGeometry(): BufferGeometry {
+  return new CircleGeometry(0.6, 28).rotateX(-Math.PI / 2).rotateY(Math.PI).translate(0, 0.03, 0);
+}
+
+export function targetGeometry(): BufferGeometry {
+  return new RingGeometry(0.42, 0.6, 28).rotateX(-Math.PI / 2).translate(0, 0.03, 0);
+}
+
+export function vortexGeometry(): BufferGeometry {
+  return new CircleGeometry(LANE.vortexRadius, 32).rotateX(-Math.PI / 2).translate(0, 0.03, 0);
+}
+
+export function exitGeometry(): BufferGeometry {
+  return new RingGeometry(LANE.exitInner, LANE.exitOuter, 28).rotateX(-Math.PI / 2).translate(0, 0.03, 0);
 }

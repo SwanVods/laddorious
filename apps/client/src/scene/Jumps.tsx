@@ -1,20 +1,32 @@
 import type { Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { DoubleSide, Object3D, type InstancedMesh } from 'three';
+import { DoubleSide, MeshBasicMaterial, MeshStandardMaterial, Object3D, type InstancedMesh } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
+import { exitGeometry, padGeometry, targetGeometry, vortexGeometry } from '../assets/models';
+import { useSlotMesh, type SlotMesh } from '../assets/slotMesh';
 import type { Director } from '../director/director';
-import { LANE, slideCurve, tileToWorld } from './layout';
+import { slideCurve, tileToWorld } from './layout';
 import { clamp01, easeOutBack } from './motion';
 import { chevronTexture, swirlTexture } from './textures';
-import { CHANNEL, channelGeometry, trailGeometry, trailPath } from './tracks';
+import { CHANNEL, channelGeometry, padHeading, trailGeometry, trailPath } from './tracks';
 
 /** A cap that keeps a crowded board inside the draw-call and triangle budget (spec #2 §6.4). */
 const MAX_JUMPS = 24;
 
-/** Slides and launch pads (spec #2 §6.1, spec #5 §4.2): each slide a raised channel, each pad an arched trail to its landing; parts a board edit adds or removes pop in or out. */
+/** A model's material named Glow, which the game may pulse (spec #5 §3.2). */
+function glowOf(mesh: SlotMesh): MeshStandardMaterial | undefined {
+  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  return materials.find((m): m is MeshStandardMaterial => m instanceof MeshStandardMaterial && m.name === 'Glow');
+}
+
+/**
+ * Slides and launch pads (spec #2 §6.1, spec #5 §4.2): each slide a raised channel from its vortex to
+ * its exit collar, each pad an arched trail to its landing target. Parts a board edit adds or removes
+ * pop in or out.
+ */
 export function Jumps({ director, clearcoat }: { director: Director; clearcoat: boolean }) {
   const shown = useStore(director.store, (s) => s.presentation?.jumps);
   const editing = useStore(director.store, (s) => (s.beat?.kind === 'boardEdit' ? s.beat.after.jumps : undefined));
@@ -31,6 +43,19 @@ export function Jumps({ director, clearcoat }: { director: Director; clearcoat: 
   const lights = useMemo(() => chevronTexture(WORLD_COLORS.pad, WORLD_COLORS.cloud), []);
   const padChevrons = useMemo(() => chevronTexture(WORLD_COLORS.pad, WORLD_COLORS.ink), []);
   const swirl = useMemo(() => swirlTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
+  const vortex = useSlotMesh(
+    'slide.vortex',
+    () => ({ geometry: vortexGeometry(), material: new MeshBasicMaterial(swirl ? { map: swirl, transparent: true } : { color: BOARD_COLORS.slide }) }),
+    { clearcoat },
+  );
+  const exit = useSlotMesh('slide.exit', () => ({ geometry: exitGeometry(), material: new MeshBasicMaterial({ color: WORLD_COLORS.chevron }) }), { clearcoat });
+  const pad = useSlotMesh(
+    'pad',
+    () => ({ geometry: padGeometry(), material: new MeshStandardMaterial(padChevrons ? { map: padChevrons, roughness: 0.5 } : { color: WORLD_COLORS.pad, roughness: 0.5 }) }),
+    { clearcoat },
+  );
+  const target = useSlotMesh('pad.target', () => ({ geometry: targetGeometry(), material: new MeshBasicMaterial({ color: WORLD_COLORS.pad }) }), { clearcoat });
+  const targetGlow = useMemo(() => glowOf(target), [target]);
   const vorticesRef = useRef<InstancedMesh>(null);
   const exitsRef = useRef<InstancedMesh>(null);
   const padsRef = useRef<InstancedMesh>(null);
@@ -56,12 +81,13 @@ export function Jumps({ director, clearcoat }: { director: Director; clearcoat: 
       if (before && !after) return 1 - t;
       return !before && after ? Math.max(0, easeOutBack(t)) : 1;
     };
-    const stamp = (mesh: InstancedMesh | null, list: Jump[], tile: (j: Jump) => number, spin: (j: Jump) => number) => {
+    // Every part stands on its tile's top and turns only about Y.
+    const stamp = (mesh: InstancedMesh | null, list: Jump[], tile: (j: Jump) => number, turn: (j: Jump) => number) => {
       if (!mesh) return;
       list.forEach((j, i) => {
         const [x, , z] = tileToWorld(tile(j));
-        place.position.set(x, 0.03, z);
-        place.rotation.set(-Math.PI / 2, 0, spin(j));
+        place.position.set(x, 0, z);
+        place.rotation.set(0, turn(j), 0);
         place.scale.setScalar(pop(j.id));
         place.updateMatrix();
         mesh.setMatrixAt(i, place.matrix);
@@ -69,16 +95,15 @@ export function Jumps({ director, clearcoat }: { director: Director; clearcoat: 
       mesh.count = list.length;
       mesh.instanceMatrix.needsUpdate = true;
     };
-    // Pads turn their chevrons towards the ladder's top.
-    const towardsTop = (j: Jump) => {
-      const [fx, , fz] = tileToWorld(j.from);
-      const [tx, , tz] = tileToWorld(j.to);
-      return Math.atan2(-(tx - fx), -(tz - fz));
-    };
     stamp(vorticesRef.current, snakes, (j) => j.from, () => clock.elapsedTime * 2.5);
     stamp(exitsRef.current, snakes, (j) => j.to, () => 0);
-    stamp(padsRef.current, ladders, (j) => j.from, towardsTop);
+    stamp(padsRef.current, ladders, (j) => j.from, padHeading);
     stamp(targetsRef.current, ladders, (j) => j.to, () => 0);
+    // The landing stars breathe (spec #5 §4.2).
+    if (targetGlow) {
+      const base = (targetGlow.userData.glow ??= targetGlow.emissiveIntensity) as number;
+      targetGlow.emissiveIntensity = base * (0.65 + 0.35 * Math.sin(clock.elapsedTime * 3));
+    }
     if (chevrons) chevrons.offset.y -= delta * 0.8;
     if (lights) lights.offset.y -= delta * 0.9; // the trail's lights travel toward the landing
     if (padChevrons) padChevrons.offset.y -= delta * 0.6;
@@ -112,22 +137,10 @@ export function Jumps({ director, clearcoat }: { director: Director; clearcoat: 
           />
         </mesh>
       )}
-      <instancedMesh ref={vorticesRef} args={[undefined, undefined, MAX_JUMPS]}>
-        <circleGeometry args={[LANE.vortexRadius, 32]} />
-        <meshBasicMaterial {...(swirl ? { map: swirl } : { color: BOARD_COLORS.slide })} transparent />
-      </instancedMesh>
-      <instancedMesh ref={exitsRef} args={[undefined, undefined, MAX_JUMPS]}>
-        <ringGeometry args={[LANE.exitInner, LANE.exitOuter, 28]} />
-        <meshBasicMaterial color={WORLD_COLORS.chevron} />
-      </instancedMesh>
-      <instancedMesh ref={padsRef} args={[undefined, undefined, MAX_JUMPS]}>
-        <circleGeometry args={[0.6, 28]} />
-        <meshStandardMaterial {...(padChevrons ? { map: padChevrons } : { color: WORLD_COLORS.pad })} roughness={0.5} />
-      </instancedMesh>
-      <instancedMesh ref={targetsRef} args={[undefined, undefined, MAX_JUMPS]}>
-        <ringGeometry args={[0.42, 0.6, 28]} />
-        <meshBasicMaterial color={WORLD_COLORS.pad} />
-      </instancedMesh>
+      <instancedMesh ref={vorticesRef} name="vortices" args={[vortex.geometry, vortex.material, MAX_JUMPS]} />
+      <instancedMesh ref={exitsRef} name="exits" args={[exit.geometry, exit.material, MAX_JUMPS]} />
+      <instancedMesh ref={padsRef} name="pads" args={[pad.geometry, pad.material, MAX_JUMPS]} />
+      <instancedMesh ref={targetsRef} name="targets" args={[target.geometry, target.material, MAX_JUMPS]} />
     </group>
   );
 }

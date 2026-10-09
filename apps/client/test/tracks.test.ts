@@ -1,7 +1,7 @@
-import type { BufferGeometry } from 'three';
+import { Vector3, type BufferGeometry } from 'three';
 import { describe, expect, it } from 'vitest';
 import { LANE, slideCurve, tileToWorld } from '../src/scene/layout';
-import { CHANNEL, TRAIL, channelGeometry, trailGeometry, trailPath } from '../src/scene/tracks';
+import { CHANNEL, TRAIL, channelGeometry, padHeading, trailGeometry, trailPath } from '../src/scene/tracks';
 
 const triangles = (g: BufferGeometry) => g.index!.count / 3;
 const ladder = { id: 'l1', from: 22, to: 52 };
@@ -35,6 +35,15 @@ describe('the jump tracks (spec #5 §4.2)', () => {
   it('runs v along the trail from the pad to the landing, so its lights travel there', () => {
     const uv = trailGeometry(trailPath(ladder)).getAttribute('uv');
     for (let i = 1; i <= TRAIL.samples; i++) expect(uv.getY(i * SECTION)).toBeGreaterThan(uv.getY((i - 1) * SECTION));
+  });
+
+  it("turns a pad's front (+Z) toward its landing tile", () => {
+    for (const jump of [ladder, { id: 'l2', from: 5, to: 26 }, { id: 'l3', from: 82, to: 99 }, { id: 'l4', from: 58, to: 88 }]) {
+      const front = new Vector3(0, 0, 1).applyAxisAngle(new Vector3(0, 1, 0), padHeading(jump));
+      const [fx, , fz] = tileToWorld(jump.from);
+      const [tx, , tz] = tileToWorld(jump.to);
+      expect(front.dot(new Vector3(tx - fx, 0, tz - fz).normalize())).toBeCloseTo(1, 5);
+    }
   });
 
   it("raises a slide's channel: two rounded walls outside the lane, from head to tail, within 1,200 triangles", () => {

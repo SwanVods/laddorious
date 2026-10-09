@@ -1,6 +1,6 @@
 import { Euler, Vector3, type BufferGeometry } from 'three';
 import { describe, expect, it } from 'vitest';
-import { DIE_FACES, PIECE_GEOMETRY, crownGeometry, dieGeometry, dieRotationFor, tileGeometry } from '../src/assets/models';
+import { DIE_FACES, PIECE_GEOMETRY, crownGeometry, dieGeometry, dieRotationFor, exitGeometry, padGeometry, targetGeometry, tileGeometry, vortexGeometry } from '../src/assets/models';
 import { TILE_SIZE, TILE_THICKNESS } from '../src/scene/layout';
 import { PIECES } from '../src/service/matchService';
 
@@ -26,6 +26,19 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
     expect(box.max.y).toBeCloseTo(TILE_THICKNESS, 5);
     expect(box.max.x - box.min.x).toBeCloseTo(TILE_SIZE * 0.95, 5);
     expect(triangles(g)).toBeLessThanOrEqual(200);
+  });
+
+  it("lays the jumps' stand-ins flat on the tile, the pad's chevrons pointing forward (+Z) like its model's arrow (spec #5 §4.2)", () => {
+    for (const g of [padGeometry(), targetGeometry(), vortexGeometry(), exitGeometry()]) {
+      g.computeBoundingBox();
+      expect(g.boundingBox!.min.y).toBeCloseTo(0.03, 5);
+      expect(g.boundingBox!.max.y).toBeCloseTo(0.03, 5);
+    }
+    const pad = padGeometry();
+    const uv = pad.getAttribute('uv');
+    let tip = 0;
+    for (let i = 0; i < uv.count; i++) if (uv.getY(i) > uv.getY(tip)) tip = i;
+    expect(pad.getAttribute('position').getZ(tip)).toBeCloseTo(0.6, 3);
   });
 
   it('maps each die face into its own cell of the pip atlas', () => {
