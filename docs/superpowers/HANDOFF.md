@@ -34,7 +34,7 @@ Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two 
 - **Try it on the Wi-Fi:** `pnpm serve` builds the game for the local server, starts `wrangler dev` on port 8787 on every network interface, and prints the addresses to open on phones (memory `multiplayer-lan-testing`).
 - **Deploy to Cloudflare:** follow `apps/server/README.md` (`wrangler login`, then `pnpm deploy:cloudflare`). Claude never deploys or touches the Cloudflare account (memory `hosting-cloudflare`).
 
-**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) is done and awaits the user's review of its screenshots. After the review, its changes are made, the branch is merged to `main` locally, and plan 2 (`docs/superpowers/plans/2026-10-09-art-pass-step2.md`, the board) runs; then plan 3 (the world). After Spec #5: **fixes for the deferred minors** under Open items, or whatever the user finds while playing online.
+**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) is done and awaits the user's review of its screenshots on the review page <https://claude.ai/artifact/Gk8E6V9hf18euZWULr4Sa4> (Steps 2 and 3 add their sections to the same page). After the review, its changes are made, the branch is merged to `main` locally, and plan 2 (`docs/superpowers/plans/2026-10-09-art-pass-step2.md`, the board) runs; then plan 3 (the world). After Spec #5: **fixes for the deferred minors** under Open items, or whatever the user finds while playing online.
 
 The roadmap was renumbered on 2026-10-08 (sound design became #3). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
 
