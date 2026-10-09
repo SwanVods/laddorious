@@ -5,6 +5,8 @@ export type Vec3 = [number, number, number];
 
 /** World units per tile (spec #2 §6.1, §6.3). */
 export const TILE_SIZE = 1.6;
+/** Tiles are this thick; their top faces sit at y = 0. */
+export const TILE_THICKNESS = 0.22;
 export const COLUMNS = BOARD_COLUMNS;
 const HALF = (COLUMNS - 1) / 2;
 

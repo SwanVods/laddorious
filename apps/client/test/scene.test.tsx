@@ -1,9 +1,10 @@
 import type { Jump } from '@laddorious/core';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import { InstancedMesh, Mesh, Vector3, type BufferGeometry, type Object3D } from 'three';
+import { InstancedMesh, Matrix4, Mesh, Vector3, type BufferGeometry, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { Director } from '../src/director/director';
 import { ribbonGeometry } from '../src/scene/Jumps';
+import { TILE_THICKNESS } from '../src/scene/layout';
 import { SceneContent } from '../src/scene/MatchScene';
 import type { QualityLevel } from '../src/scene/quality';
 import { createTagRegistry } from '../src/scene/tags';
@@ -82,6 +83,17 @@ describe('the 3D scene (spec #2 §6)', () => {
     const tiles = (await renderScene('high')).getObjectByName('tiles');
     expect(tiles).toBeInstanceOf(InstancedMesh);
     expect((tiles as InstancedMesh).count).toBe(100);
+  });
+
+  it('stands each tile on its base, its top at the board surface (spec #5 §4.2)', async () => {
+    const tiles = (await renderScene('high')).getObjectByName('tiles') as InstancedMesh;
+    tiles.geometry.computeBoundingBox();
+    const at = new Matrix4();
+    tiles.getMatrixAt(0, at);
+    const y = new Vector3().setFromMatrixPosition(at).y;
+    expect(tiles.geometry.boundingBox!.min.y).toBeCloseTo(0, 5);
+    expect(y).toBeCloseTo(-TILE_THICKNESS, 5);
+    expect(y + tiles.geometry.boundingBox!.max.y).toBeCloseTo(0, 5);
   });
 
   it.each(['high', 'low'] as const)('stays inside the phone budget on %s: at most 100 draw calls and 150k triangles', async (level) => {

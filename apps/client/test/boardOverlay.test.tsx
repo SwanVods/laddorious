@@ -29,11 +29,11 @@ describe('the board overlay (spec #2 §6.1, §6.4 budget)', () => {
     const director = new Director('p0', () => {});
     director.push(openingUpdate());
     const board = director.store.getState().settled!.view.board;
-    const renderer = await ReactThreeTestRenderer.create(<Board board={board} director={director} />);
+    const renderer = await ReactThreeTestRenderer.create(<Board board={board} director={director} clearcoat />);
 
     // Every update from the worker is a fresh copy of the same board.
-    await renderer.update(<Board board={structuredClone(board)} director={director} />);
-    await renderer.update(<Board board={structuredClone(board)} director={director} />);
+    await renderer.update(<Board board={structuredClone(board)} director={director} clearcoat />);
+    await renderer.update(<Board board={structuredClone(board)} director={director} clearcoat />);
     expect(boardOverlayTexture).toHaveBeenCalledTimes(1);
 
     // Unmounting frees the GPU texture (three.js only frees it on dispose()).

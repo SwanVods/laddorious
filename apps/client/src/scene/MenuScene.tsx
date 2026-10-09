@@ -1,13 +1,12 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Color, Fog, Object3D, Vector3, type Group, type InstancedMesh } from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { Color, Fog, MeshStandardMaterial, Object3D, Vector3, type Group, type InstancedMesh } from 'three';
 import { BOARD_COLORS, PODIUM_COLORS, SEAT_COLORS, WORLD_COLORS } from '../app/theme';
-import { PIECE_GEOMETRY } from '../assets/models';
-import { preloadSlotMeshes } from '../assets/slotMesh';
+import { PIECE_GEOMETRY, tileGeometry } from '../assets/models';
+import { preloadSlotMeshes, useSlotMesh } from '../assets/slotMesh';
 import { Slot, preloadModels, type SlotName } from '../assets/slots';
 import type { PieceId } from '../service/matchService';
-import type { Vec3 } from './layout';
+import { TILE_SIZE, TILE_THICKNESS, type Vec3 } from './layout';
 import { webglAvailable } from './MatchScene';
 import { clamp01, easeOutBack } from './motion';
 import { ContextLossWatch } from './Probes';
@@ -34,6 +33,8 @@ const TILES = Array.from({ length: 18 }, (_, i) => {
   const r = 4.2 + (i % 4) * 1.3;
   return { x: Math.cos(a) * r + 1.2, y: -0.4 + ((i * 7) % 9) * 0.45, z: -2.2 - Math.abs(Math.sin(a)) * 4 - (i % 3), phase: i * 1.7, spin: 0.2 + (i % 5) * 0.08 };
 });
+/** The floating tiles are the board's tile, shrunk to 0.6 across and 0.14 thick (spec #5 §4.2). */
+const MENU_TILE = { across: 0.6 / (TILE_SIZE * 0.95), up: 0.14 / TILE_THICKNESS } as const;
 /** Clouds below and behind the podium: four puffs each. */
 const PUFFS = Array.from({ length: 8 }, (_, i) =>
   Array.from({ length: 4 }, (_, k) => {
@@ -55,7 +56,7 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
   const scene = useThree((s) => s.scene);
   const sky = useMemo(() => skyTexture(WORLD_COLORS.sky), []);
   const geometry = useMemo(() => PIECE_GEOMETRY[piece](), [piece]);
-  const tileGeometry = useMemo(() => new RoundedBoxGeometry(0.6, 0.14, 0.6, 2, 0.06), []);
+  const tile = useSlotMesh('tile', () => ({ geometry: tileGeometry(), material: new MeshStandardMaterial({ roughness: 0.45 }) }), { clearcoat: profile.clearcoat });
   const turntableRef = useRef<Group>(null);
   const tilesRef = useRef<InstancedMesh>(null);
   const puffsRef = useRef<InstancedMesh>(null);
@@ -103,7 +104,7 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
     });
     puffs.count = shown.length;
     puffs.instanceMatrix.needsUpdate = true;
-  }, [place, profile.clouds]);
+  }, [place, profile.clouds, tile]);
 
   useFrame(({ camera, clock, size }, delta) => {
     const t = reducedMotion ? 0 : clock.elapsedTime;
@@ -120,7 +121,8 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
       TILES.forEach((d, i) => {
         place.position.set(d.x, d.y + Math.sin(t * 0.8 + d.phase) * (reducedMotion ? 0 : 0.25), d.z);
         place.rotation.set(d.phase + t * d.spin, d.phase * 0.7 + t * d.spin * 0.8, 0);
-        place.scale.setScalar(1);
+        place.scale.set(MENU_TILE.across, MENU_TILE.up, MENU_TILE.across);
+        place.translateY((-TILE_THICKNESS / 2) * MENU_TILE.up); // turn about the tile's middle, not its base
         place.updateMatrix();
         tiles.setMatrixAt(i, place.matrix);
       });
@@ -199,9 +201,7 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
           />
         </group>
       </group>
-      <instancedMesh ref={tilesRef} args={[tileGeometry, undefined, TILES.length]}>
-        <meshStandardMaterial roughness={0.5} />
-      </instancedMesh>
+      <instancedMesh ref={tilesRef} args={[tile.geometry, tile.material, TILES.length]} />
       <instancedMesh ref={puffsRef} args={[undefined, undefined, PUFFS.flat().length]}>
         <sphereGeometry args={[1, 16, 10]} />
         <meshStandardMaterial color={WORLD_COLORS.cloud} roughness={1} emissive={WORLD_COLORS.cloud} emissiveIntensity={0.22} />

@@ -1,6 +1,7 @@
 import { Euler, Vector3, type BufferGeometry } from 'three';
 import { describe, expect, it } from 'vitest';
-import { DIE_FACES, PIECE_GEOMETRY, crownGeometry, dieGeometry, dieRotationFor } from '../src/assets/models';
+import { DIE_FACES, PIECE_GEOMETRY, crownGeometry, dieGeometry, dieRotationFor, tileGeometry } from '../src/assets/models';
+import { TILE_SIZE, TILE_THICKNESS } from '../src/scene/layout';
 import { PIECES } from '../src/service/matchService';
 
 const triangles = (g: BufferGeometry) => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
@@ -15,6 +16,16 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
     expect(box.max.y).toBeGreaterThan(0.9);
     expect(box.max.y).toBeLessThan(1.2);
     expect(Math.max(box.max.x - box.min.x, box.max.z - box.min.z)).toBeLessThan(1.05);
+  });
+
+  it('builds the tile stand-in: a rounded slab on its base, the 0.95 of a tile across, under 200 triangles (spec #5 §4.2)', () => {
+    const g = tileGeometry();
+    g.computeBoundingBox();
+    const box = g.boundingBox!;
+    expect(box.min.y).toBeCloseTo(0, 5);
+    expect(box.max.y).toBeCloseTo(TILE_THICKNESS, 5);
+    expect(box.max.x - box.min.x).toBeCloseTo(TILE_SIZE * 0.95, 5);
+    expect(triangles(g)).toBeLessThanOrEqual(200);
   });
 
   it('maps each die face into its own cell of the pip atlas', () => {
