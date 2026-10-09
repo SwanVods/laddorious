@@ -48,6 +48,7 @@ export function CardPickPopup({ model, onPick, onReroll }: CardPickPopupProps) {
                   <button
                     type="button"
                     className={`pick-card ${info.rarity} ${info.type}`}
+                    data-sound="C3"
                     aria-label={`${info.name}. ${info.text}${warning ? ` ${warning}` : ''}`}
                     disabled={locked}
                     onClick={() => pick(slot)}
@@ -70,6 +71,7 @@ export function CardPickPopup({ model, onPick, onReroll }: CardPickPopupProps) {
                   <button
                     type="button"
                     className="reroll-btn"
+                    data-sound="C2"
                     aria-label={`Reroll ${info.name}`}
                     disabled={locked || !canReroll || (rerolling?.hand === hand && rerolling.slot === slot)}
                     onClick={() => {

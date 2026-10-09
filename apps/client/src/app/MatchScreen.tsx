@@ -4,6 +4,8 @@ import { useStore } from 'zustand';
 import { Director } from '../director/director';
 import { BannerView, useBanner } from '../hud/Banner';
 import { CardPickPopup } from '../hud/CardPickPopup';
+import { useSound } from '../audio/SoundProvider';
+import { useMatchSound } from '../audio/useMatchSound';
 import { CenterDie } from '../hud/CenterDie';
 import { useCardBubbles } from '../hud/bubbles';
 import { rankBadges } from '../hud/ranks';
@@ -39,6 +41,9 @@ export interface MatchScreenProps {
   showStats?: boolean;
   /** Beat lengths are multiplied by this (e2e builds). */
   timeScale?: number;
+  /** Sound is muted; with onToggleMute, a speaker button toggles it (spec #3 §4). */
+  muted?: boolean;
+  onToggleMute?: () => void;
   /** I left through the leave dialog; the session has been left. */
   onLeave: () => void;
   /** The host failed (spec #2 §8): the error screen takes over. */
@@ -51,7 +56,7 @@ export interface MatchScreenProps {
  * The match screen (spec #2 §7.1, §7.2): the 3D board with the HUD over it. It plays the
  * session's updates through a Director and sends my rolls, picks and rerolls.
  */
-export function MatchScreen({ session, quality, reducedMotion, showStats = false, timeScale = 1, onLeave, onFailed, onFinished }: MatchScreenProps) {
+export function MatchScreen({ session, quality, reducedMotion, showStats = false, timeScale = 1, muted = false, onToggleMute, onLeave, onFailed, onFinished }: MatchScreenProps) {
   const { me, seats } = session;
   const [director] = useState(() => new Director(me, (windowId) => session.playbackDone(windowId), undefined, timeScale));
   const [tags] = useState(createTagRegistry);
@@ -60,6 +65,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   // The window I picked a card in: the pick closes at once, before the host's view catches up (polish spec §4.3).
   const [pickedWindow, setPickedWindow] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const sound = useSound();
   const handlersRef = useRef({ onFailed, onFinished });
   useLayoutEffect(() => {
     handlersRef.current = { onFailed, onFinished };
@@ -70,6 +76,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
       session.onUpdate((u) => director.push(u)),
       session.onRejected((e) => {
         setPickedWindow(null); // a refused pick brings the cards back
+        sound.playNow('U4');
         showToast(rejectionText(e.code));
       }),
       session.onFailed((e) => handlersRef.current.onFailed(e.message)),
@@ -78,9 +85,11 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
       for (const off of offs) off();
       director.dispose();
     };
-  }, [session, director]);
+  }, [session, director, sound]);
 
   const settled = useStore(director.store, (s) => s.settled);
+  // The match's sounds, in time with the beats (spec #3 §5).
+  useMatchSound(director, me, settled?.view.board.size ?? 100, timeScale);
   const presentation = useStore(director.store, (s) => s.presentation);
   const beat = useStore(director.store, (s) => s.beat);
   const log = useStore(director.store, (s) => s.log);
@@ -113,6 +122,11 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const mine = rows.find((r) => r.me);
   const faceOff = view ? faceOffModel({ beat, view, me }) : null;
   const cardPick = view && view.awaiting.windowId !== pickedWindow ? cardPickModel(view) : null;
+  // The card pick fans out (spec #3 §5).
+  const pickWindow = cardPick ? (view?.awaiting.windowId ?? null) : null;
+  useEffect(() => {
+    if (pickWindow !== null) sound.playNow('C1');
+  }, [pickWindow, sound]);
   const watched = seats.find((s) => s.playerId === watch);
 
   const leave = () => {
@@ -146,6 +160,11 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
               Back to my piece
             </button>
           </div>
+        )}
+        {onToggleMute && (
+          <button type="button" className="round-btn sound-btn live" aria-label={muted ? 'Turn sound on' : 'Mute sound'} data-sound="U3" data-sound-arg={muted ? 1 : 0} onClick={onToggleMute}>
+            <Icon name={muted ? 'speaker-off' : 'speaker'} />
+          </button>
         )}
         <button type="button" className="round-btn menu-btn live" aria-label="Leave match" onClick={() => setLeaving(true)}>
           <Icon name="menu" />

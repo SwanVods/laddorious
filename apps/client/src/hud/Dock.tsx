@@ -32,7 +32,7 @@ export function Dock({ model, seats, onRoll }: DockProps) {
     case 'roll':
       return (
         <div className="dock live">
-          <button type="button" className="btn primary roll-btn" disabled={!canRoll} onClick={roll}>
+          <button type="button" className="btn primary roll-btn" data-sound="none" disabled={!canRoll} onClick={roll}>
             <Icon name="die" />
             {canRoll ? 'ROLL' : 'Rolling…'}
           </button>

@@ -92,6 +92,13 @@
   top: calc(var(--safe-t) + var(--edge));
 }
 
+/* Quick mute, left of the menu button (spec #3 §4). */
+.sound-btn {
+  position: absolute;
+  right: calc(var(--safe-r) + var(--edge) + max(44px, 8cqh) + 10px);
+  top: calc(var(--safe-t) + var(--edge));
+}
+
 .watch-pill {
   position: absolute;
   right: calc(var(--safe-r) + var(--edge));

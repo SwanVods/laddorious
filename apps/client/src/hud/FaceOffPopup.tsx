@@ -91,7 +91,7 @@ export function FaceOffPopup({ model, seats, me, onPick }: FaceOffPopupProps) {
         </div>
         <div className="choices">
           {model.choices.map((c, i) => (
-            <button key={c.choice} type="button" className={model.myPick === c.choice ? 'choice on' : 'choice'} disabled={!canPick} onClick={() => pick(c.choice)}>
+            <button key={c.choice} type="button" className={model.myPick === c.choice ? 'choice on' : 'choice'} data-sound="F2" disabled={!canPick} onClick={() => pick(c.choice)}>
               <kbd>{i + 1}</kbd>
               {RPS.has(c.choice) && <Icon name={c.choice as 'rock' | 'paper' | 'scissors'} />}
               <span className="display">{c.label}</span>

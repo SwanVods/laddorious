@@ -3,6 +3,9 @@ import type { PlayerView, PublicChallenge } from '@laddorious/core';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MatchScreen } from '../src/app/MatchScreen';
+import { createPrefsStore } from '../src/app/prefs';
+import { AudioEngine } from '../src/audio/engine';
+import { SoundProvider } from '../src/audio/SoundProvider';
 import { BEAT_MS } from '../src/director/beats';
 import type { MatchUpdate } from '../src/service/matchService';
 import { openingUpdate } from './support/fixtures';
@@ -32,19 +35,37 @@ function opening(change: Partial<PlayerView> = {}, timer: MatchUpdate['timer'] =
   return { ...u, view: { ...u.view, ...change }, timer };
 }
 
-function start(props: { onLeave?: () => void; onFailed?: (m: string) => void; onFinished?: (r: unknown) => void } = {}) {
+function start(
+  props: {
+    onLeave?: () => void;
+    onFailed?: (m: string) => void;
+    onFinished?: (r: unknown) => void;
+    sound?: AudioEngine;
+    muted?: boolean;
+    onToggleMute?: () => void;
+  } = {},
+) {
   const session = new ScriptedSession();
-  render(
+  const match = (
     <MatchScreen
       session={session}
       quality="auto"
       reducedMotion={false}
+      muted={props.muted}
+      onToggleMute={props.onToggleMute}
       onLeave={props.onLeave ?? (() => {})}
       onFailed={props.onFailed ?? (() => {})}
       onFinished={props.onFinished ?? (() => {})}
-    />,
+    />
   );
+  render(props.sound ? <SoundProvider engine={props.sound} prefs={createPrefsStore(null, { prefersReducedMotion: false })}>{match}</SoundProvider> : match);
   return session;
+}
+
+/** An engine that never loads, with its plays recorded. */
+function quietEngine() {
+  const engine = new AudioEngine(() => new Promise(() => {}));
+  return { engine, playNow: vi.spyOn(engine, 'playNow') };
 }
 
 describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
@@ -126,6 +147,41 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     });
     expect(document.querySelector('.players .pbubble .pbubble-name')?.textContent).toBe('Shove');
     expect(document.querySelector('.tags .bubble')).toBeNull(); // not over the pieces any more
+  });
+
+  it('fans the cards out with a sound when my card pick opens, and bonks on a refused action (spec #3 §5)', () => {
+    const { engine, playNow } = quietEngine();
+    const session = start({ sound: engine });
+    session.update(cardPickOpening());
+    expect(playNow).toHaveBeenCalledWith('C1');
+    session.reject('NOT_AWAITED');
+    expect(playNow).toHaveBeenCalledWith('U4');
+  });
+
+  it('mutes and unmutes from the speaker button (spec #3 §4)', () => {
+    const onToggleMute = vi.fn();
+    start({ onToggleMute, muted: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Mute sound' }));
+    expect(onToggleMute).toHaveBeenCalledTimes(1);
+    cleanup();
+    start({ onToggleMute, muted: true });
+    expect(screen.getByRole('button', { name: 'Turn sound on' }).getAttribute('data-sound')).toBe('U3');
+  });
+
+  it("gives the match's buttons their own sounds (spec #3 §5)", () => {
+    const session = start();
+    session.update(opening({}, { windowId: 1, endsAt: 12_000 }));
+    expect(screen.getByRole('button', { name: 'ROLL' }).getAttribute('data-sound')).toBe('none');
+    session.update(cardPickOpening());
+    expect(screen.getByRole('button', { name: /^Sprint/ }).getAttribute('data-sound')).toBe('C3');
+    expect(screen.getByRole('button', { name: 'Reroll Jackpot' }).getAttribute('data-sound')).toBe('C2');
+  });
+
+  it('gives the face-off choices their lock-in sound (spec #3 §5)', () => {
+    const session = start();
+    const challenge: PublicChallenge = { id: 'c4', tile: 23, participants: ['p0', 'p1'], contesting: ['p0', 'p1'], kind: 'rps', theme: null, pickRound: 1, picked: [], winner: null };
+    session.update(opening({ phase: { kind: 'settle', challenges: [challenge] }, awaiting: { windowId: 4, window: 'challenge', players: ['p0', 'p1'], durationMs: 8_000 } }));
+    expect(screen.getByRole('button', { name: /Scissors/ }).getAttribute('data-sound')).toBe('F2');
   });
 
   it('toasts a rejected action', () => {

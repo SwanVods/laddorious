@@ -115,6 +115,18 @@ const PATHS: Record<IconName, ReactNode> = {
   back: <path d="M15 4l-8 8 8 8" {...stroke} strokeWidth={3.5} />,
   next: <path d="M9 4l8 8-8 8" {...stroke} strokeWidth={3.5} />,
   menu: <path d="M4 6.5h16M4 12h16M4 17.5h16" {...stroke} strokeWidth={3} />,
+  speaker: (
+    <>
+      <path d="M3.5 9h4l5-4.5v15l-5-4.5h-4z" />
+      <path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" {...stroke} />
+    </>
+  ),
+  'speaker-off': (
+    <>
+      <path d="M3.5 9h4l5-4.5v15l-5-4.5h-4z" />
+      <path d="M16 9l5 6M21 9l-5 6" {...stroke} />
+    </>
+  ),
   pencil: <path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5zM13.5 7l3 3" {...stroke} strokeWidth={2.2} />,
   rock: (
     <>

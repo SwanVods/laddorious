@@ -88,6 +88,8 @@ export function App({ service, prefs, dev, test = null }: AppProps) {
             reducedMotion={settings.reducedMotion}
             showStats={dev || test !== null}
             timeScale={test?.timeScale ?? 1}
+            muted={settings.sound.muted}
+            onToggleMute={() => prefs.getState().setMuted(!prefs.getState().settings.sound.muted)}
             onLeave={toMenu}
             onFailed={(message) => {
               current.leave();
