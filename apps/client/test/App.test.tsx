@@ -5,6 +5,8 @@ import { App } from '../src/app/App';
 import { wantsFullscreen } from '../src/app/fullscreen';
 import { COUNT_MS } from '../src/app/MatchmakingOverlay';
 import { createPrefsStore } from '../src/app/prefs';
+import { AudioEngine } from '../src/audio/engine';
+import { SoundProvider } from '../src/audio/SoundProvider';
 import { BEAT_MS } from '../src/director/beats';
 import type { MatchService } from '../src/service/matchService';
 import { SEATS, openingUpdate } from './support/fixtures';
@@ -39,7 +41,7 @@ afterEach(() => {
   crash.menu = false;
 });
 
-function setup(dev = false) {
+function setup(dev = false, sound: AudioEngine | null = null) {
   const made: ScriptedMatchmaking[] = [];
   const findMatch = vi.fn(() => {
     const matchmaking = new ScriptedMatchmaking();
@@ -48,7 +50,8 @@ function setup(dev = false) {
   });
   const service: MatchService = { findMatch };
   const prefs = createPrefsStore(null, { prefersReducedMotion: false, random: () => 0.5 });
-  const { container } = render(<App service={service} prefs={prefs} dev={dev} />);
+  const app = <App service={service} prefs={prefs} dev={dev} />;
+  const { container } = render(sound ? <SoundProvider engine={sound} prefs={prefs}>{app}</SoundProvider> : app);
   return { findMatch, made, prefs, container };
 }
 
@@ -81,6 +84,15 @@ function finish(session: ScriptedSession) {
 }
 
 describe('App (spec #2 §4.1, §7.1)', () => {
+  it('plays the menu loop on the menu and in matchmaking, and the match loop in a match (spec #3 §6)', () => {
+    const engine = new AudioEngine(() => new Promise(() => {}));
+    const music = vi.spyOn(engine, 'music');
+    const { made } = setup(false, engine);
+    expect(music).toHaveBeenLastCalledWith('menu');
+    startMatch(made);
+    expect(music).toHaveBeenLastCalledWith('match');
+  });
+
   it('goes menu → matchmaking → match → end, and Play again goes back to matchmaking', () => {
     const { findMatch, made } = setup();
     expect(screen.getByRole('img', { name: 'Podium, auto' })).toBeTruthy();

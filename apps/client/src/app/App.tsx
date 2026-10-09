@@ -2,6 +2,7 @@ import type { Ranking } from '@laddorious/core';
 import { Component, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { useStore } from 'zustand';
 import type { StoreApi } from 'zustand/vanilla';
+import { useSound } from '../audio/SoundProvider';
 import type { FindOptions, Matchmaking, MatchService, MatchSession } from '../service/matchService';
 import { RotateScreen } from '../ui/RotateScreen';
 import { EndScreen } from './EndScreen';
@@ -52,6 +53,12 @@ export function App({ service, prefs, dev, test = null }: AppProps) {
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [playing]);
+
+  // The music follows the screen (spec #3 §6); the win fades it out, and the end screen stays quiet.
+  const sound = useSound();
+  useEffect(() => {
+    sound.music(route.screen === 'menu' || route.screen === 'matchmaking' ? 'menu' : route.screen === 'match' ? 'match' : null);
+  }, [route.screen, sound]);
 
   const toMenu = () => setRoute({ screen: 'menu' });
   const play = (opts: FindOptions = {}) => setRoute({ screen: 'matchmaking', matchmaking: service.findMatch(prefs.getState().profile, opts) });
