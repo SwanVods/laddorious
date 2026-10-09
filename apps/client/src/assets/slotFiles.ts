@@ -22,6 +22,9 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   'piece.pawn': 'pawn',
   'piece.meeple': 'meeple',
   'piece.dragon': 'dragon',
+  'piece.rook': 'rook',
+  'piece.hat': 'hat',
+  'piece.duck': 'duck',
 };
 
 /** Where the game loads a model from (served from apps/client/public). */
