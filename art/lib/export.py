@@ -59,8 +59,7 @@ def finish(scene, model_id, parts, path):
             if face not in old_faces:
                 face.material_index = remap[face.material_index]
         evaluated.to_mesh_clear()
-    mesh = bpy.data.meshes.new(model_id)
-    combined.to_mesh(mesh)
+    mesh = _canonical(model_id, combined)
     combined.free()
     for material in materials:
         mesh.materials.append(material)
@@ -77,6 +76,33 @@ def finish(scene, model_id, parts, path):
         'height': max(heights) - min(heights),
         'bytes': path.stat().st_size,
     }
+
+
+
+def _canonical(name, bm):
+    """The merged mesh as triangles in a fixed order, so an unchanged model rebuilds byte for byte.
+
+    Some bmesh steps (merging doubles, dissolving degenerate faces) order their output by memory
+    address, which changes from run to run. So: split into triangles by shape ("beauty"), sort the
+    vertices by position (then normal), sort the triangles by their vertices, and start each at its
+    lowest vertex (keeping its winding)."""
+    bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method='BEAUTY', ngon_method='BEAUTY')
+    bm.normal_update()
+    verts = sorted(bm.verts, key=lambda v: (tuple(round(c, 6) for c in v.co), tuple(round(c, 4) for c in v.normal)))
+    index = {v: i for i, v in enumerate(verts)}
+    faces = []
+    for face in bm.faces:
+        ids = [index[v] for v in face.verts]
+        first = ids.index(min(ids))
+        faces.append((face.material_index, ids[first:] + ids[:first], face.smooth))
+    faces.sort(key=lambda f: (f[0], f[1]))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata([v.co[:] for v in verts], [], [f[1] for f in faces])
+    for polygon, (material_index, _, smooth) in zip(mesh.polygons, faces):
+        polygon.material_index = material_index
+        polygon.use_smooth = smooth
+    mesh.update()
+    return mesh
 
 
 def _export(path):
