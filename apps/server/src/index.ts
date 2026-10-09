@@ -1,0 +1,27 @@
+import type { Env } from './env';
+
+export { LobbyDO } from './LobbyDO';
+export { MatchDO } from './MatchDO';
+
+/** Durable Object ids are 64 hex characters. */
+const MATCH_PATH = /^\/match\/([0-9a-f]{64})$/;
+
+/**
+ * The Worker (spec #4 §3.2). Files of the built game are served before this runs; the rest
+ * routes here: /lobby to the one lobby, /match/:id to that match.
+ */
+export default {
+  fetch(request, env): Response | Promise<Response> {
+    const { pathname } = new URL(request.url);
+    if (pathname === '/lobby') return env.LOBBY.get(env.LOBBY.idFromName('global')).fetch(request);
+    const match = MATCH_PATH.exec(pathname);
+    if (match) {
+      try {
+        return env.MATCH.get(env.MATCH.idFromString(match[1]!)).fetch(request);
+      } catch {
+        return new Response('No such match', { status: 404 }); // an id from another namespace
+      }
+    }
+    return new Response('Not found', { status: 404 });
+  },
+} satisfies ExportedHandler<Env>;
