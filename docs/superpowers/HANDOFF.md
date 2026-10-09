@@ -129,5 +129,5 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - A session that never connected at all ends with "The match carried on without you" after 60 s.
   - The Away badge and the "Reconnecting…" pill were checked through the DOM only (the browser pane was hidden); worth a look on a phone.
 - **Spec #4 follow-ups the spec left out:** Durable Object hibernation with alarms if traffic grows, private rooms, saving matches across restarts (M8, M9, §11).
-- **Spec #5** (Blender art pass: `.glb` files for the asset slots in spec #2 §6.3). Not started.
+- **Spec #5** (Blender art pass): design approved (`docs/superpowers/specs/2026-10-09-art-pass-design.md`). Three plans are written, one per step, awaiting the user's review before any runs: `docs/superpowers/plans/2026-10-09-art-pass-step1.md` (pipeline and pieces), `-step2.md` (the board), `-step3.md` (the world). Each step ends with the user's review in the game.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), particles.

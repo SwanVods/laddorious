@@ -13,7 +13,11 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-09-art-pass-design.md` (§4.1 is this plan's step; §3, §5, §6 and §7 hold for every step).
 
-**This is plan 1 of 3.** Spec #5's three steps each end with the user's review, and that feedback shapes the next step. So the board (Step 2) and the world (Step 3) get their own plans, written after each review.
+**This is plan 1 of 3.** The user asked for all three plans at once:
+- the board (Step 2): `docs/superpowers/plans/2026-10-09-art-pass-step2.md`;
+- the world (Step 3): `docs/superpowers/plans/2026-10-09-art-pass-step3.md`.
+
+Each step still ends with the user's review in the game, and the next plan starts only after it. Changes a review asks for are made first, and ledgered as rulings where they touch the next plan.
 
 ## Global Constraints
 
@@ -2202,7 +2206,7 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
   - in the repository map, add a row: `art/` | — | "The Blender build scripts for the game's 3D models, and their contract tests. [README](art/README.md)";
   - in the scripts block, add `pnpm art         # rebuild the Blender models (needs Blender 5.2; see art/README.md)` and `pnpm shots       # screenshots of the menu and a match, for reviewing models`;
   - in the intro, add "- **Spec #5 (in progress):** the art pass, Blender models for the pieces, the board and the world ([design](docs/superpowers/specs/2026-10-09-art-pass-design.md))." and change "The art pass (Spec #5) comes later." to remove it.
-- **`docs/superpowers/HANDOFF.md`:** a Spec #5 row ("Step 1 of 3 done: pipeline, seven pieces, die, crown; awaiting the user's review"). Next step: the user reviews the Step 1 shots, then plan 2 (the board) is written from the spec and the review. Add the Step 1 self-review's deferred minors to Open items.
+- **`docs/superpowers/HANDOFF.md`:** a Spec #5 row ("Step 1 of 3 done: pipeline, seven pieces, die, crown; awaiting the user's review"). Next step: the user reviews the Step 1 shots, then plan 2 (`docs/superpowers/plans/2026-10-09-art-pass-step2.md`, the board) runs. Add the Step 1 self-review's deferred minors to Open items.
 
 - [ ] **Step 2: Gate.**
   - Run `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build` and `pnpm e2e`. Expected: all green; e2e 14 passed.
@@ -2217,5 +2221,5 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 After Task 9 (and the user's approval):
 1. Self-review the branch against this plan's Review Focus, and say it was a self-review.
 2. Fast-forward merge `art/spec-5` into `main` locally, and run the suite on `main`.
-3. Keep the branch for Steps 2 and 3, or start a fresh one from `main` for plan 2.
+3. Keep the branch for Steps 2 and 3 (plans 2 and 3 continue on `art/spec-5`).
 4. Update memory (`handoff`, `blender-for-3d-objects`).
