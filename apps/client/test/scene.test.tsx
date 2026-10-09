@@ -45,7 +45,7 @@ async function renderSceneWith(level: QualityLevel, jumps?: Jump[], peeks?: Peek
     <SceneContent director={director} seats={SEATS} me="p0" board={board} level={level} watch={null} reducedMotion={false} peeks={peeks} />,
   );
   await frames(renderer, 2);
-  return { renderer, root: renderer.scene.instance as Object3D, board };
+  return { renderer, root: renderer.scene.instance as Object3D, board, director };
 }
 
 /** Run frames inside act(), so state a frame sets (the shown paths) renders, then one more for what it drew. */
@@ -121,6 +121,19 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(trail.geometry.drawRange.count).toBeGreaterThan(0);
     expect(trail.geometry.drawRange.count).toBeLessThan(whole);
     expect(REVEAL_MS).toBeGreaterThan(0);
+  });
+
+  it('keeps a shown path when the match sends news, rather than building it again', async () => {
+    const opening = openingUpdate();
+    const ladder = opening.view.board.jumps.find((j) => j.to > j.from)!;
+    const peeks = createPeeks();
+    peeks.tap(ladder.from, opening.view.board.jumps, Date.now());
+    const { renderer, root, director } = await renderSceneWith('high', undefined, peeks);
+    const before = (root.getObjectByName(`trail-${ladder.id}`) as Mesh).geometry;
+    // The same board again, as fresh objects: every update brings a new copy.
+    director.push(JSON.parse(JSON.stringify(opening)) as typeof opening);
+    await frames(renderer, 2);
+    expect((root.getObjectByName(`trail-${ladder.id}`) as Mesh).geometry).toBe(before);
   });
 
   it("peeks at a jump's path when a player taps a tile at either end", async () => {

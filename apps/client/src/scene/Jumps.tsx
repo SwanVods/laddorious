@@ -52,24 +52,27 @@ interface PathProps {
 
 /** One jump's path (spec #5 A13): a slide's channel (floor and walls) or a pad's trail, in its pair colour, grown along its length. */
 function Path({ jump, style, progress, clearcoat, chevrons, lights }: PathProps) {
-  const slide = jump.to < jump.from;
+  // Every presentation update brings fresh jump objects: build again only when the path itself changes.
+  const { id, from, to } = jump;
+  const { colour: pair } = style;
+  const slide = to < from;
   const parts = useMemo(() => {
     if (slide) {
-      const { floor, walls } = channelGeometry(slideCurve(jump.from, jump.to).getPoints(CHANNEL.samples));
+      const { floor, walls } = channelGeometry(slideCurve(from, to).getPoints(CHANNEL.samples));
       return {
         kind: 'channel' as const,
         floor,
         walls,
         floorMaterial: new MeshStandardMaterial({ ...(chevrons ? { map: chevrons } : { color: BOARD_COLORS.slide }), side: DoubleSide, roughness: 0.8 }),
-        wallMaterial: new MeshStandardMaterial({ color: style.colour, roughness: 0.45 }),
+        wallMaterial: new MeshStandardMaterial({ color: pair, roughness: 0.45 }),
       };
     }
     return {
       kind: 'trail' as const,
-      trail: trailGeometry(trailPath(jump)),
+      trail: trailGeometry(trailPath({ id, from, to })),
       trailMaterial: new MeshPhysicalMaterial({
         ...(lights ? { map: lights, emissiveMap: lights } : {}),
-        color: style.colour,
+        color: pair,
         emissive: WORLD_COLORS.cloud,
         emissiveIntensity: 0.18,
         roughness: 0.3,
@@ -81,7 +84,7 @@ function Path({ jump, style, progress, clearcoat, chevrons, lights }: PathProps)
         side: DoubleSide,
       }),
     };
-  }, [slide, jump, style, clearcoat, chevrons, lights]);
+  }, [slide, id, from, to, pair, clearcoat, chevrons, lights]);
   useEffect(
     () => () => {
       if (parts.kind === 'channel') {
@@ -106,11 +109,11 @@ function Path({ jump, style, progress, clearcoat, chevrons, lights }: PathProps)
   });
   return parts.kind === 'channel' ? (
     <>
-      <mesh geometry={parts.walls} material={parts.wallMaterial} name={`channel-walls-${jump.id}`} />
-      <mesh geometry={parts.floor} material={parts.floorMaterial} name={`channel-floor-${jump.id}`} receiveShadow />
+      <mesh geometry={parts.walls} material={parts.wallMaterial} name={`channel-walls-${id}`} />
+      <mesh geometry={parts.floor} material={parts.floorMaterial} name={`channel-floor-${id}`} receiveShadow />
     </>
   ) : (
-    <mesh geometry={parts.trail} material={parts.trailMaterial} name={`trail-${jump.id}`} />
+    <mesh geometry={parts.trail} material={parts.trailMaterial} name={`trail-${id}`} />
   );
 }
 
