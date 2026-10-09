@@ -3,10 +3,10 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { InstancedMesh, Matrix4, Mesh, Vector3, type BufferGeometry, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { Director } from '../src/director/director';
-import { ribbonGeometry } from '../src/scene/Jumps';
 import { TILE_THICKNESS } from '../src/scene/layout';
 import { SceneContent } from '../src/scene/MatchScene';
 import type { QualityLevel } from '../src/scene/quality';
+import { ribbonGeometry } from '../src/scene/tracks';
 import { createTagRegistry } from '../src/scene/tags';
 import { SEATS, openingUpdate } from './support/fixtures';
 
@@ -77,6 +77,11 @@ describe('the 3D scene (spec #2 §6)', () => {
     }
     // The four start spots stand side by side, and so do their tags.
     expect(new Set(fakes.map((el) => el.style.transform)).size).toBe(4);
+  });
+
+  it('draws every pad trail in one mesh, and every slide channel in two (spec #5 §4.2)', async () => {
+    const root = await renderScene('high');
+    for (const name of ['pad-trails', 'slide-floors', 'slide-walls']) expect(root.getObjectByName(name)).toBeInstanceOf(Mesh);
   });
 
   it('draws the 100 tiles in one instanced draw call', async () => {

@@ -46,7 +46,7 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
     <>
       <Surroundings shadows={profile.shadows} clouds={profile.clouds} clearcoat={profile.clearcoat} />
       <Board board={board} director={director} clearcoat={profile.clearcoat} />
-      <Jumps director={director} />
+      <Jumps director={director} clearcoat={profile.clearcoat} />
       <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} reducedMotion={reducedMotion} boardSize={board.size} />
       <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} />
       {tags && <TagProjector director={director} seats={seats} boardSize={board.size} tags={tags} />}
