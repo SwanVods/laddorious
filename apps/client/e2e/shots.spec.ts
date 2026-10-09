@@ -23,16 +23,19 @@ test('the menu on a landscape phone', async ({ page }) => {
   await page.screenshot({ path: `${OUT}/menu-phone.png` });
 });
 
-test('a match: the overview and a close-up', async ({ page }) => {
+test('a match: the overview, the jumps and a close-up', async ({ page }) => {
   await page.clock.install();
   await page.goto('/');
   await page.getByRole('button', { name: 'PLAY' }).click();
   await page.clock.fastForward('00:16');
   await page.getByRole('button', { name: 'Play with bots' }).click();
   await expect(page.getByRole('button', { name: 'Leave match' })).toBeVisible({ timeout: 20_000 });
-  await page.waitForTimeout(1500);
+  // e2e matches race (every seat plays itself, beats at 5%), so shoot soon after the opening.
+  await page.waitForTimeout(300);
   await page.screenshot({ path: `${OUT}/match-overview.png` });
+  // The middle of the board from the overview, at 2x: pad trails and slide channels (spec #5 §7).
+  await page.screenshot({ path: `${OUT}/match-jumps.png`, clip: { x: 320, y: 140, width: 640, height: 400 } });
   await page.getByRole('button', { name: /^Mochi,/ }).click(); // the camera watches a bot's piece
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(700);
   await page.screenshot({ path: `${OUT}/match-closeup.png` });
 });

@@ -33,6 +33,10 @@ Both scripts also run inside an open Blender (see their docstrings), in scenes o
   - anything else draws as built.
 - Finishes come from `lib/finish.py` (glossy and satin plastic, glow), and colours from `lib/palette.py`, which mirrors the game's theme.
 - Budgets and sizes for every model are in `contract.ts`; `pnpm test` checks each built file against them.
+- Board parts stand on the tile top with their origin at the base, and face −Y; the game turns them only about the vertical.
+- A model with `Tint` has only that material: instance colours tint every material of a mesh.
+- Flat shapes drawn from above (the pad's arrow, cut with `sculpt.carve`) use `shapes.outline(…, view='top', lift=…)`. A raised flat shape (the target's star) is `shapes.stack`, one outline at several heights. A surface coloured along a twisted grid (the vortex's spiral ridges) is `shapes.grid`.
+- `art/test/budget.test.ts` prices a busy match with the built models; a heavy model fails it before the browser tests do.
 
 ## Sculpting
 

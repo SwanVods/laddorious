@@ -146,12 +146,15 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 
 - **`src/assets/slotFiles.ts`** lists which slots have a model, and its id.
 - **Loading:** a listed slot loads its model with drei's `useGLTF`, and the menu preloads them all. While a model loads, or if it fails, the stand-in shows and a warning is logged once.
+- **Instanced slots** (`MESH_SLOTS`: tiles, pads, targets, vortices, exits) load through `useSlotMesh` (`src/assets/slotMesh.ts`): the model becomes one geometry with a group per material, so every copy draws once per material. It returns the stand-in until the model loads and never suspends, so callers re-place their instances when it changes. The stand-ins lie flat and face +Z, like the models, so pads turn the same way either way (`padHeading`).
+- **Tracks** (`src/scene/tracks.ts`): each pad's arched trail and each slide's raised channel are swept in code along the jump's arc or lane, with v running along them so their chevrons scroll.
 - **`prepareModel`** readies each model's materials:
   - `Seat` takes the player's colour;
   - on Low quality, glossy plastic drops its clearcoat;
-  - the die's materials can flash.
+  - the die's materials can flash;
+  - a `Shadow` mesh (the pieces', die's and crown's small stand-in) casts the model's shadow and is never seen; the detailed parts cast none.
 - **Unit tests** (Vitest) always use the stand-ins. The art tests (`art/test`) check every model file against its contract instead: size, origin, triangles and material names.
-- **Review screenshots:** `pnpm shots` saves the menu and a match to `test-results/shots/`, for reviewing a model change. The e2e build plays fast, so match shots catch a late round.
+- **Review screenshots:** `pnpm shots` saves the menu and a match (the overview, a 2x crop of the jumps, and a close-up) to `test-results/shots/`, for reviewing a model change. They render at 2x on the GPU, not SwiftShader, which is too slow at 2x. The e2e build plays every seat fast, so the match shots are taken soon after the opening.
 
 ## Tests
 

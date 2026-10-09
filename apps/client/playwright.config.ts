@@ -26,8 +26,9 @@ export default defineConfig({
     { name: 'desktop-chromium', testIgnore: /(online|shots)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     { name: 'iphone-12-landscape', testIgnore: /(online|shots)\.spec\.ts/, use: { ...devices['iPhone 12 landscape'], browserName: 'chromium' } },
     { name: 'pixel-7-landscape', testIgnore: /(online|shots)\.spec\.ts/, use: { ...devices['Pixel 7 landscape'] } },
-    // Review screenshots for the art steps (spec #5 §7): `pnpm shots`.
-    { name: 'shots', testMatch: /shots\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    // Review screenshots for the art steps (spec #5 §7): `pnpm shots`. Sharp (2x) and on the GPU: SwiftShader
+    // at 2x is so slow that the page's timers starve and a match never opens.
+    { name: 'shots', testMatch: /shots\.spec\.ts/, use: { ...devices['Desktop Chrome'], deviceScaleFactor: 2, launchOptions: { args: [] } } },
     { name: 'online', testMatch: /online\.spec\.ts/, use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${ONLINE_PORT}` } },
   ],
   webServer: [
