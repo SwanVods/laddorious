@@ -73,6 +73,21 @@ def rounded_box(name, size, radius, material, location=(0.0, 0.0, 0.0), rotation
     return obj
 
 
+def loft(name, rows, material, smooth=True):
+    """A closed surface through rows of (x, y, z) points: each row is a loop, and the rows run round a
+    loop too (the last joins the first). For shapes a profile can't simply spin into, like a crown's
+    wall rising into points."""
+    bm = bmesh.new()
+    verts = [[bm.verts.new(point) for point in row] for row in rows]
+    count = len(verts[0])
+    for i, row in enumerate(verts):
+        nxt = verts[(i + 1) % len(verts)]
+        for k in range(count):
+            bm.faces.new((row[k], row[(k + 1) % count], nxt[(k + 1) % count], nxt[k]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return _object(name, bm, material, smooth)
+
+
 def _lerp(a, b, t):
     return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
 
