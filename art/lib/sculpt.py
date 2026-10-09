@@ -40,7 +40,7 @@ def _as_mesh(obj, depsgraph):
 
 
 def _colour_edges(obj):
-    """A vertex group on the vertices where faces of different materials meet (and their neighbours)."""
+    """A vertex group on the vertices where faces of different materials meet (and, at full detail, their neighbours)."""
     mesh = obj.data
     bm = bmesh.new()
     bm.from_mesh(mesh)
@@ -49,9 +49,11 @@ def _colour_edges(obj):
         if len({f.material_index for f in e.link_faces}) > 1:
             edge.update(v.index for v in e.verts)
     near = set(edge)
-    for v in bm.verts:
-        if v.index in edge:
-            near.update(n.index for e2 in v.link_edges for n in e2.verts)
+    # A Low file (DETAIL under 1) keeps only the boundary itself, so it can thin to its share.
+    if DETAIL >= 1:
+        for v in bm.verts:
+            if v.index in edge:
+                near.update(n.index for e2 in v.link_edges for n in e2.verts)
     bm.free()
     group = obj.vertex_groups.new(name='colour-edges')
     if near:
@@ -139,6 +141,10 @@ def _sdf_tree(solids, cutters, voxel, blend, soften, smooth, adaptivity=0.0):
     return tree
 
 
+# How much of each fuse() target to keep: 1 for the models, less for a Low quality file (spec #5 A14).
+DETAIL = 1.0
+
+
 def fuse(name, solids, cutters=(), voxel=0.006, blend=0.05, soften=0.012, smooth=2, target=10000, adaptivity=0.0):
     """One sculpted object from `solids`, minus `cutters`.
 
@@ -207,6 +213,7 @@ def fuse(name, solids, cutters=(), voxel=0.006, blend=0.05, soften=0.012, smooth
         polygon.material_index = materials.index(nearest[1])
 
     triangles = sum(len(p.vertices) - 2 for p in result.data.polygons)
+    target = max(200, int(target * DETAIL))
     if triangles > target:
         # Thin the surface, but leave the colour edges alone so they stay smooth.
         edges = _colour_edges(result)

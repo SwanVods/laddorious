@@ -1,4 +1,4 @@
-import type { SlotName } from '../apps/client/src/assets/slotFiles';
+import { LOW_SLOTS, type SlotName } from '../apps/client/src/assets/slotFiles';
 import { PARTS } from '../apps/client/src/scene/layout';
 import type { GlbSummary } from './glb';
 
@@ -88,9 +88,21 @@ export const MAX_TOTAL_BYTES = 2.5 * 1024 * 1024;
 const LEVEL = 0.012;
 const CENTRED = 0.08;
 
+/** A Low file (spec #5 A14) carries at most this share of its model's triangle limit (separate details like eyes stay whole). */
+const LOW_SHARE = 0.4;
+
+/** A model's rule, or for `<id>-low` its Low file's: the same shape, fewer triangles, no shadow stand-in. */
+function ruleFor(id: string): (ModelRule & { low?: true }) | undefined {
+  const low = /^(.+)-low$/.exec(id);
+  if (!low) return MODELS[id];
+  const base = MODELS[low[1]!];
+  if (!base || !LOW_SLOTS.has(base.slot)) return undefined;
+  return { ...base, maxTriangles: Math.round(base.maxTriangles * LOW_SHARE), maxShadowTriangles: undefined, low: true };
+}
+
 /** Every rule a model file breaks, in words; empty when it keeps them all. */
 export function contractProblems(id: string, model: GlbSummary): string[] {
-  const rule = MODELS[id];
+  const rule = ruleFor(id);
   if (!rule) return [`${id} has no rule in art/contract.ts`];
   const [x0, y0, z0] = model.min;
   const [x1, y1, z1] = model.max;
@@ -104,7 +116,7 @@ export function contractProblems(id: string, model: GlbSummary): string[] {
   if (width > rule.maxWidth) problems.push(`it is ${width.toFixed(2)} wide; at most ${rule.maxWidth}`);
   if (model.triangles > rule.maxTriangles) problems.push(`it has ${model.triangles} triangles; at most ${rule.maxTriangles}`);
   if (rule.maxShadowTriangles === undefined) {
-    if (model.shadowTriangles > 0) problems.push('it has a Shadow mesh, but the game draws it instanced, without one');
+    if (model.shadowTriangles > 0) problems.push(rule.low ? 'it has a Shadow mesh, but Low quality casts no shadows' : 'it has a Shadow mesh, but the game draws it instanced, without one');
   } else if (model.shadowTriangles === 0) problems.push('it has no Shadow mesh; the game casts its shadow from one');
   else if (model.shadowTriangles > rule.maxShadowTriangles) problems.push(`its Shadow mesh has ${model.shadowTriangles} triangles; at most ${rule.maxShadowTriangles}`);
   if (model.materials.length > rule.maxMaterials) problems.push(`it has ${model.materials.length} materials; at most ${rule.maxMaterials}`);

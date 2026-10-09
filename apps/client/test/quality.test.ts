@@ -18,6 +18,8 @@ describe('graphics quality (spec #2 §6.4)', () => {
     expect(QUALITY.low.clouds).toBeLessThan(QUALITY.high.clouds);
     expect(QUALITY.high.clearcoat).toBe(true);
     expect(QUALITY.low.clearcoat).toBe(false); // phones skip the clearcoat (spec #5 §3.1)
+    expect(QUALITY.low.lowModels).toBe(true); // and draw the lighter pieces (spec #5 A14)
+    expect(QUALITY.high.lowModels).toBe(false);
   });
 
   it('keeps High while the frame rate holds at 45 fps or more', () => {

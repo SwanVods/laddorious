@@ -47,7 +47,7 @@ const PUFFS: Vec3[] = [
 ];
 
 /** Sky, fog, light, the island with its bumpers, the clouds and the crown on tile 100 (spec #2 §6.1). */
-export function Surroundings({ shadows, clouds, clearcoat }: { shadows: boolean; clouds: number; clearcoat: boolean }) {
+export function Surroundings({ shadows, clouds, clearcoat, low = false }: { shadows: boolean; clouds: number; clearcoat: boolean; low?: boolean }) {
   const scene = useThree((s) => s.scene);
   const sky = useMemo(() => skyTexture(WORLD_COLORS.sky), []);
   const island = useMemo(() => islandGeometry(), []);
@@ -143,6 +143,7 @@ export function Surroundings({ shadows, clouds, clearcoat }: { shadows: boolean;
       <group ref={crownRef} position={[goal[0], 0.01, goal[2]]}>
         <Slot
           name="crown"
+          low={low}
           clearcoat={clearcoat}
           shadows={shadows}
           fallback={

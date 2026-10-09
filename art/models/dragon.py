@@ -4,6 +4,7 @@ nostrils on the snout."""
 from lib import finish, palette, sculpt, shapes
 
 SHADOW = 400  # triangles in the stand-in that casts its shadow in the game (spec #5 §6)
+LOW = 0.3     # its Low quality file keeps this share of the sculpted triangles (spec #5 A14)
 
 BASE = [(0, 0), (0.34, 0), (0.36, 0.04), (0.34, 0.1), (0.27, 0.13), (0.24, 0.18), (0.22, 0.21), (0, 0.21)]
 HEAD = [('M', -0.2, 0), ('L', 0.16, 0), ('Q', 0.1, 0.22, 0.2, 0.36), ('L', 0.42, 0.42), ('L', 0.55, 0.47), ('L', 0.4, 0.52),

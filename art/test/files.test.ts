@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { SLOT_FILES } from '../../apps/client/src/assets/slotFiles';
+import { LOW_SLOTS, SLOT_FILES, slotFile } from '../../apps/client/src/assets/slotFiles';
 import { MAX_TOTAL_BYTES, MODELS, contractProblems } from '../contract';
 import { readGlb } from '../glb';
 
@@ -13,6 +13,10 @@ describe('the built models (spec #5 §7)', () => {
       expect(files, `${slot} is listed in slotFiles.ts but ${id}.glb isn't built`).toContain(`${id}.glb`);
       expect(MODELS[id!]?.slot, `${id} is built for another slot`).toBe(slot);
     }
+  });
+
+  it('has a lighter file for every slot that loads one on Low quality (spec #5 A14)', () => {
+    for (const slot of LOW_SLOTS) expect(files, `${slot} has no Low file`).toContain(`${slotFile(slot, true)}.glb`);
   });
 
   for (const file of files) {

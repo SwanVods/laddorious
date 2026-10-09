@@ -40,6 +40,16 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
 /** Slots drawn many times through instancing (spec #5 §6): useSlotMesh loads them as one mesh each. */
 export const MESH_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['tile', 'pad', 'pad.target', 'slide.vortex', 'slide.exit']);
 
+/** Slots with a lighter model for Low quality (spec #5 A14): `<id>-low.glb`, about a third of the triangles. The pieces only:
+ * the crown is one model, and thinning it lost its points. */
+export const LOW_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['piece.knight', 'piece.pawn', 'piece.meeple', 'piece.dragon', 'piece.rook', 'piece.hat', 'piece.duck']);
+
+/** The model id a slot loads: its lighter one on Low quality where it has one. Undefined where the slot keeps its code-built model. */
+export function slotFile(name: SlotName, low = false): string | undefined {
+  const id = SLOT_FILES[name];
+  return id && low && LOW_SLOTS.has(name) ? `${id}-low` : id;
+}
+
 /** Where the game loads a model from (served from apps/client/public). */
 export function modelUrl(id: string): string {
   return `/models/${id}.glb`;

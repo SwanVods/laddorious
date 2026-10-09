@@ -4,6 +4,7 @@ with a white shine sit on the head."""
 from lib import finish, palette, sculpt, shapes
 
 SHADOW = 400  # triangles in the stand-in that casts its shadow in the game (spec #5 §6)
+LOW = 0.3     # its Low quality file keeps this share of the sculpted triangles (spec #5 A14)
 
 
 def build():

@@ -50,10 +50,10 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
   const tap = useCallback((tile: number) => peeked.tap(tile, director.store.getState().presentation?.jumps ?? board.jumps, Date.now()), [peeked, director, board]);
   return (
     <>
-      <Surroundings shadows={profile.shadows} clouds={profile.clouds} clearcoat={profile.clearcoat} />
+      <Surroundings shadows={profile.shadows} clouds={profile.clouds} clearcoat={profile.clearcoat} low={profile.lowModels} />
       <Board board={board} director={director} clearcoat={profile.clearcoat} onTap={tap} />
       <Jumps director={director} clearcoat={profile.clearcoat} peeks={peeked} />
-      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} reducedMotion={reducedMotion} boardSize={board.size} />
+      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} />
       <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} />
       {tags && <TagProjector director={director} seats={seats} boardSize={board.size} tags={tags} />}
     </>

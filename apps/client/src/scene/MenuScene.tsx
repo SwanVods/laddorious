@@ -77,9 +77,9 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
   useEffect(() => () => geometry.dispose(), [geometry]);
   // Load every model while the menu shows, so the match never pops in (spec #5 §6).
   useEffect(() => {
-    preloadModels();
+    preloadModels(profile.lowModels);
     preloadSlotMeshes();
-  }, []);
+  }, [profile.lowModels]);
   // A new piece pops in (spec #2 §6.2 bounce).
   useEffect(() => {
     swapAtRef.current = performance.now();
@@ -191,6 +191,7 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
           <Slot
             name={`piece.${piece}` as SlotName}
             seat={SEAT_COLORS[0]}
+            low={profile.lowModels}
             clearcoat={profile.clearcoat}
             shadows={profile.shadows}
             fallback={

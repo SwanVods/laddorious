@@ -37,6 +37,13 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     expect(contractProblems('tile', tile)).toEqual(['it has a Shadow mesh, but the game draws it instanced, without one']);
   });
 
+  it("holds a piece's Low file to its rule, at most 40% of the triangles and no shadow stand-in (spec #5 A14)", () => {
+    expect(contractProblems('knight-low', knight({ triangles: 3200, shadowTriangles: 0 }))).toEqual([]);
+    expect(contractProblems('knight-low', knight({ triangles: 5000, shadowTriangles: 0 }))).toEqual(['it has 5000 triangles; at most 4000']);
+    expect(contractProblems('knight-low', knight({ triangles: 3200 }))).toEqual(['it has a Shadow mesh, but Low quality casts no shadows']);
+    expect(contractProblems('tile-low', knight())).toEqual(['tile-low has no rule in art/contract.ts']);
+  });
+
   it('refuses a model with no rule', () => {
     expect(contractProblems('teapot', knight())).toEqual(['teapot has no rule in art/contract.ts']);
   });

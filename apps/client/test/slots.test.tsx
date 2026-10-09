@@ -2,6 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { BoxGeometry, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { slotFile } from '../src/assets/slotFiles';
 import { SlotBoundary, prepareMaterial, prepareModel, setEmissive, slotUrl } from '../src/assets/slots';
 
 afterEach(() => {
@@ -14,6 +15,14 @@ function Broken(): never {
 }
 
 describe('asset slots (spec #2 §6.3, spec #5 §6)', () => {
+  it('loads the lighter file for pieces on Low quality, and the one file elsewhere (spec #5 A14)', () => {
+    expect(slotFile('piece.knight')).toBe('knight');
+    expect(slotFile('piece.knight', true)).toBe('knight-low');
+    expect(slotFile('crown', true)).toBe('crown');
+    expect(slotFile('die', true)).toBe('die');
+    expect(slotFile('tile', true)).toBe('tile');
+  });
+
   it('gives materials named Seat the seat colour, leaving shared materials and other parts alone', () => {
     const seat = new MeshStandardMaterial({ name: 'Seat', color: '#ffffff' });
     const trim = new MeshStandardMaterial({ name: 'Trim', color: '#000000' });

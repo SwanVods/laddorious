@@ -27,12 +27,14 @@ interface PiecesProps {
   seats: SeatInfo[];
   shadows: boolean;
   clearcoat: boolean;
+  /** Draw the lighter piece models (Low quality, spec #5 A14). */
+  low?: boolean;
   reducedMotion: boolean;
   boardSize: number;
 }
 
 /** Every seat's piece, its die and its shield bubble, and card projectiles (spec #2 §5.1, §6.2). */
-export function Pieces({ director, seats, shadows, clearcoat, reducedMotion, boardSize }: PiecesProps) {
+export function Pieces({ director, seats, shadows, clearcoat, low = false, reducedMotion, boardSize }: PiecesProps) {
   const seatOf = useMemo(() => {
     const index = new Map(seats.map((s, i) => [s.playerId, i]));
     return (player: PlayerId) => index.get(player) ?? 0;
@@ -56,7 +58,7 @@ export function Pieces({ director, seats, shadows, clearcoat, reducedMotion, boa
   return (
     <>
       {seats.map((seat, i) => (
-        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} reducedMotion={reducedMotion} boardSize={boardSize} rollsRef={rollsRef} />
+        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} low={low} reducedMotion={reducedMotion} boardSize={boardSize} rollsRef={rollsRef} />
       ))}
       <Projectile director={director} seatOf={seatOf} />
     </>
@@ -93,7 +95,7 @@ interface ActorProps extends Omit<PiecesProps, 'seats'> {
   rollsRef: RefObject<Map<PlayerId, Roll>>;
 }
 
-function Actor({ director, seat, index, shadows, clearcoat, reducedMotion, boardSize, rollsRef }: ActorProps) {
+function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, boardSize, rollsRef }: ActorProps) {
   const bodyRef = useRef<Group>(null);
   const modelRef = useRef<Group>(null);
   const orbRef = useRef<Mesh>(null);
@@ -145,6 +147,7 @@ function Actor({ director, seat, index, shadows, clearcoat, reducedMotion, board
           <Slot
             name={slot}
             seat={seat.color}
+            low={low}
             clearcoat={clearcoat}
             shadows={shadows}
             fallback={

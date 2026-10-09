@@ -1,6 +1,6 @@
 import { Component, Suspense, lazy, type ReactNode } from 'react';
 import { Color, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, type Material, type Object3D } from 'three';
-import { MESH_SLOTS, SLOT_FILES, modelUrl, type SlotName } from './slotFiles';
+import { MESH_SLOTS, SLOT_FILES, modelUrl, slotFile, type SlotName } from './slotFiles';
 
 export type { SlotName } from './slotFiles';
 
@@ -10,9 +10,9 @@ export type { SlotName } from './slotFiles';
  */
 const MODELS_ON = import.meta.env.MODE !== 'test';
 
-/** A slot's model URL, or null where the slot keeps its code-built model. */
-export function slotUrl(name: SlotName): string | null {
-  const file = SLOT_FILES[name];
+/** A slot's model URL (its lighter model on Low quality, spec #5 A14), or null where the slot keeps its code-built model. */
+export function slotUrl(name: SlotName, low = false): string | null {
+  const file = slotFile(name, low);
   return MODELS_ON && file ? modelUrl(file) : null;
 }
 
@@ -26,6 +26,8 @@ export interface ModelOptions {
   emissive?: string;
   /** Meshes cast shadows (High quality). */
   shadows?: boolean;
+  /** Load the slot's lighter model where it has one (Low quality, spec #5 A14). */
+  low?: boolean;
 }
 
 const WHITE = new Color(1, 1, 1);
@@ -117,8 +119,8 @@ export class SlotBoundary extends Component<BoundaryProps, { failed: boolean }> 
 const GltfModel = lazy(() => import('./GltfModel'));
 
 /** An asset slot: its Blender model when it has one, its code-built default otherwise or on failure. */
-export function Slot({ name, fallback, ...options }: { name: SlotName; fallback: ReactNode } & ModelOptions) {
-  const url = slotUrl(name);
+export function Slot({ name, fallback, low = false, ...options }: { name: SlotName; fallback: ReactNode } & ModelOptions) {
+  const url = slotUrl(name, low);
   if (!url) return fallback;
   return (
     <SlotBoundary name={name} fallback={fallback}>
@@ -129,9 +131,9 @@ export function Slot({ name, fallback, ...options }: { name: SlotName; fallback:
   );
 }
 
-/** Start loading every whole model the game uses (the menu calls this), so a match never pops from stand-in to model. */
-export function preloadModels(): void {
+/** Start loading every whole model the game uses at this quality (the menu calls this), so a match never pops from stand-in to model. */
+export function preloadModels(low = false): void {
   const names = (Object.keys(SLOT_FILES) as SlotName[]).filter((name) => !MESH_SLOTS.has(name));
-  const urls = names.map(slotUrl).filter((url): url is string => url !== null);
+  const urls = names.map((name) => slotUrl(name, low)).filter((url): url is string => url !== null);
   if (urls.length > 0) void import('./GltfModel').then((m) => m.preload(urls));
 }

@@ -9,7 +9,9 @@ Blender link:
 
 Each id names a script in art/models/ whose build() returns the model's parts; the parts are
 merged and exported to apps/client/public/models/<id>.glb. A script with SHADOW (a triangle count)
-also gets a shadow stand-in that small.
+also gets a shadow stand-in that small. A script with LOW (a share, like 0.3) also gets <id>-low.glb
+for Low quality: its sculpted parts thinned to that share, no shadow stand-in (spec #5 A14). Asking
+for <id>-low builds only that file.
 """
 import importlib
 import sys
@@ -46,17 +48,28 @@ def main():
     home = window.scene if window else None
     report = []
     try:
-        for model_id in requested_ids():
-            scene = export.begin()
+        sculpt = sys.modules['lib.sculpt']
+        for requested in requested_ids():
+            model_id = requested.removesuffix('-low')
             model = fresh(f'models.{model_id}')
-            parts = model.build()
-            report.append(export.finish(scene, model_id, parts, OUT / f'{model_id}.glb', shadow=getattr(model, 'SHADOW', None)))
+            if requested == model_id:
+                scene = export.begin()
+                report.append(export.finish(scene, model_id, model.build(), OUT / f'{model_id}.glb', shadow=getattr(model, 'SHADOW', None)))
+            low = getattr(model, 'LOW', None)
+            if low:
+                scene = export.begin()
+                sculpt.DETAIL = low
+                try:
+                    parts = model.build()
+                finally:
+                    sculpt.DETAIL = 1.0
+                report.append(export.finish(scene, f'{model_id}-low', parts, OUT / f'{model_id}-low.glb'))
     finally:
         if window and home:
             window.scene = home
     for r in report:
         stand = f"  shadow {r['shadow']}" if r['shadow'] else ''
-        print(f"{r['id']:<8} {r['triangles']:>6} triangles{stand}  {len(r['materials'])} materials  {r['height']:.2f} tall  {r['bytes'] / 1024:.0f} KB")
+        print(f"{r['id']:<11} {r['triangles']:>6} triangles{stand}  {len(r['materials'])} materials  {r['height']:.2f} tall  {r['bytes'] / 1024:.0f} KB")
     return report
 
 
