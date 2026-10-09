@@ -6,6 +6,8 @@ table below. Its middle is the origin: the die tumbles round it.
 """
 from lib import finish, palette, sculpt, shapes
 
+SHADOW = 400  # triangles in the stand-in that casts its shadow in the game (spec #5 §6)
+
 SIZE = 0.5
 SPACING = 0.115  # keeps the outer pips on the flat of the face, clear of the rounded edge
 # value: (outward normal, across, up) in Blender axes

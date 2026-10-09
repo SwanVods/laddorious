@@ -6,6 +6,7 @@ const knight = (change: Partial<GlbSummary> = {}): GlbSummary => ({
   min: [-0.42, 0, -0.45],
   max: [0.42, 1.2, 0.45],
   triangles: 3200,
+  shadowTriangles: 400,
   materials: ['Seat', 'Eye', 'Shine'],
   byMaterial: {},
   transformedNodes: [],
@@ -28,6 +29,13 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     ]);
   });
 
+  it('wants a small Shadow mesh on every model that casts a shadow, and none on the board parts', () => {
+    expect(contractProblems('knight', knight({ shadowTriangles: 0 }))).toEqual(['it has no Shadow mesh; the game casts its shadow from one']);
+    expect(contractProblems('knight', knight({ shadowTriangles: 2000 }))).toEqual(['its Shadow mesh has 2000 triangles; at most 600']);
+    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.22, 0.76], triangles: 108, shadowTriangles: 40, materials: ['Tint'], byMaterial: {}, transformedNodes: [] };
+    expect(contractProblems('tile', tile)).toEqual(['it has a Shadow mesh, but the game draws it instanced, without one']);
+  });
+
   it('refuses a model with no rule', () => {
     expect(contractProblems('teapot', knight())).toEqual(['teapot has no rule in art/contract.ts']);
   });
@@ -37,6 +45,7 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
       min: [-0.57, 0, -0.57],
       max: [0.57, 0.2, 0.57],
       triangles: 900,
+      shadowTriangles: 0,
       materials: ['Pad', 'Arrow'],
       byMaterial: { Arrow: { min: [-0.26, 0.17, arrowZ[0]], max: [0.26, 0.2, arrowZ[1]] } },
       transformedNodes: [],
@@ -46,7 +55,7 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
   });
 
   it('keeps a tile to its one Tint material, so instancing can paint it', () => {
-    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.22, 0.76], triangles: 120, materials: ['Tint', 'Edge'], byMaterial: {}, transformedNodes: [] };
+    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.22, 0.76], triangles: 120, shadowTriangles: 0, materials: ['Tint', 'Edge'], byMaterial: {}, transformedNodes: [] };
     expect(contractProblems('tile', tile)).toEqual(['it has 2 materials; at most 1']);
   });
 
@@ -55,6 +64,7 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
       min: [-0.25, -0.25, -0.25],
       max: [0.25, 0.25, 0.25],
       triangles: 1200,
+      shadowTriangles: 150,
       materials: ['Body', 'Pip', 'One'],
       byMaterial: { One: { min: [oneAt[0] - 0.07, oneAt[1] - 0.02, oneAt[2] - 0.07], max: [oneAt[0] + 0.07, oneAt[1] + 0.02, oneAt[2] + 0.07] } },
       transformedNodes: [],

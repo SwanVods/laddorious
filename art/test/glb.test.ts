@@ -35,9 +35,27 @@ describe('readGlb (spec #5 §7)', () => {
     expect(model.min).toEqual([-0.4, 0, -0.3]);
     expect(model.max).toEqual([0.4, 1.1, 0.35]);
     expect(model.triangles).toBe(3); // 6 indices, plus 3 vertices without indices
+    expect(model.shadowTriangles).toBe(0);
     expect(model.materials).toEqual(['Seat', 'Eye']);
     expect(model.byMaterial.Eye).toEqual({ min: [0.1, 0.9, -0.2], max: [0.2, 1.0, -0.1] });
     expect(model.transformedNodes).toEqual([]);
+  });
+
+  it('keeps the Shadow mesh apart: the game draws it only into the shadow map', () => {
+    const model = readGlb(
+      glb({
+        ...MODEL,
+        accessors: [...MODEL.accessors, { count: 3, type: 'VEC3', componentType: 5126, min: [-0.5, 0, -0.5], max: [0.5, 1.3, 0.5] }, { count: 1200, type: 'SCALAR', componentType: 5123 }],
+        materials: [...MODEL.materials, { name: 'Shadow' }],
+        meshes: [...MODEL.meshes, { primitives: [{ attributes: { POSITION: 3 }, indices: 4, material: 2 }] }],
+        nodes: [...MODEL.nodes, { name: 'shadow', mesh: 1 }],
+      }),
+    );
+    expect(model.triangles).toBe(3);
+    expect(model.shadowTriangles).toBe(400);
+    expect(model.materials).toEqual(['Seat', 'Eye']);
+    expect(model.max).toEqual([0.4, 1.1, 0.35]);
+    expect(model.byMaterial.Shadow).toBeUndefined();
   });
 
   it('lists nodes that still carry a transform', () => {

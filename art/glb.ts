@@ -9,6 +9,9 @@ export interface GlbSummary {
   min: Vec3;
   max: Vec3;
   triangles: number;
+  /** The Shadow mesh's triangles: a small stand-in the game draws only into the shadow map. */
+  shadowTriangles: number;
+  /** The materials drawn on screen (not Shadow). */
   materials: string[];
   /** Each material's bounds, over the primitives drawn with it. */
   byMaterial: Record<string, { min: Vec3; max: Vec3 }>;
@@ -37,6 +40,9 @@ interface Gltf {
   nodes?: Node[];
 }
 
+/** The material of a model's shadow stand-in (spec #5 §6). */
+export const SHADOW = 'Shadow';
+
 const MAGIC = 0x46546c67; // "glTF"
 const JSON_CHUNK = 0x4e4f534a; // "JSON"
 
@@ -62,21 +68,29 @@ export function readGlb(bytes: Uint8Array): GlbSummary {
   if (view.getUint32(16, true) !== JSON_CHUNK) throw new Error('the first chunk is not JSON');
   const gltf = JSON.parse(new TextDecoder().decode(bytes.subarray(20, 20 + view.getUint32(12, true)))) as Gltf;
   const accessors = gltf.accessors ?? [];
-  const materials = (gltf.materials ?? []).map((m, i) => m.name ?? `material ${i}`);
+  const names = (gltf.materials ?? []).map((m, i) => m.name ?? `material ${i}`);
   const all = empty();
   const byMaterial: GlbSummary['byMaterial'] = {};
   let triangles = 0;
+  let shadowTriangles = 0;
   for (const mesh of gltf.meshes ?? []) {
     for (const primitive of mesh.primitives) {
       if ((primitive.mode ?? 4) !== 4) throw new Error('only triangle meshes are supported');
       const position = accessors[primitive.attributes.POSITION ?? -1];
       if (!position?.min || !position.max) throw new Error('a primitive has no POSITION bounds');
-      triangles += (primitive.indices === undefined ? position.count : accessors[primitive.indices]!.count) / 3;
-      const name = primitive.material === undefined ? '(none)' : materials[primitive.material]!;
+      const count = (primitive.indices === undefined ? position.count : accessors[primitive.indices]!.count) / 3;
+      const name = primitive.material === undefined ? '(none)' : names[primitive.material]!;
+      // The shadow stand-in is never seen, so it counts apart and leaves the bounds to the model.
+      if (name === SHADOW) {
+        shadowTriangles += count;
+        continue;
+      }
+      triangles += count;
       grow(all, position.min, position.max);
       grow((byMaterial[name] ??= empty()), position.min, position.max);
     }
   }
+  const materials = names.filter((name) => name !== SHADOW);
   const transformedNodes = (gltf.nodes ?? []).flatMap((n, i) => (isIdentity(n) ? [] : [n.name ?? `node ${i}`]));
-  return { ...all, triangles, materials, byMaterial, transformedNodes };
+  return { ...all, triangles, shadowTriangles, materials, byMaterial, transformedNodes };
 }

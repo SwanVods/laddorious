@@ -11,6 +11,11 @@ export interface ModelRule {
   /** The widest footprint, across X or Z. */
   maxWidth: number;
   maxTriangles: number;
+  /**
+   * Models that cast a shadow carry a Shadow mesh of at most this many triangles, which the game draws
+   * into the shadow map in place of the model (spec #5 §6). Instanced board parts cast none, so carry none.
+   */
+  maxShadowTriangles?: number;
   maxMaterials: number;
   requiredMaterials: string[];
   /** Extra checks; each returns a problem, or null. */
@@ -37,7 +42,18 @@ function arrowForward(model: GlbSummary): string | null {
 
 // Triangle limits are guards, not the spec's targets (the user, Step 1 review: sculpted, curved models may
 // go past them). What holds hard is the whole match: at most 150,000 triangles (spec #5 §1).
-const piece = (slot: SlotName): ModelRule => ({ slot, origin: 'base', height: [0.85, 1.3], maxWidth: 1.1, maxTriangles: 10000, maxMaterials: 4, requiredMaterials: ['Seat'] });
+/** A shadow stand-in this small keeps the shadow's outline: the shadow map gives a piece only about 40 texels. */
+const SHADOW = 600;
+const piece = (slot: SlotName): ModelRule => ({
+  slot,
+  origin: 'base',
+  height: [0.85, 1.3],
+  maxWidth: 1.1,
+  maxTriangles: 10000,
+  maxShadowTriangles: SHADOW,
+  maxMaterials: 4,
+  requiredMaterials: ['Seat'],
+});
 
 export const MODELS: Record<string, ModelRule> = {
   knight: piece('piece.knight'),
@@ -47,8 +63,8 @@ export const MODELS: Record<string, ModelRule> = {
   rook: piece('piece.rook'),
   hat: piece('piece.hat'),
   duck: piece('piece.duck'),
-  die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 5000, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
-  crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 8000, maxMaterials: 3, requiredMaterials: [] },
+  die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 5000, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
+  crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 8000, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: [] },
   // The board (spec #5 §4.2): parts stand on the tile top; instancing draws each once per material.
   tile: { slot: 'tile', origin: 'base', height: [0.21, 0.23], maxWidth: 1.53, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
   pad: { slot: 'pad', origin: 'base', height: [0.12, 0.26], maxWidth: 1.25, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Arrow'], checks: [arrowForward] },
@@ -77,6 +93,10 @@ export function contractProblems(id: string, model: GlbSummary): string[] {
   const width = Math.max(x1 - x0, z1 - z0);
   if (width > rule.maxWidth) problems.push(`it is ${width.toFixed(2)} wide; at most ${rule.maxWidth}`);
   if (model.triangles > rule.maxTriangles) problems.push(`it has ${model.triangles} triangles; at most ${rule.maxTriangles}`);
+  if (rule.maxShadowTriangles === undefined) {
+    if (model.shadowTriangles > 0) problems.push('it has a Shadow mesh, but the game draws it instanced, without one');
+  } else if (model.shadowTriangles === 0) problems.push('it has no Shadow mesh; the game casts its shadow from one');
+  else if (model.shadowTriangles > rule.maxShadowTriangles) problems.push(`its Shadow mesh has ${model.shadowTriangles} triangles; at most ${rule.maxShadowTriangles}`);
   if (model.materials.length > rule.maxMaterials) problems.push(`it has ${model.materials.length} materials; at most ${rule.maxMaterials}`);
   for (const name of rule.requiredMaterials) if (!model.materials.includes(name)) problems.push(`it has no ${name} material`);
   if (model.transformedNodes.length > 0) problems.push(`these nodes still carry a transform: ${model.transformedNodes.join(', ')}`);

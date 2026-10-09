@@ -1,5 +1,5 @@
 import { Component, Suspense, lazy, type ReactNode } from 'react';
-import { Color, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, type Material, type Object3D } from 'three';
+import { Color, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, type Material, type Object3D } from 'three';
 import { MESH_SLOTS, SLOT_FILES, modelUrl, type SlotName } from './slotFiles';
 
 export type { SlotName } from './slotFiles';
@@ -52,11 +52,30 @@ export function prepareMaterial(material: Material, { seat, clearcoat = true, em
   return copy;
 }
 
-/** Ready a loaded model's materials and shadows. */
+/** Draws nothing on screen: a Shadow mesh only fills the shadow map. */
+const UNSEEN = new MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+
+const isShadow = (node: Mesh) => !Array.isArray(node.material) && (node.material as Material).name === 'Shadow';
+
+/**
+ * Ready a loaded model's materials and shadows. A model may carry a small Shadow mesh (spec #5 §6):
+ * then it casts the shadow in place of the detailed parts, at a tenth of the triangles.
+ */
 export function prepareModel(root: Object3D, options: ModelOptions): void {
+  const shadows = options.shadows ?? false;
+  let stand = false;
+  root.traverse((node) => {
+    if (node instanceof Mesh && isShadow(node)) stand = true;
+  });
   root.traverse((node) => {
     if (!(node instanceof Mesh)) return;
-    node.castShadow = options.shadows ?? false;
+    if (isShadow(node)) {
+      node.material = UNSEEN;
+      node.castShadow = shadows;
+      node.visible = shadows;
+      return;
+    }
+    node.castShadow = shadows && !stand;
     node.material = Array.isArray(node.material) ? node.material.map((m) => prepareMaterial(m, options)) : prepareMaterial(node.material, options);
   });
 }

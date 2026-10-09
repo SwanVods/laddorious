@@ -1,6 +1,7 @@
 """Render built models side by side to a PNG, for a quick look while modelling (spec #5 §7).
 
 Headless:  blender --background --factory-startup --python art/preview.py -- out.png knight pawn
+           (an id written pawn:shadow shows the model's shadow stand-in instead)
 Blender link: exec it like build.py, with ART_IDS and PREVIEW_PATH in its globals.
 """
 import math
@@ -42,9 +43,17 @@ def main():
             bpy.data.objects.remove(obj, do_unlink=True)
         groups = []
         for model_id in ids:
+            name, _, view = model_id.partition(':')
             before = set(scene.objects)
-            bpy.ops.import_scene.gltf(filepath=str(MODELS / f'{model_id}.glb'))
-            groups.append([obj for obj in set(scene.objects) - before if obj.parent is None])
+            bpy.ops.import_scene.gltf(filepath=str(MODELS / f'{name}.glb'))
+            added = set(scene.objects) - before
+            # The game never shows the shadow stand-in: leave it out, or show only it (`pawn:shadow`).
+            for obj in list(added):
+                stand = obj.type == 'MESH' and any(m and m.name.startswith('Shadow') for m in obj.data.materials)
+                if stand != (view == 'shadow'):
+                    added.discard(obj)
+                    bpy.data.objects.remove(obj, do_unlink=True)
+            groups.append([obj for obj in added if obj.parent is None])
         bpy.context.view_layer.update()
         sizes = [extent(roots) for roots in groups]
         gap = max(hi.x - lo.x for lo, hi in sizes) + 0.4

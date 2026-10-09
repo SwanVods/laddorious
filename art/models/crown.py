@@ -5,6 +5,8 @@ import math
 
 from lib import finish, palette, sculpt, shapes
 
+SHADOW = 400  # triangles in the stand-in that casts its shadow in the game (spec #5 §6)
+
 POINTS = 5
 STEPS = 180           # sections round the wall (fine, since the surface is rebuilt from them)
 LOW, HIGH = 0.24, 0.6 # the wall's height between the points, and at their tips

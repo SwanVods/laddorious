@@ -8,7 +8,8 @@ Blender link:
     result = g['RESULT']
 
 Each id names a script in art/models/ whose build() returns the model's parts; the parts are
-merged and exported to apps/client/public/models/<id>.glb.
+merged and exported to apps/client/public/models/<id>.glb. A script with SHADOW (a triangle count)
+also gets a shadow stand-in that small.
 """
 import importlib
 import sys
@@ -47,13 +48,15 @@ def main():
     try:
         for model_id in requested_ids():
             scene = export.begin()
-            parts = fresh(f'models.{model_id}').build()
-            report.append(export.finish(scene, model_id, parts, OUT / f'{model_id}.glb'))
+            model = fresh(f'models.{model_id}')
+            parts = model.build()
+            report.append(export.finish(scene, model_id, parts, OUT / f'{model_id}.glb', shadow=getattr(model, 'SHADOW', None)))
     finally:
         if window and home:
             window.scene = home
     for r in report:
-        print(f"{r['id']:<8} {r['triangles']:>6} triangles  {len(r['materials'])} materials  {r['height']:.2f} tall  {r['bytes'] / 1024:.0f} KB")
+        stand = f"  shadow {r['shadow']}" if r['shadow'] else ''
+        print(f"{r['id']:<8} {r['triangles']:>6} triangles{stand}  {len(r['materials'])} materials  {r['height']:.2f} tall  {r['bytes'] / 1024:.0f} KB")
     return report
 
 

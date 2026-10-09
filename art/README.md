@@ -44,6 +44,10 @@ Models are sculpted, not assembled (the user's direction at the Step 1 review): 
 - The export splits shading where faces meet at more than 35°, so carved rims stay crisp; sculpted surfaces have no angles that sharp.
 - Triangle limits in `contract.ts` are guards; the whole match must stay within 150,000 triangles.
 
+## Shadow stand-ins
+
+A model that casts a shadow in the game (pieces, die, crown) sets `SHADOW = 400` in its script. The build then adds a copy decimated to about that many triangles, in one material named `Shadow`. The game casts the shadow from the stand-in and never shows it, so the shadow map draws a tenth of the model (spec #5 A12). The contract wants one on those models and none on the board's instanced parts. Preview a stand-in by writing its id as `pawn:shadow`.
+
 ## Adding a model
 
 1. Write `models/<id>.py` with a `build()` that returns its parts: shapes from `lib/shapes.py`, fused or carved with `lib/sculpt.py`.

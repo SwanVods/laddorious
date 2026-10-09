@@ -3,6 +3,8 @@ cheeks, a rounded muzzle with nostrils, two ears, and a mane ridge down the back
 white shine sit on the cheeks."""
 from lib import finish, palette, sculpt, shapes
 
+SHADOW = 400  # triangles in the stand-in that casts its shadow in the game (spec #5 §6)
+
 BASE = [(0, 0), (0.34, 0), (0.36, 0.04), (0.34, 0.1), (0.27, 0.13), (0.24, 0.18), (0.22, 0.21), (0, 0.21)]
 HEAD = [('M', -0.26, 0), ('L', 0.22, 0), ('Q', 0.24, 0.18, 0.16, 0.3), ('Q', 0.26, 0.38, 0.4, 0.42), ('Q', 0.5, 0.46, 0.46, 0.56),
         ('Q', 0.42, 0.64, 0.3, 0.66), ('Q', 0.2, 0.72, 0.14, 0.8), ('Q', 0.08, 0.92, 0.0, 0.9), ('Q', -0.04, 0.88, -0.02, 0.84),

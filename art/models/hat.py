@@ -2,6 +2,8 @@
 band and a brim that curls up at the sides."""
 from lib import finish, palette, sculpt, shapes
 
+SHADOW = 400  # triangles in the stand-in that casts its shadow in the game (spec #5 §6)
+
 HAT = [(0, 0), (0.46, 0), (0.485, 0.035), (0.46, 0.07), (0.3, 0.085), (0.275, 0.1), (0.27, 0.9), (0.255, 0.95), (0.2, 0.965), (0, 0.97)]
 BAND = [(0.262, 0.12), (0.29, 0.12), (0.29, 0.27), (0.262, 0.27)]  # a ring round the crown
 CURL = 0.08  # how far the brim's left and right edges lift

@@ -42,6 +42,7 @@ Success means:
 | A8 | **Shots from a headless browser.** The review screenshots come from a Playwright script, not the browser pane. | It works whatever is on screen; the pane is often hidden. |
 | A10 | **Seven pieces.** Three new ones join the four: a **rook** (a chess castle tower), a **top hat** (the classic board-game token) and a **rubber duck** (with the knight's little eyes). Each has its own silhouette. | User's request at spec approval ("add more 3 random piece shapes"); Claude picked the three. |
 | A11 | **Sculpted, not assembled.** Every model is one continuous surface with real curves where its parts meet, never shapes visibly stuck together: parts become distance fields that are united, blended at the joins, carved and rounded (`art/lib/sculpt.py`). Hard objects with clean flats (the die) are carved with exact booleans instead. Per-model triangle budgets below are targets, not hard limits; the whole-match budget (§1) is the one that holds. | User's direction at the Step 1 review ("i want it like the real curve and conjoined object"; "it's okay to beyond the limit"). |
+| A12 | **Shadow stand-ins.** Every model that casts a shadow (pieces, die, crown) carries a small decimated copy of itself, about 400 triangles in one material named `Shadow`. The game casts the shadow from it and never shows it; the detailed model casts none. The board's instanced parts carry none. | Claude's ruling in Step 2: the sculpted pieces, drawn twice for shadows, filled the 150,000-triangle budget before the board's models landed. The shadow map gives a piece about 40 texels, so the stand-in's outline matches; the models on screen keep every triangle. |
 | A9 | **No mesh compression in this pass.** The models total about 2 MB, and a test keeps them under 2.5 MB. | Simpler loading with no decoder files; compression can come later if the size grows. |
 
 ## 3. The look
@@ -64,6 +65,7 @@ Success means:
 | `Seat` | Takes the player's colour (already in Spec #2 §6.3). |
 | `Tint` | Takes each instance's colour: tiles per square, bumpers alternating, and so on. Its base colour is white. |
 | `Glow` | Keeps its emission; the game may pulse its intensity. |
+| `Shadow` | The model's shadow stand-in (A12): drawn only into the shadow map, and not at all without shadows. |
 | any other name | Drawn as exported. |
 
 A piece has at most 4 materials (for example the dragon's `Seat`, eyes, pupils and horns), so the four pieces cost at most 16 draw calls.
@@ -156,7 +158,8 @@ The props' exact places are settled in the step 3 review. They must stay out of 
 - **Material pass:** one function prepares a loaded model's materials for the game:
   - `Seat` gets the seat colour;
   - `Tint` gets a white base, so instance colours show;
-  - on Low quality, clearcoat is set to 0.
+  - on Low quality, clearcoat is set to 0;
+  - a `Shadow` mesh casts the model's shadow, unseen, and the rest casts none (A12).
 - **Preload:** the menu preloads every slot model (drei's `useGLTF.preload`), so a match never pops from stand-in to model.
 - **Fallback:** a file that fails to load leaves the code-built model in place and warns once, as today.
 - **Trails and channels** are new geometry builders next to `ribbonGeometry` in `scene/Jumps.tsx`:

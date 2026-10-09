@@ -6,6 +6,7 @@ import bpy
 
 SCENE = 'ArtBuild'
 SHARP_ANGLE = 35  # degrees: faces meeting at more than this shade with a crisp edge
+SHADOW = 'Shadow'  # the shadow stand-in's material: the game draws it only into the shadow map
 
 
 def begin():
@@ -34,8 +35,10 @@ def _purge():
                 collection.remove(block)
 
 
-def finish(scene, model_id, parts, path):
-    """Merge the parts into one mesh (modifiers and transforms applied), export it to `path`, and report."""
+def finish(scene, model_id, parts, path, shadow=None):
+    """Merge the parts into one mesh (modifiers and transforms applied), export it to `path`, and report.
+
+    With `shadow` (a triangle count), the file also carries a stand-in that small to cast the model's shadow."""
     for part in parts:
         scene.collection.objects.link(part)
     depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -71,14 +74,46 @@ def finish(scene, model_id, parts, path):
     scene.collection.objects.link(bpy.data.objects.new(model_id, mesh))
     mesh.calc_loop_triangles()
     heights = [v.co.z for v in mesh.vertices]
+    stand = _shadow(scene, mesh, shadow) if shadow else 0
     _export(path)
     return {
         'id': model_id,
         'triangles': len(mesh.loop_triangles),
+        'shadow': stand,
         'materials': [m.name for m in materials],
         'height': max(heights) - min(heights),
         'bytes': path.stat().st_size,
     }
+
+
+def _shadow(scene, mesh, target):
+    """Add the model's shadow stand-in (spec #5 §6): a copy decimated to about `target` triangles, in one
+    material named Shadow. The game casts the shadow from it, so the shadow map draws a tenth of the model."""
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
+    for face in bm.faces:
+        face.material_index = 0
+    rough = bpy.data.meshes.new('shadow-rough')
+    bm.to_mesh(rough)
+    bm.free()
+    obj = bpy.data.objects.new('shadow', rough)
+    scene.collection.objects.link(obj)
+    decimate = obj.modifiers.new('decimate', 'DECIMATE')
+    decimate.decimate_type = 'COLLAPSE'
+    decimate.ratio = min(1.0, target / max(1, len(rough.polygons)))
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    depsgraph.update()
+    small = bmesh.new()
+    small.from_mesh(obj.evaluated_get(depsgraph).to_mesh())
+    obj.evaluated_get(depsgraph).to_mesh_clear()
+    obj.modifiers.clear()
+    obj.data = _canonical('shadow', small)
+    small.free()
+    bpy.data.meshes.remove(rough)
+    obj.data.materials.append(bpy.data.materials.get(SHADOW) or bpy.data.materials.new(SHADOW))
+    obj.data.calc_loop_triangles()
+    return len(obj.data.loop_triangles)
 
 
 

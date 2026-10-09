@@ -3,6 +3,8 @@ tail and little wing bumps, with a wide orange bill growing out of the face. The
 with a white shine sit on the head."""
 from lib import finish, palette, sculpt, shapes
 
+SHADOW = 400  # triangles in the stand-in that casts its shadow in the game (spec #5 §6)
+
 
 def build():
     seat = finish.glossy('Seat', palette.SEAT)

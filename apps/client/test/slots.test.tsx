@@ -61,6 +61,25 @@ describe('asset slots (spec #2 §6.3, spec #5 §6)', () => {
     expect(flat.castShadow).toBe(false);
   });
 
+  it("casts a model's shadow from its small Shadow mesh, which draws nothing on screen", () => {
+    const model = () => {
+      const body = new Mesh(new BoxGeometry(), new MeshStandardMaterial({ name: 'Seat' }));
+      const shadow = new Mesh(new BoxGeometry(), new MeshStandardMaterial({ name: 'Shadow' }));
+      return { root: new Group().add(body, shadow), body, shadow };
+    };
+    const lit = model();
+    prepareModel(lit.root, { shadows: true });
+    expect(lit.body.castShadow).toBe(false);
+    expect(lit.shadow.castShadow).toBe(true);
+    expect(lit.shadow.visible).toBe(true);
+    expect(lit.shadow.material).toMatchObject({ colorWrite: false, depthWrite: false });
+    // Without shadows it isn't drawn at all.
+    const flat = model();
+    prepareModel(flat.root, {});
+    expect(flat.shadow.visible).toBe(false);
+    expect(flat.body.castShadow).toBe(false);
+  });
+
   it('turns Tint white on a copy, so instance colours show (spec #5 §3.2)', () => {
     const grey = new MeshStandardMaterial({ name: 'Tint', color: '#808080' });
     const ready = prepareMaterial(grey, {}) as MeshStandardMaterial;
