@@ -7,8 +7,8 @@ import { createPrefsStore } from '../src/app/prefs';
 import { AudioEngine } from '../src/audio/engine';
 import { SoundProvider } from '../src/audio/SoundProvider';
 import { BEAT_MS } from '../src/director/beats';
-import type { MatchUpdate } from '../src/service/matchService';
-import { openingUpdate } from './support/fixtures';
+import type { MatchUpdate, SeatInfo } from '../src/service/matchService';
+import { SEATS, openingUpdate } from './support/fixtures';
 import { ScriptedSession } from './support/scripted';
 
 // jsdom has no WebGL: stand the 3D scene in with a labelled box that shows whose piece the camera follows.
@@ -38,14 +38,16 @@ function opening(change: Partial<PlayerView> = {}, timer: MatchUpdate['timer'] =
 function start(
   props: {
     onLeave?: () => void;
-    onFailed?: (m: string) => void;
+    onFailed?: (f: { message: string }) => void;
     onFinished?: (r: unknown) => void;
     sound?: AudioEngine;
     muted?: boolean;
     onToggleMute?: () => void;
+    seats?: SeatInfo[];
   } = {},
 ) {
   const session = new ScriptedSession();
+  if (props.seats) session.seats = props.seats;
   const match = (
     <MatchScreen
       session={session}
@@ -217,7 +219,7 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     const onFailed = vi.fn();
     const session = start({ onFailed });
     session.fail('board corrupted');
-    expect(onFailed).toHaveBeenCalledWith('board corrupted');
+    expect(onFailed).toHaveBeenCalledWith({ message: 'board corrupted' });
   });
 
   it('hands the final rankings over once the victory and the ranks reveal have played (polish spec 4.5)', () => {
@@ -243,5 +245,34 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     expect(onFinished).not.toHaveBeenCalled();
     act(() => vi.advanceTimersByTime(1));
     expect(onFinished).toHaveBeenCalledWith(rankings);
+  });
+});
+
+describe('MatchScreen presence (spec #4 §3.3)', () => {
+  it('toasts a player who lost connection and badges their row, then toasts their return', () => {
+    const session = start();
+    session.update(opening());
+    session.presence(['p1']);
+    expect(screen.getByText('Mochi lost connection')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Mochi, .*, away\./ })).toBeTruthy();
+    session.presence([]);
+    expect(screen.getByText('Mochi is back')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /away\./ })).toBeNull();
+  });
+
+  it('shows a reconnecting pill while my own connection is down, then says I am back', () => {
+    const session = start();
+    session.update(opening());
+    session.presence(['p0']);
+    expect(screen.getByText('Reconnecting…')).toBeTruthy();
+    session.presence([]);
+    expect(screen.queryByText('Reconnecting…')).toBeNull();
+    expect(screen.getByText('Back in the match')).toBeTruthy();
+  });
+
+  it('says the match carries on when leaving a table with other people', () => {
+    start({ seats: SEATS.map((s, i) => (i === 1 ? { ...s, nickname: 'Bo', bot: false } : s)) });
+    fireEvent.click(screen.getByRole('button', { name: 'Leave match' }));
+    expect(screen.getByText(/The match carries on without you/)).toBeTruthy();
   });
 });

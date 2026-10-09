@@ -95,6 +95,16 @@ describe('EventFeed (spec #2 §7.2)', () => {
 });
 
 describe('PlayerColumn (spec #2 §7.2, §9.2)', () => {
+  it('marks an away player with an Away badge (spec #4 §3.3)', () => {
+    const v = view({ p0: 4, p1: 9 });
+    const rows = playerRows({ view: v, presentation: presentationFromView(v), record: { round: 1, dice: {}, cards: {} }, seats: SEATS, me: 'p0', watch: null, away: ['p1'] });
+    expect(rows.map((r) => [r.seat.playerId, r.away])).toEqual([['p1', true], ['p0', false], ['p2', false], ['p3', false]]);
+    render(<PlayerColumn rows={rows} onWatch={() => {}} reducedMotion={false} />);
+    const mochi = rowOf(/^Mochi, tile 9, rank 1, away\./);
+    expect(within(mochi).getByText('Away')).toBeTruthy();
+    expect(within(rowOf(/^You \(you\)/)).queryByText('Away')).toBeNull();
+  });
+
   it('lists the players front-runner first, with rank badges and my row marked', () => {
     render(<PlayerColumn rows={mysteryRows()} onWatch={() => {}} reducedMotion={false} />);
     const names = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label')!.split(',')[0]);

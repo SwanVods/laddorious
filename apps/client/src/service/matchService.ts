@@ -1,5 +1,5 @@
 import type { InputErrorCode, PlayerId } from '@laddorious/core';
-import type { MatchUpdate, PlayerAction, Profile, Seat } from '@laddorious/host';
+import type { FailReason, MatchUpdate, PlayerAction, Profile, Seat } from '@laddorious/host';
 
 // The contract between the screens and a match (spec #2 §4.3). LocalMatchService implements it
 // with a Web Worker, and OnlineMatchService over the network (spec #4). The match types are
@@ -33,12 +33,20 @@ export interface Matchmaking {
   playWithBots(): void; // ignored unless searching; idempotent
 }
 
+/** Why a match ended early (spec #2 §8). Online, the server also says why (spec #4 §6). */
+export interface MatchFailure {
+  message: string;
+  reason?: FailReason;
+}
+
 export interface MatchSession {
   me: PlayerId;
   seats: SeatInfo[];
   onUpdate(cb: (u: MatchUpdate) => void): () => void;
   onRejected(cb: (e: { code: InputErrorCode; message: string }) => void): () => void;
-  onFailed(cb: (e: { message: string }) => void): () => void;
+  onFailed(cb: (e: MatchFailure) => void): () => void;
+  /** Who is away (spec #4 §3.3): the server's list, plus me while my connection is down. The local session never reports anyone. */
+  onPresence(cb: (away: PlayerId[]) => void): () => void;
   send(action: PlayerAction): void; // the session stamps the current windowId
   playbackDone(windowId: number): void;
   pause(): void; // local only; the online service ignores it

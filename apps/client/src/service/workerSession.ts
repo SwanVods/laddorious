@@ -1,6 +1,6 @@
 import type { InputError, PlayerId } from '@laddorious/core';
 import type { FromHost, HostWorker, ToHost } from '../worker/protocol';
-import type { MatchSession, MatchUpdate, PlayerAction, SeatInfo } from './matchService';
+import type { MatchFailure, MatchSession, MatchUpdate, PlayerAction, SeatInfo } from './matchService';
 
 /** Fans values out to listeners. Values that arrive before the first listener are held for it. */
 class Channel<T> {
@@ -30,7 +30,8 @@ export class WorkerMatchSession implements MatchSession {
   private left = false;
   private readonly updates = new Channel<MatchUpdate>();
   private readonly rejections = new Channel<InputError>();
-  private readonly failures = new Channel<{ message: string }>();
+  private readonly failures = new Channel<MatchFailure>();
+  private readonly presence = new Channel<PlayerId[]>();
 
   /** Starts the match. The seeds go to the worker and are not kept here: the rng seed must stay secret (§4.2). */
   constructor(
@@ -55,8 +56,13 @@ export class WorkerMatchSession implements MatchSession {
     return this.rejections.on(cb);
   }
 
-  onFailed(cb: (e: { message: string }) => void): () => void {
+  onFailed(cb: (e: MatchFailure) => void): () => void {
     return this.failures.on(cb);
+  }
+
+  /** Nobody is ever away in a local match: this channel never speaks. */
+  onPresence(cb: (away: PlayerId[]) => void): () => void {
+    return this.presence.on(cb);
   }
 
   send(action: PlayerAction): void {

@@ -137,3 +137,12 @@
   justify-content: flex-end;
   gap: 12px;
 }
+
+/* My connection is down (spec #4 §3.3): it stays up until the server has me back. */
+.reconnect-pill {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-t) + max(64px, 17cqh));
+  z-index: 50;
+  transform: translateX(-50%);
+}

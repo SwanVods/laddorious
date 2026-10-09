@@ -1,7 +1,8 @@
 import type { InputErrorCode } from '@laddorious/core';
+import type { FailReason } from '@laddorious/host';
 import { act } from '@testing-library/react';
 import { vi } from 'vitest';
-import type { Matchmaking, MatchmakingState, MatchSession, MatchUpdate } from '../../src/service/matchService';
+import type { MatchFailure, Matchmaking, MatchmakingState, MatchSession, MatchUpdate } from '../../src/service/matchService';
 import { SEATS } from './fixtures';
 
 /** Matchmaking a component test drives by hand. */
@@ -33,7 +34,7 @@ export class ScriptedSession implements MatchSession {
   leave = vi.fn();
   private updated: ((u: MatchUpdate) => void) | null = null;
   private rejected: ((e: { code: InputErrorCode; message: string }) => void) | null = null;
-  private failed: ((e: { message: string }) => void) | null = null;
+  private failed: ((e: MatchFailure) => void) | null = null;
 
   onUpdate(cb: (u: MatchUpdate) => void): () => void {
     this.updated = cb;
@@ -49,7 +50,7 @@ export class ScriptedSession implements MatchSession {
     };
   }
 
-  onFailed(cb: (e: { message: string }) => void): () => void {
+  onFailed(cb: (e: MatchFailure) => void): () => void {
     this.failed = cb;
     return () => {
       if (this.failed === cb) this.failed = null;
@@ -64,7 +65,20 @@ export class ScriptedSession implements MatchSession {
     act(() => this.rejected?.({ code, message }));
   }
 
-  fail(message: string): void {
-    act(() => this.failed?.({ message }));
+  fail(message: string, reason?: FailReason): void {
+    act(() => this.failed?.(reason ? { message, reason } : { message }));
+  }
+
+  private presenceCb: ((away: string[]) => void) | null = null;
+
+  onPresence(cb: (away: string[]) => void): () => void {
+    this.presenceCb = cb;
+    return () => {
+      if (this.presenceCb === cb) this.presenceCb = null;
+    };
+  }
+
+  presence(away: string[]): void {
+    act(() => this.presenceCb?.(away));
   }
 }

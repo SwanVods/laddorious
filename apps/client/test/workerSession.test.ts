@@ -6,6 +6,16 @@ import { FakeWorker, SEATS, loopbackWorker, openingUpdate } from './support/fixt
 const SEEDS = { seed: 'board-seed', rngSeed: 'secret-rng-seed' };
 
 describe('WorkerMatchSession', () => {
+  it('never reports anyone away', () => {
+    const worker = new FakeWorker();
+    const session = new WorkerMatchSession(worker, SEATS, SEEDS);
+    const got: string[][] = [];
+    const off = session.onPresence((away) => got.push(away));
+    worker.reply({ type: 'update', update: openingUpdate() });
+    off();
+    expect(got).toEqual([]);
+  });
+
   it('starts the match with a create message, and its human seat is me', () => {
     const worker = new FakeWorker();
     const session = new WorkerMatchSession(worker, SEATS, SEEDS);

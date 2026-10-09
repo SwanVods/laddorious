@@ -136,7 +136,7 @@ export function PlayerColumn({ rows, bubbles = {}, onWatch, reducedMotion }: Pla
     <ol className="players live" aria-label="Players">
       {rows.map((row) => {
         const id = row.seat.playerId;
-        const classes = ['prow', row.me ? 'me' : '', row.watched ? 'watched' : '', row.rank === 1 ? 'first' : ''].filter(Boolean).join(' ');
+        const classes = ['prow', row.me ? 'me' : '', row.watched ? 'watched' : '', row.rank === 1 ? 'first' : '', row.away ? 'away' : ''].filter(Boolean).join(' ');
         return (
           <li
             key={id}
@@ -148,7 +148,7 @@ export function PlayerColumn({ rows, bubbles = {}, onWatch, reducedMotion }: Pla
             <button
               type="button"
               className={classes}
-              aria-label={`${nameOf(row)}, tile ${row.tile}, rank ${row.rank}. ${row.statusText}`}
+              aria-label={`${nameOf(row)}, tile ${row.tile}, rank ${row.rank}${row.away ? ', away' : ''}. ${row.statusText}`}
               onPointerDown={() => {
                 stopPress();
                 pressRef.current.fired = false;
@@ -185,6 +185,7 @@ export function PlayerColumn({ rows, bubbles = {}, onWatch, reducedMotion }: Pla
                 <span className="prow-name display">
                   {row.seat.nickname}
                   <span className="prow-tile">{row.tile}</span>
+                  {row.away && <span className="prow-away">Away</span>}
                 </span>
                 <span className="prow-mini">
                   {row.dice && <DiceChips dice={row.dice} />}

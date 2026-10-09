@@ -5,6 +5,7 @@ import type { StoreApi } from 'zustand/vanilla';
 import { useSound } from '../audio/SoundProvider';
 import type { FindOptions, Matchmaking, MatchService, MatchSession } from '../service/matchService';
 import { RotateScreen } from '../ui/RotateScreen';
+import { ToastHost, showToast } from '../ui/toasts';
 import { EndScreen } from './EndScreen';
 import { ErrorScreen } from './ErrorScreen';
 import { wantsFullscreen } from './fullscreen';
@@ -91,9 +92,15 @@ export function App({ service, prefs, dev, test = null }: AppProps) {
             muted={settings.sound.muted}
             onToggleMute={() => prefs.getState().setMuted(!prefs.getState().settings.sound.muted)}
             onLeave={toMenu}
-            onFailed={(message) => {
+            onFailed={(failure) => {
               current.leave();
-              setRoute({ screen: 'error', message });
+              if (failure.reason === 'seat-lost') {
+                // The match carried on without me: back to the menu, saying so (spec #4 §5.2).
+                showToast(failure.message);
+                setRoute({ screen: 'menu' });
+              } else {
+                setRoute({ screen: 'error', message: failure.message });
+              }
             }}
             onFinished={(rankings) => setRoute({ screen: 'end', session: current, rankings })}
           />
@@ -148,6 +155,7 @@ export function App({ service, prefs, dev, test = null }: AppProps) {
       >
         {screen}
         {settingsOpen && <SettingsDialog prefs={prefs} onClose={() => setSettingsOpen(false)} />}
+        {route.screen !== 'match' && route.screen !== 'end' && <ToastHost />}
       </CrashBoundary>
       <RotateScreen />
     </div>

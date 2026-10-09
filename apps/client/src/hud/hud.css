@@ -762,3 +762,18 @@
 .pbubble-summary::before {
   content: '· ';
 }
+
+/* A player whose connection dropped (spec #4 §3.3): their seat plays on by timeouts. */
+.prow.away .portrait {
+  opacity: 0.55;
+}
+
+.prow-away {
+  padding: 3px 6px 2px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: max(10px, 1.5cqh);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

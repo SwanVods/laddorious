@@ -84,6 +84,15 @@ function finish(session: ScriptedSession) {
 }
 
 describe('App (spec #2 §4.1, §7.1)', () => {
+  it('goes back to the menu with a toast when my seat was lost (spec #4 §5.2)', () => {
+    const { made } = setup();
+    const session = startMatch(made);
+    session.fail('The match carried on without you', 'seat-lost');
+    expect(session.leave).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'PLAY' })).toBeTruthy();
+    expect(screen.getByText('The match carried on without you')).toBeTruthy();
+  });
+
   it('plays the menu loop on the menu and in matchmaking, and the match loop in a match (spec #3 §6)', () => {
     const engine = new AudioEngine(() => new Promise(() => {}));
     const music = vi.spyOn(engine, 'music');

@@ -105,6 +105,8 @@ export interface PlayerRow {
   rank: number;
   me: boolean;
   watched: boolean;
+  /** Their connection is down; their seat plays on by timeouts (spec #4 M2). */
+  away: boolean;
   status: RowStatus;
   statusText: string;
   dice: DiceRecord | null;
@@ -122,6 +124,8 @@ export interface RowsInput {
   seats: SeatInfo[];
   me: PlayerId;
   watch: PlayerId | null;
+  /** Away players (spec #4 §3.3). */
+  away?: readonly PlayerId[];
 }
 
 function statusOf(view: PlayerView, player: PlayerId, me: PlayerId): { status: RowStatus; text: string } {
@@ -146,7 +150,7 @@ function statusOf(view: PlayerView, player: PlayerId, me: PlayerId): { status: R
 }
 
 /** The rows of the player column, front-runner first (spec #2 §7.2). */
-export function playerRows({ view, presentation, record, seats, me, watch }: RowsInput): PlayerRow[] {
+export function playerRows({ view, presentation, record, seats, me, watch, away = [] }: RowsInput): PlayerRow[] {
   const names = new Map(seats.map((s) => [s.playerId, s.playerId === me ? 'You' : s.nickname]));
   const tileOf = (id: PlayerId) => presentation.positions[id] ?? 0;
   const picked = view.phase.kind === 'mysterySelect' ? view.phase.picked : null;
@@ -164,6 +168,7 @@ export function playerRows({ view, presentation, record, seats, me, watch }: Row
         rank: 1 + seats.filter((s) => tileOf(s.playerId) > tile).length,
         me: id === me,
         watched: id === watch,
+        away: away.includes(id),
         status,
         statusText: text,
         dice: record.dice[id] ?? null,

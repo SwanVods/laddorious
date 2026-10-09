@@ -17,6 +17,7 @@ import { feedLines } from '../hud/feed';
 import { nextRollMods, rejectionText } from '../hud/labels';
 import { cardPickModel, countdown, dockModel, faceOffModel, playerRows, stageFromLog, stageIndex } from '../hud/model';
 import { NameTags } from '../hud/NameTags';
+import { presenceToast } from '../hud/presence';
 import { PlayerColumn } from '../hud/PlayerColumn';
 import { roundRecord } from '../hud/record';
 import { StageBar } from '../hud/StageBar';
@@ -24,7 +25,7 @@ import { YourPiece } from '../hud/YourPiece';
 import { MatchScene } from '../scene/MatchScene';
 import type { QualitySetting } from '../scene/quality';
 import { createTagRegistry } from '../scene/tags';
-import type { MatchSession } from '../service/matchService';
+import type { MatchFailure, MatchSession } from '../service/matchService';
 import { Dialog } from '../ui/Dialog';
 import { Icon } from '../ui/Icon';
 import { ToastHost, showToast } from '../ui/toasts';
@@ -47,7 +48,7 @@ export interface MatchScreenProps {
   /** I left through the leave dialog; the session has been left. */
   onLeave: () => void;
   /** The host failed (spec #2 §8): the error screen takes over. */
-  onFailed: (message: string) => void;
+  onFailed: (failure: MatchFailure) => void;
   /** The victory has played: the end screen takes over. */
   onFinished: (rankings: Ranking[]) => void;
 }
@@ -65,6 +66,9 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   // The window I picked a card in: the pick closes at once, before the host's view catches up (polish spec §4.3).
   const [pickedWindow, setPickedWindow] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Who is away (spec #4 §3.3); the ref holds the last list so a change can be announced once.
+  const [away, setAway] = useState<PlayerId[]>([]);
+  const awayRef = useRef<PlayerId[]>([]);
   const sound = useSound();
   const handlersRef = useRef({ onFailed, onFinished });
   useLayoutEffect(() => {
@@ -79,7 +83,13 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
         sound.playNow('U4');
         showToast(rejectionText(e.code));
       }),
-      session.onFailed((e) => handlersRef.current.onFailed(e.message)),
+      session.onFailed((e) => handlersRef.current.onFailed(e)),
+      session.onPresence((next) => {
+        const text = presenceToast(awayRef.current, next, session.seats, session.me);
+        awayRef.current = next;
+        setAway(next);
+        if (text) showToast(text);
+      }),
     ];
     return () => {
       for (const off of offs) off();
@@ -118,7 +128,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   useHotkeys({ Escape: backToMine }, watch !== null && !leaving);
 
   const view = settled?.view;
-  const rows = view && presentation ? playerRows({ view, presentation, record, seats, me, watch }) : [];
+  const rows = view && presentation ? playerRows({ view, presentation, record, seats, me, watch, away }) : [];
   const mine = rows.find((r) => r.me);
   const faceOff = view ? faceOffModel({ beat, view, me }) : null;
   const cardPick = view && view.awaiting.windowId !== pickedWindow ? cardPickModel(view) : null;
@@ -161,6 +171,12 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
             </button>
           </div>
         )}
+        {away.includes(me) && (
+          <div className="reconnect-pill pill live" role="status" aria-live="polite">
+            <span className="spinner" />
+            Reconnecting…
+          </div>
+        )}
         {onToggleMute && (
           <button type="button" className="round-btn sound-btn live" aria-label={muted ? 'Turn sound on' : 'Mute sound'} data-sound="U3" data-sound-arg={muted ? 1 : 0} onClick={onToggleMute}>
             <Icon name={muted ? 'speaker-off' : 'speaker'} />
@@ -185,7 +201,11 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
         )}
         {leaving && (
           <Dialog title="Leave match?" onClose={() => setLeaving(false)}>
-            <p className="dialog-text">Leaving ends this match against the bots and takes you back to the menu.</p>
+            <p className="dialog-text">
+              {seats.some((s) => !s.bot && s.playerId !== me)
+                ? 'You go back to the menu. The match carries on without you.'
+                : 'Leaving ends this match against the bots and takes you back to the menu.'}
+            </p>
             <div className="dialog-actions">
               <button type="button" className="btn" onClick={() => setLeaving(false)}>
                 Keep playing
