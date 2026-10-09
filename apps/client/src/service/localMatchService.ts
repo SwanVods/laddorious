@@ -1,32 +1,16 @@
-import { SEAT_COLORS } from '../app/theme';
+import { buildSeats, randomHex } from '@laddorious/host';
 import type { HostWorker } from '../worker/protocol';
-import { PIECES, type FindOptions, type Matchmaking, type MatchmakingState, type MatchService, type Profile, type SeatInfo } from './matchService';
+import type { FindOptions, Matchmaking, MatchmakingState, MatchService, Profile, SeatInfo } from './matchService';
+import { colorSeats } from './seats';
 import { WorkerMatchSession } from './workerSession';
 
 /** How often `searching` reports the elapsed time, and the pause between bots taking seats (spec #2 §4.4). */
 export const SEARCH_TICK_MS = 250;
 export const BOT_SEAT_MS = 420;
 
-const BOT_NAMES = ['Mochi', 'Pip', 'Juno'] as const;
-
-/** Seat 0 is you; the bots take the pieces you didn't choose, in picker order. */
+/** Seat 0 is you; the bots take the pieces you didn't choose, in picker order (buildSeats). */
 function seatsFor(profile: Profile): SeatInfo[] {
-  const pieces = PIECES.filter((p) => p !== profile.piece);
-  return [
-    { playerId: 'p0', nickname: profile.nickname, piece: profile.piece, color: SEAT_COLORS.you, bot: false },
-    ...BOT_NAMES.map((nickname, i) => ({
-      playerId: `p${i + 1}`,
-      nickname,
-      piece: pieces[i]!,
-      color: SEAT_COLORS.bots[i]!,
-      bot: true,
-    })),
-  ];
-}
-
-/** 128 random bits as hex, from the platform's secure generator. */
-function randomSeed(): string {
-  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+  return colorSeats(buildSeats([profile]));
 }
 
 /** Matchmaking that never finds a real player; "Play with bots" fills the empty seats (spec #2 C7). */
@@ -91,7 +75,7 @@ class LocalMatchmaking implements Matchmaking {
         this.seatBot(seat + 1);
         return;
       }
-      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: this.boardSeed ?? randomSeed(), rngSeed: randomSeed() }, this.fast);
+      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: this.boardSeed ?? randomHex(), rngSeed: randomHex() }, this.fast);
       this.emit({ kind: 'found', session });
     }, BOT_SEAT_MS);
   }

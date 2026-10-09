@@ -1,11 +1,8 @@
 // Tangerine Dusk colours used from TypeScript (spec #2 §7.4). HUD colours are CSS custom
 // properties in theme.css; the board and the 3D world around it take their colours from here.
 
-/** Seat colours: coral for you, then the three bots in seat order. */
-export const SEAT_COLORS = {
-  you: '#ff5470',
-  bots: ['#3b82f6', '#a3e635', '#8b5cf6'],
-} as const;
+/** Seat colours in seat order: pink, blue, lime, purple (spec #4 M10). Offline, you're always seat 0. */
+export const SEAT_COLORS = ['#ff5470', '#3b82f6', '#a3e635', '#8b5cf6'] as const;
 
 /** The board (spec #2 §6.1): classic squares repeating diagonally, purple "?" squares with a rarity glyph, a gold last tile, dark slides. */
 export const BOARD_COLORS = {

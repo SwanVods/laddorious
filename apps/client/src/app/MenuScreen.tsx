@@ -79,7 +79,7 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
         </button>
 
         <div className="profile-chip live">
-          <Portrait piece={profile.piece} color={SEAT_COLORS.you} />
+          <Portrait piece={profile.piece} color={SEAT_COLORS[0]} />
           {editing ? (
             <input
               className="profile-input display"

@@ -182,10 +182,10 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
         <group ref={turntableRef} name="menu-turntable" position-y={TOP_Y}>
           <Slot
             name={`piece.${piece}` as SlotName}
-            color={SEAT_COLORS.you}
+            color={SEAT_COLORS[0]}
             fallback={
               <mesh name="menu-piece" geometry={geometry} castShadow={profile.shadows}>
-                <meshPhysicalMaterial color={SEAT_COLORS.you} clearcoat={0.9} clearcoatRoughness={0.15} roughness={0.3} />
+                <meshPhysicalMaterial color={SEAT_COLORS[0]} clearcoat={0.9} clearcoatRoughness={0.15} roughness={0.3} />
               </mesh>
             }
           />
