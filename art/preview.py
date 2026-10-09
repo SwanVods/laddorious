@@ -66,7 +66,9 @@ def main():
         distance = max(4.0, max(len(groups) * gap, tall * 2.5) * 1.6)
         camera = bpy.data.objects.new('PreviewCamera', bpy.data.cameras.new('PreviewCamera'))
         scene.collection.objects.link(camera)
-        camera.location = (distance * 0.5, -distance, low + tall * 0.5 + distance * 0.15)  # a three-quarter view
+        # A three-quarter view; flat board parts are seen from higher up, as the game's camera sees them.
+        rise = 0.15 if tall > 0.3 * gap else 0.75
+        camera.location = (distance * 0.5, -distance, low + tall * 0.5 + distance * rise)
         camera.rotation_euler = (Vector((0.0, 0.0, low + tall * 0.45)) - camera.location).to_track_quat('-Z', 'Y').to_euler()
         camera.data.clip_end = distance * 4
         scene.camera = camera
