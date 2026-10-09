@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MatchFailure, MatchUpdate } from '../src/service/matchService';
-import { BACKOFF_MS, OnlineMatchSession, REJOIN_MS } from '../src/service/onlineSession';
+import { BACKOFF_MS, OnlineMatchSession, REJOIN_MS, SERVER_SILENCE_MS } from '../src/service/onlineSession';
+import { PING_MS } from '../src/service/onlineSocket';
 import { SEAT_KEY, saveSeat, type SavedSeat } from '../src/service/savedSeat';
 import { SEATS, openingUpdate } from './support/fixtures';
 import { fakeSockets, memoryStore } from './support/fakeSocket';
@@ -113,6 +114,18 @@ describe('OnlineMatchSession (spec #4 §3.3)', () => {
     ws.reply(welcome(Date.now()));
     ws.reply({ type: 'presence', away: [] });
     expect(got.presence.at(-1)).toEqual([]);
+  });
+
+  it('notices a connection that went silent, even if the browser has not, and reconnects (spec #4 §5.2)', () => {
+    const { sockets, got } = start();
+    const ws = sockets.last();
+    ws.open();
+    ws.reply(welcome(0));
+    vi.advanceTimersByTime(SERVER_SILENCE_MS + PING_MS); // no pong ever comes back
+    expect(ws.closed).toBe(true);
+    expect(got.presence.at(-1)).toEqual(['p0']);
+    vi.advanceTimersByTime(BACKOFF_MS[0]);
+    expect(sockets.made).toHaveLength(2);
   });
 
   it('gives up after 60 s: the match carried on without me', () => {

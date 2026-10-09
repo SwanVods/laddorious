@@ -24,7 +24,7 @@
 | **Spec #4, the multiplayer server** (Cloudflare Workers + Durable Objects): quick match with real players, bots on request after your own 15 s, away seats that run on timeouts (no bot plays for them), rejoin within 60 s (also after a reload), clock sync, the unreachable-server fallback to offline bots, `pnpm serve` for Wi-Fi play and a deploy guide. **Done, merged to `main`.** Not deployed: deploying is the user's step | `docs/superpowers/specs/2026-10-09-multiplayer-server-design.md`, `docs/superpowers/plans/2026-10-09-multiplayer-server.md`, `apps/server/README.md` (the Wi-Fi and Cloudflare guide); commits `66d2908`, `a068693`, `6cd4220`, `9c20922`, `9def4c2`, `4381de9`, `948c5ea`, `0c9440a`, `65d4386`, `048a1ee`, `c519334`, `7ed8abd`, `a91dfa5`, `60de741` |
 | **Polish pass** (after the user played Spec #2): your die in the centre, thinner slide lanes that never cross, the card pick closing on pick, a 30 s card window, card bubbles, hands without duplicates, and a ranks reveal after the winner cam. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-08-polish-pass-design.md`, `docs/superpowers/plans/2026-10-08-polish-pass.md`; commits `e1d0e96`, `a8ffd37`, `2bfd0c3`, `9eb4742`, `b281271`, `03a392b`, `d17b21b`, `a59c244`, `8a230bb`; browser fix `fa8b190` |
 
-After Spec #4 the full suite is 76 test files, 596 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
+After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
 ## Next step: Spec #5, the Blender art pass
 
@@ -121,6 +121,13 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - Dev builds only: React StrictMode runs effects twice, so the card-fan (C1) and MATCH FOUND / countdown (Q2, Q3) sounds play twice in dev; production plays them once.
   - Music changes fade out then in (0.4 s + 0.8 s) rather than overlapping, since Tone has one transport.
   - The in-game sounds weren't listened to after integration (Claude can't hear); they're a straight port of the approved board, checked by tests, the e2e sound check and a dev-build run with no warnings. Worth a listen on a phone.
+- **Deferred Spec #4 minors** (from the self-review; not fixed):
+  - The lobby socket has no silence check: a half-open lobby socket freezes the overlay's clock, and its seat becomes an away seat once someone calls in bots.
+  - A duplicated browser tab copies `sessionStorage`, so the two tabs take the same seat from each other in a loop.
+  - A rejoin during the 10 s after the win can leave the "Reconnecting…" pill under the end screen (the server sends no presence after the win).
+  - A match that fails to start shows the server's raw error text in the unreachable overlay.
+  - A session that never connected at all ends with "The match carried on without you" after 60 s.
+  - The Away badge and the "Reconnecting…" pill were checked through the DOM only (the browser pane was hidden); worth a look on a phone.
 - **Spec #4 follow-ups the spec left out:** Durable Object hibernation with alarms if traffic grows, private rooms, saving matches across restarts (M8, M9, §11).
 - **Spec #5** (Blender art pass: `.glb` files for the asset slots in spec #2 §6.3). Not started.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), particles.

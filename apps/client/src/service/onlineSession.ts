@@ -10,6 +10,8 @@ import { colorSeats } from './seats';
 export const BACKOFF_MS = [500, 1000, 2000, 4000, 8000] as const;
 /** How long the game keeps trying: the server's rejoin window. */
 export const REJOIN_MS = 60_000;
+/** A match socket that hears nothing for this long is dead, even if the browser hasn't noticed: pongs come every 5 s. */
+export const SERVER_SILENCE_MS = 12_000;
 /** The clock offset is the median of this many pings (spec #4 §5.3). */
 const CLOCK_SAMPLES = 5;
 export const SEAT_LOST_MESSAGE = 'The match carried on without you';
@@ -44,6 +46,8 @@ export class OnlineMatchSession implements MatchSession {
   private attempt = 0;
   private retry: ReturnType<typeof setTimeout> | null = null;
   private pinger: ReturnType<typeof setInterval> | null = null;
+  /** When the server last said anything on this socket. */
+  private heardAt = 0;
   private samples: number[] = [];
   /** Server time minus my time. */
   private offset = 0;
@@ -100,11 +104,15 @@ export class OnlineMatchSession implements MatchSession {
     const ws = this.deps.open(`${this.deps.url}/match/${this.seat.matchId}`);
     this.ws = ws;
     ws.onopen = () => {
+      this.heardAt = Date.now();
       this.post({ type: 'join', token: this.seat.token });
       this.ping();
-      this.pinger = setInterval(() => this.ping(), PING_MS);
+      this.pinger = setInterval(() => this.tick(), PING_MS);
     };
-    ws.onmessage = (e) => this.receive(e.data);
+    ws.onmessage = (e) => {
+      this.heardAt = Date.now();
+      this.receive(e.data);
+    };
     ws.onclose = () => this.dropped();
     ws.onerror = () => {}; // a close follows
   }
@@ -166,6 +174,16 @@ export class OnlineMatchSession implements MatchSession {
       this.retry = null;
       if (!this.over) this.connect();
     }, delay);
+  }
+
+  /** Every 5 s: ping, unless the server has gone quiet, which means a half-open socket (a phone waking, a Wi-Fi switch). */
+  private tick(): void {
+    if (Date.now() - this.heardAt <= SERVER_SILENCE_MS) {
+      this.ping();
+      return;
+    }
+    if (this.ws) quietClose(this.ws);
+    this.dropped();
   }
 
   private ping(): void {
