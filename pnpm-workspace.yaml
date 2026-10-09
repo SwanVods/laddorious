@@ -3,5 +3,7 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+  sharp: true
+  workerd: true
 minimumReleaseAgeExclude:
   - eslint@10.12.0

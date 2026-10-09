@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/core && tsc -p packages/bots && tsc -p packages/host && tsc -p apps/sim && tsc -p apps/client && tsc -p apps/client/e2e",
+    "typecheck": "tsc -p packages/core && tsc -p packages/bots && tsc -p packages/host && tsc -p apps/sim && tsc -p apps/server && tsc -p apps/server/test && tsc -p apps/client && tsc -p apps/client/e2e",
     "lint": "eslint .",
     "sim": "tsx apps/sim/src/bin.ts",
     "dev": "pnpm --filter @laddorious/client dev",

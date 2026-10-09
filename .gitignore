@@ -9,3 +9,5 @@ sim-out/
 dist-e2e/
 test-results/
 playwright-report/
+.wrangler/
+dist-online-e2e/
