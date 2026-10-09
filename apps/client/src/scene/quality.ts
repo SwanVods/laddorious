@@ -7,12 +7,14 @@ export interface QualityProfile {
   dpr: number;
   antialias: boolean;
   clouds: number;
+  /** Glossy plastic keeps its clearcoat (spec #5 §3.1). */
+  clearcoat: boolean;
 }
 
 /** Spec #2 §6.4. */
 export const QUALITY: Record<QualityLevel, QualityProfile> = {
-  high: { shadows: true, dpr: 2, antialias: true, clouds: 8 },
-  low: { shadows: false, dpr: 1.5, antialias: false, clouds: 4 },
+  high: { shadows: true, dpr: 2, antialias: true, clouds: 8, clearcoat: true },
+  low: { shadows: false, dpr: 1.5, antialias: false, clouds: 4, clearcoat: false },
 };
 
 /** Auto starts Low on phones (a coarse pointer and a short screen side under 500 px) and High elsewhere. */

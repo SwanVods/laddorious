@@ -188,5 +188,6 @@ export function crownGeometry(): BufferGeometry {
   for (let x = 0; x <= radial; x += 2) pos.setY(x, pos.getY(x) + 0.26);
   pos.needsUpdate = true;
   g.computeVertexNormals();
+  g.translate(0, 0.21, 0); // stand on the base, like the Blender crown (spec #5 §5)
   return g;
 }

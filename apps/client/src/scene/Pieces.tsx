@@ -1,10 +1,10 @@
 import type { PlayerId } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three';
+import type { Group, Mesh, MeshBasicMaterial } from 'three';
 import { WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
-import { Slot, type SlotName } from '../assets/slots';
+import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { clamp01, easeOut, poseAt, projectileAt, withIdle, type Pose } from './motion';
@@ -26,12 +26,13 @@ interface PiecesProps {
   director: Director;
   seats: SeatInfo[];
   shadows: boolean;
+  clearcoat: boolean;
   reducedMotion: boolean;
   boardSize: number;
 }
 
 /** Every seat's piece, its die and its shield bubble, and card projectiles (spec #2 §5.1, §6.2). */
-export function Pieces({ director, seats, shadows, reducedMotion, boardSize }: PiecesProps) {
+export function Pieces({ director, seats, shadows, clearcoat, reducedMotion, boardSize }: PiecesProps) {
   const seatOf = useMemo(() => {
     const index = new Map(seats.map((s, i) => [s.playerId, i]));
     return (player: PlayerId) => index.get(player) ?? 0;
@@ -55,7 +56,7 @@ export function Pieces({ director, seats, shadows, reducedMotion, boardSize }: P
   return (
     <>
       {seats.map((seat, i) => (
-        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} reducedMotion={reducedMotion} boardSize={boardSize} rollsRef={rollsRef} />
+        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} reducedMotion={reducedMotion} boardSize={boardSize} rollsRef={rollsRef} />
       ))}
       <Projectile director={director} seatOf={seatOf} />
     </>
@@ -92,12 +93,12 @@ interface ActorProps extends Omit<PiecesProps, 'seats'> {
   rollsRef: RefObject<Map<PlayerId, Roll>>;
 }
 
-function Actor({ director, seat, index, shadows, reducedMotion, boardSize, rollsRef }: ActorProps) {
+function Actor({ director, seat, index, shadows, clearcoat, reducedMotion, boardSize, rollsRef }: ActorProps) {
   const bodyRef = useRef<Group>(null);
   const modelRef = useRef<Group>(null);
   const orbRef = useRef<Mesh>(null);
   const blobRef = useRef<Mesh>(null);
-  const dieRef = useRef<Mesh>(null);
+  const dieRef = useRef<Group>(null);
   const shieldRef = useRef<Mesh>(null);
   const geometry = useMemo(() => PIECE_GEOMETRY[seat.piece](), [seat.piece]);
   const dieShape = useMemo(() => dieGeometry(), []);
@@ -126,7 +127,7 @@ function Actor({ director, seat, index, shadows, reducedMotion, boardSize, rolls
       const [rx, ry, rz] = dieRotationFor(roll.face);
       dieRef.current.position.set(pose.position[0], pose.position[1] + DIE_LIFT + spin * 0.8, pose.position[2]);
       dieRef.current.rotation.set(rx + spin * Math.PI * 6, ry + spin * Math.PI * 4, rz + spin * Math.PI * 5);
-      (dieRef.current.material as MeshStandardMaterial).emissiveIntensity = roll.forced ? 0.35 + 0.35 * Math.sin(now / 90) : 0;
+      setEmissive(dieRef.current, roll.forced ? 0.35 + 0.35 * Math.sin(now / 90) : 0);
     }
     // The shield bubble shows while a shield effect is up and flares when it blocks.
     const shielded = state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false;
@@ -143,10 +144,12 @@ function Actor({ director, seat, index, shadows, reducedMotion, boardSize, rolls
         <group ref={modelRef} scale={PIECE_SCALE}>
           <Slot
             name={slot}
-            color={seat.color}
+            seat={seat.color}
+            clearcoat={clearcoat}
+            shadows={shadows}
             fallback={
               <mesh geometry={geometry} castShadow={shadows}>
-                <meshPhysicalMaterial color={seat.color} clearcoat={1} clearcoatRoughness={0.12} roughness={0.32} />
+                <meshPhysicalMaterial color={seat.color} clearcoat={clearcoat ? 1 : 0} clearcoatRoughness={0.12} roughness={0.32} />
               </mesh>
             }
           />
@@ -162,9 +165,19 @@ function Actor({ director, seat, index, shadows, reducedMotion, boardSize, rolls
           <meshBasicMaterial color={WORLD_COLORS.ink} transparent opacity={0.28} depthWrite={false} />
         </mesh>
       )}
-      <mesh ref={dieRef} geometry={dieShape} visible={false} castShadow={shadows}>
-        <meshStandardMaterial {...(atlas ? { map: atlas } : { color: WORLD_COLORS.die })} emissive={WORLD_COLORS.crown} emissiveIntensity={0} roughness={0.4} />
-      </mesh>
+      <group ref={dieRef} visible={false}>
+        <Slot
+          name="die"
+          clearcoat={clearcoat}
+          shadows={shadows}
+          emissive={WORLD_COLORS.crown}
+          fallback={
+            <mesh geometry={dieShape} castShadow={shadows}>
+              <meshStandardMaterial {...(atlas ? { map: atlas } : { color: WORLD_COLORS.die })} emissive={WORLD_COLORS.crown} emissiveIntensity={0} roughness={0.4} />
+            </mesh>
+          }
+        />
+      </group>
       <mesh ref={shieldRef} visible={false}>
         <sphereGeometry args={[0.95, 24, 16]} />
         <meshBasicMaterial color={WORLD_COLORS.shield} transparent opacity={0.22} depthWrite={false} />

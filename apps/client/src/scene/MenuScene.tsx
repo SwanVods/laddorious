@@ -4,7 +4,7 @@ import { Color, Fog, Object3D, Vector3, type Group, type InstancedMesh } from 't
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BOARD_COLORS, PODIUM_COLORS, SEAT_COLORS, WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY } from '../assets/models';
-import { Slot, type SlotName } from '../assets/slots';
+import { Slot, preloadModels, type SlotName } from '../assets/slots';
 import type { PieceId } from '../service/matchService';
 import type { Vec3 } from './layout';
 import { webglAvailable } from './MatchScene';
@@ -73,6 +73,8 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
   }, [scene, sky]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
+  // Load every model while the menu shows, so the match never pops in (spec #5 §6).
+  useEffect(() => preloadModels(), []);
   // A new piece pops in (spec #2 §6.2 bounce).
   useEffect(() => {
     swapAtRef.current = performance.now();
@@ -182,7 +184,9 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
         <group ref={turntableRef} name="menu-turntable" position-y={TOP_Y}>
           <Slot
             name={`piece.${piece}` as SlotName}
-            color={SEAT_COLORS[0]}
+            seat={SEAT_COLORS[0]}
+            clearcoat={profile.clearcoat}
+            shadows={profile.shadows}
             fallback={
               <mesh name="menu-piece" geometry={geometry} castShadow={profile.shadows}>
                 <meshPhysicalMaterial color={SEAT_COLORS[0]} clearcoat={0.9} clearcoatRoughness={0.15} roughness={0.3} />

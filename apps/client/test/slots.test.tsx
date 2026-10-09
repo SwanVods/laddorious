@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
-import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
+import { BoxGeometry, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SlotBoundary, tintSeat } from '../src/assets/slots';
+import { SlotBoundary, prepareModel, setEmissive, slotUrl } from '../src/assets/slots';
 
 afterEach(() => {
   cleanup();
@@ -13,7 +13,7 @@ function Broken(): never {
   throw new Error('404 knight.glb');
 }
 
-describe('asset slots (spec #2 §6.3)', () => {
+describe('asset slots (spec #2 §6.3, spec #5 §6)', () => {
   it('gives materials named Seat the seat colour, leaving shared materials and other parts alone', () => {
     const seat = new MeshStandardMaterial({ name: 'Seat', color: '#ffffff' });
     const trim = new MeshStandardMaterial({ name: 'Trim', color: '#000000' });
@@ -21,12 +21,48 @@ describe('asset slots (spec #2 §6.3)', () => {
     const hat = new Mesh(new BoxGeometry(), [seat, trim]);
     const root = new Group();
     root.add(body, hat);
-    tintSeat(root, '#ff5470');
+    prepareModel(root, { seat: '#ff5470' });
     expect((body.material as MeshStandardMaterial).color.getHexString()).toBe('ff5470');
     const [tinted, untouched] = hat.material as MeshStandardMaterial[];
     expect(tinted!.color.getHexString()).toBe('ff5470');
     expect(untouched).toBe(trim);
     expect(seat.color.getHexString()).toBe('ffffff');
+  });
+
+  it('drops the clearcoat on Low quality, on a copy, and keeps it on High', () => {
+    const glossy = new MeshPhysicalMaterial({ name: 'Seat', clearcoat: 0.9 });
+    const low = new Mesh(new BoxGeometry(), glossy);
+    prepareModel(low, { clearcoat: false });
+    expect((low.material as MeshPhysicalMaterial).clearcoat).toBe(0);
+    expect(glossy.clearcoat).toBe(0.9);
+    const high = new Mesh(new BoxGeometry(), glossy);
+    prepareModel(high, { clearcoat: true });
+    expect(high.material).toBe(glossy);
+  });
+
+  it('readies every lit material to flash, then flashes it', () => {
+    const body = new MeshStandardMaterial({ name: 'Body' });
+    const die = new Mesh(new BoxGeometry(), body);
+    prepareModel(die, { emissive: '#ffcc33' });
+    const ready = die.material as MeshStandardMaterial;
+    expect(ready.emissive.getHexString()).toBe('ffcc33');
+    expect(ready.emissiveIntensity).toBe(0);
+    setEmissive(die, 0.5);
+    expect(ready.emissiveIntensity).toBe(0.5);
+    expect(body.emissiveIntensity).toBe(1);
+  });
+
+  it('casts shadows only when asked', () => {
+    const lit = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+    prepareModel(lit, { shadows: true });
+    expect(lit.castShadow).toBe(true);
+    const flat = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+    prepareModel(flat, {});
+    expect(flat.castShadow).toBe(false);
+  });
+
+  it('keeps the code-built models in unit tests', () => {
+    expect(slotUrl('piece.knight')).toBeNull();
   });
 
   it('shows the built-in model and warns when a model fails to load', () => {

@@ -42,11 +42,14 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
     });
   });
 
-  it('gives the crown five raised points', () => {
-    const pos = crownGeometry().getAttribute('position');
+  it('stands the crown on its base, with five raised points', () => {
+    const g = crownGeometry();
+    g.computeBoundingBox();
+    expect(g.boundingBox!.min.y).toBeCloseTo(0, 3);
+    const pos = g.getAttribute('position');
     // Keyed in hundredths: the seam repeats the first vertex up to a float error.
     const points = new Set<string>();
-    for (let i = 0; i < pos.count; i++) if (pos.getY(i) > 0.4) points.add(`${Math.round(pos.getX(i) * 100)},${Math.round(pos.getZ(i) * 100)}`);
+    for (let i = 0; i < pos.count; i++) if (pos.getY(i) > 0.6) points.add(`${Math.round(pos.getX(i) * 100)},${Math.round(pos.getZ(i) * 100)}`);
     expect(points.size).toBe(5);
   });
 });

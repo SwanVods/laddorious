@@ -44,10 +44,10 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
   const profile = QUALITY[level];
   return (
     <>
-      <Surroundings shadows={profile.shadows} clouds={profile.clouds} />
+      <Surroundings shadows={profile.shadows} clouds={profile.clouds} clearcoat={profile.clearcoat} />
       <Board board={board} director={director} />
       <Jumps director={director} />
-      <Pieces director={director} seats={seats} shadows={profile.shadows} reducedMotion={reducedMotion} boardSize={board.size} />
+      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} reducedMotion={reducedMotion} boardSize={board.size} />
       <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} />
       {tags && <TagProjector director={director} seats={seats} boardSize={board.size} tags={tags} />}
     </>
