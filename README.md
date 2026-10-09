@@ -11,8 +11,9 @@ This repository holds:
 
 - **Spec #1:** the deterministic rules engine, the seeded board generator and a headless simulator ([design](docs/superpowers/specs/2026-10-03-game-core-design.md)).
 - **Spec #2:** the 3D web client, with the main menu, matchmaking, a full match against bots and the end screen ([design](docs/superpowers/specs/2026-10-04-3d-client-design.md)).
+- **Spec #3:** sound design. Every sound effect and both music loops are made in code with Tone.js, with mute and volume settings ([design](docs/superpowers/specs/2026-10-09-sound-design.md)).
 
-Sound design (Spec #3), the multiplayer server (Spec #4) and the art pass (Spec #5) come later.
+The multiplayer server (Spec #4) and the art pass (Spec #5) come later.
 
 ## Repository map
 

@@ -1,4 +1,4 @@
-# Handoff — 3D client (Spec #2) and the polish pass complete
+# Handoff — Spec #3 (sound design) complete
 
 **Written:** 2026-10-04, at the end of the session that designed Spec #2 and built its Phase 1; updated the same day at the end of Phases 2, 3 and 4, on 2026-10-08 at the end of Phases 5 and 6 (Spec #2 complete), and again after the polish pass the user asked for once they had played it.
 **For:** the next Claude Code session on this repo. Read this file, then the spec and the phase index, before doing anything.
@@ -20,20 +20,18 @@
 | **Phase 4** (the 3D scene): **done, merged to `main`** | `docs/superpowers/plans/2026-10-04-client-phase-4-3d-scene.md`; commits `3d9c934`, `91f41fe`, `2d00e81`, `69b79e2`, `7a7db45`, `625cd48`, `c607d59`, `809436b`, `5151604`; review fix `5ac6f4c` |
 | **Phase 5** (HUD and screens): **done, merged to `main`**. Built prototype-first, then a task-by-task replay verified it before the plan was generated | `docs/superpowers/plans/2026-10-08-client-phase-5-hud-screens.md`; commits `39c8487`, `09bb185`, `5983e50`, `6cb8fb7`, `1c0b7ca`, `6130160`, `635ed3e`, `6562f11`, `43806cc`, `98862b0`, `e71f77b`, `57283f2`, `1dc5e72`; browser fix `93beb3b` |
 | **Phase 6** (e2e tests, CI, READMEs): **done, merged to `main`** | `docs/superpowers/plans/2026-10-08-client-phase-6-e2e-ci-docs.md`; commits `23f829b`, `fbbb65d`, `dfcff79`, `ac85eac`, `70d1b38`; review fix `795cb06` |
+| **Spec #3, sound design** (Claude-made, in code with Tone.js 15.1.22): 42 effects and two music loops from the approved sound board, a pure beat-to-sound mapping, mute and volume settings, a quick mute button, Tone loaded as its own chunk after the first tap. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-09-sound-design.md`, `docs/superpowers/specs/2026-10-09-sound-board.html` (the approved sounds), `docs/superpowers/plans/2026-10-09-sound-design.md`; commits `cc1547d`, `f78ffa2`, `09f7dab`, `b3dcb2d`, `afadd08`, `750cc32`, `3dca2f0`, `fbfc419`, `e80ba07` |
 | **Polish pass** (after the user played Spec #2): your die in the centre, thinner slide lanes that never cross, the card pick closing on pick, a 30 s card window, card bubbles, hands without duplicates, and a ranks reveal after the winner cam. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-08-polish-pass-design.md`, `docs/superpowers/plans/2026-10-08-polish-pass.md`; commits `e1d0e96`, `a8ffd37`, `2bfd0c3`, `9eb4742`, `b281271`, `03a392b`, `d17b21b`, `a59c244`, `8a230bb`; browser fix `fa8b190` |
 
-After the polish pass and the column card bubbles the full suite is 60 test files, 455 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 4 minutes). 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
+After Spec #3 the full suite is 67 test files, 501 tests, all passing, and `pnpm e2e` passes 9 Playwright tests (3 tests × 3 projects, about 3–4 minutes); the whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-## Next step: Spec #3, sound design
+## Next step: Spec #4, the multiplayer server
 
-Spec #2 and the polish pass are complete, including the column card bubbles (2026-10-09, commit `8180d2a`).
+Spec #3 (sound design) is done and merged to `main` (2026-10-09). Next is **Spec #4, the multiplayer server**: matchmaking queue, rooms, and the engine on the server, behind the same `MatchService` the local worker implements. It's tested first on the user's own Wi-Fi (memory `multiplayer-lan-testing`). Start with superpowers:brainstorming.
 
-The user renumbered the roadmap on 2026-10-08: **sound design is Spec #3 and comes next**, before the server (memory `sound-design-spec3`). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
+After that: **Spec #5, the Blender art pass** (`.glb` models for the asset slots; spec #2 §6.3 and `apps/client/README.md` have the contract; memory `blender-for-3d-objects`), or **fixes for the deferred minors** under Open items.
 
-- **Spec #3, sound design (next):** the user wants Claude to do the sound design itself. Start with superpowers:brainstorming: what the game should sound like, how sounds are made (for example synthesized in code with Web Audio, or free CC0 libraries), music or not, and how sounds hook into the director's beats and the HUD.
-- **Spec #4, the multiplayer server:** matchmaking queue, rooms, and the engine on the server, behind the same `MatchService` the local worker implements. Tested first on the user's own Wi-Fi (memory `multiplayer-lan-testing`).
-- **Spec #5, the Blender art pass:** `.glb` models for the asset slots (spec #2 §6.3; `apps/client/README.md` has the contract). Use the Blender MCP (memory `blender-for-3d-objects`).
-- **Fixes for the deferred minors** under Open items.
+The roadmap was renumbered on 2026-10-08 (sound design became #3). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
 
 The user also plans other board styles and themes later, not only the 10×10 grid (memory `future-board-themes`); the layout and the lane shape already live in one module for that (`packages/core/src/board/layout.ts`).
 
@@ -112,7 +110,10 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - Rank badges live inside name tags, so a tag hidden behind the camera hides its badge too (rare; the reveal uses the overview).
   - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
   - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
-- **Spec #3** (sound design, done by Claude). Not started; next.
+- **Deferred Spec #3 minors** (from the self-review; not fixed):
+  - Dev builds only: React StrictMode runs effects twice, so the card-fan (C1) and MATCH FOUND / countdown (Q2, Q3) sounds play twice in dev; production plays them once.
+  - Music changes fade out then in (0.4 s + 0.8 s) rather than overlapping, since Tone has one transport.
+  - The in-game sounds weren't listened to after integration (Claude can't hear); they're a straight port of the approved board, checked by tests, the e2e sound check and a dev-build run with no warnings. Worth a listen on a phone.
 - **Spec #4** (multiplayer server: matchmaking queue, rooms, server-side engine) implements the online `MatchService`. Not started; tested first on the user's own network (memory `multiplayer-lan-testing`).
 - **Spec #5** (Blender art pass: `.glb` files for the asset slots in spec #2 §6.3). Not started.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), particles.

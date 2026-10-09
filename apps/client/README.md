@@ -105,6 +105,27 @@ Settings → Graphics quality:
 
 A match stays within 100 draw calls and 150,000 triangles: `test/scene.test.tsx` checks the scene graph, and the e2e tests check a live match.
 
+## Sound
+
+Every sound effect and both music loops are made in code with [Tone.js](https://tonejs.github.io/) 15.1.22. There are no audio files. Design: [Spec #3](../../docs/superpowers/specs/2026-10-09-sound-design.md).
+
+- **The sound board:** the approved sounds and loops are in [`2026-10-09-sound-board.html`](../../docs/superpowers/specs/2026-10-09-sound-board.html). Open it in a browser to hear any sound by its code (U1, D2, S1…). It's the reference for tuning.
+- **Where it lives** (`src/audio/`):
+  - `sounds.ts` holds the 42 recipes and their level trims;
+  - `music.ts` holds the menu and match loops;
+  - `cues.ts` decides what plays when, from the director's beats;
+  - `engine.ts` holds the buses, mute, music fades and ducking;
+  - `SoundProvider.tsx` handles the first-tap unlock, pausing while hidden and button clicks;
+  - `useMatchSound.ts` plays a match's sounds.
+- **Loading:** Tone loads as its own chunk (about 80 KB gzipped) on the first tap or key, which is also when phones allow audio. While muted, it isn't loaded at all.
+- **Settings:** Settings → Sound has a mute switch and Effects and Music sliders. In a match, the speaker button mutes at once. Your own moments play at full level and other players' 7 dB lower.
+- **Buttons:** every button clicks (U1). Give a button `data-sound="<code>"` (with `data-sound-arg` for a variant) to play another sound, or `data-sound="none"` for silence.
+
+To retune a sound:
+1. Change its recipe in `sounds.ts`, or its level in `TRIM`.
+2. Make the same change on the sound board, so the two stay in step (`test/sounds.test.ts` checks that the codes and trims match the board).
+3. Listen on the board.
+
 ## Asset slots and `.glb` models
 
 Every model sits in a named slot with a code-built default (`src/assets/slots.tsx`). The slots are `piece.knight`, `piece.pawn`, `piece.meeple`, `piece.dragon`, `die`, `pad`, `slide.vortex`, `crown` and `island`.
