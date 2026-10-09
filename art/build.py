@@ -37,7 +37,7 @@ def requested_ids():
 
 
 def main():
-    for name in ('lib.palette', 'lib.finish', 'lib.shapes', 'lib.export'):
+    for name in ('lib.palette', 'lib.finish', 'lib.shapes', 'lib.sculpt', 'lib.export'):
         fresh(name)
     export = sys.modules['lib.export']
     OUT.mkdir(parents=True, exist_ok=True)

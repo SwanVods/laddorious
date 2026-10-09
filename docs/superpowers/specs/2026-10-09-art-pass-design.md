@@ -41,6 +41,7 @@ Success means:
 | A7 | **Launch pads, their trails and the slides are made "more visible and incredible"** (§4.2): a modelled pad, an arched glossy trail with travelling lights, a pulsing landing target, a sunken spinning vortex with a glowing rim, a raised slide channel with flowing chevrons, and an exit collar. | User's request at design approval. |
 | A8 | **Shots from a headless browser.** The review screenshots come from a Playwright script, not the browser pane. | It works whatever is on screen; the pane is often hidden. |
 | A10 | **Seven pieces.** Three new ones join the four: a **rook** (a chess castle tower), a **top hat** (the classic board-game token) and a **rubber duck** (with the knight's little eyes). Each has its own silhouette. | User's request at spec approval ("add more 3 random piece shapes"); Claude picked the three. |
+| A11 | **Sculpted, not assembled.** Every model is one continuous surface with real curves where its parts meet, never shapes visibly stuck together: parts become distance fields that are united, blended at the joins, carved and rounded (`art/lib/sculpt.py`). Hard objects with clean flats (the die) are carved with exact booleans instead. Per-model triangle budgets below are targets, not hard limits; the whole-match budget (§1) is the one that holds. | User's direction at the Step 1 review ("i want it like the real curve and conjoined object"; "it's okay to beyond the limit"). |
 | A9 | **No mesh compression in this pass.** The models total about 2 MB, and a test keeps them under 2.5 MB. | Simpler loading with no decoder files; compression can come later if the size grows. |
 
 ## 3. The look
@@ -135,6 +136,7 @@ The props' exact places are settled in the step 3 review. They must stay out of 
 | `art/lib/shapes.py` | Revolve a profile, extrude a profile with bevels, rounded slabs, eyes (an eye plus its highlight) |
 | `art/lib/finish.py` | `glossy(name, colour)`, `satin(name, colour)`, `glow(name, colour, strength)` |
 | `art/lib/palette.py` | The Tangerine Dusk colours, mirrored from `theme.ts` |
+| `art/lib/sculpt.py` | `fuse()`: one sculpted surface from overlapping parts and cutters (SDF union, a blend at the joins, the cuts, rounded edges), thinned to a triangle target and painted by nearest part; `carve()`: exact-boolean holes in a hard solid |
 | `art/lib/export.py` | A fresh scene per model; it applies modifiers and transforms, triangulates for the count, and exports glTF binary (+Y up, no cameras or lights, materials on) |
 | `art/models/<slot>.py` | One script per model, with `build()` returning the model's root object |
 | `art/build.mjs` | `pnpm art [names…]`. It finds Blender (the `BLENDER` environment variable, then `blender` on the PATH) and runs `blender --background --factory-startup --python art/build.py -- [names…]`. |

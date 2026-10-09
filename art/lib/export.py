@@ -1,8 +1,11 @@
 """A clean scene per model, one merged mesh, and the glTF export (spec #5 §5)."""
+import math
+
 import bmesh
 import bpy
 
 SCENE = 'ArtBuild'
+SHARP_ANGLE = 35  # degrees: faces meeting at more than this shade with a crisp edge
 
 
 def begin():
@@ -101,6 +104,8 @@ def _canonical(name, bm):
     for polygon, (material_index, _, smooth) in zip(mesh.polygons, faces):
         polygon.material_index = material_index
         polygon.use_smooth = smooth
+    # Shade smooth, but keep real creases crisp (a carved pip's rim); sculpted surfaces have none this sharp.
+    mesh.set_sharp_from_angle(angle=math.radians(SHARP_ANGLE))
     mesh.update()
     return mesh
 

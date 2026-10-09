@@ -18,11 +18,11 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
   });
 
   it('names every rule a model breaks', () => {
-    const problems = contractProblems('knight', knight({ min: [-0.42, 0.1, -0.45], max: [0.42, 1.6, 0.45], triangles: 6000, materials: ['Body'], transformedNodes: ['knight'] }));
+    const problems = contractProblems('knight', knight({ min: [-0.42, 0.1, -0.45], max: [0.42, 1.6, 0.45], triangles: 12000, materials: ['Body'], transformedNodes: ['knight'] }));
     expect(problems).toEqual([
       'its base is at y = 0.100, not 0',
       'it is 1.50 tall; 0.85–1.3 expected',
-      'it has 6000 triangles; at most 5000',
+      'it has 12000 triangles; at most 10000',
       'it has no Seat material',
       'these nodes still carry a transform: knight',
     ]);

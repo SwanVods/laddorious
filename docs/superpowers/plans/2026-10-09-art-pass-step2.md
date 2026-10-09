@@ -27,6 +27,11 @@ Screenshots go to the user for the Step 2 review.
 - the `art/` build (`build.py`, `preview.py`, `lib/*`, `contract.ts`, `glb.ts`, `art/test/*`);
 - `apps/client/e2e/shots.spec.ts` and `pnpm shots`.
 
+**Amendment after the Step 1 review (2026-10-09).** The user asked for every model to be sculpted, not assembled ("the real curve and conjoined object"), and said per-model triangle limits are soft. So, for every model in this plan:
+- build it through `art/lib/sculpt.py`: `fuse()` for anything made of parts (solids, cutters, `blend`, `soften`, a triangle `target`), `carve()` for hard objects with flat faces. Fused parts use `sculpt.FINE` and `sculpt.FINE_TURN`. The scripts below are the part lists to feed it; their materials and sizes still hold;
+- treat the triangle limits in this plan's contract rules as guards, and raise one when a model needs it, while the busy-match budget (≤ 100 draw calls, ≤ 150,000 triangles) stays the hard check;
+- previews render without shadows (the preview renderer's shadow edge is ragged on curved models).
+
 ## Global Constraints
 
 - Everything in plan 1's Global Constraints holds:

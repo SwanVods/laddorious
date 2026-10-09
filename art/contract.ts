@@ -26,7 +26,9 @@ function oneOnTop(model: GlbSummary): string | null {
   return `the one-pip face is not on top (+Y): its pip is at ${mid.map((v) => (v + 0).toFixed(2)).join(', ')}`;
 }
 
-const piece = (slot: SlotName): ModelRule => ({ slot, origin: 'base', height: [0.85, 1.3], maxWidth: 1.1, maxTriangles: 5000, maxMaterials: 4, requiredMaterials: ['Seat'] });
+// Triangle limits are guards, not the spec's targets (the user, Step 1 review: sculpted, curved models may
+// go past them). What holds hard is the whole match: at most 150,000 triangles (spec #5 §1).
+const piece = (slot: SlotName): ModelRule => ({ slot, origin: 'base', height: [0.85, 1.3], maxWidth: 1.1, maxTriangles: 10000, maxMaterials: 4, requiredMaterials: ['Seat'] });
 
 export const MODELS: Record<string, ModelRule> = {
   knight: piece('piece.knight'),
@@ -36,8 +38,8 @@ export const MODELS: Record<string, ModelRule> = {
   rook: piece('piece.rook'),
   hat: piece('piece.hat'),
   duck: piece('piece.duck'),
-  die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 2000, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
-  crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 3000, maxMaterials: 3, requiredMaterials: [] },
+  die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 5000, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
+  crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 8000, maxMaterials: 3, requiredMaterials: [] },
 };
 
 /** All the model files together stay under this (spec #5 A9). */

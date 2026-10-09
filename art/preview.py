@@ -49,6 +49,7 @@ def main():
         scene.camera = camera
         sun = bpy.data.objects.new('PreviewSun', bpy.data.lights.new('PreviewSun', 'SUN'))
         sun.data.energy = 4.0
+        sun.data.use_shadow = False  # the preview renderer's shadow edge is ragged on curved models
         sun.rotation_euler = (math.radians(50), math.radians(-20), math.radians(-30))
         scene.collection.objects.link(sun)
         world = bpy.data.worlds.get('PreviewWorld') or bpy.data.worlds.new('PreviewWorld')

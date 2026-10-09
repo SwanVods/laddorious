@@ -1,10 +1,10 @@
-"""The die (spec #5 §4.1): a rounded cream die with dark sunken pips and a pink single pip.
+"""The die (spec #5 §4.1): a rounded cream die with real carved pips: dark dimples, and a pink one.
 
 Faces follow the game's map (DIE_FACES, dieRotationFor): in the game's axes +Y 1, -Y 6, +X 3,
 -X 4, +Z 2, -Z 5. Blender's +Z is the game's +Y and Blender's -Y the game's +Z, which gives the
 table below. Its middle is the origin: the die tumbles round it.
 """
-from lib import finish, palette, shapes
+from lib import finish, palette, sculpt, shapes
 
 SIZE = 0.5
 SPACING = 0.115  # keeps the outer pips on the flat of the face, clear of the rounded edge
@@ -31,13 +31,13 @@ def build():
     body = finish.glossy('Body', palette.CREAM)
     pip = finish.glossy('Pip', palette.INK)
     one = finish.glossy('One', palette.SEAT)
-    parts = [shapes.rounded_box('die', (SIZE, SIZE, SIZE), 0.09, body, segments=4)]
+    die = shapes.rounded_box('die', (SIZE, SIZE, SIZE), 0.09, body, segments=5)
+    pips = []
     for value, (normal, across, up) in FACES.items():
         for i, (a, b) in enumerate(PIPS[value]):
-            # A flat round pip set just into the face, so its whole disc shows from any side.
-            centre = tuple(normal[k] * (SIZE / 2 - 0.006) + across[k] * a * SPACING + up[k] * b * SPACING for k in range(3))
-            flat = tuple(1 - abs(normal[k]) * 0.65 for k in range(3))
-            radius = 0.07 if value == 1 else 0.045
-            # Twelve sides, so a pip reads round, not as a diamond.
-            parts.append(shapes.sphere(f'pip{value}{i}', radius, one if value == 1 else pip, location=centre, scale=flat, segments=12, rings=4))
-    return parts
+            # A ball sunk partway into the face carves a round dimple with a crisp rim, as on real dice.
+            radius, out = (0.07, 0.045) if value == 1 else (0.05, 0.03)
+            centre = tuple(normal[k] * (SIZE / 2 + out) + across[k] * a * SPACING + up[k] * b * SPACING for k in range(3))
+            colour = one if value == 1 else pip
+            pips.append((shapes.sphere(f'pip{value}{i}', radius, colour, location=centre, segments=24, rings=12), colour))
+    return [sculpt.carve('die', (die, body), pips)]
