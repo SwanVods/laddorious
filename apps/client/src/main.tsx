@@ -19,7 +19,7 @@ import './app/screens.css';
 const sound = new AudioEngine(() => import('tone'));
 
 // e2e builds only (vite build --mode e2e): fast matches and window.__laddoriousTest (spec #2 §9.3).
-const test = import.meta.env.MODE === 'e2e' ? testHooks() : null;
+const test = import.meta.env.MODE === 'e2e' ? testHooks(undefined, () => sound.stats()) : null;
 const service = new LocalMatchService(
   () => new Worker(new URL('./worker/host.worker.ts', import.meta.url), { type: 'module' }),
   { fast: test !== null },

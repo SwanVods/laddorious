@@ -21,4 +21,10 @@ describe('the e2e test hook (spec #2 §9.3)', () => {
     renderStats.setState({ calls: 42 });
     expect(window.__laddoriousTest!.drawCalls()).toBe(42);
   });
+
+  it("reports the sound engine's stats for the e2e sound check (spec #3 §7)", () => {
+    const hooks = testHooks('e2e', () => ({ started: true, played: 3, errors: 0 }))!;
+    expect(hooks.soundStats()).toEqual({ started: true, played: 3, errors: 0 });
+    expect(testHooks('e2e')!.soundStats()).toEqual({ started: false, played: 0, errors: 0 });
+  });
 });

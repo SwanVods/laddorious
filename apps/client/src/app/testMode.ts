@@ -1,3 +1,4 @@
+import type { SoundStats } from '../audio/engine';
 import { renderStats } from '../scene/stats';
 
 /** What e2e builds expose to Playwright (spec #2 §9.3). */
@@ -8,6 +9,8 @@ export interface TestHooks {
   timeScale: number;
   /** The draw calls of the last frames, for the ≤ 100 check (§6.4). */
   drawCalls(): number;
+  /** Whether sound started, how many sounds played and how many failed (spec #3 §7). */
+  soundStats(): SoundStats;
 }
 
 declare global {
@@ -22,9 +25,9 @@ export const TEST_TIME_SCALE = 0.05;
  * The test hook, only in builds made with `--mode e2e`: Vite replaces import.meta.env.MODE at
  * build time, so every other build drops it. Null elsewhere.
  */
-export function testHooks(mode: string = import.meta.env.MODE): TestHooks | null {
+export function testHooks(mode: string = import.meta.env.MODE, soundStats: () => SoundStats = () => ({ started: false, played: 0, errors: 0 })): TestHooks | null {
   if (mode !== 'e2e') return null;
-  const hooks: TestHooks = { fast: true, timeScale: TEST_TIME_SCALE, drawCalls: () => renderStats.getState().calls };
+  const hooks: TestHooks = { fast: true, timeScale: TEST_TIME_SCALE, drawCalls: () => renderStats.getState().calls, soundStats };
   window.__laddoriousTest = hooks;
   return hooks;
 }

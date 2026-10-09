@@ -198,7 +198,7 @@ describe('App (spec #2 §4.1, §7.1)', () => {
       },
     };
     const prefs = createPrefsStore(null, { prefersReducedMotion: false, random: () => 0.5 });
-    render(<App service={service} prefs={prefs} dev={false} test={{ fast: true, timeScale: 0.05, drawCalls: () => 0 }} />);
+    render(<App service={service} prefs={prefs} dev={false} test={{ fast: true, timeScale: 0.05, drawCalls: () => 0, soundStats: () => ({ started: false, played: 0, errors: 0 }) }} />);
     startMatch(made);
     expect(screen.getByText(/draw calls/)).toBeTruthy();
   });

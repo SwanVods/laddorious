@@ -14,6 +14,11 @@ async function startMatch(page: Page) {
 test('plays a whole match against the bots, then Play again goes back to matchmaking (spec #2 §9.3)', async ({ page }) => {
   await startMatch(page);
   await expect(page.getByRole('heading', { name: /wins?!$/ })).toBeVisible({ timeout: 150_000 });
+  // Sound ran through the whole match without a single error (spec #3 §7).
+  const sound = await page.evaluate(() => window.__laddoriousTest!.soundStats());
+  expect(sound.started).toBe(true);
+  expect(sound.played).toBeGreaterThan(0);
+  expect(sound.errors).toBe(0);
   await page.getByRole('button', { name: 'Play again' }).click();
   await expect(page.getByRole('dialog', { name: 'FINDING PLAYERS' })).toBeVisible();
 });
