@@ -26,6 +26,15 @@ function oneOnTop(model: GlbSummary): string | null {
   return `the one-pip face is not on top (+Y): its pip is at ${mid.map((v) => (v + 0).toFixed(2)).join(', ')}`;
 }
 
+/** A pad's arrow points forward (+Z), the way the game turns pads toward their landing: its tip reaches further forward than its tail reaches back. */
+function arrowForward(model: GlbSummary): string | null {
+  const arrow = model.byMaterial.Arrow;
+  if (!arrow) return null; // requiredMaterials reports a missing Arrow
+  const forward = arrow.max[2]!;
+  const back = -arrow.min[2]!;
+  return forward > back + 0.05 ? null : `the arrow does not point forward (+Z): it reaches ${forward.toFixed(2)} forward and ${back.toFixed(2)} back`;
+}
+
 // Triangle limits are guards, not the spec's targets (the user, Step 1 review: sculpted, curved models may
 // go past them). What holds hard is the whole match: at most 150,000 triangles (spec #5 §1).
 const piece = (slot: SlotName): ModelRule => ({ slot, origin: 'base', height: [0.85, 1.3], maxWidth: 1.1, maxTriangles: 10000, maxMaterials: 4, requiredMaterials: ['Seat'] });
@@ -40,6 +49,12 @@ export const MODELS: Record<string, ModelRule> = {
   duck: piece('piece.duck'),
   die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 5000, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
   crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 8000, maxMaterials: 3, requiredMaterials: [] },
+  // The board (spec #5 §4.2): parts stand on the tile top; instancing draws each once per material.
+  tile: { slot: 'tile', origin: 'base', height: [0.21, 0.23], maxWidth: 1.53, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  pad: { slot: 'pad', origin: 'base', height: [0.12, 0.26], maxWidth: 1.25, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Arrow'], checks: [arrowForward] },
+  target: { slot: 'pad.target', origin: 'base', height: [0.03, 0.12], maxWidth: 1.3, maxTriangles: 800, maxMaterials: 2, requiredMaterials: ['Glow'] },
+  vortex: { slot: 'slide.vortex', origin: 'base', height: [0.05, 0.16], maxWidth: 0.72, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Glow'] },
+  exit: { slot: 'slide.exit', origin: 'base', height: [0.04, 0.12], maxWidth: 0.72, maxTriangles: 800, maxMaterials: 1, requiredMaterials: [] },
 };
 
 /** All the model files together stay under this (spec #5 A9). */

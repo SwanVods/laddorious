@@ -32,6 +32,24 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     expect(contractProblems('teapot', knight())).toEqual(['teapot has no rule in art/contract.ts']);
   });
 
+  it("checks a pad's arrow points forward (+Z), the way the game turns it toward the landing", () => {
+    const pad = (arrowZ: [number, number]): GlbSummary => ({
+      min: [-0.57, 0, -0.57],
+      max: [0.57, 0.2, 0.57],
+      triangles: 900,
+      materials: ['Pad', 'Arrow'],
+      byMaterial: { Arrow: { min: [-0.26, 0.17, arrowZ[0]], max: [0.26, 0.2, arrowZ[1]] } },
+      transformedNodes: [],
+    });
+    expect(contractProblems('pad', pad([-0.21, 0.37]))).toEqual([]);
+    expect(contractProblems('pad', pad([-0.37, 0.21]))).toEqual(['the arrow does not point forward (+Z): it reaches 0.21 forward and 0.37 back']);
+  });
+
+  it('keeps a tile to its one Tint material, so instancing can paint it', () => {
+    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.22, 0.76], triangles: 120, materials: ['Tint', 'Edge'], byMaterial: {}, transformedNodes: [] };
+    expect(contractProblems('tile', tile)).toEqual(['it has 2 materials; at most 1']);
+  });
+
   it('checks the die keeps its middle at the origin and its one-pip face up (+Y)', () => {
     const die = (oneAt: [number, number, number]): GlbSummary => ({
       min: [-0.25, -0.25, -0.25],

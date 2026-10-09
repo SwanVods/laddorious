@@ -8,6 +8,9 @@ WHITE = '#ffffff'
 GOLD = '#ffcc33'
 TANGERINE = '#ffa22e'
 PODIUM_TOP = '#fff3e3'
+MINT = '#5ff0c5'   # launch pads and their trails
+PINK = '#ff5470'   # slide rims and collars
+SLIDE = '#2a2140'  # inside a slide's vortex
 
 
 def linear(colour):

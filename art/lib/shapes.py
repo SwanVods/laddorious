@@ -8,7 +8,7 @@ import math
 
 import bmesh
 import bpy
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 
 def _object(name, bm, material, smooth=True):
@@ -88,6 +88,24 @@ def loft(name, rows, material, smooth=True):
     return _object(name, bm, material, smooth)
 
 
+def tube(name, points, radius, material, sides=6, smooth=True):
+    """A round tube along a path of (x, y, z) points, its ends open: a spring's coil, a spiral ridge.
+    Open ends can't be fused (sculpt.fuse needs closed parts); fuse a chain of spheres instead."""
+    bm = bmesh.new()
+    rings = []
+    for i, point in enumerate(points):
+        ahead = (Vector(points[min(i + 1, len(points) - 1)]) - Vector(points[max(i - 1, 0)])).normalized()
+        across = ahead.cross(Vector((0.0, 0.0, 1.0)) if abs(ahead.z) < 0.9 else Vector((1.0, 0.0, 0.0))).normalized()
+        up = across.cross(ahead)
+        centre = Vector(point)
+        rings.append([bm.verts.new(centre + (across * math.cos(a) + up * math.sin(a)) * radius) for a in (k * math.tau / sides for k in range(sides))])
+    for a, b in zip(rings, rings[1:]):
+        for k in range(sides):
+            bm.faces.new((a[k], a[(k + 1) % sides], b[(k + 1) % sides], b[k]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return _object(name, bm, material, smooth)
+
+
 def _lerp(a, b, t):
     return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
 
@@ -123,12 +141,14 @@ def _bezier(commands):
     return points
 
 
-def outline(name, commands, depth, material, bevel=0.045, view='side', offset=(0.0, 0.0), resolution=12):
+def outline(name, commands, depth, material, bevel=0.045, view='side', offset=(0.0, 0.0), resolution=12, lift=0.0):
     """Extrude a closed outline drawn with M/L/Q commands (x across, y up) to `depth` in all, its
     edges rounded by `bevel` (the rounding grows the outline by `bevel` all round).
 
     view='side': x is the model's forward (-Y) and the outline is extruded across X (a knight's head).
     view='front': x is the model's right (+X) and the outline is extruded along Y (a meeple).
+    view='top': the outline lies flat, its base at z = lift; the drawing's x is the model's left to right
+    and its up (+y) is the model's forward (-Y). It's turned half round, a rotation, not a mirror.
     `offset` moves the outline by (x, y) in its own drawing.
     """
     curve = bpy.data.curves.new(name, 'CURVE')
@@ -155,7 +175,12 @@ def outline(name, commands, depth, material, bevel=0.045, view='side', offset=(0
     if view == 'side':
         obj.rotation_euler = (math.pi / 2, 0.0, -math.pi / 2)
         obj.location = (0.0, -dx, dy)
-    else:
+    elif view == 'front':
         obj.rotation_euler = (math.pi / 2, 0.0, 0.0)
         obj.location = (dx, 0.0, dy)
+    elif view == 'top':
+        obj.rotation_euler = (0.0, 0.0, math.pi)
+        obj.location = (-dx, -dy, lift + depth / 2)
+    else:
+        raise ValueError(f'unknown view {view!r}')
     return obj

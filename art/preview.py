@@ -13,7 +13,6 @@ from mathutils import Vector
 ART = Path(__file__).resolve().parent
 MODELS = ART.parent / 'apps' / 'client' / 'public' / 'models'
 SCENE = 'ArtPreview'
-GAP = 1.4
 
 
 def arguments():
@@ -23,6 +22,12 @@ def arguments():
         rest = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
         path, ids = rest[0], rest[1:]
     return Path(path), list(ids)
+
+
+def extent(roots):
+    """The world bounds of imported objects and everything under them: (lowest corner, highest corner)."""
+    corners = [obj.matrix_world @ Vector(c) for root in roots for obj in (root, *root.children_recursive) if obj.type == 'MESH' for c in obj.bound_box]
+    return (Vector([min(c[k] for c in corners) for k in range(3)]), Vector([max(c[k] for c in corners) for k in range(3)]))
 
 
 def main():
@@ -35,17 +40,26 @@ def main():
     try:
         for obj in list(scene.objects):
             bpy.data.objects.remove(obj, do_unlink=True)
-        for i, model_id in enumerate(ids):
+        groups = []
+        for model_id in ids:
             before = set(scene.objects)
             bpy.ops.import_scene.gltf(filepath=str(MODELS / f'{model_id}.glb'))
-            for obj in set(scene.objects) - before:
-                if obj.parent is None:
-                    obj.location.x += (i - (len(ids) - 1) / 2) * GAP
+            groups.append([obj for obj in set(scene.objects) - before if obj.parent is None])
+        bpy.context.view_layer.update()
+        sizes = [extent(roots) for roots in groups]
+        gap = max(hi.x - lo.x for lo, hi in sizes) + 0.4
+        for i, (roots, (lo, hi)) in enumerate(zip(groups, sizes)):
+            shift = (i - (len(groups) - 1) / 2) * gap - (lo.x + hi.x) / 2
+            for obj in roots:
+                obj.location.x += shift
+        low = min(lo.z for lo, _ in sizes)
+        tall = max(hi.z - lo.z for lo, hi in sizes)
+        distance = max(4.0, max(len(groups) * gap, tall * 2.5) * 1.6)
         camera = bpy.data.objects.new('PreviewCamera', bpy.data.cameras.new('PreviewCamera'))
         scene.collection.objects.link(camera)
-        distance = max(4.0, len(ids) * GAP * 1.6)
-        camera.location = (distance * 0.5, -distance, 2.0)  # a three-quarter view: faces and profiles both show
-        camera.rotation_euler = (Vector((0.0, 0.0, 0.55)) - camera.location).to_track_quat('-Z', 'Y').to_euler()
+        camera.location = (distance * 0.5, -distance, low + tall * 0.5 + distance * 0.15)  # a three-quarter view
+        camera.rotation_euler = (Vector((0.0, 0.0, low + tall * 0.45)) - camera.location).to_track_quat('-Z', 'Y').to_euler()
+        camera.data.clip_end = distance * 4
         scene.camera = camera
         sun = bpy.data.objects.new('PreviewSun', bpy.data.lights.new('PreviewSun', 'SUN'))
         sun.data.energy = 4.0
