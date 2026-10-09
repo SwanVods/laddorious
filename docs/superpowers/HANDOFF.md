@@ -22,18 +22,19 @@
 | **Phase 6** (e2e tests, CI, READMEs): **done, merged to `main`** | `docs/superpowers/plans/2026-10-08-client-phase-6-e2e-ci-docs.md`; commits `23f829b`, `fbbb65d`, `dfcff79`, `ac85eac`, `70d1b38`; review fix `795cb06` |
 | **Spec #3, sound design** (Claude-made, in code with Tone.js 15.1.22): 42 effects and two music loops from the approved sound board, a pure beat-to-sound mapping, mute and volume settings, a quick mute button, Tone loaded as its own chunk after the first tap. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-09-sound-design.md`, `docs/superpowers/specs/2026-10-09-sound-board.html` (the approved sounds), `docs/superpowers/plans/2026-10-09-sound-design.md`; commits `cc1547d`, `f78ffa2`, `09f7dab`, `b3dcb2d`, `afadd08`, `750cc32`, `3dca2f0`, `fbfc419`, `e80ba07` |
 | **Spec #4, the multiplayer server** (Cloudflare Workers + Durable Objects): quick match with real players, bots on request after your own 15 s, away seats that run on timeouts (no bot plays for them), rejoin within 60 s (also after a reload), clock sync, the unreachable-server fallback to offline bots, `pnpm serve` for Wi-Fi play and a deploy guide. **Done, merged to `main`.** Not deployed: deploying is the user's step | `docs/superpowers/specs/2026-10-09-multiplayer-server-design.md`, `docs/superpowers/plans/2026-10-09-multiplayer-server.md`, `apps/server/README.md` (the Wi-Fi and Cloudflare guide); commits `66d2908`, `a068693`, `6cd4220`, `9c20922`, `9def4c2`, `4381de9`, `948c5ea`, `0c9440a`, `65d4386`, `048a1ee`, `c519334`, `7ed8abd`, `a91dfa5`, `60de741` |
+| **Spec #5, the art pass, Step 1 of 3** (the Blender build and the pieces): `art/` builds models headless with `pnpm art`; seven pieces (the rook, top hat and rubber duck are new; protocol 2), the die and the crown; a contract test per model file; `pnpm shots`. **Done on branch `art/spec-5`, awaiting the user's review** | `docs/superpowers/specs/2026-10-09-art-pass-design.md`, `docs/superpowers/plans/2026-10-09-art-pass-step1.md`, `art/README.md` |
 | **Polish pass** (after the user played Spec #2): your die in the centre, thinner slide lanes that never cross, the card pick closing on pick, a 30 s card window, card bubbles, hands without duplicates, and a ranks reveal after the winner cam. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-08-polish-pass-design.md`, `docs/superpowers/plans/2026-10-08-polish-pass.md`; commits `e1d0e96`, `a8ffd37`, `2bfd0c3`, `9eb4742`, `b281271`, `03a392b`, `d17b21b`, `a59c244`, `8a230bb`; browser fix `fa8b190` |
 
 After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-## Next step: Spec #5, the Blender art pass
+## Next step: the user reviews Spec #5 Step 1
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
 - **Try it on the Wi-Fi:** `pnpm serve` builds the game for the local server, starts `wrangler dev` on port 8787 on every network interface, and prints the addresses to open on phones (memory `multiplayer-lan-testing`).
 - **Deploy to Cloudflare:** follow `apps/server/README.md` (`wrangler login`, then `pnpm deploy:cloudflare`). Claude never deploys or touches the Cloudflare account (memory `hosting-cloudflare`).
 
-Next is **Spec #5, the Blender art pass** (`.glb` models for the asset slots; spec #2 §6.3 and `apps/client/README.md` have the contract; memory `blender-for-3d-objects`), or **fixes for the deferred minors** under Open items, or whatever the user finds while playing online.
+**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) is done and awaits the user's review of its screenshots. After the review, its changes are made, the branch is merged to `main` locally, and plan 2 (`docs/superpowers/plans/2026-10-09-art-pass-step2.md`, the board) runs; then plan 3 (the world). After Spec #5: **fixes for the deferred minors** under Open items, or whatever the user finds while playing online.
 
 The roadmap was renumbered on 2026-10-08 (sound design became #3). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
 
@@ -95,12 +96,12 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 
 ## Open items
 
-- **Blender MCP:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`), for Spec #5 (the art pass). It used to time out on connect (in Blender: Disconnect, then Connect, in the MCP panel); it was reachable on 2026-10-08. Check it with `get_addon_status`.
+- **Blender:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`). On 2026-10-09 a build run inside the user's open Blender (through the MCP link) crashed it; the bug is fixed (`art/lib/export.py` kept the scene graph's copies of materials), and since then every build and preview runs headless (`pnpm art`, `blender --background --factory-startup --python art/preview.py -- out.png ids`), never in the user's Blender.
 - **Deferred Phase 4 minors** (from the self-review; not fixed):
   - The crown is placed at tile 100 directly (`src/scene/Surroundings.tsx`), not at the board's last tile.
   - `webglAvailable()` (`src/scene/MatchScene.tsx`) never releases its probe context.
   - Textures and geometries built with `useMemo` in the scene (chevrons, swirl, die atlas, sky, piece and die geometries) are not disposed on unmount; only the board overlay and slide ribbons are.
-  - Only six of the nine §6.3 slots are wired: `die`, `pad` and `slide.vortex` wait for Spec #5.
+  - `pad` and `slide.vortex` are still drawn directly; Spec #5 Step 2 moves them onto slots (the die moved in Step 1).
 - **Deferred Phase 5 minors** (from the self-review; not fixed):
   - Dev builds only (React StrictMode): MatchScreen's subscription effect disposes the director in its cleanup, so updates held before the screen mounted go to the first, discarded subscription. Today only the opening update can be held, and it has no beats, so nothing is lost.
   - On a 390 px tall screen the menu's piece picker covers part of the podium's name plate.
@@ -128,6 +129,12 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - A match that fails to start shows the server's raw error text in the unreachable overlay.
   - A session that never connected at all ends with "The match carried on without you" after 60 s.
   - The Away badge and the "Reconnecting…" pill were checked through the DOM only (the browser pane was hidden); worth a look on a phone.
+- **Deferred Spec #5 Step 1 minors** (from the self-review; not fixed):
+  - The dragon's cream horns can read dark from some angles.
+  - The meeple is a flat cut-out, as in the mockup: seen edge-on (often, for bots' pieces from the overview) it reads as a thin slab.
+  - `pnpm shots`' match close-up comes from the fast e2e build, so it catches a late round, often under a banner.
+  - A match entered without the menu (a resumed online seat) hasn't preloaded the models, so they pop in from the stand-ins once.
+  - The online e2e tests don't check for slot warnings; the offline whole-match test does.
 - **Spec #4 follow-ups the spec left out:** Durable Object hibernation with alarms if traffic grows, private rooms, saving matches across restarts (M8, M9, §11).
 - **Spec #5** (Blender art pass): design approved (`docs/superpowers/specs/2026-10-09-art-pass-design.md`). Three plans are written, one per step, awaiting the user's review before any runs: `docs/superpowers/plans/2026-10-09-art-pass-step1.md` (pipeline and pieces), `-step2.md` (the board), `-step3.md` (the world). Each step ends with the user's review in the game.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), particles.

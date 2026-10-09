@@ -46,7 +46,7 @@ Online builds keep the offline bots as a fallback. If the server can't be reache
 | `worker/` | The Web Worker host: the engine, the timers and the bots |
 | `director/` | Turns engine events into animation beats on a presentation state |
 | `scene/` | React Three Fiber: the board, pieces, slides, launch pads, camera, menu podium, name tags |
-| `assets/` | Asset slots: the code-built models and optional `.glb` overrides |
+| `assets/` | Asset slots: the code-built stand-ins, the Blender model list (`slotFiles.ts`) and their loading |
 | `hud/` | The match HUD: a pure model (`model.ts`, `labels.ts`, `record.ts`, `feed.ts`) and its components |
 | `ui/` | Shared pieces: icons, portraits, dialogs, toasts, the rotate screen |
 
@@ -140,24 +140,18 @@ To retune a sound:
 2. Make the same change on the sound board, so the two stay in step (`test/sounds.test.ts` checks that the codes and trims match the board).
 3. Listen on the board.
 
-## Asset slots and `.glb` models
+## Asset slots and Blender models
 
-Every model sits in a named slot with a code-built default (`src/assets/slots.tsx`). The slots are `piece.knight`, `piece.pawn`, `piece.meeple`, `piece.dragon`, `die`, `pad`, `slide.vortex`, `crown` and `island`.
+Every model sits in a named slot with a code-built stand-in (`src/assets/slots.tsx`, `src/assets/models.ts`). The Blender models (Spec #5) are built from scripts in [`art/`](../../art/README.md) into `public/models/<id>.glb`.
 
-A `.glb` for a slot must follow this contract:
-
-- 1 tile = 1.6 units; the origin is at the base centre (the feet); forward is +Z; Y is up.
-- Pieces stay under 5,000 triangles, with PBR materials.
-- A material named `Seat` takes the player's colour.
-
-To drop one in:
-
-1. Put the file in `apps/client/public/models/`, for example `public/models/knight.glb`.
-2. In `src/assets/slots.tsx`, add it to `SLOT_URLS`: `'piece.knight': '/models/knight.glb'`.
-
-It loads with drei's `useGLTF` inside Suspense. If it fails to load, the built-in model stays and a warning appears in the console.
-
-Today the four pieces, `crown` and `island` are wired through `<Slot>`. `die`, `pad` and `slide.vortex` are declared but drawn directly, and the Spec #5 art pass will wire them.
+- **`src/assets/slotFiles.ts`** lists which slots have a model, and its id.
+- **Loading:** a listed slot loads its model with drei's `useGLTF`, and the menu preloads them all. While a model loads, or if it fails, the stand-in shows and a warning is logged once.
+- **`prepareModel`** readies each model's materials:
+  - `Seat` takes the player's colour;
+  - on Low quality, glossy plastic drops its clearcoat;
+  - the die's materials can flash.
+- **Unit tests** (Vitest) always use the stand-ins. The art tests (`art/test`) check every model file against its contract instead: size, origin, triangles and material names.
+- **Review screenshots:** `pnpm shots` saves the menu and a match to `test-results/shots/`, for reviewing a model change. The e2e build plays fast, so match shots catch a late round.
 
 ## Tests
 

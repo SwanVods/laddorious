@@ -13,8 +13,7 @@ This repository holds:
 - **Spec #2:** the 3D web client, with the main menu, matchmaking, a full match against bots and the end screen ([design](docs/superpowers/specs/2026-10-04-3d-client-design.md)).
 - **Spec #3:** sound design. Every sound effect and both music loops are made in code with Tone.js, with mute and volume settings ([design](docs/superpowers/specs/2026-10-09-sound-design.md)).
 - **Spec #4:** the multiplayer server. Quick match with real players, bots on request, and rejoining within 60 s, on Cloudflare Workers and Durable Objects ([design](docs/superpowers/specs/2026-10-09-multiplayer-server-design.md)).
-
-The art pass (Spec #5) comes later.
+- **Spec #5 (in progress):** the art pass, Blender models for the pieces, the board and the world ([design](docs/superpowers/specs/2026-10-09-art-pass-design.md)).
 
 ## Repository map
 
@@ -26,6 +25,7 @@ The art pass (Spec #5) comes later.
 | `apps/sim` | `@laddorious/sim` | Batch runner, metrics and the `sim` CLI. |
 | `apps/client` | `@laddorious/client` | The web client (Vite, React, React Three Fiber): the main menu, matchmaking, a 4-player match against the simulator's bots in 3D with the full HUD, and the end screen. The engine runs in a Web Worker behind the `MatchService` interface, or on the server when `VITE_SERVER` is set. [README](apps/client/README.md) |
 | `apps/server` | `@laddorious/server` | The multiplayer server: a Cloudflare Worker with a lobby and one Durable Object per match. It also serves the built game. [README](apps/server/README.md) |
+| `art/` | — | The Blender build scripts for the game's 3D models, and their contract tests. [README](art/README.md) |
 
 Libraries live in `packages/` and deployable apps in `apps/`.
 
@@ -52,6 +52,8 @@ pnpm serve       # play on your Wi-Fi: the game and server on port 8787 (see app
 pnpm dev:online  # the dev server against a local multiplayer server
 pnpm deploy:cloudflare  # build and deploy to Cloudflare (needs `wrangler login`; see apps/server/README.md)
 pnpm e2e         # Playwright end-to-end tests (see apps/client/README.md)
+pnpm art         # rebuild the Blender models (needs Blender 5.2; see art/README.md)
+pnpm shots       # screenshots of the menu and a match, for reviewing models
 
 pnpm sim board --seed daily-2026-10-03                   # print a generated board and its analysis
 pnpm sim run --matches 1000 --players 4 --policy heuristic --out report.json --log match0.json
