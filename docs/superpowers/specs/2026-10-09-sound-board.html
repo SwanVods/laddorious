@@ -1,0 +1,706 @@
+<title>Laddorious Sound Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Lilita+One&display=swap">
+<style>
+  /* Layout: one dark teal stage like the in-game HUD; a control bar, the music deck, then sound groups as grids of chunky toy buttons. */
+  :root {
+    --sky-top: #0b4a5a;
+    --sky-mid: #2f8f8a;
+    --ink: #0f2e36;
+    --paper: #fff7ec;
+    --paper-dim: #f0e2cf;
+    --accent: #ff5470;
+    --gold: #ffcc33;
+    --mint: #5ff0c5;
+    --muted: #b9e3dd;
+    --display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif;
+    --body: 'Fredoka', 'Segoe UI', system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding-inline: 16px;
+    padding-block: 24px 56px;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 100%) fixed;
+    color: var(--paper);
+    font: 500 15px/1.45 var(--body);
+  }
+  main { max-width: 1080px; margin-inline: auto; display: grid; gap: 26px; }
+  h1, h2 { font-family: var(--display); font-weight: 400; margin: 0; letter-spacing: 0.5px; text-wrap: balance; }
+  h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1; text-shadow: 0 3px 0 var(--ink); }
+  h2 { font-size: 1.35rem; text-shadow: 0 2px 0 var(--ink); }
+  p { margin: 0; max-width: 64ch; color: var(--muted); }
+  header { display: grid; gap: 10px; }
+  .bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+    padding: 14px 16px; border: 3px solid var(--ink); border-radius: 18px;
+    background: color-mix(in srgb, var(--ink) 55%, transparent);
+  }
+  .bar label { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .bar input[type="range"] { width: 140px; accent-color: var(--mint); }
+  .bar input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); }
+  .status { margin-left: auto; font-size: 0.9rem; color: var(--muted); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+    padding: 8px 18px; border: 3px solid var(--ink); border-radius: 14px;
+    background: var(--gold); color: var(--ink); box-shadow: 0 4px 0 var(--ink);
+    font: 400 1.05rem/1 var(--display); letter-spacing: 0.5px; cursor: pointer;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .btn.alt { background: var(--mint); }
+  .btn.on { background: var(--accent); color: var(--paper); }
+  .btn:focus-visible, .tile:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+  section { display: grid; gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 12px; }
+  .tile {
+    position: relative; display: grid; gap: 4px; align-content: start; min-width: 0;
+    padding: 12px 14px 14px; border: 3px solid var(--ink); border-radius: 16px;
+    background: var(--paper); color: var(--ink); box-shadow: 0 4px 0 var(--ink);
+    text-align: left; font: inherit; cursor: pointer;
+  }
+  .tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .tile.playing { background: var(--paper-dim); }
+  .tile.playing::after {
+    content: ''; position: absolute; left: 12px; right: 12px; bottom: 6px; height: 4px; border-radius: 4px;
+    background: var(--accent); transform-origin: left; animation: progress var(--len, 1s) linear forwards;
+  }
+  @keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .code { justify-self: start; padding: 1px 8px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 400 0.8rem/1.5 var(--display); letter-spacing: 1px; }
+  .name { font: 400 1.1rem/1.15 var(--display); }
+  .desc { font-size: 0.9rem; color: color-mix(in srgb, var(--ink) 75%, transparent); }
+  .err { font-size: 0.8rem; color: var(--accent); }
+  .deck { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+  .deck .tile { cursor: default; }
+  .deck .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  @media (prefers-reduced-motion: reduce) { .tile.playing::after { animation: none; transform: none; } }
+</style>
+
+<main>
+  <header>
+    <h1>Laddorious Sound Board</h1>
+    <p>Every game sound and both music loops, made in code with Tone.js. Tap a tile to hear it. Tell me its code (like <b>D2</b>) and what to change: louder, shorter, lower, less cartoony. The demo round plays a sequence of sounds in order over the match music, so you hear them in context.</p>
+  </header>
+
+  <div class="bar" role="group" aria-label="Playback">
+    <button class="btn" id="demo" type="button">▶ Demo round</button>
+    <label for="master">Master <input id="master" type="range" min="-30" max="0" step="1" value="-4"></label>
+    <label for="music-vol">Music <input id="music-vol" type="range" min="-40" max="8" step="1" value="-4"></label>
+    <label for="other"><input id="other" type="checkbox"> As another player (softer)</label>
+    <span class="status" id="status">Tap anything to start the audio.</span>
+  </div>
+
+  <section aria-labelledby="music-h">
+    <h2 id="music-h">Music</h2>
+    <div class="deck">
+      <div class="tile">
+        <span class="code">M-MENU</span>
+        <span class="name">Menu loop</span>
+        <span class="desc">104 bpm, C major. Marimba arpeggios over a plucked bass, a soft kick and shaker, and a little bell tune.</span>
+        <div class="row"><button class="btn alt" type="button" data-song="menu">▶ Play</button></div>
+      </div>
+      <div class="tile">
+        <span class="code">M-MATCH</span>
+        <span class="name">Match loop</span>
+        <span class="desc">88 bpm, calmer. Sparse marimba over warm seventh chords and brushed percussion, no kick, so game sounds stay clear.</span>
+        <div class="row"><button class="btn alt" type="button" data-song="match">▶ Play</button></div>
+      </div>
+      <div class="tile">
+        <span class="code">M-DUCK</span>
+        <span class="name">Duck test</span>
+        <span class="desc">Plays the face-off sting while the music dips under it and comes back. Start a loop first.</span>
+        <div class="row"><button class="btn alt" type="button" id="duck">▶ Play</button></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="groups"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/tone@15.1.22/build/Tone.js"></script>
+<script>
+// ===================================================================== engine
+// One start on the first tap, an effects bus and a music bus into a light room reverb.
+const engine = { started: false, sfx: null, others: null, music: null, verb: null, out: null, at: 0 };
+
+async function start() {
+  if (engine.started) return;
+  await Tone.start();
+  const limiter = new Tone.Limiter(-1).toDestination();
+  engine.verb = new Tone.Reverb({ decay: 1.4, wet: 0.16 }).connect(limiter);
+  await engine.verb.ready;
+  engine.sfx = new Tone.Volume(-2).connect(engine.verb);
+  engine.others = new Tone.Volume(-7).connect(engine.sfx);
+  engine.music = new Tone.Volume(Number(document.getElementById('music-vol').value)).connect(engine.verb);
+  Tone.getDestination().volume.value = Number(document.getElementById('master').value);
+  engine.started = true;
+  setStatus('Audio on.');
+}
+
+// Every sound builds its own short-lived instruments: Tone refuses a note that starts before
+// one it already scheduled, so sharing instruments across sounds scheduled ahead would break.
+// They are cleaned up a few seconds after the sound's own start time (engine.at), which may be
+// well in the future for the demo round.
+function disposeLater(node, lifeS) {
+  const lead = Math.max(0, engine.at - Tone.now());
+  setTimeout(() => node.dispose(), (lead + lifeS + 4) * 1000);
+}
+function make(node, lifeS) {
+  node.connect(engine.out);
+  disposeLater(node, lifeS);
+  return node;
+}
+
+const rnd = (a, b) => a + Math.random() * (b - a);
+const jitter = (cents) => Math.pow(2, rnd(-cents, cents) / 1200);
+const hz = (note) => Tone.Frequency(note).toFrequency();
+
+// ===================================================================== instruments
+function wood(life) {
+  return make(new Tone.MembraneSynth({ pitchDecay: 0.006, octaves: 1.6, oscillator: { type: 'sine' }, envelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.02 }, volume: -6 }), life);
+}
+function click(life) {
+  const f = make(new Tone.Filter(3200, 'highpass'), life);
+  const n = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.012, sustain: 0, release: 0.01 }, volume: -18 }).connect(f);
+  disposeLater(n, life);
+  return n;
+}
+function marimba(life, volume = -9) {
+  return make(new Tone.PolySynth(Tone.FMSynth, {
+    harmonicity: 3.99, modulationIndex: 3.2,
+    oscillator: { type: 'sine' }, modulation: { type: 'sine' },
+    envelope: { attack: 0.002, decay: 0.5, sustain: 0, release: 0.35 },
+    modulationEnvelope: { attack: 0.001, decay: 0.07, sustain: 0, release: 0.05 },
+    volume,
+  }), life);
+}
+function bell(life, volume = -15) {
+  return make(new Tone.PolySynth(Tone.FMSynth, {
+    harmonicity: 3.5, modulationIndex: 7,
+    oscillator: { type: 'sine' }, modulation: { type: 'sine' },
+    envelope: { attack: 0.001, decay: 1.3, sustain: 0, release: 0.9 },
+    modulationEnvelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.4 },
+    volume,
+  }), life);
+}
+function thump(life, volume = -6) {
+  return make(new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 4, envelope: { attack: 0.001, decay: 0.26, sustain: 0, release: 0.05 }, volume }), life);
+}
+function noise(life, { type = 'pink', filter = 'bandpass', freq = 2000, q = 1, attack = 0.001, decay = 0.05, volume = -10 } = {}) {
+  const f = make(new Tone.Filter({ frequency: freq, type: filter, Q: q }), life);
+  const n = new Tone.NoiseSynth({ noise: { type }, envelope: { attack, decay, sustain: 0, release: 0.02 }, volume }).connect(f);
+  disposeLater(n, life);
+  return { synth: n, filter: f };
+}
+function glider(life, { type = 'sine', volume = -12, vibrato = null } = {}) {
+  const s = new Tone.Synth({ oscillator: { type }, envelope: { attack: 0.008, decay: 0.05, sustain: 0.9, release: 0.08 }, volume });
+  if (vibrato) {
+    const v = make(new Tone.Vibrato(vibrato[0], vibrato[1]), life);
+    s.connect(v);
+    disposeLater(s, life);
+  } else {
+    make(s, life);
+  }
+  return s;
+}
+// Glide through [frequency, seconds-from-start] points, exponential between them.
+function glide(t, points, opts = {}) {
+  const life = points[points.length - 1][1] + 0.3;
+  const s = glider(life, opts);
+  s.triggerAttack(points[0][0], t, opts.velocity ?? 1);
+  for (const [f, at] of points.slice(1)) s.frequency.exponentialRampToValueAtTime(f, t + at);
+  s.triggerRelease(t + points[points.length - 1][1]);
+}
+function metal(life, volume = -20) {
+  return make(new Tone.MetalSynth({ envelope: { attack: 0.001, decay: 0.35, release: 0.1 }, harmonicity: 5.1, modulationIndex: 20, resonance: 4200, octaves: 1.2, volume }), life);
+}
+
+// ===================================================================== small building blocks
+function knock(t, note, vel = 0.7) {
+  wood(0.3).triggerAttackRelease(hz(note) * jitter(15), 0.06, t, vel);
+  click(0.2).triggerAttackRelease(0.01, t, vel * 0.8);
+}
+function pop(t, from = 300, to = 900, vel = 0.8) {
+  glide(t, [[from, 0], [to, 0.06]], { volume: -14, velocity: vel });
+}
+function flick(t, vel = 0.7) {
+  noise(0.2, { type: 'white', filter: 'highpass', freq: 2600, decay: 0.035, volume: -14 }).synth.triggerAttackRelease(0.03, t, vel);
+}
+function thud(t, note = 'C2', vel = 0.8) {
+  thump(0.5).triggerAttackRelease(note, 0.2, t, vel);
+}
+function sparkle(t, notes, gap = 0.04, vel = 0.4) {
+  const b = bell(notes.length * gap + 1.8);
+  notes.forEach((n, i) => b.triggerAttackRelease(n, 0.5, t + i * gap, vel));
+}
+function puff(t, from = 2000, to = 200, len = 0.45, vel = 0.6) {
+  const { synth, filter } = noise(len + 0.3, { type: 'pink', filter: 'lowpass', freq: from, attack: 0.01, decay: len, volume: -8 });
+  filter.frequency.setValueAtTime(from, t);
+  filter.frequency.exponentialRampToValueAtTime(to, t + len);
+  synth.triggerAttackRelease(len, t, vel);
+}
+function whoosh(t, from, to, len, vel = 0.6) {
+  const { synth, filter } = noise(len + 0.3, { type: 'pink', filter: 'bandpass', freq: from, q: 1.4, attack: len * 0.35, decay: len * 0.65, volume: -6 });
+  filter.frequency.setValueAtTime(from, t);
+  filter.frequency.exponentialRampToValueAtTime(to, t + len);
+  synth.triggerAttackRelease(len, t, vel);
+}
+
+// ===================================================================== the sounds
+// Each recipe schedules from time t and returns how long it lasts (seconds).
+const HOP_NOTES = ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6'];
+let pieceIndex = 0;
+let seatIndex = 0;
+
+const SOUNDS = [
+  // ------------------------------------------------ menu and buttons
+  { code: 'U1', group: 'Menu and buttons', name: 'Button tap', desc: 'A soft wooden click for any button.', play(t) { knock(t, 'A5', 0.55); return 0.15; } },
+  { code: 'U2', group: 'Menu and buttons', name: 'Pick a piece', desc: 'A pop with each piece\'s own note. Tap again for the next piece: knight, pawn, meeple, dragon.', play(t) {
+    const note = ['C5', 'E5', 'G5', 'C6'][pieceIndex++ % 4];
+    pop(t, 320, 900, 0.7);
+    marimba(1.2).triggerAttackRelease(note, 0.4, t + 0.03, 0.8);
+    return 0.6;
+  } },
+  { code: 'U3', group: 'Menu and buttons', name: 'Switch on / off', desc: 'Settings switches: a rising click pair for on, falling for off. Plays on, then off.', play(t) {
+    knock(t, 'C6', 0.5); knock(t + 0.05, 'G6', 0.45);
+    knock(t + 0.5, 'G5', 0.5); knock(t + 0.55, 'C5', 0.45);
+    return 0.75;
+  } },
+  { code: 'U4', group: 'Menu and buttons', name: 'Refused action', desc: 'The "Too late" toast: a low, muffled two-note bonk.', play(t) {
+    const m = marimba(1.2, -7);
+    m.triggerAttackRelease('E3', 0.25, t, 0.55);
+    m.triggerAttackRelease('C3', 0.4, t + 0.13, 0.5);
+    return 0.6;
+  } },
+
+  // ------------------------------------------------ matchmaking
+  { code: 'Q1', group: 'Matchmaking', name: 'A bot takes a seat', desc: 'A pop, a little higher for each seat. Tap three times for seats 1 to 3.', play(t) {
+    const k = 1 + 0.25 * (seatIndex++ % 3);
+    pop(t, 260 * k, 780 * k, 0.8);
+    knock(t + 0.02, ['E5', 'G5', 'C6'][(seatIndex - 1) % 3], 0.35);
+    return 0.25;
+  } },
+  { code: 'Q2', group: 'Matchmaking', name: 'MATCH FOUND', desc: 'A strummed bell chord with a marimba chord under it and a little shimmer.', play(t) {
+    sparkle(t, ['C5', 'E5', 'G5', 'C6'], 0.045, 0.55);
+    marimba(1.6).triggerAttackRelease(['C4', 'G4', 'E5'], 0.6, t + 0.02, 0.7);
+    noise(1.2, { type: 'white', filter: 'highpass', freq: 7000, attack: 0.05, decay: 0.7, volume: -22 }).synth.triggerAttackRelease(0.7, t + 0.05, 0.6);
+    return 1.6;
+  } },
+  { code: 'Q3', group: 'Matchmaking', name: '3, 2, 1', desc: 'Woodblock ticks 750 ms apart, the last one higher, and a whoosh into the match.', play(t) {
+    knock(t, 'C5', 0.8); knock(t + 0.75, 'C5', 0.8); knock(t + 1.5, 'G5', 0.9);
+    whoosh(t + 1.75, 500, 4500, 0.5, 0.55);
+    return 2.4;
+  } },
+
+  // ------------------------------------------------ dice
+  { code: 'D1', group: 'Dice', name: 'Your turn to roll', desc: 'A gentle double chime when the dice window opens. Only for you.', play(t) { sparkle(t, ['E6', 'A6'], 0.12, 0.35); return 1.2; } },
+  { code: 'D2', group: 'Dice', name: 'Your roll', desc: 'A dice-cup rattle for the roll beat, then a clack and a small bounce as it lands.', play(t) {
+    const { synth } = noise(1, { type: 'pink', filter: 'bandpass', freq: 2600, q: 1.6, decay: 0.022, volume: -6 });
+    let at = t;
+    for (let i = 0; i < 12; i++) { at += rnd(0.035, 0.065); synth.triggerAttackRelease(0.02, at, rnd(0.3, 0.85)); }
+    for (let i = 0; i < 5; i++) knock(t + 0.06 + i * 0.12 + rnd(0, 0.03), ['C6', 'D6', 'E6', 'G6'][i % 4], rnd(0.12, 0.25));
+    knock(t + 0.85, 'D4', 0.95);
+    knock(t + 0.93, 'A4', 0.45);
+    thud(t + 0.85, 'C3', 0.35);
+    return 1.15;
+  } },
+  { code: 'D3', group: 'Dice', name: 'Another player rolls', desc: 'Just a soft clack, so four players rolling at once stays tidy.', play(t) { knock(t, 'E4', 0.55); knock(t + 0.05, 'B4', 0.25); return 0.2; } },
+  { code: 'D4', group: 'Dice', name: 'Last seconds tick', desc: 'One soft tick a second in the last 3 seconds of a window you haven\'t acted in.', play(t) { for (let i = 0; i < 3; i++) knock(t + i, 'E6', 0.3); return 2.2; } },
+  { code: 'D5', group: 'Dice', name: 'Forced face', desc: 'A quick sparkle when a card sets your die (Loaded Die).', play(t) { sparkle(t, ['C6', 'E6', 'G6', 'C7', 'E7'], 0.035, 0.3); return 1.1; } },
+  { code: 'D6', group: 'Dice', name: 'Move goes up', desc: '"Move 12": a zing up with a bell, when a card grows your move.', play(t) {
+    glide(t, [[420, 0], [1300, 0.22]], { volume: -16, vibrato: [7, 0.06] });
+    sparkle(t + 0.2, ['G6'], 0.05, 0.4);
+    return 0.9;
+  } },
+  { code: 'D7', group: 'Dice', name: 'Move goes down', desc: 'A zing down, when a card shrinks your move (Heavy Boots).', play(t) {
+    glide(t, [[1100, 0], [380, 0.25]], { volume: -16, vibrato: [7, 0.06] });
+    return 0.5;
+  } },
+
+  // ------------------------------------------------ moving
+  { code: 'H1', group: 'Moving', name: 'Hops', desc: 'A wooden knock per tile, rising a little along the move (6 tiles, 230 ms apart), then the landing.', play(t) {
+    for (let i = 0; i < 6; i++) {
+      knock(t + i * 0.23, HOP_NOTES[i], 0.6);
+      thud(t + i * 0.23, 'C3', 0.18);
+    }
+    SOUND('H2').play(t + 6 * 0.23 + 0.07);
+    return 1.85;
+  } },
+  { code: 'H2', group: 'Moving', name: 'Landing', desc: 'A felt thump with a small knock.', play(t) { thud(t, 'C2', 0.8); knock(t + 0.01, 'G3', 0.35); puff(t, 900, 200, 0.18, 0.35); return 0.45; } },
+  { code: 'H3', group: 'Moving', name: 'Landing on someone', desc: 'A wobbly boing and a thud when you stand on top of another piece.', play(t) {
+    glide(t, [[180, 0], [520, 0.06], [260, 0.2]], { type: 'triangle', volume: -12, vibrato: [12, 0.3] });
+    thud(t + 0.02, 'D2', 0.7);
+    return 0.5;
+  } },
+  { code: 'S1', group: 'Moving', name: 'Snake slide', desc: 'The vortex sucks in (a swirling whoosh), a falling slide whistle as the orb rides the lane, then a pop at the exit. 2 seconds, like the slide.', play(t) {
+    whoosh(t, 3200, 380, 0.45, 0.7);
+    glide(t + 0.35, [[1500, 0], [280, 1.25]], { volume: -14, vibrato: [5.5, 0.08] });
+    pop(t + 1.7, 300, 950, 0.9);
+    knock(t + 1.72, 'G4', 0.5);
+    return 2.0;
+  } },
+  { code: 'L1', group: 'Moving', name: 'Launch pad', desc: 'A springy boing and a rising whoosh, then a soft landing. 1.3 seconds, like the launch.', play(t) {
+    glide(t, [[110, 0], [620, 0.09], [340, 0.34]], { type: 'triangle', volume: -10, vibrato: [14, 0.25] });
+    whoosh(t + 0.1, 500, 5200, 0.75, 0.6);
+    thud(t + 1.2, 'C2', 0.5);
+    knock(t + 1.21, 'A4', 0.3);
+    return 1.4;
+  } },
+  { code: 'K1', group: 'Moving', name: 'Knocked back', desc: 'A cartoon thwack with a short falling whistle as the piece backflips.', play(t) {
+    noise(0.4, { type: 'white', filter: 'lowpass', freq: 2500, decay: 0.08, volume: -4 }).synth.triggerAttackRelease(0.06, t, 1);
+    thud(t, 'E2', 0.9);
+    glide(t + 0.05, [[950, 0], [420, 0.35]], { volume: -16, vibrato: [8, 0.05] });
+    return 0.6;
+  } },
+  { code: 'B1', group: 'Moving', name: 'Step back', desc: 'Small shuffling knocks, one per tile backwards (3 tiles).', play(t) { ['G4', 'E4', 'C4'].forEach((n, i) => knock(t + i * 0.3, n, 0.4)); return 0.95; } },
+  { code: 'B2', group: 'Moving', name: 'Shield blocks a snake', desc: 'A bright metallic ting with a bell: a shield stopped the slide. Also used when a card is blocked.', play(t) {
+    metal(1).triggerAttackRelease(900, 0.25, t, 0.75);
+    sparkle(t + 0.01, ['B6'], 0.05, 0.3);
+    return 0.9;
+  } },
+  { code: 'B3', group: 'Moving', name: 'Landing on a ?', desc: 'A sparkle chime when your piece lands on a purple ? square.', play(t) {
+    sparkle(t, ['G5', 'C6', 'E6'], 0.055, 0.45);
+    noise(1, { type: 'white', filter: 'highpass', freq: 7500, attack: 0.02, decay: 0.5, volume: -24 }).synth.triggerAttackRelease(0.5, t + 0.05, 0.6);
+    return 1.2;
+  } },
+
+  // ------------------------------------------------ face-offs
+  { code: 'F1', group: 'Face-offs', name: 'Face-off starts', desc: 'A "versus" sting: two drum hits and a tense chord. The music dips under it.', play(t) {
+    thud(t, 'G1', 1);
+    thud(t + 0.18, 'G1', 0.9);
+    const filt = make(new Tone.Filter(1800, 'lowpass'), 1.4);
+    const chord = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.3, release: 0.4 }, volume: -20 }).connect(filt);
+    disposeLater(chord, 1.4);
+    chord.triggerAttackRelease(['D4', 'F4', 'A4', 'D5'], 0.35, t + 0.36, 0.8);
+    metal(1.4, -26).triggerAttackRelease(300, 0.5, t + 0.36, 0.6);
+    return 1.1;
+  } },
+  { code: 'F2', group: 'Face-offs', name: 'Your pick locks in', desc: 'A quick high-low click.', play(t) { knock(t, 'E6', 0.5); knock(t + 0.045, 'B5', 0.45); return 0.15; } },
+  { code: 'F3', group: 'Face-offs', name: 'You win the face-off', desc: 'A bright rising marimba arpeggio with a bell on top.', play(t) {
+    const m = marimba(1.5);
+    ['C5', 'E5', 'G5', 'C6'].forEach((n, i) => m.triggerAttackRelease(n, 0.3, t + i * 0.07, 0.85));
+    sparkle(t + 0.28, ['C6', 'E6'], 0.02, 0.35);
+    return 1.1;
+  } },
+  { code: 'F4', group: 'Face-offs', name: 'You lose the face-off', desc: 'A cartoon three-note fall, "wah wah wah-wahhh".', play(t) {
+    const filt = make(new Tone.Filter({ frequency: 900, type: 'lowpass', Q: 2 }), 2.2);
+    const v = new Tone.Vibrato(5, 0);
+    const s = new Tone.Synth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.03, decay: 0.1, sustain: 0.8, release: 0.15 }, volume: -16 }).chain(v, filt);
+    disposeLater(s, 2.2);
+    disposeLater(v, 2.2);
+    s.triggerAttackRelease('G4', 0.26, t, 0.6);
+    s.triggerAttackRelease('F#4', 0.26, t + 0.32, 0.6);
+    s.triggerAttackRelease('F4', 0.26, t + 0.64, 0.6);
+    s.triggerAttackRelease('E4', 0.8, t + 0.96, 0.6);
+    v.depth.setValueAtTime(0, t + 0.96);
+    v.depth.linearRampToValueAtTime(0.25, t + 1.3);
+    return 1.9;
+  } },
+  { code: 'F5', group: 'Face-offs', name: 'Replay', desc: 'A two-note "huh?" when everyone picks the same and the face-off goes again.', play(t) {
+    const m = marimba(1);
+    m.triggerAttackRelease('E5', 0.2, t, 0.7);
+    m.triggerAttackRelease('A5', 0.15, t + 0.14, 0.6);
+    glide(t + 0.14, [[880, 0], [1050, 0.12]], { volume: -24 });
+    return 0.5;
+  } },
+
+  // ------------------------------------------------ cards
+  { code: 'C1', group: 'Cards', name: 'The card pick opens', desc: 'Three card flicks as the cards fan out.', play(t) { [0, 0.07, 0.14].forEach((d) => flick(t + d, 0.8)); marimba(1).triggerAttackRelease('G5', 0.2, t + 0.2, 0.35); return 0.5; } },
+  { code: 'C2', group: 'Cards', name: 'Reroll', desc: 'A quick riffle shuffle.', play(t) { for (let i = 0; i < 12; i++) flick(t + i * 0.03 + rnd(0, 0.01), 0.75 - i * 0.04); return 0.5; } },
+  { code: 'C3', group: 'Cards', name: 'Pick a card', desc: 'A crisp card snap.', play(t) { flick(t, 1); knock(t + 0.01, 'C6', 0.45); return 0.2; } },
+  { code: 'C4', group: 'Cards', name: 'Cards revealed', desc: 'A flip per card with a rising note (three cards).', play(t) {
+    const m = marimba(1.4);
+    ['E5', 'G5', 'B5'].forEach((n, i) => { flick(t + i * 0.18, 0.8); m.triggerAttackRelease(n, 0.25, t + i * 0.18 + 0.02, 0.55); });
+    return 0.9;
+  } },
+  { code: 'C5', group: 'Cards', name: 'Card hits', desc: 'A solid thump when a card lands on its target.', play(t) {
+    thud(t, 'A1', 1);
+    noise(0.4, { type: 'pink', filter: 'lowpass', freq: 1200, decay: 0.1, volume: -6 }).synth.triggerAttackRelease(0.08, t, 0.9);
+    knock(t + 0.01, 'D3', 0.4);
+    return 0.5;
+  } },
+  { code: 'C6', group: 'Cards', name: 'Card fizzles', desc: 'A deflating puff when a card has no target.', play(t) {
+    puff(t, 2000, 200, 0.5, 0.6);
+    glide(t, [[480, 0], [130, 0.4]], { volume: -20 });
+    return 0.6;
+  } },
+  { code: 'C7', group: 'Cards', name: 'Clash', desc: 'A clang when two cards collide.', play(t) {
+    metal(1.6, -16).triggerAttackRelease(220, 0.9, t, 0.9);
+    thud(t, 'F1', 0.8);
+    return 1.3;
+  } },
+  { code: 'C8', group: 'Cards', name: 'Snake or ladder appears', desc: 'A bubbly bloop when a card adds a snake or ladder.', play(t) {
+    glide(t, [[220, 0], [760, 0.12]], { type: 'triangle', volume: -12 });
+    glide(t + 0.1, [[360, 0], [900, 0.09]], { type: 'triangle', volume: -16 });
+    return 0.4;
+  } },
+  { code: 'C9', group: 'Cards', name: 'Snake or ladder goes away', desc: 'The bloop in reverse when it expires.', play(t) {
+    glide(t, [[900, 0], [360, 0.09]], { type: 'triangle', volume: -16 });
+    glide(t + 0.08, [[760, 0], [220, 0.12]], { type: 'triangle', volume: -12 });
+    return 0.4;
+  } },
+  { code: 'C10', group: 'Cards', name: 'An effect lands on you', desc: 'A soft shimmer when a shield or another effect is put on you.', play(t) {
+    sparkle(t, ['G6', 'B6', 'D7'], 0.03, 0.22);
+    noise(1.2, { type: 'white', filter: 'highpass', freq: 6000, attack: 0.15, decay: 0.6, volume: -26 }).synth.triggerAttackRelease(0.7, t, 0.6);
+    return 1.3;
+  } },
+
+  // ------------------------------------------------ finish
+  { code: 'W1', group: 'Finish', name: 'You win', desc: 'A drumroll into a marimba run and a big bell chord.', play(t) {
+    const { synth } = noise(1, { type: 'white', filter: 'bandpass', freq: 1800, q: 0.8, decay: 0.03, volume: -14 });
+    for (let i = 0; i < 14; i++) synth.triggerAttackRelease(0.02, t + i * 0.045, 0.2 + i * 0.05);
+    const m = marimba(2.6);
+    ['C5', 'E5', 'G5', 'C6', 'E6'].forEach((n, i) => m.triggerAttackRelease(n, 0.4, t + 0.65 + i * 0.06, 0.85));
+    bell(3, -12).triggerAttackRelease(['C6', 'E6', 'G6'], 1.2, t + 1.0, 0.6);
+    thud(t + 1.0, 'C2', 0.7);
+    return 2.6;
+  } },
+  { code: 'W2', group: 'Finish', name: 'Someone else wins', desc: 'A shorter, softer flourish.', play(t) {
+    const m = marimba(1.5);
+    ['G4', 'C5', 'E5'].forEach((n, i) => m.triggerAttackRelease(n, 0.35, t + i * 0.08, 0.6));
+    sparkle(t + 0.3, ['G5'], 0.05, 0.3);
+    return 1.3;
+  } },
+  { code: 'W3', group: 'Finish', name: 'Ranks reveal', desc: 'A pop with a rising note as each badge appears: 4th, 3rd, then 2nd, 500 ms apart.', play(t) {
+    ['C5', 'E5', 'G5'].forEach((n, i) => { pop(t + i * 0.5, 300, 850, 0.7); marimba(1).triggerAttackRelease(n, 0.3, t + i * 0.5 + 0.03, 0.7); });
+    return 1.5;
+  } },
+  { code: 'W4', group: 'Finish', name: 'End screen', desc: 'A warm settling chord as the podium appears.', play(t) {
+    const pad = make(new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.08, decay: 1.2, sustain: 0.2, release: 1 }, volume: -16 }), 3);
+    pad.triggerAttackRelease(['C4', 'E4', 'G4', 'B4'], 1.2, t, 0.7);
+    sparkle(t + 0.1, ['C6'], 0.05, 0.25);
+    return 1.8;
+  } },
+];
+const SOUND = (code) => SOUNDS.find((s) => s.code === code);
+
+// Level trims (dB) from offline measurements, so sounds sit in tiers by their loudest 300 ms:
+// big moments about -20 dBFS, core feedback -24, prompts -26, buttons and others' small sounds -28 to -30.
+const TRIM = {
+  U1: 8, U2: 5, U3: 6, U4: 9.5, Q1: 4, Q2: 9.5, Q3: 3.5,
+  D1: 20, D2: 4, D3: 5, D4: 11, D5: 18, D6: 3.5, D7: 3,
+  H1: 4, H2: 4, H3: 0.5, S1: 4, L1: 2, K1: 4, B1: 10, B2: 13, B3: 15,
+  F1: 4, F2: 6, F3: 9, F4: 10, F5: 7,
+  C1: 12, C2: 12, C3: 10.5, C4: 14, C5: 5, C6: 6, C7: 4.5, C8: 1.5, C9: 1.5, C10: 18.5,
+  W1: 9, W2: 12.5, W3: 9, W4: 4,
+};
+
+// ===================================================================== music
+// A tiny song format: chords per bar, an arpeggio pattern, a bass line and percussion.
+const SONGS = {
+  menu: {
+    bpm: 104,
+    bars: [
+      ['C4', 'E4', 'G4', 'C5'], ['A3', 'C4', 'E4', 'A4'], ['F3', 'A3', 'C4', 'F4'], ['G3', 'B3', 'D4', 'G4'],
+      ['C4', 'E4', 'G4', 'C5'], ['A3', 'C4', 'E4', 'A4'], ['F3', 'A3', 'C4', 'F4'], ['G3', 'B3', 'D4', 'G4'],
+    ],
+    arp: [0, 1, 2, 3, 2, 1, 2, 3],
+    bass: ['C2', 'A1', 'F1', 'G1', 'C2', 'A1', 'F1', 'G1'],
+    tune: [[4, 'E5'], [4.5, 'G5'], [5, 'A5'], [6, 'G5'], [12, 'E5'], [12.5, 'D5'], [13, 'C5'], [14, 'D5'], [28, 'E5'], [28.5, 'G5'], [29, 'C6'], [30, 'B5']],
+    kick: true,
+  },
+  match: {
+    bpm: 88,
+    bars: [
+      ['F3', 'A3', 'C4', 'E4'], ['E3', 'G3', 'B3', 'D4'], ['D3', 'F3', 'A3', 'C4'], ['G3', 'C4', 'D4', 'F4'],
+      ['F3', 'A3', 'C4', 'E4'], ['E3', 'G3', 'B3', 'D4'], ['D3', 'F3', 'A3', 'C4'], ['G3', 'B3', 'D4', 'F4'],
+    ],
+    arp: [0, -1, 2, -1, 3, -1, 1, -1],
+    bass: ['F1', 'E1', 'D1', 'G1', 'F1', 'E1', 'D1', 'G1'],
+    tune: [[2, 'A4'], [3, 'C5'], [10, 'G4'], [11, 'B4'], [18, 'F4'], [19, 'A4'], [26, 'D5'], [27, 'C5']],
+    kick: false,
+  },
+};
+
+const player = { song: null, parts: [], inst: null };
+
+function musicInstruments() {
+  if (player.inst) return player.inst;
+  const out = engine.music;
+  player.inst = {
+    mallet: new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 3.99, modulationIndex: 2.6, oscillator: { type: 'sine' }, modulation: { type: 'sine' },
+      envelope: { attack: 0.003, decay: 0.6, sustain: 0, release: 0.4 }, modulationEnvelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 }, volume: -10,
+    }).connect(out),
+    bell: new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 3.5, modulationIndex: 5, oscillator: { type: 'sine' }, modulation: { type: 'sine' },
+      envelope: { attack: 0.002, decay: 1, sustain: 0, release: 0.8 }, modulationEnvelope: { attack: 0.001, decay: 0.4, sustain: 0, release: 0.3 }, volume: -16,
+    }).connect(out),
+    bass: new Tone.MonoSynth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.3, sustain: 0.2, release: 0.2 }, filterEnvelope: { attack: 0.005, decay: 0.15, sustain: 0.2, baseFrequency: 180, octaves: 2.5 }, volume: -8 }).connect(out),
+    kick: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 5, envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.05 }, volume: -12 }).connect(out),
+    shaker: new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.002, decay: 0.04, sustain: 0, release: 0.02 }, volume: -30 }).connect(new Tone.Filter(6500, 'highpass').connect(out)),
+    pad: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.6, decay: 1.5, sustain: 0.5, release: 1.5 }, volume: -24 }).connect(out),
+  };
+  return player.inst;
+}
+
+function stopMusic() {
+  const transport = Tone.getTransport();
+  transport.stop();
+  transport.cancel();
+  for (const p of player.parts) p.dispose();
+  player.parts = [];
+  player.song = null;
+}
+
+function playSong(name) {
+  const song = SONGS[name];
+  const inst = musicInstruments();
+  const transport = Tone.getTransport();
+  stopMusic();
+  transport.bpm.value = song.bpm;
+  const events = [];
+  song.bars.forEach((chord, bar) => {
+    song.arp.forEach((idx, step) => {
+      if (idx >= 0) events.push({ time: `${bar}:0:${step * 2}`, kind: 'mallet', note: chord[idx], vel: step % 2 === 0 ? 0.7 : 0.45 });
+    });
+    events.push({ time: `${bar}:0:0`, kind: 'bass', note: song.bass[bar] });
+    events.push({ time: `${bar}:2:0`, kind: 'bass', note: song.bass[bar] });
+    if (!song.kick) events.push({ time: `${bar}:0:0`, kind: 'pad', notes: chord.slice(0, 3) });
+    for (let beat = 0; beat < 4; beat++) {
+      events.push({ time: `${bar}:${beat}:2`, kind: 'shaker', vel: song.kick ? 0.6 : 0.35 });
+      if (song.kick && beat % 2 === 0) events.push({ time: `${bar}:${beat}:0`, kind: 'kick' });
+    }
+  });
+  for (const [beats, note] of song.tune) events.push({ time: `${Math.floor(beats / 4)}:${Math.floor(beats % 4)}:${(beats % 1) * 4}`, kind: 'bell', note });
+  const part = new Tone.Part((time, e) => {
+    if (e.kind === 'mallet') inst.mallet.triggerAttackRelease(e.note, '8n', time, e.vel);
+    else if (e.kind === 'bass') inst.bass.triggerAttackRelease(e.note, '8n', time, 0.8);
+    else if (e.kind === 'shaker') inst.shaker.triggerAttackRelease('32n', time, e.vel);
+    else if (e.kind === 'kick') inst.kick.triggerAttackRelease('C1', '8n', time, 0.7);
+    else if (e.kind === 'bell') inst.bell.triggerAttackRelease(e.note, '4n', time, 0.5);
+    else if (e.kind === 'pad') inst.pad.triggerAttackRelease(e.notes, '1m', time, 0.5);
+  }, events);
+  part.loop = true;
+  part.loopEnd = `${song.bars.length}m`;
+  part.start(0);
+  player.parts.push(part);
+  player.song = name;
+  engine.music.volume.cancelScheduledValues(Tone.now());
+  engine.music.volume.setValueAtTime(-60, Tone.now());
+  engine.music.volume.linearRampToValueAtTime(musicLevel(), Tone.now() + 0.8);
+  transport.start('+0.05');
+}
+
+const musicLevel = () => Number(document.getElementById('music-vol').value);
+
+// The music dips under a big moment and comes back.
+function duck(t, holdS = 1.2) {
+  const v = engine.music.volume;
+  v.cancelScheduledValues(t);
+  v.setValueAtTime(musicLevel(), t);
+  v.linearRampToValueAtTime(musicLevel() - 12, t + 0.08);
+  v.setValueAtTime(musicLevel() - 12, t + holdS);
+  v.linearRampToValueAtTime(musicLevel(), t + holdS + 0.6);
+}
+
+// ===================================================================== the demo round
+// Roughly one round of a match, timed like the game's beats.
+const DEMO = [
+  [0, 'D1'], [0.9, 'D2'], [2.1, 'D3'], [2.35, 'D3'],
+  [3.0, 'H1'],
+  [5.0, 'S1'],
+  [7.4, 'B3'], [8.4, 'C1'], [9.6, 'C2'], [10.4, 'C3'], [11.0, 'C4'], [12.2, 'C5'], [12.9, 'K1'],
+  [14.2, 'F1'], [15.6, 'F2'], [16.6, 'F3'],
+  [18.2, 'W1'], [21.3, 'W3'], [23.2, 'W4'],
+];
+
+// ===================================================================== the page
+const groupsEl = document.getElementById('groups');
+const statusEl = document.getElementById('status');
+const setStatus = (text) => { statusEl.textContent = text; };
+
+function out() {
+  return document.getElementById('other').checked ? engine.others : engine.sfx;
+}
+
+function run(sound, tile, at = 0) {
+  engine.at = Tone.now() + 0.03 + at;
+  // Each play goes through its own trim, into the effects (or other player's) bus.
+  const trim = new Tone.Volume(TRIM[sound.code] ?? 0).connect(out());
+  engine.out = trim;
+  disposeLater(trim, 3);
+  try {
+    const len = sound.play(engine.at);
+    if (tile) {
+      tile.querySelector('.err').textContent = '';
+      setTimeout(() => {
+        tile.classList.remove('playing');
+        void tile.offsetWidth;
+        tile.style.setProperty('--len', `${len}s`);
+        tile.classList.add('playing');
+      }, at * 1000);
+      setTimeout(() => tile.classList.remove('playing'), (at + len) * 1000 + 50);
+    }
+    if (sound.code === 'F1' && player.song) duck(Tone.now() + 0.03 + at);
+  } catch (e) {
+    if (tile) tile.querySelector('.err').textContent = `Error: ${e.message}`;
+    setStatus(`${sound.code} failed: ${e.message}`);
+  }
+}
+
+const tiles = new Map();
+for (const group of [...new Set(SOUNDS.map((s) => s.group))]) {
+  const section = document.createElement('section');
+  const id = `g-${group.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+  section.setAttribute('aria-labelledby', id);
+  section.innerHTML = `<h2 id="${id}">${group}</h2><div class="grid"></div>`;
+  const grid = section.querySelector('.grid');
+  for (const s of SOUNDS.filter((x) => x.group === group)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tile';
+    b.innerHTML = `<span class="code">${s.code}</span><span class="name">${s.name}</span><span class="desc">${s.desc}</span><span class="err" role="status"></span>`;
+    b.addEventListener('click', async () => { await start(); run(s, b); });
+    grid.appendChild(b);
+    tiles.set(s.code, b);
+  }
+  groupsEl.appendChild(section);
+}
+
+document.querySelectorAll('[data-song]').forEach((b) => {
+  b.addEventListener('click', async () => {
+    await start();
+    const name = b.dataset.song;
+    if (player.song === name) {
+      stopMusic();
+    } else {
+      playSong(name);
+    }
+    document.querySelectorAll('[data-song]').forEach((x) => {
+      const on = player.song === x.dataset.song;
+      x.classList.toggle('on', on);
+      x.textContent = on ? '■ Stop' : '▶ Play';
+    });
+    setStatus(player.song ? `Playing the ${player.song} loop.` : 'Music stopped.');
+  });
+});
+
+document.getElementById('duck').addEventListener('click', async () => {
+  await start();
+  run(SOUND('F1'), null);
+  if (!player.song) setStatus('Start a loop first to hear the music dip.');
+});
+
+document.getElementById('demo').addEventListener('click', async () => {
+  await start();
+  if (player.song !== 'match') {
+    playSong('match');
+    document.querySelectorAll('[data-song]').forEach((x) => {
+      const on = x.dataset.song === 'match';
+      x.classList.toggle('on', on);
+      x.textContent = on ? '■ Stop' : '▶ Play';
+    });
+  }
+  for (const [at, code] of DEMO) run(SOUND(code), tiles.get(code), at + 0.5);
+  setStatus('Demo round: your turn, roll, hops, a snake slide, a card pick and hit, a face-off, the win and the ranks.');
+});
+
+document.getElementById('master').addEventListener('input', (e) => {
+  if (engine.started) Tone.getDestination().volume.rampTo(Number(e.target.value), 0.05);
+});
+document.getElementById('music-vol').addEventListener('input', (e) => {
+  if (engine.started) engine.music.volume.rampTo(Number(e.target.value), 0.05);
+});
+</script>
