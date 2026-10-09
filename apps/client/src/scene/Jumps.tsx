@@ -5,7 +5,7 @@ import { Color, DoubleSide, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandar
 import { useStore } from 'zustand';
 import { BOARD_COLORS, PAIR_COLORS, WORLD_COLORS } from '../app/theme';
 import { exitGeometry, padGeometry, targetGeometry, vortexGeometry } from '../assets/models';
-import { useSlotMesh, type SlotMesh } from '../assets/slotMesh';
+import { useSlotMesh } from '../assets/slotMesh';
 import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
 import { PARTS, slideCurve, tileToWorld } from './layout';
@@ -21,12 +21,8 @@ const MAX_JUMPS = 24;
 const MAX_MARKS = 4 * MAX_JUMPS;
 const INK = new Color(WORLD_COLORS.ink);
 const GOLD = new Color(WORLD_COLORS.crown);
-
-/** A model's material named Glow, which the game may pulse (spec #5 §3.2). */
-function glowOf(mesh: SlotMesh): MeshStandardMaterial | undefined {
-  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-  return materials.find((m): m is MeshStandardMaterial => m instanceof MeshStandardMaterial && m.name === 'Glow');
-}
+const CREAM = new Color(PAIR_COLORS.cap);
+const hsl = { h: 0, s: 0, l: 0 };
 
 /** A shown path's progress: when it began to grow in, and when it began to shrink away. */
 interface Reveal {
@@ -75,12 +71,12 @@ function Path({ jump, style, progress, clearcoat, chevrons, lights }: PathProps)
         ...(lights ? { map: lights, emissiveMap: lights } : {}),
         color: style.colour,
         emissive: WORLD_COLORS.cloud,
-        emissiveIntensity: 0.45,
+        emissiveIntensity: 0.18,
         roughness: 0.3,
         clearcoat: clearcoat ? 0.9 : 0,
         clearcoatRoughness: 0.15,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.92,
         depthWrite: false,
         side: DoubleSide,
       }),
@@ -148,7 +144,6 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
     { clearcoat },
   );
   const target = useSlotMesh('pad.target', () => ({ geometry: targetGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
-  const targetGlow = useMemo(() => glowOf(target), [target]);
   // The pair symbols (spec #5 A13): one instanced mesh per symbol, unlit decals, and the whirlpools' still caps.
   const symbols = useMemo(() => Object.fromEntries(SYMBOLS.map((name) => [name, symbolGeometry(name)])) as Record<SymbolName, BufferGeometry>, []);
   const symbolMaterial = useMemo(() => new MeshBasicMaterial({ vertexColors: true, side: DoubleSide }), []);
@@ -235,7 +230,9 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
       mesh.setColorAt(i, tint);
     };
     for (const j of ladders) {
-      mark(j, j.from, PARTS.padTop + 0.004, PARTS.symbol.pad, INK);
+      // A dark pad (teal, plum) carries a cream symbol: a dark one would vanish on it.
+      colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud);
+      mark(j, j.from, PARTS.padTop + 0.004, PARTS.symbol.pad, colour.getHSL(hsl).l < 0.4 ? CREAM : INK);
       mark(j, j.to, PARTS.onTile, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe));
     }
     for (const j of snakes) {
@@ -264,11 +261,6 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
       });
       caps.count = snakes.length;
       caps.instanceMatrix.needsUpdate = true;
-    }
-    // The landing stars breathe (spec #5 §4.2).
-    if (targetGlow) {
-      const base = (targetGlow.userData.glow ??= targetGlow.emissiveIntensity) as number;
-      targetGlow.emissiveIntensity = base * (0.65 + 0.35 * Math.sin(clock.elapsedTime * 3));
     }
     if (chevrons) chevrons.offset.y -= delta * 0.8;
     if (lights) lights.offset.y -= delta * 0.9; // the trail's lights travel toward the landing

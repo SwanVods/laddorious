@@ -6,7 +6,7 @@ export type Vec3 = [number, number, number];
 /** World units per tile (spec #2 §6.1, §6.3). */
 export const TILE_SIZE = 1.6;
 /** Tiles are this thick; their top faces sit at y = 0. */
-export const TILE_THICKNESS = 0.22;
+export const TILE_THICKNESS = 0.3;
 export const COLUMNS = BOARD_COLUMNS;
 const HALF = (COLUMNS - 1) / 2;
 
@@ -30,13 +30,13 @@ export const PARTS = {
   /** At most 0.44: lanes a clearance apart never overlap, vortices and exits included (polish spec 4.1). */
   vortexRadius: 0.43,
   /** The still cap in a whirlpool's eye: its radius, and its top, where the symbol lies. */
-  cap: { radius: 0.18, top: 0.07 },
+  cap: { radius: 0.21, top: 0.07 },
   exitInner: 0.29,
   exitOuter: 0.43,
   /** Symbols on tile tops sit just above the board overlay. */
   onTile: 0.012,
   /** Each symbol's size across. */
-  symbol: { pad: 0.5, landing: 0.52, eye: 0.26, exit: 0.36 },
+  symbol: { pad: 0.5, landing: 0.52, eye: 0.33, exit: 0.36 },
 } as const;
 
 /** Centre of a tile's top face; row 0 is nearest the camera (+Z). Tile 0 is a start spot in front of the board, one per seat. */

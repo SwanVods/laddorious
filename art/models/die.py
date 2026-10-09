@@ -1,4 +1,5 @@
-"""The die (spec #5 §4.1): a rounded cream die with real carved pips: dark dimples, and a pink one.
+"""The die (spec #5 §4.1, A13): a rounded cream die with real carved pips: dark dimples, and a red one,
+as on classic dice. Kept light (four bevel steps, sixteen-sided pips): four of them tumble at once.
 
 Faces follow the game's map (DIE_FACES, dieRotationFor): in the game's axes +Y 1, -Y 6, +X 3,
 -X 4, +Z 2, -Z 5. Blender's +Z is the game's +Y and Blender's -Y the game's +Z, which gives the
@@ -32,14 +33,14 @@ PIPS = {
 def build():
     body = finish.glossy('Body', palette.CREAM)
     pip = finish.glossy('Pip', palette.INK)
-    one = finish.glossy('One', palette.SEAT)
-    die = shapes.rounded_box('die', (SIZE, SIZE, SIZE), 0.09, body, segments=5)
+    one = finish.glossy('One', palette.RED)
+    die = shapes.rounded_box('die', (SIZE, SIZE, SIZE), 0.09, body, segments=4)
     pips = []
     for value, (normal, across, up) in FACES.items():
         for i, (a, b) in enumerate(PIPS[value]):
             # A ball sunk partway into the face carves a round dimple with a crisp rim, as on real dice.
-            radius, out = (0.07, 0.045) if value == 1 else (0.05, 0.03)
+            radius, out = (0.075, 0.048) if value == 1 else (0.05, 0.03)
             centre = tuple(normal[k] * (SIZE / 2 + out) + across[k] * a * SPACING + up[k] * b * SPACING for k in range(3))
             colour = one if value == 1 else pip
-            pips.append((shapes.sphere(f'pip{value}{i}', radius, colour, location=centre, segments=24, rings=12), colour))
+            pips.append((shapes.sphere(f'pip{value}{i}', radius, colour, location=centre, segments=16, rings=8), colour))
     return [sculpt.carve('die', (die, body), pips)]

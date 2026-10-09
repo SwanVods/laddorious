@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { contractProblems } from '../contract';
 import type { GlbSummary } from '../glb';
+import { PARTS } from '../../apps/client/src/scene/layout';
 
 const knight = (change: Partial<GlbSummary> = {}): GlbSummary => ({
   min: [-0.42, 0, -0.45],
@@ -32,7 +33,7 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
   it('wants a small Shadow mesh on every model that casts a shadow, and none on the board parts', () => {
     expect(contractProblems('knight', knight({ shadowTriangles: 0 }))).toEqual(['it has no Shadow mesh; the game casts its shadow from one']);
     expect(contractProblems('knight', knight({ shadowTriangles: 2000 }))).toEqual(['its Shadow mesh has 2000 triangles; at most 600']);
-    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.22, 0.76], triangles: 108, shadowTriangles: 40, materials: ['Tint'], byMaterial: {}, transformedNodes: [] };
+    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.3, 0.76], triangles: 196, shadowTriangles: 40, materials: ['Tint'], byMaterial: {}, transformedNodes: [] };
     expect(contractProblems('tile', tile)).toEqual(['it has a Shadow mesh, but the game draws it instanced, without one']);
   });
 
@@ -40,23 +41,36 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     expect(contractProblems('teapot', knight())).toEqual(['teapot has no rule in art/contract.ts']);
   });
 
-  it("checks a pad's arrow points forward (+Z), the way the game turns it toward the landing", () => {
-    const pad = (arrowZ: [number, number]): GlbSummary => ({
-      min: [-0.57, 0, -0.57],
-      max: [0.57, 0.2, 0.57],
-      triangles: 900,
-      shadowTriangles: 0,
-      materials: ['Pad', 'Arrow'],
-      byMaterial: { Arrow: { min: [-0.26, 0.17, arrowZ[0]], max: [0.26, 0.2, arrowZ[1]] } },
-      transformedNodes: [],
-    });
-    expect(contractProblems('pad', pad([-0.21, 0.37]))).toEqual([]);
-    expect(contractProblems('pad', pad([-0.37, 0.21]))).toEqual(['the arrow does not point forward (+Z): it reaches 0.21 forward and 0.37 back']);
+  const pad = (notchZ: [number, number], top: number = PARTS.padTop): GlbSummary => ({
+    min: [-0.57, 0, -0.57],
+    max: [0.57, top, 0.57],
+    triangles: 1000,
+    shadowTriangles: 0,
+    materials: ['Tint', 'Ink'],
+    byMaterial: { Ink: { min: [-0.09, top - 0.04, notchZ[0]], max: [0.09, top, notchZ[1]] } },
+    transformedNodes: [],
   });
 
-  it('keeps a tile to its one Tint material, so instancing can paint it', () => {
-    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.22, 0.76], triangles: 120, shadowTriangles: 0, materials: ['Tint', 'Edge'], byMaterial: {}, transformedNodes: [] };
+  it("checks a pad's notch points forward (+Z), the way the game turns it toward the landing (spec #5 A13)", () => {
+    expect(contractProblems('pad', pad([0.33, 0.47]))).toEqual([]);
+    expect(contractProblems('pad', pad([-0.47, -0.33]))).toEqual(['the Ink does not point forward (+Z): it reaches -0.33 forward and 0.47 back']);
+  });
+
+  it("keeps a pad's plate top where the game lays its symbol (PARTS.padTop)", () => {
+    expect(contractProblems('pad', pad([0.33, 0.47], PARTS.padTop + 0.03))).toEqual([`its top is at 0.340, but the symbol lies at ${PARTS.padTop}`]);
+  });
+
+  it('keeps a tile to its one Tint material, so instancing can paint it, 0.30 tall (spec #5 A13)', () => {
+    const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.3, 0.76], triangles: 196, shadowTriangles: 0, materials: ['Tint', 'Edge'], byMaterial: {}, transformedNodes: [] };
     expect(contractProblems('tile', tile)).toEqual(['it has 2 materials; at most 1']);
+    expect(contractProblems('tile', { ...tile, max: [0.76, 0.22, 0.76], materials: ['Tint'] })).toEqual(['it is 0.22 tall; 0.29–0.31 expected']);
+  });
+
+  it('paints the landing ring, whirlpool and collar through Tint, so each takes its pair colour (spec #5 A13)', () => {
+    const part = (materials: string[]): GlbSummary => ({ min: [-0.4, 0, -0.4], max: [0.4, 0.1, 0.4], triangles: 600, shadowTriangles: 0, materials, byMaterial: {}, transformedNodes: [] });
+    expect(contractProblems('target', part(['Ring']))).toEqual(['it has no Tint material']);
+    expect(contractProblems('vortex', part(['Inside', 'Glow']))).toEqual(['it has no Tint material']);
+    expect(contractProblems('exit', part(['Collar']))).toEqual(['it has no Tint material']);
   });
 
   it('checks the die keeps its middle at the origin and its one-pip face up (+Y)', () => {

@@ -1,4 +1,5 @@
 import type { SlotName } from '../apps/client/src/assets/slotFiles';
+import { PARTS } from '../apps/client/src/scene/layout';
 import type { GlbSummary } from './glb';
 
 // What every model file must keep (spec #5 §4, §5): one rule per art/models/<id>.py.
@@ -31,13 +32,21 @@ function oneOnTop(model: GlbSummary): string | null {
   return `the one-pip face is not on top (+Y): its pip is at ${mid.map((v) => (v + 0).toFixed(2)).join(', ')}`;
 }
 
-/** A pad's arrow points forward (+Z), the way the game turns pads toward their landing: its tip reaches further forward than its tail reaches back. */
-function arrowForward(model: GlbSummary): string | null {
-  const arrow = model.byMaterial.Arrow;
-  if (!arrow) return null; // requiredMaterials reports a missing Arrow
-  const forward = arrow.max[2]!;
-  const back = -arrow.min[2]!;
-  return forward > back + 0.05 ? null : `the arrow does not point forward (+Z): it reaches ${forward.toFixed(2)} forward and ${back.toFixed(2)} back`;
+/** A material's part points forward (+Z), the way the game turns pads toward their landing: it reaches further forward than back. */
+function forward(material: string) {
+  return (model: GlbSummary): string | null => {
+    const part = model.byMaterial[material];
+    if (!part) return null; // requiredMaterials reports it missing
+    const ahead = part.max[2]!;
+    const back = -part.min[2]!;
+    return ahead > back + 0.05 ? null : `the ${material} does not point forward (+Z): it reaches ${ahead.toFixed(2)} forward and ${back.toFixed(2)} back`;
+  };
+}
+
+/** The model's top is where the game lays its pair symbol (spec #5 A13, PARTS in the client's layout). */
+function topAt(height: number) {
+  return (model: GlbSummary): string | null =>
+    Math.abs(model.max[1] - height) <= 0.006 ? null : `its top is at ${model.max[1].toFixed(3)}, but the symbol lies at ${height}`;
 }
 
 // Triangle limits are guards, not the spec's targets (the user, Step 1 review: sculpted, curved models may
@@ -63,14 +72,15 @@ export const MODELS: Record<string, ModelRule> = {
   rook: piece('piece.rook'),
   hat: piece('piece.hat'),
   duck: piece('piece.duck'),
-  die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 5000, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
+  die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 2500, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
   crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 8000, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: [] },
-  // The board (spec #5 §4.2): parts stand on the tile top; instancing draws each once per material.
-  tile: { slot: 'tile', origin: 'base', height: [0.21, 0.23], maxWidth: 1.53, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
-  pad: { slot: 'pad', origin: 'base', height: [0.12, 0.26], maxWidth: 1.25, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Arrow'], checks: [arrowForward] },
-  target: { slot: 'pad.target', origin: 'base', height: [0.03, 0.12], maxWidth: 1.3, maxTriangles: 800, maxMaterials: 2, requiredMaterials: ['Glow'] },
-  vortex: { slot: 'slide.vortex', origin: 'base', height: [0.05, 0.16], maxWidth: 0.72, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Glow'] },
-  exit: { slot: 'slide.exit', origin: 'base', height: [0.04, 0.12], maxWidth: 0.72, maxTriangles: 800, maxMaterials: 1, requiredMaterials: [] },
+  // The board (spec #5 §4.2, A13): parts stand on the tile top; instancing draws each once per material, and
+  // the instance colour (each jump's pair colour) paints Tint, so every jump part has it.
+  tile: { slot: 'tile', origin: 'base', height: [0.29, 0.31], maxWidth: 1.53, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  pad: { slot: 'pad', origin: 'base', height: [0.28, 0.34], maxWidth: 1.25, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Tint', 'Ink'], checks: [forward('Ink'), topAt(PARTS.padTop)] },
+  target: { slot: 'pad.target', origin: 'base', height: [0.05, 0.1], maxWidth: 1.3, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  vortex: { slot: 'slide.vortex', origin: 'base', height: [0.08, 0.14], maxWidth: 0.88, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Inside', 'Tint'] },
+  exit: { slot: 'slide.exit', origin: 'base', height: [0.06, 0.12], maxWidth: 0.88, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'] },
 };
 
 /** All the model files together stay under this (spec #5 A9). */

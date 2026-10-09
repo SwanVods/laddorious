@@ -88,10 +88,11 @@ def loft(name, rows, material, smooth=True):
     return _object(name, bm, material, smooth)
 
 
-def stack(name, outline, layers, material, top=None, smooth=True):
+def stack(name, outline, layers, material, top=None, smooth=True, flat_top=False):
     """A solid stacked from one closed outline of (x, y) points, drawn at (scale, height) layers from the
     bottom up: flat underneath, and closed on top by a point at height `top` (a domed star) or, without
-    one, by a flat cap. The outline lies flat like outline()'s top view: its +y is the model's forward (-Y)."""
+    one, by a flat cap. The outline lies flat like outline()'s top view: its +y is the model's forward (-Y).
+    flat_top shades that flat cap flat, so a rounded edge's shading doesn't spill across it (a tile)."""
     bm = bmesh.new()
     rings = [[bm.verts.new((-x * s, -y * s, z)) for x, y in outline] for s, z in layers]
     count = len(outline)
@@ -100,13 +101,18 @@ def stack(name, outline, layers, material, top=None, smooth=True):
             bm.faces.new((a[k], a[(k + 1) % count], b[(k + 1) % count], b[k]))
     bm.faces.new(rings[0])
     if top is None:
-        bm.faces.new(rings[-1])
+        cap = bm.faces.new(rings[-1])
     else:
         peak = bm.verts.new((0.0, 0.0, top))
         for k in range(count):
             bm.faces.new((rings[-1][k], rings[-1][(k + 1) % count], peak))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    return _object(name, bm, material, smooth)
+    bm.faces.index_update()
+    flat = cap.index if flat_top and top is None else None  # read before _object frees the bmesh
+    obj = _object(name, bm, material, smooth)
+    if flat is not None:
+        obj.data.polygons[flat].use_smooth = False
+    return obj
 
 
 def grid(name, rows, materials, paint=lambda row, column: 0, smooth=True):
