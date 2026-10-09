@@ -32,6 +32,20 @@ export const WORLD_COLORS = {
   ring: '#ffcc33',
 } as const;
 
+/**
+ * Pair colours (spec #5 A13): a jump's start and end share one, with a matching symbol. Each reads on
+ * every square colour with a dark rim. The dark ones are for ladders only: they vanish on a portal's dark bowl.
+ */
+const PAIR = { pink: '#ff4f9a', cyan: '#33d6ff', lime: '#b8f03c', cream: '#fff7ec', teal: '#0f5d63', plum: '#7a2e6e' } as const;
+export const PAIR_COLORS = {
+  all: PAIR,
+  /** In the order pairs take them. */
+  ladder: [PAIR.pink, PAIR.cyan, PAIR.lime, PAIR.cream, PAIR.teal, PAIR.plum],
+  portal: [PAIR.pink, PAIR.cyan, PAIR.lime, PAIR.cream],
+  /** The cap in a whirlpool's eye, under its symbol. */
+  cap: PAIR.cream,
+} as const;
+
 /** The menu podium and its floating island (spec #2 §7.4 Podium tokens). */
 export const PODIUM_COLORS = {
   top: '#fff3e3',

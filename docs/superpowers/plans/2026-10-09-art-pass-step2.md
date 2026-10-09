@@ -32,6 +32,12 @@ Screenshots go to the user for the Step 2 review.
 - treat the triangle limits in this plan's contract rules as guards, and raise one when a model needs it, while the busy-match budget (≤ 100 draw calls, ≤ 150,000 triangles) stays the hard check;
 - previews render without shadows (the preview renderer's shadow edge is ragged on curved models).
 
+**Amendment after the Step 2 review (2026-10-10).** The user's notes and answers, and the pairs mockup they approved (review page, version 4), change the board as follows. These tasks run before the merge, with the same build and checks (Tasks R1–R7 below, at the end of this plan).
+- **Paths are hidden.** A pad's trail or a portal's (a slide's) channel shows only while a piece stands on its start tile, while a piece travels along it, and for 3 s after a tap or click on either end's tile. It grows in along its path and shrinks away.
+- **Pairs.** Each jump's start and end share a colour and a symbol, unique on the board: six colours (pink, cyan, lime, cream, dark teal, plum; teal and plum for ladders only) and eight symbols (circle, triangle, square, diamond, heart, plus, moon, bolt). Pad body, landing ring, whirlpool rim and ridges, and exit collar take the pair colour (instance colour, `Tint`). Symbols are a code-built marker layer: dark on the pad's plate, glowing gold in the landing ring (it breathes), on a still cream cap in the whirlpool's eye, and in the collar.
+- **Models:** tiles rounder on top and taller (0.30); a taller pad whose spring shows, with a dark notch toward its landing; target, vortex and exit recoloured through `Tint`; a lighter die with a red one; lighter pieces and crown for Low quality (`<id>-low.glb`, about a third of the triangles, no shadow stand-in).
+- The star stays gold; the slide walls take the pair colour.
+
 ## Global Constraints
 
 - Everything in plan 1's Global Constraints holds:
@@ -1715,3 +1721,43 @@ After the user approves:
 1. Fast-forward merge `art/spec-5` into `main` locally, and run `pnpm test` on `main`.
 2. Keep the branch for Step 3.
 3. Update memory (`handoff`).
+
+---
+
+## Review 2 tasks (after the user's Step 2 review)
+
+Each task is test-first: write the failing test, watch it fail, make it pass, run `pnpm test`, commit with the trailer.
+
+### Task R1: Pair colours and symbols
+- `theme.ts`: `PAIR_COLORS` (pink `#ff4f9a`, cyan `#33d6ff`, lime `#b8f03c`, cream `#fff7ec`, teal `#0f5d63`, plum `#7a2e6e`) and which are light enough for portals.
+- `scene/pairs.ts`: `SYMBOLS` (8 names) and `pairStyles(jumps): Map<string, PairStyle>`, where `PairStyle = { colour, symbol }`. Deterministic (jump id order), unique (colour, symbol) per board, portals only on light colours, and a jump keeps its style when others are added.
+- Tests: uniqueness on a 26-jump board, portals never dark, stability when a jump is added, same result for the same jumps in any order.
+
+### Task R2: Hidden paths, revealed by pieces and taps
+- `scene/paths.ts`: `shownPaths({ jumps, positions, moving, peeks, now })` returns the ids to draw: a piece on the start tile, a `Moved` event with cause `snake`/`ladder` in the current beat, or a peek still running. `PEEK_MS = 3000`.
+- A peek store per match; `Board` tiles take a tap or click and peek every jump that starts or ends on that tile.
+- `Jumps`: draws only shown paths, each its own mesh, growing in along the path over 0.35 s and shrinking away; trails and channels take the pair colour.
+- Tests: each reason to show, peeks expiring, the scene drawing no path mesh for an empty board start, and a tap on a pad's tile showing its trail.
+
+### Task R3: The marker layer
+- `assets/symbols.ts`: `symbolGeometry(name)`, a flat glyph with a dark rim (vertex colours: rim dark, face white), lying on its base.
+- `scene/Markers.tsx`: one instanced mesh per symbol plus the whirlpool caps; placed on pads (dark), landings (gold, breathing), whirlpool eyes (pair colour on a cream cap that doesn't spin) and collars (pair colour). Board parts take pair colours through instance colours.
+- Tests: geometry for every symbol, a marker per jump end, colours from `pairStyles`, at most 9 extra draw calls.
+
+### Task R4: The board models, reworked
+- `tile`: rounded top edges, 0.30 tall (`TILE_THICKNESS`), at most 200 triangles.
+- `pad`: taller, the spring visible, `Tint` body with a dark `Ink` notch pointing forward.
+- `target`: the ring alone, in `Tint`. `vortex`: `Inside` bowl, `Tint` rim and ridges, a flat eye for the cap. `exit`: `Tint`.
+- `die`: lighter (≤ 2,500 triangles), the one pip red.
+- Contract rules and stand-ins follow; previews checked.
+
+### Task R5: Lighter pieces on Low
+- `sculpt.DETAIL` scales every `fuse` target; `build.py` also writes `<id>-low.glb` (no shadow stand-in) for scripts with `LOW = <scale>`: the seven pieces and the crown.
+- Slots load the low file when the match or menu runs on Low quality.
+- Contract: every low file keeps its model's rule, with at most a third of its triangles and no `Shadow` mesh.
+
+### Task R6: The budget
+- `budget.test.ts` prices the busy match with hidden paths (at most 5 shown: four pieces and one peek), the marker layer, and a second check on Low with the low files and no shadows.
+
+### Task R7: Docs, gate and the review
+- Spec amendments (A13 pairs and hidden paths, A14 Low pieces), READMEs, HANDOFF; the gate as Task 9; screenshots and the review page; stop for the user.
