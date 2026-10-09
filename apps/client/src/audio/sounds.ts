@@ -191,7 +191,8 @@ function whoosh(p: Play, t: number, from: number, to: number, len: number, vel =
 
 const HOP_NOTES = ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6'];
 const STEP_BACK_NOTES = ['G4', 'F4', 'E4', 'D4', 'C4'];
-const PIECE_NOTES = ['C5', 'E5', 'G5', 'C6'];
+/** One marimba note per piece in picker order (spec #3 §5, spec #5 §4.1). */
+export const PIECE_NOTES = ['C5', 'E5', 'G5', 'C6', 'D5', 'A5', 'E6'] as const;
 const RANK_NOTES: Record<number, string> = { 4: 'C5', 3: 'E5', 2: 'G5' };
 
 const landing: Recipe = (p, t) => {
@@ -217,7 +218,7 @@ export const SOUNDS: Record<SoundId, Recipe> = {
   },
   U2: (p, t, piece = 0) => {
     pop(p, t, 320, 900, 0.7);
-    marimba(p, 1.2).triggerAttackRelease(PIECE_NOTES[piece % 4]!, 0.4, t + 0.03, 0.8);
+    marimba(p, 1.2).triggerAttackRelease(PIECE_NOTES[piece % PIECE_NOTES.length]!, 0.4, t + 0.03, 0.8);
     return 0.6;
   },
   U3: (p, t, on = 1) => {

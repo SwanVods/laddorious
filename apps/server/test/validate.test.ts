@@ -9,7 +9,7 @@ describe('parseLobbyMessage (spec #4 §6, §7)', () => {
   it('reads hello with a clean profile, and the other lobby messages', () => {
     expect(parseLobbyMessage(json({ type: 'hello', version: PROTOCOL_VERSION, profile: { nickname: '  Ari ', piece: 'meeple' } }))).toEqual({
       kind: 'ok',
-      msg: { type: 'hello', version: 1, profile: { nickname: 'Ari', piece: 'meeple' } },
+      msg: { type: 'hello', version: PROTOCOL_VERSION, profile: { nickname: 'Ari', piece: 'meeple' } },
     });
     for (const type of ['find', 'cancel', 'playWithBots']) expect(parseLobbyMessage(json({ type }))).toEqual({ kind: 'ok', msg: { type } });
     expect(parseLobbyMessage(json({ type: 'ping', t: 1234.5 }))).toEqual({ kind: 'ok', msg: { type: 'ping', t: 1234.5 } });
@@ -22,6 +22,12 @@ describe('parseLobbyMessage (spec #4 §6, §7)', () => {
     }
     expect(hello({ nickname: 'Ari', piece: 'queen' }).kind).toBe('close');
     expect(hello(null).kind).toBe('close');
+  });
+
+  it('accepts the three new pieces (spec #5 §4.1)', () => {
+    for (const piece of ['rook', 'hat', 'duck']) {
+      expect(parseLobbyMessage(json({ type: 'hello', version: 2, profile: { nickname: 'Ari', piece } }))).toMatchObject({ kind: 'ok', msg: { profile: { piece } } });
+    }
   });
 
   it('ignores unknown types and closes on malformed frames', () => {

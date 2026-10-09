@@ -3,10 +3,10 @@ import type { ChallengeChoice, GameEvent, InputError, PlayerId, PlayerView } fro
 // What a match host and its human seats exchange (spec #4 §3.1). The offline Web Worker and
 // the multiplayer server both use these.
 
-export type PieceId = 'knight' | 'pawn' | 'meeple' | 'dragon';
+export type PieceId = 'knight' | 'pawn' | 'meeple' | 'dragon' | 'rook' | 'hat' | 'duck';
 
-/** Piece picker order. Bots take the pieces no human chose, in this order (spec #2 §4.4). */
-export const PIECES: readonly PieceId[] = ['knight', 'pawn', 'meeple', 'dragon'];
+/** Piece picker order. Bots take the pieces no human chose, in this order (spec #2 §4.4, spec #5 §4.1). */
+export const PIECES: readonly PieceId[] = ['knight', 'pawn', 'meeple', 'dragon', 'rook', 'hat', 'duck'];
 
 export interface Profile {
   nickname: string;

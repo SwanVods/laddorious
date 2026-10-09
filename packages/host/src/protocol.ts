@@ -4,8 +4,8 @@ import type { MatchUpdate, PlayerAction, Profile, Seat } from './types';
 // The messages between the game and the multiplayer server (spec #4 §6): JSON text frames,
 // one object with a `type` each.
 
-/** Bumped whenever these messages change. The game and the server are built from the same commit. */
-export const PROTOCOL_VERSION = 1;
+/** Bumped whenever these messages change. The game and the server are built from the same commit. 2 since spec #5's three new pieces. */
+export const PROTOCOL_VERSION = 2;
 
 /** Why the server ended a lobby or match connection. */
 export type FailReason = 'version' | 'bad-token' | 'seat-lost' | 'server-error';

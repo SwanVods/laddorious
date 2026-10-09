@@ -168,16 +168,17 @@
   align-items: center;
   justify-content: center;
   gap: max(2px, 0.4cqh);
-  width: max(56px, 11.5cqh);
+  width: max(50px, 10cqh);
   height: max(60px, 13.5cqh);
-  padding: max(3px, 0.6cqh) 0 0;
+  padding: max(3px, 0.6cqh) 2px 0;
   border: 3px solid var(--ink);
   border-radius: max(10px, 2cqh);
   background: var(--paper);
   box-shadow: 0 max(3px, 0.6cqh) 0 var(--ink);
   color: var(--ink);
-  font-size: max(10px, 1.9cqh);
+  font-size: max(9px, 1.7cqh);
   line-height: 1;
+  text-align: center;
   cursor: pointer;
   transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4);
 }

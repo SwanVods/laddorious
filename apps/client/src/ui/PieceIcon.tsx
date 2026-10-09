@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
-import type { PieceId } from '../service/matchService';
+import { PIECES, type PieceId } from '../service/matchService';
 
-// 2D portraits of the four pieces for the HUD (spec #2 §7.2): white silhouettes with an ink
+// 2D portraits of the pieces for the HUD (spec #2 §7.2): white silhouettes with an ink
 // outline, drawn on a disc in the seat colour. The outlines follow the in-match mockup.
 
 type Command = ['M' | 'L', number, number] | ['Q', number, number, number, number];
@@ -17,6 +17,16 @@ const SHAPES: Record<Exclude<PieceId, 'pawn'>, { eye?: [number, number]; cmds: C
   },
   meeple: {
     cmds: [['M', -0.36, 0], ['L', -0.1, 0], ['Q', 0, 0.24, 0.1, 0], ['L', 0.36, 0], ['Q', 0.3, 0.2, 0.2, 0.34], ['Q', 0.42, 0.38, 0.4, 0.5], ['Q', 0.36, 0.6, 0.16, 0.6], ['Q', 0.24, 0.74, 0.16, 0.84], ['Q', 0, 0.96, -0.16, 0.84], ['Q', -0.24, 0.74, -0.16, 0.6], ['Q', -0.36, 0.6, -0.4, 0.5], ['Q', -0.42, 0.38, -0.2, 0.34], ['Q', -0.3, 0.2, -0.36, 0]],
+  },
+  rook: {
+    cmds: [['M', -0.34, 0], ['L', 0.34, 0], ['L', 0.34, 0.08], ['L', 0.26, 0.12], ['L', 0.22, 0.62], ['L', 0.32, 0.66], ['L', 0.32, 0.92], ['L', 0.19, 0.92], ['L', 0.19, 0.83], ['L', 0.07, 0.83], ['L', 0.07, 0.92], ['L', -0.07, 0.92], ['L', -0.07, 0.83], ['L', -0.19, 0.83], ['L', -0.19, 0.92], ['L', -0.32, 0.92], ['L', -0.32, 0.66], ['L', -0.22, 0.62], ['L', -0.26, 0.12], ['L', -0.34, 0.08], ['L', -0.34, 0]],
+  },
+  hat: {
+    cmds: [['M', -0.46, 0.04], ['Q', -0.46, 0, -0.38, 0], ['L', 0.38, 0], ['Q', 0.46, 0, 0.46, 0.04], ['Q', 0.46, 0.1, 0.3, 0.12], ['L', 0.27, 0.86], ['Q', 0.27, 0.92, 0.2, 0.92], ['L', -0.2, 0.92], ['Q', -0.27, 0.92, -0.27, 0.86], ['L', -0.3, 0.12], ['Q', -0.46, 0.1, -0.46, 0.04]],
+  },
+  duck: {
+    eye: [0.16, 0.76],
+    cmds: [['M', -0.3, 0], ['L', 0.24, 0], ['Q', 0.44, 0.02, 0.42, 0.22], ['Q', 0.4, 0.4, 0.2, 0.44], ['Q', 0.36, 0.5, 0.34, 0.66], ['L', 0.5, 0.62], ['L', 0.52, 0.68], ['L', 0.34, 0.74], ['Q', 0.3, 0.92, 0.12, 0.92], ['Q', -0.06, 0.9, -0.06, 0.7], ['Q', -0.06, 0.56, 0.04, 0.48], ['Q', -0.2, 0.48, -0.34, 0.36], ['L', -0.44, 0.42], ['L', -0.4, 0.22], ['Q', -0.42, 0.04, -0.3, 0]],
   },
 };
 const PAWN_SIDE: Array<[number, number]> = [[0.36, 0], [0.37, 0.04], [0.35, 0.1], [0.27, 0.13], [0.25, 0.18], [0.18, 0.22], [0.14, 0.34], [0.115, 0.5], [0.11, 0.56], [0.2, 0.6], [0.21, 0.63], [0.12, 0.67]];
@@ -61,7 +71,7 @@ function draw(piece: PieceId): Drawn {
   };
 }
 
-const DRAWN: Record<PieceId, Drawn> = { knight: draw('knight'), pawn: draw('pawn'), meeple: draw('meeple'), dragon: draw('dragon') };
+const DRAWN = Object.fromEntries(PIECES.map((piece) => [piece, draw(piece)])) as Record<PieceId, Drawn>;
 
 /** A piece silhouette. The fill and outline come from CSS (.piece-icon). */
 export function PieceIcon({ piece }: { piece: PieceId }) {

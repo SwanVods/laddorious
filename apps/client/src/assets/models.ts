@@ -1,4 +1,4 @@
-import { CylinderGeometry, ExtrudeGeometry, LatheGeometry, Shape, Vector2, type BufferGeometry } from 'three';
+import { ConeGeometry, CylinderGeometry, ExtrudeGeometry, LatheGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { PieceId } from '../service/matchService';
@@ -97,11 +97,49 @@ function dragonGeometry(): BufferGeometry {
   return merge([plinth(), profile(head, 0.28)]);
 }
 
+function rookGeometry(): BufferGeometry {
+  const tower = lathe([[0, 0], [0.4, 0], [0.42, 0.05], [0.4, 0.1], [0.31, 0.14], [0.28, 0.2], [0.24, 0.6], [0.31, 0.64], [0.33, 0.68], [0.33, 0.84], [0, 0.84]]);
+  const merlons = [0, 1, 2, 3].map((i) => {
+    const a = Math.PI / 4 + (i * Math.PI) / 2;
+    const m = new RoundedBoxGeometry(0.16, 0.16, 0.16, 1, 0.03);
+    m.rotateY(-a);
+    m.translate(Math.cos(a) * 0.24, 0.91, Math.sin(a) * 0.24);
+    return m;
+  });
+  return merge([tower, ...merlons]);
+}
+
+function hatGeometry(): BufferGeometry {
+  return lathe([[0, 0], [0.46, 0], [0.485, 0.035], [0.46, 0.07], [0.3, 0.085], [0.275, 0.1], [0.27, 0.9], [0.255, 0.95], [0.2, 0.965], [0, 0.97]]);
+}
+
+/** A round body, a head, a flat beak and a tail, facing +Z; stood on the origin. */
+function duckGeometry(): BufferGeometry {
+  const body = new SphereGeometry(0.34, 20, 14);
+  body.scale(0.9, 0.75, 1.15);
+  body.translate(0, 0.27, 0);
+  const head = new SphereGeometry(0.2, 18, 12);
+  head.translate(0, 0.72, 0.12);
+  const beak = new SphereGeometry(0.09, 12, 8);
+  beak.scale(1.1, 0.45, 1.6);
+  beak.translate(0, 0.68, 0.33);
+  const tail = new ConeGeometry(0.1, 0.22, 10);
+  tail.rotateX(-0.8);
+  tail.translate(0, 0.42, -0.36);
+  const g = merge([body, head, beak, tail]);
+  g.computeBoundingBox();
+  g.translate(0, -g.boundingBox!.min.y, 0);
+  return g;
+}
+
 export const PIECE_GEOMETRY: Record<PieceId, () => BufferGeometry> = {
   knight: knightGeometry,
   pawn: pawnGeometry,
   meeple: meepleGeometry,
   dragon: dragonGeometry,
+  rook: rookGeometry,
+  hat: hatGeometry,
+  duck: duckGeometry,
 };
 
 /** Die faces in BoxGeometry's face order (+X, −X, +Y, −Y, +Z, −Z); opposite faces sum to 7. */

@@ -5,7 +5,7 @@ import type { PieceId } from '../service/matchService';
 // the client reads names, texts and targets from it.
 
 /** How the HUD names each piece. */
-export const PIECE_NAMES: Record<PieceId, string> = { knight: 'Knight', pawn: 'Pawn', meeple: 'Meeple', dragon: 'Dragon head' };
+export const PIECE_NAMES: Record<PieceId, string> = { knight: 'Knight', pawn: 'Pawn', meeple: 'Meeple', dragon: 'Dragon head', rook: 'Rook', hat: 'Top hat', duck: 'Rubber duck' };
 
 /** Icon names drawn by ui/Icon.tsx. */
 export type IconName =

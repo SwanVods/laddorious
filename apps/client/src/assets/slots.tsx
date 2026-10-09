@@ -1,7 +1,7 @@
 import { Component, Suspense, lazy, type ReactNode } from 'react';
 import { Mesh, type Material, type MeshStandardMaterial, type Object3D } from 'three';
 
-export type SlotName = 'piece.knight' | 'piece.pawn' | 'piece.meeple' | 'piece.dragon' | 'die' | 'pad' | 'slide.vortex' | 'crown' | 'island';
+export type SlotName = 'piece.knight' | 'piece.pawn' | 'piece.meeple' | 'piece.dragon' | 'piece.rook' | 'piece.hat' | 'piece.duck' | 'die' | 'pad' | 'slide.vortex' | 'crown' | 'island';
 
 /**
  * Optional .glb overrides per slot (spec #2 §6.3); the Spec #5 art pass fills these in.

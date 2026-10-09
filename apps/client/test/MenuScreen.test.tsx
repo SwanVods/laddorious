@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MenuScreen, TIPS, TIP_MS } from '../src/app/MenuScreen';
 import { createPrefsStore } from '../src/app/prefs';
@@ -71,7 +71,7 @@ describe('MenuScreen (spec #2 §7.1)', () => {
     expect(screen.getByRole('button', { name: 'Dragon head' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('img', { name: 'Podium with the dragon, auto' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next piece' }));
-    expect(prefs.getState().profile.piece).toBe('knight');
+    expect(prefs.getState().profile.piece).toBe('rook');
     fireEvent.click(screen.getByRole('button', { name: 'Previous piece' }));
     expect(prefs.getState().profile.piece).toBe('dragon');
   });
@@ -81,7 +81,13 @@ describe('MenuScreen (spec #2 §7.1)', () => {
     const dragon = screen.getByRole('button', { name: 'Dragon head' });
     expect([dragon.getAttribute('data-sound'), dragon.getAttribute('data-sound-arg')]).toEqual(['U2', '3']);
     expect(screen.getByRole('button', { name: 'Next piece' }).getAttribute('data-sound-arg')).toBe('1');
-    expect(screen.getByRole('button', { name: 'Previous piece' }).getAttribute('data-sound-arg')).toBe('3');
+    expect(screen.getByRole('button', { name: 'Previous piece' }).getAttribute('data-sound-arg')).toBe('6');
+  });
+
+  it('offers all seven pieces in the picker (spec #5 §4.1)', () => {
+    open();
+    const picker = screen.getByRole('group', { name: 'Choose your piece' });
+    expect(within(picker).getAllByRole('button').map((b) => b.textContent)).toEqual(['Knight', 'Pawn', 'Meeple', 'Dragon head', 'Rook', 'Top hat', 'Rubber duck']);
   });
 
   it('turns over the rule tips every few seconds', () => {

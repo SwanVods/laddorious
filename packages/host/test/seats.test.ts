@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { PROTOCOL_VERSION } from '../src/protocol';
 import { BOT_NAMES, buildSeats, randomHex } from '../src/seats';
+import { PIECES } from '../src/types';
 
 describe('buildSeats (spec #4 §4)', () => {
   it('seats one human, then Mochi, Pip and Juno on the pieces the human left, in picker order', () => {
@@ -37,5 +39,20 @@ describe('randomHex', () => {
     const a = randomHex();
     expect(a).toMatch(/^[0-9a-f]{32}$/);
     expect(randomHex()).not.toBe(a);
+  });
+});
+
+describe('the seven pieces (spec #5 §4.1)', () => {
+  it('lists the new pieces after the four, and bots still take free pieces in that order', () => {
+    expect(PIECES).toEqual(['knight', 'pawn', 'meeple', 'dragon', 'rook', 'hat', 'duck']);
+    const seats = buildSeats([
+      { nickname: 'Ari', piece: 'rook' },
+      { nickname: 'Bo', piece: 'duck' },
+    ]);
+    expect(seats.map((s) => s.piece)).toEqual(['rook', 'duck', 'knight', 'pawn']);
+  });
+
+  it('is protocol 2, so builds from before the new pieces ask to reload', () => {
+    expect(PROTOCOL_VERSION).toBe(2);
   });
 });
