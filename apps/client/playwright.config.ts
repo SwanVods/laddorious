@@ -23,9 +23,11 @@ export default defineConfig({
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
   },
   projects: [
-    { name: 'desktop-chromium', testIgnore: /online\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
-    { name: 'iphone-12-landscape', testIgnore: /online\.spec\.ts/, use: { ...devices['iPhone 12 landscape'], browserName: 'chromium' } },
-    { name: 'pixel-7-landscape', testIgnore: /online\.spec\.ts/, use: { ...devices['Pixel 7 landscape'] } },
+    { name: 'desktop-chromium', testIgnore: /(online|shots)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'iphone-12-landscape', testIgnore: /(online|shots)\.spec\.ts/, use: { ...devices['iPhone 12 landscape'], browserName: 'chromium' } },
+    { name: 'pixel-7-landscape', testIgnore: /(online|shots)\.spec\.ts/, use: { ...devices['Pixel 7 landscape'] } },
+    // Review screenshots for the art steps (spec #5 §7): `pnpm shots`.
+    { name: 'shots', testMatch: /shots\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     { name: 'online', testMatch: /online\.spec\.ts/, use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${ONLINE_PORT}` } },
   ],
   webServer: [

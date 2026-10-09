@@ -14,12 +14,13 @@ describe('the e2e test hook (spec #2 §9.3)', () => {
     expect(window.__laddoriousTest).toBeUndefined();
   });
 
-  it('speeds the match up and reports the draw calls', () => {
+  it('speeds the match up and reports the draw calls and triangles', () => {
     const hooks = testHooks('e2e')!;
     expect(hooks).toMatchObject({ fast: true, timeScale: TEST_TIME_SCALE });
     expect(window.__laddoriousTest).toBe(hooks);
-    renderStats.setState({ calls: 42 });
+    renderStats.setState({ calls: 42, triangles: 61_000 });
     expect(window.__laddoriousTest!.drawCalls()).toBe(42);
+    expect(window.__laddoriousTest!.triangles()).toBe(61_000);
   });
 
   it("reports the sound engine's stats for the e2e sound check (spec #3 §7)", () => {

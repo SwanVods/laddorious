@@ -17,7 +17,8 @@
     "deploy:cloudflare": "node apps/server/scripts/online.mjs deploy",
     "art": "node art/build.mjs",
     "build": "pnpm --filter @laddorious/client build",
-    "e2e": "pnpm --filter @laddorious/client e2e"
+    "e2e": "pnpm --filter @laddorious/client e2e",
+    "shots": "pnpm --filter @laddorious/client exec playwright test --project shots"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.23.5",
