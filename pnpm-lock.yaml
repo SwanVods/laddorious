@@ -47,6 +47,9 @@ importers:
       '@laddorious/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@laddorious/host':
+        specifier: workspace:*
+        version: link:../../packages/host
       '@react-three/drei':
         specifier: ^10.7.9
         version: 10.7.9(@react-three/fiber@9.8.1(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(three@0.186.1))(@types/react@19.3.0)(@types/three@0.186.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(three@0.186.1)
@@ -113,6 +116,15 @@ importers:
         version: link:../core
 
   packages/core: {}
+
+  packages/host:
+    dependencies:
+      '@laddorious/bots':
+        specifier: workspace:*
+        version: link:../bots
+      '@laddorious/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

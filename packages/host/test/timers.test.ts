@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PausableTimers } from '../src/worker/timers';
+import { PausableTimers } from '../src/timers';
 
 beforeEach(() => {
   vi.useFakeTimers();

@@ -1,5 +1,5 @@
-import type { InputError } from '@laddorious/core';
-import type { MatchUpdate, PlayerAction, SeatInfo } from '../service/matchService';
+import type { FromHost } from '@laddorious/host';
+import type { PlayerAction, SeatInfo } from '../service/matchService';
 
 /** Main thread → host worker (spec #2 §4.4). Plain objects, so they survive structured cloning. */
 export type ToHost =
@@ -10,11 +10,8 @@ export type ToHost =
   | { type: 'resume' }
   | { type: 'leave' };
 
-/** Host worker → main thread: only what a remote player would receive (§4.2). */
-export type FromHost =
-  | { type: 'update'; update: MatchUpdate }
-  | { type: 'rejected'; error: InputError }
-  | { type: 'failed'; message: string };
+/** Host worker → main thread: only what a remote player would receive (spec #2 §4.2). */
+export type { FromHost } from '@laddorious/host';
 
 /** The part of a Worker that the session uses, so tests can stand in for one. */
 export interface HostWorker {

@@ -1,24 +1,15 @@
-import type { ChallengeChoice, GameEvent, InputErrorCode, PlayerId, PlayerView } from '@laddorious/core';
+import type { InputErrorCode, PlayerId } from '@laddorious/core';
+import type { MatchUpdate, PlayerAction, Profile, Seat } from '@laddorious/host';
 
-// The contract between the screens and a match (spec #2 §4.3). LocalMatchService
-// implements it with a Web Worker; the online service (Spec #4) will implement it over the network.
+// The contract between the screens and a match (spec #2 §4.3). LocalMatchService implements it
+// with a Web Worker, and OnlineMatchService over the network (spec #4). The match types are
+// shared with the host (packages/host).
 
-export type PieceId = 'knight' | 'pawn' | 'meeple' | 'dragon';
+export { PIECES, type MatchUpdate, type PieceId, type PlayerAction, type Profile } from '@laddorious/host';
 
-/** Piece picker order. Bots take the pieces you didn't choose, in this order (§4.4). */
-export const PIECES: readonly PieceId[] = ['knight', 'pawn', 'meeple', 'dragon'];
-
-export interface Profile {
-  nickname: string;
-  piece: PieceId;
-}
-
-export interface SeatInfo {
-  playerId: PlayerId;
-  nickname: string;
-  piece: PieceId;
+/** A seat as the screens show it: the shared seat plus its colour (spec #4 M10). */
+export interface SeatInfo extends Seat {
   color: string;
-  bot: boolean;
 }
 
 export type MatchmakingState =
@@ -40,18 +31,6 @@ export interface Matchmaking {
   onState(cb: (s: MatchmakingState) => void): () => void;
   cancel(): void; // ignored once filling has started
   playWithBots(): void; // ignored unless searching; idempotent
-}
-
-export type PlayerAction =
-  | { type: 'roll' }
-  | { type: 'challengePick'; challengeId: string; choice: ChallengeChoice }
-  | { type: 'reroll'; slot: number }
-  | { type: 'pickCard'; slot: number };
-
-export interface MatchUpdate {
-  view: PlayerView; // viewFor(state, me) after this step
-  events: GameEvent[]; // eventsFor(events, me) produced by this step
-  timer: { windowId: number; endsAt: number } | null; // null while waiting for playback or when no window is open
 }
 
 export interface MatchSession {
