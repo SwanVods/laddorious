@@ -16,6 +16,8 @@ Real 3D models, made in Blender, replace the code-built stand-ins for:
 - the board;
 - the world around the board.
 
+Three new pieces join the four.
+
 They come in three steps, and each step lands in the game for the user to review.
 
 Success means:
@@ -38,6 +40,7 @@ Success means:
 | A6 | **Three steps:** pieces, then board, then world. Each lands in the game, and the user reviews it from match screenshots before the next starts. | User's choice of review ("in the game per step"). |
 | A7 | **Launch pads, their trails and the slides are made "more visible and incredible"** (§4.2): a modelled pad, an arched glossy trail with travelling lights, a pulsing landing target, a sunken spinning vortex with a glowing rim, a raised slide channel with flowing chevrons, and an exit collar. | User's request at design approval. |
 | A8 | **Shots from a headless browser.** The review screenshots come from a Playwright script, not the browser pane. | It works whatever is on screen; the pane is often hidden. |
+| A10 | **Seven pieces.** Three new ones join the four: a **rook** (a chess castle tower), a **top hat** (the classic board-game token) and a **rubber duck** (with the knight's little eyes). Each has its own silhouette. | User's request at spec approval ("add more 3 random piece shapes"); Claude picked the three. |
 | A9 | **No mesh compression in this pass.** The models total about 2 MB, and a test keeps them under 2.5 MB. | Simpler loading with no decoder files; compression can come later if the size grows. |
 
 ## 3. The look
@@ -74,10 +77,26 @@ A piece has at most 4 materials (for example the dragon's `Seat`, eyes, pupils a
 | `piece.pawn` | A turned pawn with a ball head | ≤ 5,000 |
 | `piece.meeple` | A chunky, bevelled meeple | ≤ 5,000 |
 | `piece.dragon` | The mockup's dragon head on a round base: gold glowing eyes and cream horns | ≤ 5,000 |
+| `piece.rook` (new) | A chess castle tower with chunky battlements | ≤ 5,000 |
+| `piece.hat` (new) | A tall top hat with a band; the band is a second colour, the hat is `Seat` | ≤ 5,000 |
+| `piece.duck` (new) | A rubber duck with a round body, a cream beak and dark eyes with a white highlight | ≤ 5,000 |
 | `die` | A rounded die with sunken pips | ≤ 2,000 |
 | `crown` | The crown on the last tile | ≤ 3,000 |
 
 The pieces keep today's size (about 1 unit tall, origin at the base); the scene's `PIECE_SCALE` still applies. The `Seat` part is the body.
+
+**The three new pieces reach every place the piece list does:**
+
+| Where | Change |
+|---|---|
+| `packages/host/src/types.ts` | `PieceId` gains `'rook' \| 'hat' \| 'duck'`. `PIECES` becomes knight, pawn, meeple, dragon, rook, hat, duck; bots still take free pieces in this order. |
+| `packages/host/src/protocol.ts` | `PROTOCOL_VERSION` becomes 2, so a game and server from different builds ask to reload. |
+| `apps/server/src/validate.ts` | Accepts the new pieces through `PIECES` (no own list). |
+| `apps/client/src/hud/labels.ts` | `PIECE_NAMES`: Rook, Top hat, Rubber duck. |
+| `apps/client/src/ui/PieceIcon.tsx` | Portrait silhouettes for the three, in the same flat style as the others. |
+| `apps/client/src/assets/models.ts` | Code-built stand-ins for the three, used before their models load and as the fallback. |
+| `apps/client/src/audio/sounds.ts` | `PIECE_NOTES` grows to seven marimba notes (C5, E5, G5, C6, D5, A5, E6), so each piece has its own picker note. |
+| Menu piece picker | Seven tiles in one row; it must still fit a landscape phone at 44 px per tile. |
 
 ### 4.2 Step 2: the board, the pads and the slides
 
@@ -103,7 +122,7 @@ The pieces keep today's size (about 1 unit tall, origin at the base); the scene'
 | `bumper` (new) | A rounded post, instanced around the slab's edge, alternating red and white through `Tint` | ≤ 200 |
 | `cloud` (new) | A chunky cloud puff, instanced as today's clouds | ≤ 300 |
 | `podium` (new) | The menu podium (top, band and base, in the podium tokens) | ≤ 3,000 |
-| `prop.die`, `prop.cards`, `prop.rook`, `prop.king`, `prop.spinner` (new) | Oversized toys on small floating candy rocks around the island, never over the board | ≤ 3,000 each |
+| `prop.die`, `prop.cards`, `prop.spinner`, `prop.hourglass`, `prop.chips` (new) | Oversized toys (a die, a card stack, a spinner, an hourglass, a stack of poker chips) on small floating candy rocks around the island, never over the board | ≤ 3,000 each |
 
 The props' exact places are settled in the step 3 review. They must stay out of the board view's centre and within the triangle budget.
 
@@ -130,7 +149,7 @@ The props' exact places are settled in the step 3 review. They must stay out of 
 
 ## 6. How the game uses them
 
-- **Slots:** `SlotName` gains `tile`, `pad.target`, `slide.exit`, `bumper`, `cloud`, `podium` and the five props. `SLOT_URLS` lists every model file once its step lands.
+- **Slots:** `SlotName` gains `piece.rook`, `piece.hat`, `piece.duck`, `tile`, `pad.target`, `slide.exit`, `bumper`, `cloud`, `podium` and the five props. `SLOT_URLS` lists every model file once its step lands.
 - **Instanced slots:** a new hook, `useSlotMesh(name, fallback)`, returns a geometry and material: the `.glb`'s single mesh, merged, or the code-built default. It's used by the instanced parts (tiles, pads, targets, vortices, exits, bumpers, clouds). The die, pad and vortex, which are drawn directly today, move onto slots.
 - **Material pass:** one function prepares a loaded model's materials for the game:
   - `Seat` gets the seat colour;
@@ -169,7 +188,7 @@ The props' exact places are settled in the step 3 review. They must stay out of 
 
 ## 8. Out of scope
 
-- New board layouts or themes (memory `future-board-themes`), and new piece types.
+- New board layouts or themes (memory `future-board-themes`), and pieces beyond the seven.
 - Animated models (skeletons, morphs); motion stays in code, as today.
 - Mesh compression (Draco, meshopt) and texture images inside models.
 - Capacitor packaging, and any change to the rules, the HUD or the sounds.
