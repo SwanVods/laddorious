@@ -1,4 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { DEFAULT_SOUND, type SoundSettings } from '../audio/settings';
 import type { QualitySetting } from '../scene/quality';
 import { PIECES, type PieceId, type Profile } from '../service/matchService';
 
@@ -11,6 +12,7 @@ const KEYS = { profile: 'laddorious.profile', settings: 'laddorious.settings' } 
 export interface Settings {
   quality: QualitySetting;
   reducedMotion: boolean;
+  sound: SoundSettings;
 }
 
 export interface PrefsState {
@@ -21,6 +23,9 @@ export interface PrefsState {
   setPiece(piece: PieceId): void;
   setQuality(quality: QualitySetting): void;
   setReducedMotion(on: boolean): void;
+  setMuted(muted: boolean): void;
+  setEffectsVolume(volume: number): void;
+  setMusicVolume(volume: number): void;
 }
 
 /** The part of Storage the store uses. */
@@ -77,11 +82,24 @@ function loadProfile(stored: unknown, random: () => number): Profile {
   return { nickname: nickname ?? defaultNickname(random), piece };
 }
 
+const unit = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1 ? v : fallback);
+const clampUnit = (v: number) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
+
+function loadSound(stored: unknown): SoundSettings {
+  const saved = (stored ?? {}) as Partial<SoundSettings>;
+  return {
+    muted: typeof saved.muted === 'boolean' ? saved.muted : DEFAULT_SOUND.muted,
+    effects: unit(saved.effects, DEFAULT_SOUND.effects),
+    music: unit(saved.music, DEFAULT_SOUND.music),
+  };
+}
+
 function loadSettings(stored: unknown, prefersReducedMotion: boolean): Settings {
   const saved = (stored ?? {}) as Partial<Settings>;
   return {
     quality: QUALITIES.includes(saved.quality as QualitySetting) ? (saved.quality as QualitySetting) : 'auto',
     reducedMotion: typeof saved.reducedMotion === 'boolean' ? saved.reducedMotion : prefersReducedMotion,
+    sound: loadSound(saved.sound),
   };
 }
 
@@ -124,6 +142,15 @@ export function createPrefsStore(
       },
       setReducedMotion(reducedMotion) {
         saveSettings({ ...get().settings, reducedMotion });
+      },
+      setMuted(muted) {
+        saveSettings({ ...get().settings, sound: { ...get().settings.sound, muted } });
+      },
+      setEffectsVolume(volume) {
+        saveSettings({ ...get().settings, sound: { ...get().settings.sound, effects: clampUnit(volume) } });
+      },
+      setMusicVolume(volume) {
+        saveSettings({ ...get().settings, sound: { ...get().settings.sound, music: clampUnit(volume) } });
       },
     };
   });
