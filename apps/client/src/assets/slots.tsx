@@ -1,14 +1,8 @@
 import { Component, Suspense, lazy, type ReactNode } from 'react';
 import { Mesh, type Material, type MeshStandardMaterial, type Object3D } from 'three';
+import { SLOT_FILES, modelUrl, type SlotName } from './slotFiles';
 
-export type SlotName = 'piece.knight' | 'piece.pawn' | 'piece.meeple' | 'piece.dragon' | 'piece.rook' | 'piece.hat' | 'piece.duck' | 'die' | 'pad' | 'slide.vortex' | 'crown' | 'island';
-
-/**
- * Optional .glb overrides per slot (spec #2 §6.3); the Spec #5 art pass fills these in.
- * Contract: 1 tile = 1.6 units, origin at the feet, +Z forward, Y up, pieces under 5k
- * triangles, PBR materials, and a material named `Seat` takes the player's colour.
- */
-export const SLOT_URLS: Partial<Record<SlotName, string>> = {};
+export type { SlotName } from './slotFiles';
 
 /** Give every material named `Seat` the seat colour. Tinted materials are copies, so shared ones stay as they were. */
 export function tintSeat(root: Object3D, color: string): void {
@@ -51,8 +45,9 @@ const GltfModel = lazy(() => import('./GltfModel'));
 
 /** An asset slot: its .glb override when one is set, its code-built default otherwise or on failure. */
 export function Slot({ name, fallback, color }: { name: SlotName; fallback: ReactNode; color?: string }) {
-  const url = SLOT_URLS[name];
-  if (!url) return fallback;
+  const file = SLOT_FILES[name];
+  if (!file) return fallback;
+  const url = modelUrl(file);
   return (
     <SlotBoundary name={name} fallback={fallback}>
       <Suspense fallback={fallback}>
