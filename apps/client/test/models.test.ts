@@ -29,11 +29,16 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
   });
 
   it("lays the jumps' stand-ins on the tile, the pad a drum up to its plate, where its symbol lies (spec #5 A13)", () => {
-    for (const g of [targetGeometry(), vortexGeometry(), exitGeometry()]) {
+    const flat = (g: BufferGeometry, y: number) => {
       g.computeBoundingBox();
-      expect(g.boundingBox!.min.y).toBeCloseTo(0.03, 5);
-      expect(g.boundingBox!.max.y).toBeCloseTo(0.03, 5);
-    }
+      expect(g.boundingBox!.min.y).toBeCloseTo(y, 5);
+      expect(g.boundingBox!.max.y).toBeCloseTo(y, 5);
+    };
+    flat(vortexGeometry(), 0.03);
+    flat(exitGeometry(), PARTS.splat.top);
+    const flag = targetGeometry();
+    flag.computeBoundingBox();
+    expect(flag.boundingBox!.max.y).toBeCloseTo(PARTS.flag.height, 5);
     const pad = padGeometry();
     pad.computeBoundingBox();
     expect(pad.boundingBox!.min.y).toBeCloseTo(0, 5);

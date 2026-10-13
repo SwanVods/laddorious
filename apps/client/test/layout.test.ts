@@ -62,6 +62,6 @@ describe('board layout (spec #2 §6.1)', () => {
     const halfLane = (LANE.width + LANE.edge) / 2;
     expect(LANE.width).toBe(0.3);
     expect(PARTS.vortexRadius + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
-    expect(PARTS.exitOuter + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
+    expect(PARTS.splat.radius + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
   });
 });

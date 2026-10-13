@@ -78,9 +78,10 @@ export const MODELS: Record<string, ModelRule> = {
   // the instance colour (each jump's pair colour) paints Tint, so every jump part has it.
   tile: { slot: 'tile', origin: 'base', height: [0.29, 0.31], maxWidth: 1.53, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
   pad: { slot: 'pad', origin: 'base', height: [0.28, 0.34], maxWidth: 1.25, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Tint', 'Ink'], checks: [forward('Ink'), topAt(PARTS.padTop)] },
-  target: { slot: 'pad.target', origin: 'base', height: [0.05, 0.1], maxWidth: 1.3, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  // A ladder's end is a flag, all Tint; a portal's end is a flat splat.
+  target: { slot: 'pad.target', origin: 'base', height: [1.2, 1.35], maxWidth: 1.3, maxTriangles: 1500, maxMaterials: 1, requiredMaterials: ['Tint'] },
   vortex: { slot: 'slide.vortex', origin: 'base', height: [0.08, 0.14], maxWidth: 0.88, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Inside', 'Tint'] },
-  exit: { slot: 'slide.exit', origin: 'base', height: [0.06, 0.12], maxWidth: 0.88, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  exit: { slot: 'slide.exit', origin: 'base', height: [0.03, 0.06], maxWidth: 0.88, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'], checks: [topAt(PARTS.splat.top)] },
 };
 
 /** All the model files together stay under this (spec #5 A9). */

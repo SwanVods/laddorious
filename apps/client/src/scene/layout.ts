@@ -31,12 +31,14 @@ export const PARTS = {
   vortexRadius: 0.43,
   /** The still cap in a whirlpool's eye: its radius, and its top, where the symbol lies. */
   cap: { radius: 0.21, top: 0.07 },
-  exitInner: 0.29,
-  exitOuter: 0.43,
+  /** A ladder's end is a flag (the user's pick, Step 2 review 3): the gold symbol stands on its pennant, facing the camera (+Z). */
+  flag: { x: 0.15, y: 1.0, z: 0.052, height: 1.27 },
+  /** A portal's end is a flat splat, at most this far across from its centre, its symbol on its top. */
+  splat: { radius: 0.43, top: 0.04 },
   /** Symbols on tile tops sit just above the board overlay. */
   onTile: 0.012,
   /** Each symbol's size across. */
-  symbol: { pad: 0.5, landing: 0.52, eye: 0.33, exit: 0.36 },
+  symbol: { pad: 0.5, landing: 0.34, eye: 0.33, exit: 0.34 },
 } as const;
 
 /** Centre of a tile's top face; row 0 is nearest the camera (+Z). Tile 0 is a start spot in front of the board, one per seat. */

@@ -44,6 +44,16 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     expect(contractProblems('tile-low', knight())).toEqual(['tile-low has no rule in art/contract.ts']);
   });
 
+  it('stands a ladder flag up and lays a portal splat flat (spec #5 A13, the third review)', () => {
+    const flag: GlbSummary = { min: [-0.25, 0, -0.12], max: [0.35, PARTS.flag.height, 0.12], triangles: 1000, shadowTriangles: 0, materials: ['Tint'], byMaterial: {}, transformedNodes: [] };
+    expect(contractProblems('target', flag)).toEqual([]);
+    expect(contractProblems('target', { ...flag, max: [0.35, 0.07, 0.12] })).toEqual(['it is 0.07 tall; 1.2–1.35 expected']);
+    expect(contractProblems('target', { ...flag, materials: ['Tint', 'Pole'] })).toEqual(['it has 2 materials; at most 1']);
+    const splat: GlbSummary = { min: [-0.42, 0, -0.42], max: [0.42, PARTS.splat.top, 0.42], triangles: 500, shadowTriangles: 0, materials: ['Tint'], byMaterial: {}, transformedNodes: [] };
+    expect(contractProblems('exit', splat)).toEqual([]);
+    expect(contractProblems('exit', { ...splat, max: [0.42, 0.09, 0.42] })).toEqual(['it is 0.09 tall; 0.03–0.06 expected', `its top is at 0.090, but the symbol lies at ${PARTS.splat.top}`]);
+  });
+
   it('refuses a model with no rule', () => {
     expect(contractProblems('teapot', knight())).toEqual(['teapot has no rule in art/contract.ts']);
   });
@@ -73,11 +83,10 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     expect(contractProblems('tile', { ...tile, max: [0.76, 0.22, 0.76], materials: ['Tint'] })).toEqual(['it is 0.22 tall; 0.29–0.31 expected']);
   });
 
-  it('paints the landing ring, whirlpool and collar through Tint, so each takes its pair colour (spec #5 A13)', () => {
+  it('paints the whirlpool and the splat through Tint, so each takes its pair colour (spec #5 A13)', () => {
     const part = (materials: string[]): GlbSummary => ({ min: [-0.4, 0, -0.4], max: [0.4, 0.1, 0.4], triangles: 600, shadowTriangles: 0, materials, byMaterial: {}, transformedNodes: [] });
-    expect(contractProblems('target', part(['Ring']))).toEqual(['it has no Tint material']);
     expect(contractProblems('vortex', part(['Inside', 'Glow']))).toEqual(['it has no Tint material']);
-    expect(contractProblems('exit', part(['Collar']))).toEqual(['it has no Tint material']);
+    expect(contractProblems('exit', { ...part(['Splat']), max: [0.4, PARTS.splat.top, 0.4] })).toEqual(['it has no Tint material']);
   });
 
   it('checks the die keeps its middle at the origin and its one-pip face up (+Y)', () => {

@@ -3,7 +3,7 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Color, InstancedMesh, Matrix4, Mesh, Quaternion, Vector3, type BufferGeometry, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { Director } from '../src/director/director';
-import { TILE_THICKNESS, tileToWorld } from '../src/scene/layout';
+import { PARTS, TILE_THICKNESS, tileToWorld } from '../src/scene/layout';
 import { SceneContent } from '../src/scene/MatchScene';
 import { SYMBOLS, pairStyles } from '../src/scene/pairs';
 import { REVEAL_MS, createPeeks, type Peeks } from '../src/scene/paths';
@@ -170,6 +170,23 @@ describe('the 3D scene (spec #2 §6)', () => {
     for (const name of SYMBOLS) marks += (root.getObjectByName(`symbols-${name}`) as InstancedMesh | undefined)?.count ?? 0;
     expect(marks).toBe(2 * jumps.length);
     expect((root.getObjectByName('caps') as InstancedMesh).count).toBe(jumps.filter((j) => j.to < j.from).length);
+  });
+
+  it("stands each ladder's gold symbol upright on its flag, facing the camera (spec #5 A13)", async () => {
+    const root = await renderScene('high');
+    const { jumps } = openingUpdate().view.board;
+    const ladder = jumps.filter((j) => j.to > j.from)[0]!;
+    const mesh = root.getObjectByName(`symbols-${pairStyles(jumps).get(ladder.id)!.symbol}`) as InstancedMesh;
+    // Its pad's symbol comes first, then its landing's.
+    const at = new Matrix4();
+    mesh.getMatrixAt(1, at);
+    const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
+    at.decompose(p, q, s);
+    const [x, , z] = tileToWorld(ladder.to);
+    expect(p.x).toBeCloseTo(x + PARTS.flag.x, 5);
+    expect(p.y).toBeCloseTo(PARTS.flag.y, 5);
+    expect(p.z).toBeCloseTo(z + PARTS.flag.z, 5);
+    expect(new Vector3(0, 1, 0).applyQuaternion(q).z).toBeCloseTo(1, 5); // its face looks along +Z
   });
 
   it('paints each pad, landing ring, whirlpool and collar in its pair colour (spec #5 A13)', async () => {

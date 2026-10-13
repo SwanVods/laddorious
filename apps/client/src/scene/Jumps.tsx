@@ -216,7 +216,8 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
     // The symbols lie flat and upright to the camera; a landing's glowing gold breathes.
     const marks = new Map<SymbolName, number>();
     const breathe = 0.78 + 0.22 * Math.sin(clock.elapsedTime * 3);
-    const mark = (j: Jump, tile: number, y: number, size: number, tint: Color) => {
+    // A symbol lies flat, or stands upright facing the camera (+Z) at an offset from its tile's centre.
+    const mark = (j: Jump, tile: number, y: number, size: number, tint: Color, upright?: { x: number; z: number }) => {
       const style = styles.get(j.id);
       const mesh = style ? symbolsRef.current[style.symbol] : null;
       if (!style || !mesh) return;
@@ -225,8 +226,8 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
       marks.set(style.symbol, i + 1);
       const [x, , z] = tileToWorld(tile);
       const s = size * pop(j.id);
-      place.position.set(x, y, z);
-      place.rotation.set(0, 0, 0);
+      place.position.set(x + (upright?.x ?? 0), y, z + (upright?.z ?? 0));
+      place.rotation.set(upright ? Math.PI / 2 : 0, 0, 0);
       place.scale.set(s, 1, s);
       place.updateMatrix();
       mesh.setMatrixAt(i, place.matrix);
@@ -236,13 +237,14 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
       // A dark pad (teal, plum) carries a cream symbol: a dark one would vanish on it.
       colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud);
       mark(j, j.from, PARTS.padTop + 0.004, PARTS.symbol.pad, colour.getHSL(hsl).l < 0.4 ? CREAM : INK);
-      mark(j, j.to, PARTS.onTile, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe));
+      mark(j, j.to, PARTS.flag.y, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe), PARTS.flag);
     }
     for (const j of snakes) {
       const pair = styles.get(j.id)?.colour ?? WORLD_COLORS.cloud;
       // On the cream cap a cream symbol wouldn't show: the cream pair's symbol is drawn in ink there.
       mark(j, j.from, PARTS.cap.top + 0.002, PARTS.symbol.eye, pair === PAIR_COLORS.cap ? INK : colour.set(pair));
-      mark(j, j.to, PARTS.onTile, PARTS.symbol.exit, colour.set(pair));
+      // The splat is the pair's colour, so its symbol is cream (ink on a cream splat).
+      mark(j, j.to, PARTS.splat.top + 0.004, PARTS.symbol.exit, pair === PAIR_COLORS.cap ? INK : CREAM);
     }
     for (const name of SYMBOLS) {
       const mesh = symbolsRef.current[name];

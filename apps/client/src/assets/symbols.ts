@@ -5,21 +5,24 @@ import type { SymbolName } from '../scene/pairs';
 
 // The pair symbols (spec #5 A13), drawn as in the approved mockup: each in a 100-unit box, y down.
 
+/** Points round each of the crescent's circles: smooth at a symbol's size, and light. */
+const MOON_STEPS = 32;
+
 /** A crescent: the outer circle less an inner one set up and to the right. */
 function moon(): Vector2[] {
   const outer = { x: 45, y: 50, r: 42 };
   const inner = { x: 63, y: 42, r: 33 };
   const inside = (p: { x: number; y: number }, c: typeof outer) => Math.hypot(p.x - c.x, p.y - c.y) < c.r;
   const points: Vector2[] = [];
-  for (let i = 0; i < 48; i++) {
-    const a = (i / 48) * Math.PI * 2;
+  for (let i = 0; i < MOON_STEPS; i++) {
+    const a = (i / MOON_STEPS) * Math.PI * 2;
     const p = { x: outer.x + outer.r * Math.cos(a), y: outer.y + outer.r * Math.sin(a) };
     if (!inside(p, inner)) points.push(new Vector2(p.x, p.y));
   }
   // Back along the inner circle, the part inside the outer one, the other way round.
   const back: Vector2[] = [];
-  for (let i = 0; i < 48; i++) {
-    const a = (i / 48) * Math.PI * 2;
+  for (let i = 0; i < MOON_STEPS; i++) {
+    const a = (i / MOON_STEPS) * Math.PI * 2;
     const p = { x: inner.x + inner.r * Math.cos(a), y: inner.y + inner.r * Math.sin(a) };
     if (inside(p, outer)) back.push(new Vector2(p.x, p.y));
   }
@@ -84,7 +87,7 @@ const RIM = 1.18;
  * face, which the instance colour paints, over a slightly larger copy in ink, its rim.
  */
 export function symbolGeometry(name: SymbolName): BufferGeometry {
-  const face = new ShapeGeometry(shapeOf(name), 6);
+  const face = new ShapeGeometry(shapeOf(name), 4);
   // From the 100-unit box (y down) to a unit centred on the origin (y up), then flat with y up.
   face.computeBoundingBox();
   const box = face.boundingBox!;

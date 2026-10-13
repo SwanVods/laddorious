@@ -1,4 +1,4 @@
-import { CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeometry, LatheGeometry, RingGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
+import { BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeometry, LatheGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { PieceId } from '../service/matchService';
@@ -204,14 +204,18 @@ export function padGeometry(): BufferGeometry {
   return new CylinderGeometry(0.47, 0.57, PARTS.padTop, 28).translate(0, PARTS.padTop / 2, 0);
 }
 
+/** A ladder's end: a flag, its pole left of centre and its pennant where the game stands the gold symbol (PARTS.flag). */
 export function targetGeometry(): BufferGeometry {
-  return new RingGeometry(0.42, 0.6, 28).rotateX(-Math.PI / 2).translate(0, 0.03, 0);
+  const pole = new CylinderGeometry(0.03, 0.03, PARTS.flag.height, 8).translate(-0.17, PARTS.flag.height / 2, 0);
+  const pennant = new BoxGeometry(0.6, 0.44, 0.06).translate(PARTS.flag.x, PARTS.flag.y, 0);
+  return mergeGeometries([pole.toNonIndexed(), pennant.toNonIndexed()])!;
 }
 
 export function vortexGeometry(): BufferGeometry {
   return new CircleGeometry(PARTS.vortexRadius, 32).rotateX(-Math.PI / 2).translate(0, 0.03, 0);
 }
 
+/** A portal's end: a flat splat, its top where the symbol lies (PARTS.splat). */
 export function exitGeometry(): BufferGeometry {
-  return new RingGeometry(PARTS.exitInner, PARTS.exitOuter, 28).rotateX(-Math.PI / 2).translate(0, 0.03, 0);
+  return new CircleGeometry(PARTS.splat.radius * 0.9, 24).rotateX(-Math.PI / 2).translate(0, PARTS.splat.top, 0);
 }
