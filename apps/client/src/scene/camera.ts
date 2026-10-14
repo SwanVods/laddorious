@@ -29,6 +29,8 @@ export interface ShotInput {
   nowMs: number;
   /** I'm peeking at the board from my card pick: show all of it (2026-10-14). */
   peeking?: boolean;
+  /** The face-offs on the board (the presentation's), so the camera can watch other players' (2026-10-15). */
+  faceOffs?: ReadonlyArray<{ tile: number; players: readonly PlayerId[] }>;
 }
 
 const FOLLOW: Vec3 = [0, 7.5, 8.5];
@@ -56,6 +58,8 @@ export function cameraShot(shown: ShotInput): Shot {
   if (isMyMoment(input)) return swoop(mine, input);
   const resolving = resolvingPiece(input);
   if (resolving) return follow(input.piece(resolving));
+  const watching = othersFaceOff(input);
+  if (watching !== null) return follow(tileToWorld(watching));
   const busy = beat !== null && beat.kind !== 'roll' && beat.kind !== 'info';
   if (busy || input.window === 'challenge' || input.window === 'mystery') return follow(mine);
   // Everyone rolls: the whole board, drifting gently.
@@ -100,6 +104,16 @@ function resolvingPiece({ beat, me, piece }: ShotInput): PlayerId | null {
     return Math.hypot(mx - x, mz - z) < TILE_SIZE / 2 ? me : e.player;
   }
   return null;
+}
+
+/**
+ * When I'm not in a face-off but others are (2026-10-15), the camera watches theirs: from the collision,
+ * through the picks, to the result. The first, if there are two.
+ */
+function othersFaceOff({ beat, me, faceOffs = [] }: ShotInput): number | null {
+  if (faceOffs.some((f) => f.players.includes(me))) return null;
+  const quiet = beat === null || beat.kind === 'info' || beat.kind === 'faceOff' || beat.kind === 'faceOffResult';
+  return quiet && faceOffs.length > 0 ? faceOffs[0]!.tile : null;
 }
 
 function overview(input: ShotInput): Shot {

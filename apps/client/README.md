@@ -118,10 +118,10 @@ The game reads `tuning.json` (served next to the page) when it starts, so an adm
 | `camera.overview.distance` | 27.5 | How far back the whole-board view sits. |
 | `camera.overview.height` | 28.75 | How high it sits. |
 | `camera.overview.zoomMin`, `zoomMax` | 0.6, 1.4 | How far a mouse wheel or pinch can zoom the overview (1 = as set; lower is closer). |
-| `camera.follow.ease` | 1.8 | How quickly the camera reaches a piece it follows (higher is quicker). |
+| `camera.follow.ease` | 3.2 | How quickly the camera reaches a piece it follows (higher is quicker). |
 | `camera.swoop.ease` | 2.8 | The same for the close swoop on my own moments. |
 | `timing.hopMs` | 230 | Each tile hop, in the air and landing (ms). Hop sounds follow it. |
-| `timing.rollPauseMs` | 700 | The pause after the last die roll, before the pieces move (ms). |
+| `timing.rollPauseMs` | 400 | The pause after the last die roll, before the pieces move (ms). |
 | `timing.cardLeadMs` | 450 | Before each card plays, while the camera reaches its player (ms). |
 | `timing.cardPauseMs` | 600 | The pause after each card and its moves (ms). |
 | `timing.faceOffIntroMs` | 1900 | My own face-off's opening: the collision, then the hop down (ms). |

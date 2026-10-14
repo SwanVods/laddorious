@@ -44,7 +44,19 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ beat: beatOf('move', [moved('p1')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p0 });
   });
 
-  it('follows my piece through a face-off window I am not in', () => {
+  it("watches other players' face-off when I'm not in one, from the collision to the knock-back (2026-10-15)", () => {
+    const theirs = [{ challengeId: 'c1', tile: 23, players: ['p1', 'p2'] }];
+    const tile = tileToWorld(23);
+    expect(shot({ window: 'challenge', faceOffs: theirs }).target).toEqual(tile);
+    const started: GameEvent = { type: 'ChallengeStarted', challengeId: 'c1', tile: 23, players: ['p1', 'p2'], kind: 'rps', theme: null, visibility: 'public' };
+    expect(shot({ beat: beatOf('faceOff', [started]), faceOffs: theirs }).target).toEqual(tile);
+    expect(shot({ beat: beatOf('faceOffResult', []), faceOffs: theirs }).target).toEqual(tile);
+    // Two at once: the first. Mine: the swoop on me, as before.
+    expect(shot({ window: 'challenge', faceOffs: [...theirs, { challengeId: 'c2', tile: 40, players: ['p3', 'p0'] }] }).target).toEqual(SPOTS.p0);
+    expect(shot({ window: 'challenge', faceOffs: [...theirs, { challengeId: 'c2', tile: 40, players: ['p3', 'p1'] }] }).target).toEqual(tile);
+  });
+
+  it('follows my piece through a face-off window when no face-off is shown', () => {
     expect(shot({ window: 'challenge' })).toMatchObject({ mode: 'follow', target: SPOTS.p0 });
   });
 

@@ -37,10 +37,10 @@ export interface Tuning {
 export const DEFAULT_TUNING: Tuning = {
   camera: {
     overview: { distance: 27.5, height: 28.75, zoomMin: 0.6, zoomMax: 1.4 },
-    follow: { ease: 1.8 },
+    follow: { ease: 3.2 },
     swoop: { ease: 2.8 },
   },
-  timing: { hopMs: 230, rollPauseMs: 700, cardLeadMs: 450, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850 },
+  timing: { hopMs: 230, rollPauseMs: 400, cardLeadMs: 450, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850 },
   hud: { feedLines: 4, phoneCompactCards: true },
 };
 

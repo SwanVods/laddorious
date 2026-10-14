@@ -39,6 +39,7 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       reducedMotion,
       nowMs: now,
       peeking,
+      faceOffs: state.presentation?.faceOffs ?? [],
       piece: (id): Vec3 => poseAt(state, id, seatOf.get(id) ?? 0, now, boardSize)?.position ?? [0, 0, 0],
     });
     const { follow, swoop } = tuning().camera;

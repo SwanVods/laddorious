@@ -81,3 +81,10 @@ describe('the game reads the settings in use', () => {
     tuningStore.setState(DEFAULT_TUNING, true);
   });
 });
+
+describe('the camera reaches my piece sooner after the roll (2026-10-15)', () => {
+  it('eases faster than before, after a shorter pause', () => {
+    expect(DEFAULT_TUNING.camera.follow.ease).toBeGreaterThanOrEqual(3);
+    expect(DEFAULT_TUNING.timing.rollPauseMs).toBeLessThanOrEqual(400);
+  });
+});
