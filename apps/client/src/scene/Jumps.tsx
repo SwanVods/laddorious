@@ -1,7 +1,7 @@
 import type { Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Color, DoubleSide, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { Color, DoubleSide, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, PAIR_COLORS, WORLD_COLORS } from '../app/theme';
 import { exitGeometry, padGeometry, targetGeometry, vortexGeometry } from '../assets/models';
@@ -12,7 +12,7 @@ import { PARTS, slideCurve, tileToWorld } from './layout';
 import { clamp01, easeOutBack } from './motion';
 import { SYMBOLS, pairStyles, type PairStyle, type SymbolName } from './pairs';
 import { REVEAL_MS, shownPaths, type Peeks } from './paths';
-import { chevronTexture, swirlTexture } from './textures';
+import { chevronTexture, endIconTexture, swirlTexture, type EndIcon } from './textures';
 import { CHANNEL, TRAIL, channelGeometry, trailGeometry, trailPath } from './tracks';
 
 /** A cap that keeps a crowded board inside the draw-call and triangle budget (spec #2 §6.4). */
@@ -21,6 +21,71 @@ const MAX_JUMPS = 24;
 const MAX_MARKS = 4 * MAX_JUMPS;
 const GOLD = new Color(WORLD_COLORS.crown);
 const CREAM = new Color(PAIR_COLORS.cap);
+
+interface EndRefs {
+  vortices: RefObject<InstancedMesh | null>;
+  exits: RefObject<InstancedMesh | null>;
+  pads: RefObject<InstancedMesh | null>;
+  targets: RefObject<InstancedMesh | null>;
+}
+
+/** The ends as 3D models (High): rockets, flags, whirlpools and splats, loaded only when shown. */
+function ModelEnds({ clearcoat, refs }: { clearcoat: boolean; refs: EndRefs }) {
+  const swirl = useMemo(() => swirlTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
+  const vortex = useSlotMesh(
+    'slide.vortex',
+    () => ({ geometry: vortexGeometry(), material: new MeshBasicMaterial(swirl ? { map: swirl, transparent: true } : { color: BOARD_COLORS.slide }) }),
+    { clearcoat },
+  );
+  const exit = useSlotMesh('slide.exit', () => ({ geometry: exitGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
+  const pad = useSlotMesh('pad', () => ({ geometry: padGeometry(), material: new MeshStandardMaterial({ roughness: 0.5 }) }), { clearcoat });
+  const target = useSlotMesh('pad.target', () => ({ geometry: targetGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
+  return (
+    <>
+      <instancedMesh ref={refs.vortices} name="vortices" args={[vortex.geometry, vortex.material, MAX_JUMPS]} />
+      <instancedMesh ref={refs.exits} name="exits" args={[exit.geometry, exit.material, MAX_JUMPS]} />
+      <instancedMesh ref={refs.pads} name="pads" args={[pad.geometry, pad.material, MAX_JUMPS]} />
+      <instancedMesh ref={refs.targets} name="targets" args={[target.geometry, target.material, MAX_JUMPS]} />
+    </>
+  );
+}
+
+/** One kind of flat end: a square image lying on the tile, which instance colours paint. */
+function useFlatEnd(kind: EndIcon, size: number) {
+  return useMemo(() => {
+    const texture = endIconTexture(kind, WORLD_COLORS.cloud, PAIR_COLORS.shade);
+    return {
+      geometry: new PlaneGeometry(size, size).rotateX(-Math.PI / 2).translate(0, PARTS.flat.y, 0),
+      material: new MeshBasicMaterial(texture ? { map: texture, transparent: true, alphaTest: 0.4 } : {}),
+    };
+  }, [kind, size]);
+}
+
+/** The ends as flat images (Low, round 5): no 3D models are loaded. */
+function FlatEnds({ refs }: { refs: EndRefs }) {
+  const swirl = useFlatEnd('swirl', PARTS.flat.swirl.size);
+  const splat = useFlatEnd('splat', PARTS.flat.splat.size);
+  const rocket = useFlatEnd('rocket', PARTS.flat.rocket.size);
+  const flag = useFlatEnd('flag', PARTS.flat.flag.size);
+  useEffect(
+    () => () => {
+      for (const end of [swirl, splat, rocket, flag]) {
+        end.geometry.dispose();
+        (end.material.map as Texture | null)?.dispose();
+        end.material.dispose();
+      }
+    },
+    [swirl, splat, rocket, flag],
+  );
+  return (
+    <>
+      <instancedMesh ref={refs.vortices} name="flat-swirls" args={[swirl.geometry, swirl.material, MAX_JUMPS]} />
+      <instancedMesh ref={refs.exits} name="flat-splats" args={[splat.geometry, splat.material, MAX_JUMPS]} />
+      <instancedMesh ref={refs.pads} name="flat-rockets" args={[rocket.geometry, rocket.material, MAX_JUMPS]} />
+      <instancedMesh ref={refs.targets} name="flat-flags" args={[flag.geometry, flag.material, MAX_JUMPS]} />
+    </>
+  );
+}
 
 /** A shown path's progress: when it began to grow in, and when it began to shrink away. */
 interface Reveal {
@@ -120,7 +185,15 @@ function Path({ jump, style, progress, clearcoat, chevrons, lights }: PathProps)
  * each path (a slide's channel, a pad's trail) only while a piece stands on its start, rides it, or a
  * player tapped one of its ends. Parts a board edit adds or removes pop in or out.
  */
-export function Jumps({ director, clearcoat, peeks }: { director: Director; clearcoat: boolean; peeks: Peeks }) {
+interface JumpsProps {
+  director: Director;
+  clearcoat: boolean;
+  peeks: Peeks;
+  /** The ends as 3D models (High), or flat images on the tiles (Low; round 5). */
+  modelEnds?: boolean;
+}
+
+export function Jumps({ director, clearcoat, peeks, modelEnds = true }: JumpsProps) {
   const shown = useStore(director.store, (s) => s.presentation?.jumps);
   const editing = useStore(director.store, (s) => (s.beat?.kind === 'boardEdit' ? s.beat.after.jumps : undefined));
   const jumps = useMemo(() => [...new Map([...(shown ?? []), ...(editing ?? [])].map((j) => [j.id, j])).values()], [shown, editing]);
@@ -132,19 +205,6 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
   // Shown paths and how far each has grown in or shrunk away; React redraws when the set changes.
   const revealsRef = useRef(new Map<string, Reveal>());
   const [paths, setPaths] = useState<string[]>([]);
-  const swirl = useMemo(() => swirlTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
-  const vortex = useSlotMesh(
-    'slide.vortex',
-    () => ({ geometry: vortexGeometry(), material: new MeshBasicMaterial(swirl ? { map: swirl, transparent: true } : { color: BOARD_COLORS.slide }) }),
-    { clearcoat },
-  );
-  const exit = useSlotMesh('slide.exit', () => ({ geometry: exitGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
-  const pad = useSlotMesh(
-    'pad',
-    () => ({ geometry: padGeometry(), material: new MeshStandardMaterial({ roughness: 0.5 }) }),
-    { clearcoat },
-  );
-  const target = useSlotMesh('pad.target', () => ({ geometry: targetGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
   // The pair symbols (spec #5 A13): one instanced mesh per symbol, unlit decals, and the whirlpools' still caps.
   const symbols = useMemo(() => Object.fromEntries(SYMBOLS.map((name) => [name, symbolGeometry(name)])) as Record<SymbolName, BufferGeometry>, []);
   const symbolMaterial = useMemo(() => new MeshBasicMaterial({ vertexColors: true, side: DoubleSide }), []);
@@ -214,8 +274,8 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
     // The symbols lie flat and upright to the camera; a landing's glowing gold breathes.
     const marks = new Map<SymbolName, number>();
     const breathe = 0.78 + 0.22 * Math.sin(clock.elapsedTime * 3);
-    // A symbol lies flat, or stands upright facing the camera (+Z) at an offset from its tile's centre.
-    const mark = (j: Jump, tile: number, y: number, size: number, tint: Color, upright?: { x: number; z: number }) => {
+    // A symbol at an offset from its tile's centre, standing upright facing the camera (+Z) or lying flat.
+    const mark = (j: Jump, tile: number, y: number, size: number, tint: Color, at?: { x: number; z: number }, upright = at !== undefined) => {
       const style = styles.get(j.id);
       const mesh = style ? symbolsRef.current[style.symbol] : null;
       if (!style || !mesh) return;
@@ -224,22 +284,32 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
       marks.set(style.symbol, i + 1);
       const [x, , z] = tileToWorld(tile);
       const s = size * pop(j.id);
-      place.position.set(x + (upright?.x ?? 0), y, z + (upright?.z ?? 0));
+      place.position.set(x + (at?.x ?? 0), y, z + (at?.z ?? 0));
       place.rotation.set(upright ? Math.PI / 2 : 0, 0, 0);
       place.scale.set(s, 1, s);
       place.updateMatrix();
       mesh.setMatrixAt(i, place.matrix);
       mesh.setColorAt(i, tint);
     };
+    const { flat } = PARTS;
+    // On a flat image the symbol lies on it, at its spot.
+    const lie = (j: Jump, tile: number, at: { x: number; z: number; size: number }, tint: Color) => mark(j, tile, flat.y + 0.006, at.size, tint, at, false);
     for (const j of ladders) {
-      // On the rocket's cream porthole, in the pair's colour.
-      mark(j, j.from, PARTS.rocket.y, PARTS.symbol.pad, colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud), { x: 0, z: PARTS.rocket.z });
-      mark(j, j.to, PARTS.flag.y, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe), PARTS.flag);
+      const pair = colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud);
+      if (modelEnds) {
+        // On the rocket's cream porthole, in the pair's colour; in glowing gold on the flag's pennant.
+        mark(j, j.from, PARTS.rocket.y, PARTS.symbol.pad, pair, { x: 0, z: PARTS.rocket.z });
+        mark(j, j.to, PARTS.flag.y, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe), PARTS.flag);
+      } else {
+        lie(j, j.from, flat.rocket.symbol, pair);
+        lie(j, j.to, flat.flag.symbol, colour.copy(GOLD).multiplyScalar(breathe));
+      }
     }
     for (const j of snakes) {
       // On the whirlpool's cream cap in the pair's colour; on the splat, which is the pair's colour, in cream.
       mark(j, j.from, PARTS.cap.top + 0.002, PARTS.symbol.eye, colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud));
-      mark(j, j.to, PARTS.splat.top + 0.004, PARTS.symbol.exit, CREAM);
+      if (modelEnds) mark(j, j.to, PARTS.splat.top + 0.004, PARTS.symbol.exit, CREAM);
+      else lie(j, j.to, flat.splat.symbol, CREAM);
     }
     for (const name of SYMBOLS) {
       const mesh = symbolsRef.current[name];
@@ -290,10 +360,11 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
         />
       ))}
       <instancedMesh ref={capsRef} name="caps" args={[cap, capMaterial, MAX_JUMPS]} />
-      <instancedMesh ref={vorticesRef} name="vortices" args={[vortex.geometry, vortex.material, MAX_JUMPS]} />
-      <instancedMesh ref={exitsRef} name="exits" args={[exit.geometry, exit.material, MAX_JUMPS]} />
-      <instancedMesh ref={padsRef} name="pads" args={[pad.geometry, pad.material, MAX_JUMPS]} />
-      <instancedMesh ref={targetsRef} name="targets" args={[target.geometry, target.material, MAX_JUMPS]} />
+      {modelEnds ? (
+        <ModelEnds clearcoat={clearcoat} refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef }} />
+      ) : (
+        <FlatEnds refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef }} />
+      )}
     </group>
   );
 }

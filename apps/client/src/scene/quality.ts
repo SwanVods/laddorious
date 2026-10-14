@@ -11,12 +11,14 @@ export interface QualityProfile {
   clearcoat: boolean;
   /** Pieces and the crown load their lighter models (spec #5 A14). */
   lowModels: boolean;
+  /** The ladder and portal ends are 3D models; otherwise flat images on the tiles (Step 2, round 5). */
+  modelEnds: boolean;
 }
 
 /** Spec #2 §6.4. */
 export const QUALITY: Record<QualityLevel, QualityProfile> = {
-  high: { shadows: true, dpr: 2, antialias: true, clouds: 8, clearcoat: true, lowModels: false },
-  low: { shadows: false, dpr: 1.5, antialias: false, clouds: 4, clearcoat: false, lowModels: true },
+  high: { shadows: true, dpr: 2, antialias: true, clouds: 8, clearcoat: true, lowModels: false, modelEnds: true },
+  low: { shadows: false, dpr: 1.5, antialias: false, clouds: 4, clearcoat: false, lowModels: true, modelEnds: false },
 };
 
 /** Auto starts Low on phones (a coarse pointer and a short screen side under 500 px) and High elsewhere. */

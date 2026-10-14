@@ -56,9 +56,13 @@ export function loadSlotMesh(url: string): Promise<SlotMesh> {
   return load;
 }
 
-/** Start loading every instanced model (the menu calls this with preloadModels). */
-export function preloadSlotMeshes(): void {
+/** The ladder and portal ends, drawn as 3D models on High only (Step 2, round 5). */
+const END_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['pad', 'pad.target', 'slide.vortex', 'slide.exit']);
+
+/** Start loading every instanced model the game will draw (the menu calls this with preloadModels): the ends only on High. */
+export function preloadSlotMeshes(modelEnds = true): void {
   for (const name of MESH_SLOTS) {
+    if (!modelEnds && END_SLOTS.has(name)) continue;
     const url = slotUrl(name);
     // A failure warns when a scene uses the slot.
     if (url) void loadSlotMesh(url).catch(() => undefined);

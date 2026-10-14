@@ -37,6 +37,17 @@ export const PARTS = {
   flag: { x: 0.15, y: 1.0, z: 0.052, height: 1.27 },
   /** A portal's end is a flat splat, at most this far across from its centre, its symbol on its top. */
   splat: { radius: 0.43, top: 0.04 },
+  /**
+   * On Low the ends are flat images (round 5): each image's size across, and where its symbol lies on it
+   * (x right, z toward the camera, from the tile's centre).
+   */
+  flat: {
+    y: 0.012,
+    rocket: { size: 1.0, symbol: { x: 0, z: -0.11, size: 0.2 } },
+    flag: { size: 1.0, symbol: { x: 0.06, z: -0.19, size: 0.26 } },
+    swirl: { size: 0.86 },
+    splat: { size: 0.86, symbol: { x: 0, z: 0, size: 0.34 } },
+  },
   /** Symbols on tile tops sit just above the board overlay. */
   onTile: 0.012,
   /** Each symbol's size across. */

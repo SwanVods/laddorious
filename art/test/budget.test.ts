@@ -94,7 +94,11 @@ function price(level: 'high' | 'low') {
       .reduce((sum, v) => sum + v, 0);
   const cost = shadows ? shadowed : flat;
   add('pieces', heaviest((m) => cost(m).calls), heaviest((m) => cost(m).triangles));
+  // On Low the ladder and portal ends are flat images (round 5): four instanced quads, two triangles a copy.
+  const ENDS = ['pad', 'target', 'vortex', 'exit'];
+  if (low) add('flat ends', 4, 2 * 2 * (SLIDES + PADS));
   for (const [id, use] of Object.entries(USES)) {
+    if (low && ENDS.includes(id)) continue;
     const model = builtFor(id, low);
     if (!model) continue;
     const each = use.shadows && shadows ? shadowed(model) : flat(model);

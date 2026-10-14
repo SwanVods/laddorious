@@ -72,6 +72,83 @@ export function chevronTexture(base: string, stripe: string): CanvasTexture | nu
 }
 
 /** A three-armed spiral for the vortex at a slide's head. */
+export type EndIcon = 'rocket' | 'flag' | 'swirl' | 'splat';
+
+/**
+ * A ladder's or portal's end drawn flat for Low quality (Step 2, round 5): light with a grey outline on a
+ * clear ground, so the instance colour paints it its pair's colour. Its top is the board's far side.
+ */
+export function endIconTexture(kind: EndIcon, light: string, shade: string): CanvasTexture | null {
+  return paint(128, 128, (ctx) => {
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = shade;
+    ctx.fillStyle = light;
+    const shape = (draw: () => void) => {
+      ctx.beginPath();
+      draw();
+      ctx.fill();
+      ctx.stroke();
+    };
+    if (kind === 'rocket') {
+      shape(() => {
+        ctx.moveTo(38, 104);
+        ctx.lineTo(26, 120);
+        ctx.lineTo(48, 108);
+      });
+      shape(() => {
+        ctx.moveTo(90, 104);
+        ctx.lineTo(102, 120);
+        ctx.lineTo(80, 108);
+      });
+      shape(() => {
+        ctx.moveTo(64, 8);
+        ctx.bezierCurveTo(96, 30, 92, 88, 82, 110);
+        ctx.lineTo(46, 110);
+        ctx.bezierCurveTo(36, 88, 32, 30, 64, 8);
+      });
+      ctx.fillStyle = shade;
+      shape(() => ctx.arc(64, 50, 15, 0, Math.PI * 2));
+      ctx.fillStyle = light;
+      shape(() => ctx.arc(64, 50, 10, 0, Math.PI * 2));
+    } else if (kind === 'flag') {
+      shape(() => ctx.ellipse(40, 112, 18, 8, 0, 0, Math.PI * 2));
+      shape(() => ctx.rect(36, 14, 8, 98));
+      shape(() => {
+        ctx.moveTo(44, 16);
+        ctx.bezierCurveTo(64, 6, 84, 26, 112, 16);
+        ctx.lineTo(112, 60);
+        ctx.bezierCurveTo(84, 70, 64, 50, 44, 60);
+      });
+    } else if (kind === 'swirl') {
+      shape(() => ctx.arc(64, 64, 60, 0, Math.PI * 2));
+      ctx.lineWidth = 9;
+      for (let k = 0; k < 3; k++) {
+        ctx.beginPath();
+        for (let i = 0; i <= 30; i++) {
+          const r = 14 + (44 * i) / 30;
+          const a = 1.6 * Math.log(r / 14) + (k * Math.PI * 2) / 3;
+          if (i === 0) ctx.moveTo(64 + r * Math.cos(a), 64 + r * Math.sin(a));
+          else ctx.lineTo(64 + r * Math.cos(a), 64 + r * Math.sin(a));
+        }
+        ctx.stroke();
+      }
+    } else {
+      shape(() => {
+        for (let i = 0; i <= 24; i++) {
+          const a = (i / 24) * Math.PI * 2;
+          const r = 42 + 8 * Math.sin(5 * a + 0.6) + 5 * Math.sin(9 * a + 1.3);
+          if (i === 0) ctx.moveTo(64 + r * Math.cos(a), 64 + r * Math.sin(a));
+          else ctx.lineTo(64 + r * Math.cos(a), 64 + r * Math.sin(a));
+        }
+        ctx.closePath();
+      });
+      for (const [x, y, r] of [[112, 40, 6], [18, 76, 5], [100, 108, 5]]) shape(() => ctx.arc(x!, y!, r!, 0, Math.PI * 2));
+    }
+  });
+}
+
 export function swirlTexture(base: string, arm: string): CanvasTexture | null {
   return paint(128, 128, (ctx) => {
     ctx.fillStyle = base;

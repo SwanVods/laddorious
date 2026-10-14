@@ -20,6 +20,8 @@ describe('graphics quality (spec #2 §6.4)', () => {
     expect(QUALITY.low.clearcoat).toBe(false); // phones skip the clearcoat (spec #5 §3.1)
     expect(QUALITY.low.lowModels).toBe(true); // and draw the lighter pieces (spec #5 A14)
     expect(QUALITY.high.lowModels).toBe(false);
+    expect(QUALITY.high.modelEnds).toBe(true); // the ladder and portal ends are 3D on High only (round 5)
+    expect(QUALITY.low.modelEnds).toBe(false);
   });
 
   it('keeps High while the frame rate holds at 45 fps or more', () => {

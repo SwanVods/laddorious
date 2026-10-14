@@ -78,8 +78,8 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
   // Load every model while the menu shows, so the match never pops in (spec #5 §6).
   useEffect(() => {
     preloadModels(profile.lowModels);
-    preloadSlotMeshes();
-  }, [profile.lowModels]);
+    preloadSlotMeshes(profile.modelEnds);
+  }, [profile.lowModels, profile.modelEnds]);
   // A new piece pops in (spec #2 §6.2 bounce).
   useEffect(() => {
     swapAtRef.current = performance.now();

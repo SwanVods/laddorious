@@ -178,6 +178,24 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(colour.getHex()).toBe(new Color(style.colour).getHex());
   });
 
+  it('draws the ladder and portal ends as flat images on Low, and as 3D models on High (round 5)', async () => {
+    const { jumps } = openingUpdate().view.board;
+    const ladders = jumps.filter((j) => j.to > j.from).length;
+    const slides = jumps.length - ladders;
+    const flat = { 'flat-rockets': ladders, 'flat-flags': ladders, 'flat-swirls': slides, 'flat-splats': slides };
+    const models = ['pads', 'targets', 'vortices', 'exits'];
+    const low = await renderScene('low');
+    for (const [name, count] of Object.entries(flat)) expect((low.getObjectByName(name) as InstancedMesh | undefined)?.count, name).toBe(count);
+    for (const name of models) expect(low.getObjectByName(name), name).toBeUndefined();
+    const high = await renderScene('high');
+    for (const name of Object.keys(flat)) expect(high.getObjectByName(name), name).toBeUndefined();
+    for (const name of models) expect(high.getObjectByName(name), name).toBeInstanceOf(InstancedMesh);
+    // Symbols at both levels.
+    let marks = 0;
+    for (const name of SYMBOLS) marks += (low.getObjectByName(`symbols-${name}`) as InstancedMesh | undefined)?.count ?? 0;
+    expect(marks).toBe(2 * jumps.length);
+  });
+
   it("marks both ends of every jump with its pair's symbol, and each whirlpool's eye with a still cap (spec #5 A13)", async () => {
     const root = await renderScene('high');
     const { jumps } = openingUpdate().view.board;
