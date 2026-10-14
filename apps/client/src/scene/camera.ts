@@ -1,6 +1,6 @@
 import type { PlayerId, WindowKind } from '@laddorious/core';
 import type { Beat } from '../director/beats';
-import type { Vec3 } from './layout';
+import { BOARD_SCALE, type Vec3 } from './layout';
 
 export type ShotMode = 'overview' | 'follow' | 'swoop';
 
@@ -30,10 +30,10 @@ export interface ShotInput {
 
 const FOLLOW: Vec3 = [0, 7.5, 8.5];
 const SWOOP: Vec3 = [0, 3.4, 4.6];
-const OVERVIEW_RADIUS = 22;
-const OVERVIEW_HEIGHT = 23;
+const OVERVIEW_RADIUS = 22 * BOARD_SCALE;
+const OVERVIEW_HEIGHT = 23 * BOARD_SCALE;
 /** The overview looks a little toward the start row, so the bottom dock never hides it, even 390 px tall (Phase 5). */
-const OVERVIEW_TARGET_Z = 4;
+const OVERVIEW_TARGET_Z = 4 * BOARD_SCALE;
 
 const offset = (at: Vec3, by: Vec3): Vec3 => [at[0] + by[0], at[1] + by[1], at[2] + by[2]];
 const follow = (at: Vec3): Shot => ({ mode: 'follow', position: offset(at, FOLLOW), target: at, cut: false });

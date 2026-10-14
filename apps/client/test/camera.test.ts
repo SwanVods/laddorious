@@ -1,9 +1,10 @@
 import type { GameEvent, MoveCause, PlayerId } from '@laddorious/core';
+import { PerspectiveCamera, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
 import { presentationFromView } from '../src/director/presentation';
 import { cameraShot, type ShotInput } from '../src/scene/camera';
-import type { Vec3 } from '../src/scene/layout';
+import { BOARD_SCALE, COLUMNS, TILE_SIZE, type Vec3 } from '../src/scene/layout';
 import { openingUpdate } from './support/fixtures';
 
 const SPOTS: Record<PlayerId, Vec3> = { p0: [1, 0, 1], p1: [5, 0, -3], p2: [-4, 0, 2], p3: [0, 0, -6] };
@@ -17,7 +18,21 @@ function shot(over: Partial<ShotInput> = {}) {
 
 describe('camera rules (spec #2 §5.3)', () => {
   it('shows the whole board while everyone rolls, framed a little toward the start row so the dock never hides it', () => {
-    expect(shot()).toMatchObject({ mode: 'overview', target: [0, 0, 4], position: [0, 23, 26] });
+    expect(shot()).toMatchObject({ mode: 'overview', target: [0, 0, 4 * BOARD_SCALE], position: [0, 23 * BOARD_SCALE, 26 * BOARD_SCALE] });
+  });
+
+  it('keeps every corner of the bigger board on screen in the overview, on a landscape phone (round 5)', () => {
+    const { position, target } = shot({ reducedMotion: true });
+    const camera = new PerspectiveCamera(42, 844 / 390, 0.5, 200);
+    camera.position.set(...position);
+    camera.lookAt(new Vector3(...target));
+    camera.updateMatrixWorld();
+    const half = (TILE_SIZE * COLUMNS) / 2;
+    for (const [x, z] of [[-half, -half], [half, -half], [-half, half], [half, half]] as const) {
+      const p = new Vector3(x, 0, z).project(camera);
+      expect(Math.abs(p.x), `corner ${x}, ${z}`).toBeLessThan(1);
+      expect(Math.abs(p.y), `corner ${x}, ${z}`).toBeLessThan(1);
+    }
   });
 
   it('drifts gently over the overview, and holds still with reduced motion', () => {
@@ -69,6 +84,6 @@ describe('camera rules (spec #2 §5.3)', () => {
 
   it('pulls back to the overview for the ranks reveal after the winner cam (polish spec 4.5)', () => {
     const won: GameEvent = { type: 'MatchWon', winner: 'p0', rankings: [], visibility: 'public' };
-    expect(shot({ beat: beatOf('ranks', [won]), window: 'none' })).toMatchObject({ mode: 'overview', target: [0, 0, 4] });
+    expect(shot({ beat: beatOf('ranks', [won]), window: 'none' })).toMatchObject({ mode: 'overview', target: [0, 0, 4 * BOARD_SCALE] });
   });
 });

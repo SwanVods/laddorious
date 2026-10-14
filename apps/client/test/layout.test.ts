@@ -9,12 +9,20 @@ function expectAt(point: number[], x: number, z: number) {
 }
 
 describe('board layout (spec #2 §6.1)', () => {
-  it('lays the tiles on a serpentine 10×10 grid, 1.6 units apart, tile 1 at the front left', () => {
-    expectAt(tileToWorld(1), -7.2, 7.2);
-    expectAt(tileToWorld(10), 7.2, 7.2);
-    expectAt(tileToWorld(11), 7.2, 5.6);
-    expectAt(tileToWorld(100), -7.2, -7.2);
-    expect(TILE_SIZE * COLUMNS).toBeCloseTo(16);
+  it('makes each square 2.0 across, so the board spans 20 units (Step 2, round 5)', () => {
+    expect(TILE_SIZE).toBe(2);
+    const [x1] = tileToWorld(1);
+    const [x2] = tileToWorld(2);
+    expect(x2 - x1).toBeCloseTo(2, 5);
+    expect(TILE_SIZE * COLUMNS).toBe(20);
+  });
+
+  it('lays the tiles on a serpentine 10×10 grid, 2.0 units apart, tile 1 at the front left', () => {
+    expectAt(tileToWorld(1), -9, 9);
+    expectAt(tileToWorld(10), 9, 9);
+    expectAt(tileToWorld(11), 9, 7);
+    expectAt(tileToWorld(100), -9, -9);
+    expect(TILE_SIZE * COLUMNS).toBeCloseTo(20);
   });
 
   it('puts one start spot per seat in front of the board', () => {

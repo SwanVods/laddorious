@@ -73,6 +73,11 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     expect(contractProblems('pad', rocket(-0.2))).toEqual([`its Window faces away: its front is at -0.20, the symbol stands at ${PARTS.rocket.z}`]);
   });
 
+  it('takes a tile 1.9 across, for the bigger board (round 5)', () => {
+    const tile: GlbSummary = { min: [-0.95, 0, -0.95], max: [0.95, 0.3, 0.95], triangles: 196, shadowTriangles: 0, materials: ['Tint'], byMaterial: {}, transformedNodes: [] };
+    expect(contractProblems('tile', tile)).toEqual([]);
+  });
+
   it('keeps a tile to its one Tint material, so instancing can paint it, 0.30 tall (spec #5 A13)', () => {
     const tile: GlbSummary = { min: [-0.76, 0, -0.76], max: [0.76, 0.3, 0.76], triangles: 196, shadowTriangles: 0, materials: ['Tint', 'Edge'], byMaterial: {}, transformedNodes: [] };
     expect(contractProblems('tile', tile)).toEqual(['it has 2 materials; at most 1']);

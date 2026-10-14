@@ -5,7 +5,7 @@ import math
 
 from lib import finish, palette, shapes
 
-SIZE = 1.52
+SIZE = 1.9   # 0.95 of the game's TILE_SIZE (2.0)
 THICKNESS = 0.30   # the game's TILE_THICKNESS
 CORNER = 0.17      # the corners' radius, seen from above
 ROLL = 0.07        # the top edge's radius

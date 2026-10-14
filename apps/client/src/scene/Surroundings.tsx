@@ -4,12 +4,15 @@ import { BufferAttribute, Color, CylinderGeometry, DoubleSide, Fog, Object3D, ty
 import { WORLD_COLORS } from '../app/theme';
 import { crownGeometry } from '../assets/models';
 import { Slot } from '../assets/slots';
-import { COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from './layout';
+import { BOARD_SCALE, COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from './layout';
+
+/** Half the shadow camera's box: the board and what stands on it. */
+const SHADOW_REACH = 13 * BOARD_SCALE;
 import { skyTexture } from './textures';
 
 /** The island under the board: a wobbly, sand-topped rock in one draw call (vertex colours). */
 export function islandGeometry(): CylinderGeometry {
-  const g = new CylinderGeometry(12.5, 8.5, 2.4, 40, 1);
+  const g = new CylinderGeometry(12.5 * BOARD_SCALE, 8.5 * BOARD_SCALE, 2.4, 40, 1);
   const pos = g.getAttribute('position');
   const colors = new Float32Array(pos.count * 3);
   const sand = new Color(WORLD_COLORS.islandTop);
@@ -36,7 +39,7 @@ const BUMPERS: Vec3[] = Array.from({ length: 9 }, (_, i) => -EDGE + (i + 0.5) * 
 ]);
 const CLOUDS: Vec3[] = Array.from({ length: 8 }, (_, i): Vec3 => {
   const a = (i / 8) * Math.PI * 2 + 0.4;
-  const r = 20 + (i % 3) * 3;
+  const r = (20 + (i % 3) * 3) * BOARD_SCALE;
   return [Math.cos(a) * r, 5 + (i % 4), Math.sin(a) * r];
 });
 /** Each cloud is three puffs: [x offset, y offset, size]. */
@@ -114,10 +117,10 @@ export function Surroundings({ shadows, clouds, clearcoat, low = false }: { shad
         intensity={1.6}
         castShadow={shadows}
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-13}
-        shadow-camera-right={13}
-        shadow-camera-top={13}
-        shadow-camera-bottom={-13}
+        shadow-camera-left={-SHADOW_REACH}
+        shadow-camera-right={SHADOW_REACH}
+        shadow-camera-top={SHADOW_REACH}
+        shadow-camera-bottom={-SHADOW_REACH}
         shadow-camera-near={1}
         shadow-camera-far={60}
         shadow-bias={-0.0006}
