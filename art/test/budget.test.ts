@@ -1,9 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { capGeometry, symbolGeometry } from '../../apps/client/src/assets/symbols';
-import { PARTS, slideCurve } from '../../apps/client/src/scene/layout';
+import { arrowheadGeometry, puffGeometry } from '../../apps/client/src/assets/models';
+import { PARTS } from '../../apps/client/src/scene/layout';
 import { SYMBOLS } from '../../apps/client/src/scene/pairs';
-import { CHANNEL, channelGeometry, trailGeometry, trailPath } from '../../apps/client/src/scene/tracks';
+import { PUFFS, dashPoints } from '../../apps/client/src/scene/tracks';
 import { MODELS } from '../contract';
 import { readGlb, type GlbSummary } from '../glb';
 
@@ -11,6 +12,7 @@ import { readGlb, type GlbSummary } from '../glb';
 // The busiest moment is a roll: four dice tumble while every piece and part shows. Today's boards have
 // 8 slides and 10 pads; cards add a few, so this prices 12 and 14. Paths hide unless a piece stands on
 // their start or a player taps an end (spec #5 A13): at most five show, priced as the costliest kind.
+// A trail is low-poly pieces (round 5): two instanced meshes in all, puffs and arrowheads.
 
 const DIR = new URL('../../apps/client/public/models/', import.meta.url);
 const SLIDES = 12;
@@ -51,8 +53,8 @@ const shadowed = (m: GlbSummary) =>
 
 const flat = (m: GlbSummary) => ({ calls: m.materials.length, triangles: m.triangles });
 
-/** An indexed geometry's triangles (typed by shape: three's types live in the client). */
-const triangles = (g: { index: { count: number } | null }) => g.index!.count / 3;
+/** A geometry's triangles, indexed or not (typed by shape: three's types live in the client). */
+const triangles = (g: { index: { count: number } | null; attributes: Record<string, { count: number }> }) => (g.index ?? g.attributes['position']!).count / 3;
 
 function built(id: string): GlbSummary | null {
   const url = new URL(`${id}.glb`, DIR);
@@ -73,10 +75,10 @@ function price(level: 'high' | 'low') {
     total += t;
     rows.push(`${name}: ${c} calls, ${t} triangles`);
   };
-  // The paths that show, each its own mesh, priced as long slides: a channel outweighs a trail.
-  const slide = channelGeometry(slideCurve(99, 2).getPoints(CHANNEL.samples));
-  const trail = triangles(trailGeometry(trailPath({ id: 'l', from: 3, to: 97 })));
-  add('shown paths', 2 * SHOWN, SHOWN * Math.max(triangles(slide.floor) + triangles(slide.walls), trail));
+  // The paths that show, priced as the costlier kind: a long slide's arrowheads or a rocket's puffs.
+  const slide = dashPoints({ id: 's', from: 99, to: 2 }).length * triangles(arrowheadGeometry());
+  const rocket = PUFFS * triangles(puffGeometry());
+  add('shown paths', 2, SHOWN * Math.max(slide, rocket));
   // The pair symbols: one instanced mesh per symbol, both ends of every jump; and the whirlpools' caps.
   const heaviestSymbol = Math.max(...SYMBOLS.map((name) => triangles(symbolGeometry(name))));
   add('pair symbols', SYMBOLS.length, 2 * (SLIDES + PADS) * heaviestSymbol);

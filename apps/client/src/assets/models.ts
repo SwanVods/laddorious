@@ -1,4 +1,4 @@
-import { BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeometry, LatheGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
+import { BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeometry, IcosahedronGeometry, LatheGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { PieceId } from '../service/matchService';
@@ -221,4 +221,26 @@ export function vortexGeometry(): BufferGeometry {
 /** A portal's end: a flat splat, its top where the symbol lies (PARTS.splat). */
 export function exitGeometry(): BufferGeometry {
   return new CircleGeometry(PARTS.splat.radius * 0.9, 24).rotateX(-Math.PI / 2).translate(0, PARTS.splat.top, 0);
+}
+
+// The jumps' trails (round 5): low-poly pieces, one instanced mesh each.
+
+/** A rocket trail's smoke puff: a 20-faced ball of radius 1, drawn flat-shaded so it reads as low-poly. */
+export function puffGeometry(): BufferGeometry {
+  return new IcosahedronGeometry(1, 0);
+}
+
+/** A slide trail's arrowhead: a flat chevron, 0.04 thick, lying on its base and pointing +Z. */
+export function arrowheadGeometry(): BufferGeometry {
+  const outline = [
+    [0, 0.22],
+    [0.29, -0.06],
+    [0.19, -0.19],
+    [0, 0],
+    [-0.19, -0.19],
+    [-0.29, -0.06],
+  ] as const;
+  const shape = new Shape(outline.map(([x, y]) => new Vector2(x, y)));
+  // Extruded up from the shape's plane, then laid down: the shape's +Y becomes +Z, the depth goes up.
+  return new ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, 0.04, 0);
 }

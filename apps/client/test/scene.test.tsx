@@ -8,7 +8,7 @@ import { SceneContent } from '../src/scene/MatchScene';
 import { SYMBOLS, pairStyles } from '../src/scene/pairs';
 import { REVEAL_MS, createPeeks, type Peeks } from '../src/scene/paths';
 import type { QualityLevel } from '../src/scene/quality';
-import { ribbonGeometry } from '../src/scene/tracks';
+import { PUFFS, dashPoints } from '../src/scene/tracks';
 import { createTagRegistry } from '../src/scene/tags';
 import { SEATS, openingUpdate } from './support/fixtures';
 
@@ -56,29 +56,13 @@ async function frames(renderer: Awaited<ReturnType<typeof ReactThreeTestRenderer
   await renderer.advanceFrames(1, 1 / 60);
 }
 
-/** Every path mesh in the scene: pad trails and slide channels. */
-const pathMeshes = (root: Object3D) => {
-  const found: Mesh[] = [];
-  root.traverse((node) => {
-    if (node instanceof Mesh && /^(trail|channel-floor|channel-walls)-/.test(node.name)) found.push(node);
-  });
-  return found;
-};
+/** How many smoke puffs and arrowheads show: the trails of every path on show. */
+const trailCounts = (root: Object3D) => ({
+  puffs: (root.getObjectByName('trail-puffs') as InstancedMesh).count,
+  arrows: (root.getObjectByName('slide-arrows') as InstancedMesh).count,
+});
 
 describe('the 3D scene (spec #2 §6)', () => {
-  it('lays slide ribbons face up, so the light falls on them', () => {
-    const ribbon = ribbonGeometry([new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(2, 0, 1), new Vector3(2, 0, 3)], 0.6, 0.02);
-    const pos = ribbon.getAttribute('position');
-    const index = ribbon.index!;
-    const [a, b, c] = [new Vector3(), new Vector3(), new Vector3()];
-    for (let i = 0; i < index.count; i += 3) {
-      a.fromBufferAttribute(pos, index.getX(i));
-      b.fromBufferAttribute(pos, index.getX(i + 1));
-      c.fromBufferAttribute(pos, index.getX(i + 2));
-      expect(b.sub(a).cross(c.sub(a)).y).toBeGreaterThan(0);
-    }
-  });
-
   it('moves each name tag over its piece on screen (spec #2 §7.2)', async () => {
     const director = new Director('p0', () => {});
     director.push(openingUpdate());
@@ -103,10 +87,10 @@ describe('the 3D scene (spec #2 §6)', () => {
   });
 
   it('hides every path while no piece stands on a start tile (spec #5 A13)', async () => {
-    expect(pathMeshes(await renderScene('high'))).toEqual([]);
+    expect(trailCounts(await renderScene('high'))).toEqual({ puffs: 0, arrows: 0 });
   });
 
-  it("shows a tapped jump's path, growing it in along its length (spec #5 A13)", async () => {
+  it("shows a tapped jump's trail in its pair colour, puffs for a rocket and arrowheads for a slide, filling in (round 5)", async () => {
     const { jumps } = openingUpdate().view.board;
     const ladder = jumps.find((j) => j.to > j.from)!;
     const slide = jumps.find((j) => j.to < j.from)!;
@@ -114,36 +98,26 @@ describe('the 3D scene (spec #2 §6)', () => {
     peeks.tap(ladder.from, jumps, Date.now());
     peeks.tap(slide.to, jumps, Date.now());
     const root = await renderScene('high', undefined, peeks);
-    const trail = root.getObjectByName(`trail-${ladder.id}`) as Mesh;
-    for (const name of [`channel-floor-${slide.id}`, `channel-walls-${slide.id}`]) expect(root.getObjectByName(name)).toBeInstanceOf(Mesh);
-    // Two frames in, the trail has only begun: part of its length shows.
-    const whole = (trail.geometry as BufferGeometry).index!.count;
-    expect(trail.geometry.drawRange.count).toBeGreaterThan(0);
-    expect(trail.geometry.drawRange.count).toBeLessThan(whole);
+    const { puffs, arrows } = trailCounts(root);
+    // Two frames in, each has only begun: the first puffs and arrowheads show, not all of them.
+    expect(puffs).toBeGreaterThan(0);
+    expect(puffs).toBeLessThan(PUFFS);
+    expect(arrows).toBeGreaterThan(0);
+    expect(arrows).toBeLessThan(dashPoints(slide).length);
+    const colour = new Color();
+    (root.getObjectByName('trail-puffs') as InstancedMesh).getColorAt(0, colour);
+    expect(colour.getHex()).toBe(new Color(pairStyles(jumps).get(ladder.id)!.colour).getHex());
     expect(REVEAL_MS).toBeGreaterThan(0);
   });
 
-  it('keeps a shown path when the match sends news, rather than building it again', async () => {
-    const opening = openingUpdate();
-    const ladder = opening.view.board.jumps.find((j) => j.to > j.from)!;
-    const peeks = createPeeks();
-    peeks.tap(ladder.from, opening.view.board.jumps, Date.now());
-    const { renderer, root, director } = await renderSceneWith('high', undefined, peeks);
-    const before = (root.getObjectByName(`trail-${ladder.id}`) as Mesh).geometry;
-    // The same board again, as fresh objects: every update brings a new copy.
-    director.push(JSON.parse(JSON.stringify(opening)) as typeof opening);
-    await frames(renderer, 2);
-    expect((root.getObjectByName(`trail-${ladder.id}`) as Mesh).geometry).toBe(before);
-  });
-
-  it("peeks at a jump's path when a player taps a tile at either end", async () => {
+  it("peeks at a jump's trail when a player taps a tile at either end", async () => {
     const { jumps } = openingUpdate().view.board;
     const ladder = jumps.find((j) => j.to > j.from)!;
     const { renderer, root } = await renderSceneWith('high');
     const tiles = renderer.scene.find((node) => node.props.name === 'tiles');
     await renderer.fireEvent(tiles, 'onClick', { instanceId: ladder.to - 1, stopPropagation: () => {} });
     await frames(renderer, 2);
-    expect(root.getObjectByName(`trail-${ladder.id}`)).toBeInstanceOf(Mesh);
+    expect(trailCounts(root).puffs).toBeGreaterThan(0);
   });
 
   it('stands the jump parts on their tiles, each rocket upright and facing the camera (spec #5 §4.2, A16)', async () => {

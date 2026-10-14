@@ -1,5 +1,5 @@
 import type { Rarity } from '@laddorious/core';
-import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three';
+import { CanvasTexture, SRGBColorSpace } from 'three';
 import { COLUMNS, TILE_SIZE, tileToWorld } from './layout';
 
 /** Paint a canvas texture, or return null where there is no DOM (tests) or no 2D context. */
@@ -47,28 +47,6 @@ export function boardOverlayTexture(size: number, mystery: Record<number, Rarity
       }
     }
   });
-}
-
-/** A chevron stripe that tiles; scrolling its offset moves the chevrons along a slide or pad. */
-export function chevronTexture(base: string, stripe: string): CanvasTexture | null {
-  const texture = paint(64, 64, (ctx) => {
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, 64, 64);
-    ctx.strokeStyle = stripe;
-    ctx.lineWidth = 9;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(14, 44);
-    ctx.lineTo(32, 22);
-    ctx.lineTo(50, 44);
-    ctx.stroke();
-  });
-  if (texture) {
-    texture.wrapS = RepeatWrapping;
-    texture.wrapT = RepeatWrapping;
-  }
-  return texture;
 }
 
 /** A three-armed spiral for the vortex at a slide's head. */

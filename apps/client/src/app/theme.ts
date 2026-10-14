@@ -30,7 +30,6 @@ export const WORLD_COLORS = {
   shield: '#6ff3ff',
   ring: '#ffcc33',
   /** A pad trail's base under its pair colour: the colour multiplies it, so the cream lights stay brighter. */
-  trailMask: '#d9d9d9',
 } as const;
 
 /**
