@@ -185,11 +185,14 @@ describe('beat poses (spec #2 §5.1)', () => {
     const card: GameEvent = { type: 'CardResolved', caster: 'p1', cardId: 'shove', target: 'p0', result: 'hit', visibility: 'public' };
     const b = beat([card], from);
     const seatOf = (id: PlayerId) => Number(id.slice(1));
-    const start = projectileAt(b, from, seatOf, 0)!;
+    // It waits for the camera's lead-in (2026-10-14), then flies over the first half of what's left.
+    expect(projectileAt(b, from, seatOf, BEAT_MS.cardLead / 2)).toBeNull();
+    const play = b.durationMs - BEAT_MS.cardLead;
+    const start = projectileAt(b, from, seatOf, BEAT_MS.cardLead)!;
     expect(start[0]).toBeCloseTo(restPose(from, 'p1', 1).position[0]);
     expect(start[2]).toBeCloseTo(restPose(from, 'p1', 1).position[2]);
-    expect(projectileAt(b, from, seatOf, b.durationMs * 0.25)![1]).toBeGreaterThan(1.5);
-    expect(projectileAt(b, from, seatOf, b.durationMs * 0.6)).toBeNull();
+    expect(projectileAt(b, from, seatOf, BEAT_MS.cardLead + play * 0.25)![1]).toBeGreaterThan(1.5);
+    expect(projectileAt(b, from, seatOf, BEAT_MS.cardLead + play * 0.6)).toBeNull();
     expect(projectileAt({ ...b, events: [{ ...card, target: 'p1' }] }, from, seatOf, 0)).toBeNull();
   });
 });

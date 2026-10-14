@@ -45,6 +45,8 @@ export const BEAT_MS = {
   faceOffResult: 1100,
   cardReveal: 1700,
   card: { hit: 1400, blocked: 1200, fizzled: 900 } satisfies Record<CardResult, number>,
+  /** Before each card plays, so the camera reaches its player first (2026-10-14). */
+  cardLead: 450,
   clash: 900,
   boardEdit: 600,
   victory: 3000,
@@ -166,7 +168,7 @@ function durationOf(beat: Beat, boardSize: number): number {
       return BEAT_MS.cardReveal;
     case 'cardResolved': {
       const resolved = beat.events[0];
-      return resolved?.type === 'CardResolved' ? BEAT_MS.card[resolved.result] : 0;
+      return resolved?.type === 'CardResolved' ? BEAT_MS.cardLead + BEAT_MS.card[resolved.result] : 0;
     }
     case 'clash':
       return BEAT_MS.clash;

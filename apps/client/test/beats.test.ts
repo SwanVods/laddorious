@@ -111,12 +111,24 @@ describe('buildTimeline', () => {
     const beats = buildTimeline(events, start({ p0: 20 }), 'p0', SIZE);
     expect(beats.map((b) => [b.kind, b.durationMs])).toEqual([
       ['cardReveal', BEAT_MS.cardReveal],
-      ['cardResolved', BEAT_MS.card.hit],
-      ['cardResolved', BEAT_MS.card.blocked],
+      ['cardResolved', BEAT_MS.cardLead + BEAT_MS.card.hit],
+      ['cardResolved', BEAT_MS.cardLead + BEAT_MS.card.blocked],
       ['cardMove', BEAT_MS.cardMove],
     ]);
     expect(beats[1]!.events[0]).toMatchObject({ caster: 'p0' });
     expect(beats[2]!.events[0]).toMatchObject({ caster: 'p1' });
+  });
+
+  it('plays each card and the move it makes before the next card (2026-10-14)', () => {
+    const events: GameEvent[] = [
+      { type: 'CardResolved', caster: 'p1', cardId: 'sprint', target: 'p1', result: 'hit', visibility: 'public' },
+      moved('p1', 10, 13, 'card'),
+      { type: 'CardResolved', caster: 'p0', cardId: 'sprint', target: 'p0', result: 'hit', visibility: 'public' },
+      moved('p0', 20, 23, 'card'),
+    ];
+    const beats = buildTimeline(events, start({ p0: 20, p1: 10 }), 'p0', SIZE);
+    expect(beats.map((b) => b.kind)).toEqual(['cardResolved', 'cardMove', 'cardResolved', 'cardMove']);
+    expect(BEAT_MS.cardLead).toBeGreaterThanOrEqual(400);
   });
 
   it('ends a won match with the victory beat', () => {

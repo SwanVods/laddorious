@@ -46,12 +46,33 @@ export function cameraShot(input: ShotInput): Shot {
   // After the winner cam, the whole board while the other places are revealed (polish spec §4.5).
   if (beat?.kind === 'ranks') return overview(input);
   if (input.watch) return follow(input.piece(input.watch));
+  const card = cardShot(input);
+  if (card) return card;
   const mine = input.piece(me);
   if (isMyMoment(input)) return swoop(mine, input);
   const busy = beat !== null && beat.kind !== 'roll' && beat.kind !== 'info';
   if (busy || input.window === 'challenge' || input.window === 'mystery') return follow(mine);
   // Everyone rolls: the whole board, drifting gently.
   return overview(input);
+}
+
+/**
+ * Cards resolve one at a time (2026-10-14): the camera frames each card's caster, or the caster and its
+ * target together, pulled back as they stand further apart, then follows the piece the card moves.
+ */
+function cardShot(input: ShotInput): Shot | null {
+  const { beat } = input;
+  if (beat?.kind === 'cardMove') {
+    const move = beat.events.find((e) => e.type === 'Moved');
+    return move?.type === 'Moved' ? { ...follow(input.piece(move.player)), cut: input.reducedMotion } : null;
+  }
+  const card = beat?.kind === 'cardResolved' ? beat.events.find((e) => e.type === 'CardResolved') : undefined;
+  if (card?.type !== 'CardResolved') return null;
+  const a = input.piece(card.caster);
+  const b = card.target && card.target !== card.caster ? input.piece(card.target) : a;
+  const at: Vec3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+  const back = 1 + Math.hypot(b[0] - a[0], b[2] - a[2]) / 10;
+  return { mode: 'follow', position: offset(at, [FOLLOW[0] * back, FOLLOW[1] * back, FOLLOW[2] * back]), target: at, cut: input.reducedMotion };
 }
 
 function overview(input: ShotInput): Shot {
@@ -68,7 +89,7 @@ function swoop(at: Vec3, input: ShotInput): Shot {
   return { mode: 'swoop', position: offset(at, SWOOP), target: at, cut: input.reducedMotion };
 }
 
-/** Swoops are only for your own moments: your collision, your slide or launch, a card aimed at you, your Mystery pick. */
+/** Swoops are only for your own moments: your collision, your slide or launch, your Mystery pick (cards get their own shot). */
 function isMyMoment({ beat, me, myPick, window }: ShotInput): boolean {
   if (myPick && window === 'mystery') return true;
   return (

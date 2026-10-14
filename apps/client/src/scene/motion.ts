@@ -129,7 +129,8 @@ export function beatPose(beat: PlayingBeat, from: PresentationState, player: Pla
     return { ...end, position: [end.position[0], end.position[1] + Math.abs(Math.sin(t * Math.PI * 3)) * 0.9, end.position[2]], rotation: [0, t * Math.PI * 4, 0] };
   }
   if (beat.kind === 'cardResolved' && beat.events.some((e) => e.type === 'CardResolved' && e.target === player && e.result === 'hit')) {
-    return { ...start, position: [start.position[0], start.position[1] + Math.sin(t * Math.PI) * 0.35, start.position[2]] };
+    const k = clamp01((elapsed - BEAT_MS.cardLead) / (beat.durationMs - BEAT_MS.cardLead));
+    return { ...start, position: [start.position[0], start.position[1] + Math.sin(k * Math.PI) * 0.35, start.position[2]] };
   }
   const k = easeInOut(t);
   return { ...end, position: lerp3(start.position, end.position, k), rotation: lerp3(start.rotation, end.rotation, k) };
@@ -188,7 +189,10 @@ export function projectileAt(beat: PlayingBeat, from: PresentationState, seatOf:
   if (beat.kind !== 'cardResolved') return null;
   const card = beat.events.find((e) => e.type === 'CardResolved');
   if (card?.type !== 'CardResolved' || card.target === null || card.target === card.caster) return null;
-  const t = clamp01((nowMs - beat.startedAt) / (beat.durationMs / 2));
+  // It waits for the camera's lead-in (2026-10-14), then flies over the first half of what's left.
+  const since = nowMs - beat.startedAt - BEAT_MS.cardLead;
+  if (since < 0) return null;
+  const t = clamp01(since / ((beat.durationMs - BEAT_MS.cardLead) / 2));
   if (t >= 1) return null;
   const a = restPose(from, card.caster, seatOf(card.caster)).position;
   const b = restPose(from, card.target, seatOf(card.target)).position;

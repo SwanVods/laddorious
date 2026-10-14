@@ -372,9 +372,13 @@ export interface CardPickModel {
 }
 
 /** The card-pick popup, only for the offer's owner (spec #2 §7.2); null otherwise. */
-export function cardPickModel(view: PlayerView, maxRerolls = MAX_REROLLS): CardPickModel | null {
+/** Beats that only play once every pick is in: the pick's window has closed, whatever the settled view still says. */
+const RESOLVING: ReadonlySet<Beat['kind']> = new Set(['cardReveal', 'cardResolved', 'cardMove', 'clash', 'boardEdit']);
+
+export function cardPickModel(view: PlayerView, beat: Beat | null = null, maxRerolls = MAX_REROLLS): CardPickModel | null {
   const offer = view.myOffer;
   if (view.phase.kind !== 'mysterySelect' || !offer || offer.picked !== null) return null;
+  if (beat && RESOLVING.has(beat.kind)) return null;
   const rerollsLeft = Math.max(0, maxRerolls - offer.rerollsUsed);
   return {
     rarity: offer.rarity,

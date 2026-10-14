@@ -207,6 +207,12 @@ describe('the card-pick popup (spec #2 §7.2)', () => {
     expect(cardPickModel(offerView([false, false, false], 0, 1))).toBeNull();
     expect(cardPickModel(view())).toBeNull();
   });
+
+  it('closes while the cards resolve, even if my window timed out before I picked (2026-10-14)', () => {
+    const offer = offerView([false, false, false], 0);
+    for (const kind of ['cardReveal', 'cardResolved', 'cardMove', 'boardEdit'] as const) expect(cardPickModel(offer, beat(kind))).toBeNull();
+    expect(cardPickModel(offer, beat('move'))).not.toBeNull();
+  });
 });
 
 describe('banners (spec #2 §5.1)', () => {

@@ -59,9 +59,31 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ beat: beatOf('faceOff', [started]) }).mode).toBe('swoop');
   });
 
-  it('swoops in for a card aimed at me', () => {
-    const card: GameEvent = { type: 'CardResolved', caster: 'p1', cardId: 'shove', target: 'p0', result: 'hit', visibility: 'public' };
-    expect(shot({ beat: beatOf('cardResolved', [card]) }).mode).toBe('swoop');
+  describe('visits each card as it resolves (2026-10-14)', () => {
+    const card = (caster: PlayerId, target: PlayerId | null): GameEvent => ({ type: 'CardResolved', caster, cardId: 'shove', target, result: 'hit', visibility: 'public' });
+    const mid = (a: Vec3, b: Vec3): Vec3 => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+
+    it("frames the caster of a card on itself, whoever's it is", () => {
+      expect(shot({ beat: beatOf('cardResolved', [card('p2', 'p2')]) }).target).toEqual(SPOTS.p2);
+      expect(shot({ beat: beatOf('cardResolved', [card('p3', null)]) }).target).toEqual(SPOTS.p3);
+    });
+
+    it('frames the caster and the target together, pulled back to fit both', () => {
+      const near = shot({ beat: beatOf('cardResolved', [card('p1', 'p0')]) });
+      expect(near.target).toEqual(mid(SPOTS.p1!, SPOTS.p0!));
+      const far = shot({ beat: beatOf('cardResolved', [card('p3', 'p1')]) });
+      const back = (s: { position: Vec3; target: Vec3 }) => Math.hypot(s.position[0] - s.target[0], s.position[1] - s.target[1], s.position[2] - s.target[2]);
+      expect(back(far)).toBeGreaterThan(back(shot({ beat: beatOf('cardResolved', [card('p2', 'p2')]) })));
+    });
+
+    it('follows the piece a card moves', () => {
+      expect(shot({ beat: beatOf('cardMove', [moved('p2', 'card')]) }).target).toEqual(SPOTS.p2);
+    });
+
+    it('cuts instead of gliding with reduced motion', () => {
+      expect(shot({ beat: beatOf('cardResolved', [card('p2', 'p2')]), reducedMotion: true }).cut).toBe(true);
+      expect(shot({ beat: beatOf('cardResolved', [card('p2', 'p2')]) }).cut).toBe(false);
+    });
   });
 
   it('swoops in for my Mystery pick', () => {

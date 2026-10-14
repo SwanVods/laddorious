@@ -131,7 +131,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const rows = view && presentation ? playerRows({ view, presentation, record, seats, me, watch, away }) : [];
   const mine = rows.find((r) => r.me);
   const faceOff = view ? faceOffModel({ beat, view, me }) : null;
-  const cardPick = view && view.awaiting.windowId !== pickedWindow ? cardPickModel(view) : null;
+  const cardPick = view && view.awaiting.windowId !== pickedWindow ? cardPickModel(view, beat) : null;
   // The card pick fans out (spec #3 §5).
   const pickWindow = cardPick ? (view?.awaiting.windowId ?? null) : null;
   useEffect(() => {
