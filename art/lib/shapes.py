@@ -161,6 +161,60 @@ def tube(name, points, radius, material, sides=6, smooth=True):
     return _object(name, bm, material, smooth)
 
 
+def lathe(name, profile, materials, paint=lambda row, column: 0, segments=32, smooth=True):
+    """A closed surface turned round the Z axis from a profile of (radius, height) points, bottom to top;
+    leave the axis out, as each end is closed by a fan to it. One surface in several materials:
+    paint(row, column) picks the material of the band from profile point row to row + 1, between columns
+    column and column + 1 round the axis. For round, low-poly parts with an exact triangle count
+    (segments × (2 × bands + 2)): the course's pads, chips, a podium. Board theme plan, decision 4."""
+    rows = [[(r * math.cos(a), r * math.sin(a), h) for a in (k * math.tau / segments for k in range(segments))] for r, h in profile]
+    return grid(name, rows, materials, paint=paint, smooth=smooth)
+
+
+def capsule(name, radius, length, material, location=(0.0, 0.0, 0.0), rotation=(0.0, 0.0, 0.0), segments=48):
+    """A rod with round ends, `length` long overall, along Z through its middle before rotation."""
+    half = length / 2 - radius
+    bottom = [(radius * math.cos(a), -half + radius * math.sin(a)) for a in (math.radians(-90 + 15 * k) for k in range(1, 6))]
+    top = [(radius * math.cos(a), half + radius * math.sin(a)) for a in (math.radians(15 * k) for k in range(1, 6))]
+    profile = [(0.0, -half - radius), *bottom, (radius, -half), (radius, half), *top, (0.0, half + radius)]
+    obj = revolve(name, profile, material, segments=segments)
+    obj.location = location
+    obj.rotation_euler = rotation
+    return obj
+
+
+def rounded_rect(half_x, half_y, radius, count):
+    """`count` points spaced evenly round a rounded rectangle centred on the origin, anticlockwise from the
+    middle of its +x side, each with its outward normal: [((x, y), (nx, ny)), ...]. The platform's rows."""
+    sx, sy = half_x - radius, half_y - radius
+
+    def line(a, b, normal):
+        return (math.dist(a, b), lambda t: (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t), lambda t: normal)
+
+    def arc(cx, cy, start):
+        angle = lambda t: math.radians(start + 90 * t)
+        return (radius * math.pi / 2, lambda t: (cx + radius * math.cos(angle(t)), cy + radius * math.sin(angle(t))), lambda t: (math.cos(angle(t)), math.sin(angle(t))))
+
+    runs = [
+        line((half_x, 0.0), (half_x, sy), (1.0, 0.0)), arc(sx, sy, 0),
+        line((sx, half_y), (-sx, half_y), (0.0, 1.0)), arc(-sx, sy, 90),
+        line((-half_x, sy), (-half_x, -sy), (-1.0, 0.0)), arc(-sx, -sy, 180),
+        line((-sx, -half_y), (sx, -half_y), (0.0, -1.0)), arc(sx, -sy, 270),
+        line((half_x, -sy), (half_x, 0.0), (1.0, 0.0)),
+    ]
+    total = sum(length for length, _, _ in runs)
+    points = []
+    for i in range(count):
+        s = total * i / count
+        for k, (length, at, normal) in enumerate(runs):
+            if s <= length or k == len(runs) - 1:
+                t = s / length if length else 0.0
+                points.append((at(t), normal(t)))
+                break
+            s -= length
+    return points
+
+
 def _lerp(a, b, t):
     return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
 

@@ -1,5 +1,5 @@
 import { LOW_SLOTS, type SlotName } from '../apps/client/src/assets/slotFiles';
-import { PARTS } from '../apps/client/src/scene/layout';
+import { PARTS, PLATFORM } from '../apps/client/src/scene/layout';
 import type { GlbSummary } from './glb';
 
 // What every model file must keep (spec #5 §4, §5): one rule per art/models/<id>.py.
@@ -50,6 +50,15 @@ function topAt(height: number) {
     Math.abs(model.max[1] - height) <= 0.006 ? null : `its top is at ${model.max[1].toFixed(3)}, but the symbol lies at ${height}`;
 }
 
+/** A material's top is at this height: the course pad's deck, where its obstacle stands (board theme spec §6). */
+export function materialTop(material: string, height: number, tolerance = 0.06) {
+  return (model: GlbSummary): string | null => {
+    const part = model.byMaterial[material];
+    if (!part) return null; // requiredMaterials reports it missing
+    return Math.abs(part.max[1]! - height) <= tolerance ? null : `its ${material} top is at ${part.max[1]!.toFixed(2)}, but ${height} is expected`;
+  };
+}
+
 // Triangle limits are guards, not the spec's targets (the user, Step 1 review: sculpted, curved models may
 // go past them). What holds hard is the whole match: at most 150,000 triangles (spec #5 §1).
 /** A shadow stand-in this small keeps the shadow's outline: the shadow map gives a piece only about 40 texels. */
@@ -83,6 +92,10 @@ export const MODELS: Record<string, ModelRule> = {
   // A ladder's end is a flag, all Tint; a portal's end is a flat splat.
   target: { slot: 'pad.target', origin: 'base', height: [1.2, 1.35], maxWidth: 1.3, maxTriangles: 1500, maxMaterials: 1, requiredMaterials: ['Tint'] },
   vortex: { slot: 'slide.vortex', origin: 'base', height: [0.08, 0.14], maxWidth: 0.88, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Inside', 'Tint'] },
+  // The world (board theme spec §3, §7): instanced, no shadows, light. Round parts are lathed, so their counts are exact.
+  platform: { slot: 'platform', origin: 'base', height: [PLATFORM.rimTop - 0.05, PLATFORM.rimTop + 0.05], maxWidth: 55.5, maxTriangles: 3600, maxMaterials: 3, requiredMaterials: ['Deck', 'Stripe', 'Cushion'] },
+  cloud: { slot: 'cloud', origin: 'base', height: [2.45, 2.75], maxWidth: 5.6, maxTriangles: 220, maxMaterials: 1, requiredMaterials: ['Cloud'] },
+  step: { slot: 'step', origin: 'base', height: [0.55, 0.65], maxWidth: 3.7, maxTriangles: 120, maxMaterials: 1, requiredMaterials: ['Tint'] },
   exit: { slot: 'slide.exit', origin: 'base', height: [0.03, 0.06], maxWidth: 0.88, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'], checks: [topAt(PARTS.splat.top)] },
 };
 

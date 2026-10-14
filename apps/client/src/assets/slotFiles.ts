@@ -49,6 +49,9 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   'pad.target': 'target',
   'slide.vortex': 'vortex',
   'slide.exit': 'exit',
+  platform: 'platform',
+  cloud: 'cloud',
+  step: 'step',
 };
 
 /** Slots drawn many times through instancing (spec #5 §6): useSlotMesh loads them as one mesh each. */
