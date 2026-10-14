@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { slideCurve, tileToWorld } from '../src/scene/layout';
+import { TILE_SIZE, slideCurve, tileToWorld } from '../src/scene/layout';
 import { DASH_GAP, dashPoints, ladderCurve, type Dash } from '../src/scene/tracks';
 
 const ladder = { id: 'l1', from: 22, to: 52 };
@@ -13,6 +13,10 @@ const toward = (d: Dash, next: Dash) => {
 };
 
 describe('the jump trails: arrowheads (2026-10-14)', () => {
+  it("spaces the arrowheads by the board's step, so each tile carries as many as on the 2.0 board (board theme spec B3)", () => {
+    expect(DASH_GAP / TILE_SIZE).toBeCloseTo(0.3);
+  });
+
   it("lays a slide's arrowheads along its lane, one every DASH_GAP, each pointing on toward the splat", () => {
     const curve = slideCurve(slide.from, slide.to);
     const dashes = dashPoints(slide);

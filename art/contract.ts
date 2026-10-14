@@ -1,5 +1,5 @@
 import { LOW_SLOTS, type SlotName } from '../apps/client/src/assets/slotFiles';
-import { PARTS, PLATFORM } from '../apps/client/src/scene/layout';
+import { COURSE, PARTS, PLATFORM } from '../apps/client/src/scene/layout';
 import type { GlbSummary } from './glb';
 
 // What every model file must keep (spec #5 §4, §5): one rule per art/models/<id>.py.
@@ -96,6 +96,12 @@ export const MODELS: Record<string, ModelRule> = {
   platform: { slot: 'platform', origin: 'base', height: [PLATFORM.rimTop - 0.05, PLATFORM.rimTop + 0.05], maxWidth: 55.5, maxTriangles: 3600, maxMaterials: 3, requiredMaterials: ['Deck', 'Stripe', 'Cushion'] },
   cloud: { slot: 'cloud', origin: 'base', height: [2.45, 2.75], maxWidth: 5.6, maxTriangles: 220, maxMaterials: 1, requiredMaterials: ['Cloud'] },
   step: { slot: 'step', origin: 'base', height: [0.55, 0.65], maxWidth: 3.7, maxTriangles: 120, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  course_pad: { slot: 'course.pad', origin: 'base', height: [2.4, 2.6], maxWidth: 11.3, maxTriangles: 400, maxMaterials: 3, requiredMaterials: ['Pad', 'Rim', 'Cushion'], checks: [materialTop('Pad', COURSE.padTop)] },
+  sweeper: { slot: 'course.sweeper', origin: 'base', height: [3.0, 3.3], maxWidth: 8.5, maxTriangles: 400, maxMaterials: 1, requiredMaterials: ['Bar'] },
+  mushroom: { slot: 'course.mushroom', origin: 'base', height: [2.2, 2.45], maxWidth: 3.1, maxTriangles: 320, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  hoop: { slot: 'course.hoop', origin: 'base', height: [4.1, 4.4], maxWidth: 4.1, maxTriangles: 250, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  fan: { slot: 'course.fan', origin: 'base', height: [2.7, 3.0], maxWidth: 9.2, maxTriangles: 450, maxMaterials: 1, requiredMaterials: ['Blade'] },
+  ramp: { slot: 'course.ramp', origin: 'base', height: [2.5, 2.9], maxWidth: 6.6, maxTriangles: 350, maxMaterials: 1, requiredMaterials: ['Ramp'] },
   exit: { slot: 'slide.exit', origin: 'base', height: [0.03, 0.06], maxWidth: 0.88, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'], checks: [topAt(PARTS.splat.top)] },
 };
 

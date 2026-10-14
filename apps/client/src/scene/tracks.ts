@@ -1,12 +1,12 @@
 import type { Jump } from '@laddorious/core';
 import { CatmullRomCurve3, Vector3, type Curve } from 'three';
-import { arcPoint, slideCurve, tileToWorld, type Vec3 } from './layout';
+import { TILE_SIZE, arcPoint, slideCurve, tileToWorld, type Vec3 } from './layout';
 
 // The jumps' trails, low-poly and simple (spec #5, Step 2 round 5; the user, 2026-10-14): a line of chevron
 // arrowheads, along a slide's lane on the board or along a rocket's arc through the air, drifting on.
 
-/** How far apart the arrowheads are, along the way. */
-export const DASH_GAP = 0.6;
+/** How far apart the arrowheads are, along the way: 0.3 of a square's step, as many to a tile as on the 2.0 board (board theme spec B3). */
+export const DASH_GAP = 0.3 * TILE_SIZE;
 /** How high above the arc a rocket's arrowheads fly, and how many points trace the arc. */
 const LIFT = 0.15;
 const ARC_SAMPLES = 24;
