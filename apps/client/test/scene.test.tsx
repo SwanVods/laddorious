@@ -8,7 +8,7 @@ import { SceneContent } from '../src/scene/MatchScene';
 import { SYMBOLS, pairStyles } from '../src/scene/pairs';
 import { REVEAL_MS, createPeeks, type Peeks } from '../src/scene/paths';
 import type { QualityLevel } from '../src/scene/quality';
-import { PUFFS, dashPoints } from '../src/scene/tracks';
+import { dashPoints } from '../src/scene/tracks';
 import { createTagRegistry } from '../src/scene/tags';
 import { SEATS, openingUpdate } from './support/fixtures';
 
@@ -56,10 +56,10 @@ async function frames(renderer: Awaited<ReturnType<typeof ReactThreeTestRenderer
   await renderer.advanceFrames(1, 1 / 60);
 }
 
-/** How many smoke puffs and arrowheads show: the trails of every path on show. */
+/** How many arrowheads, and their outlines, show: the trails of every path on show. */
 const trailCounts = (root: Object3D) => ({
-  puffs: (root.getObjectByName('trail-puffs') as InstancedMesh).count,
-  arrows: (root.getObjectByName('slide-arrows') as InstancedMesh).count,
+  arrows: (root.getObjectByName('trail-arrows') as InstancedMesh).count,
+  outlines: (root.getObjectByName('trail-arrow-outlines') as InstancedMesh).count,
 });
 
 describe('the 3D scene (spec #2 §6)', () => {
@@ -108,10 +108,10 @@ describe('the 3D scene (spec #2 §6)', () => {
   });
 
   it('hides every path while no piece stands on a start tile (spec #5 A13)', async () => {
-    expect(trailCounts(await renderScene('high'))).toEqual({ puffs: 0, arrows: 0 });
+    expect(trailCounts(await renderScene('high'))).toEqual({ arrows: 0, outlines: 0 });
   });
 
-  it("shows a tapped jump's trail in its pair colour, puffs for a rocket and arrowheads for a slide, filling in (round 5)", async () => {
+  it("shows a tapped jump's trail as arrowheads in its pair colour, with outlines, filling in (2026-10-14)", async () => {
     const { jumps } = openingUpdate().view.board;
     const ladder = jumps.find((j) => j.to > j.from)!;
     const slide = jumps.find((j) => j.to < j.from)!;
@@ -119,18 +119,17 @@ describe('the 3D scene (spec #2 §6)', () => {
     peeks.tap(ladder.from, jumps, Date.now());
     peeks.tap(slide.to, jumps, Date.now());
     const root = await renderScene('high', undefined, peeks);
-    const { puffs, arrows } = trailCounts(root);
-    // Two frames in, each has only begun: the first puffs and arrowheads show, not all of them.
-    expect(puffs).toBeGreaterThan(0);
-    expect(puffs).toBeLessThan(PUFFS);
-    expect(arrows).toBeGreaterThan(0);
-    expect(arrows).toBeLessThan(dashPoints(slide).length);
-    // Each piece has a dark outline behind it, so the trail stands out on the busy board.
-    expect((root.getObjectByName('trail-puff-outlines') as InstancedMesh).count).toBe(puffs);
-    expect((root.getObjectByName('slide-arrow-outlines') as InstancedMesh).count).toBe(arrows);
+    const { arrows, outlines } = trailCounts(root);
+    // A few frames in, both trails have begun: some arrowheads show, not all of them.
+    expect(arrows).toBeGreaterThan(1);
+    expect(arrows).toBeLessThan(dashPoints(ladder).length + dashPoints(slide).length);
+    expect(outlines).toBe(arrows);
+    const colours = new Set<number>();
     const colour = new Color();
-    (root.getObjectByName('trail-puffs') as InstancedMesh).getColorAt(0, colour);
-    expect(colour.getHex()).toBe(new Color(pairStyles(jumps).get(ladder.id)!.colour).getHex());
+    const mesh = root.getObjectByName('trail-arrows') as InstancedMesh;
+    for (let i = 0; i < arrows; i++) colours.add(mesh.getColorAt(i, colour).getHex());
+    expect(colours.has(new Color(pairStyles(jumps).get(ladder.id)!.colour).getHex())).toBe(true);
+    expect(root.getObjectByName('trail-puffs')).toBeUndefined();
     expect(REVEAL_MS).toBeGreaterThan(0);
   });
 
@@ -141,7 +140,7 @@ describe('the 3D scene (spec #2 §6)', () => {
     const tiles = renderer.scene.find((node) => node.props.name === 'tiles');
     await renderer.fireEvent(tiles, 'onClick', { instanceId: ladder.to - 1, stopPropagation: () => {} });
     await frames(renderer, 2);
-    expect(trailCounts(root).puffs).toBeGreaterThan(0);
+    expect(trailCounts(root).arrows).toBeGreaterThan(0);
   });
 
   it("stands each rocket and flag in its tile's top-right corner (2026-10-14)", async () => {

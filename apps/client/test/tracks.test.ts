@@ -1,36 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { slideCurve, tileToWorld } from '../src/scene/layout';
-import { DASH_GAP, PUFFS, dashPoints, puffPoints } from '../src/scene/tracks';
+import { DASH_GAP, dashPoints, ladderCurve, type Dash } from '../src/scene/tracks';
 
 const ladder = { id: 'l1', from: 22, to: 52 };
 const slide = { id: 's1', from: 79, to: 41 };
 
-describe('the jump trails, low-poly and simple (spec #5, Step 2 round 5)', () => {
-  it("strings a rocket's smoke puffs along its arc, from the rocket to the flag, growing as they go", () => {
-    const puffs = puffPoints(ladder);
-    expect(puffs).toHaveLength(PUFFS);
-    const [fx, , fz] = tileToWorld(ladder.from);
-    const [tx, , tz] = tileToWorld(ladder.to);
-    const along = (p: { position: readonly number[] }) => ((p.position[0]! - fx) * (tx - fx) + (p.position[2]! - fz) * (tz - fz)) / ((tx - fx) ** 2 + (tz - fz) ** 2);
-    for (let i = 1; i < puffs.length; i++) {
-      expect(along(puffs[i]!)).toBeGreaterThan(along(puffs[i - 1]!));
-      expect(puffs[i]!.size).toBeGreaterThan(puffs[i - 1]!.size);
-    }
-    expect(along(puffs[0]!)).toBeLessThan(0.1);
-    expect(along(puffs.at(-1)!)).toBeGreaterThan(0.9);
-    // They arc: the middle puff flies well above the ends.
-    expect(puffs[PUFFS / 2]!.position[1]).toBeGreaterThan(puffs[0]!.position[1]! + 1);
-  });
+/** The way a dash's tip points: +Z turned by its pitch, then its heading. */
+const ahead = (d: Dash) => [Math.sin(d.heading) * Math.cos(d.pitch), Math.sin(d.pitch), Math.cos(d.heading) * Math.cos(d.pitch)];
+const toward = (d: Dash, next: Dash) => {
+  const dir = ahead(d);
+  return dir.reduce((sum, v, i) => sum + v * (next.position[i]! - d.position[i]!), 0);
+};
 
+describe('the jump trails: arrowheads (2026-10-14)', () => {
   it("lays a slide's arrowheads along its lane, one every DASH_GAP, each pointing on toward the splat", () => {
     const curve = slideCurve(slide.from, slide.to);
     const dashes = dashPoints(slide);
     expect(dashes.length).toBe(Math.max(2, Math.floor(curve.getLength() / DASH_GAP)));
     for (let i = 0; i + 1 < dashes.length; i++) {
-      const [x, , z] = dashes[i]!.position;
-      const [nx, , nz] = dashes[i + 1]!.position;
-      const ahead = [Math.sin(dashes[i]!.heading), Math.cos(dashes[i]!.heading)];
-      expect(ahead[0]! * (nx! - x!) + ahead[1]! * (nz! - z!)).toBeGreaterThan(0); // +Z turned by heading points to the next one
+      expect(toward(dashes[i]!, dashes[i + 1]!)).toBeGreaterThan(0);
+      expect(dashes[i]!.pitch).toBe(0); // flat on the board
     }
     const [hx, , hz] = tileToWorld(slide.from);
     const [ex, , ez] = tileToWorld(slide.to);
@@ -38,12 +27,24 @@ describe('the jump trails, low-poly and simple (spec #5, Step 2 round 5)', () =>
     expect(Math.hypot(dashes.at(-1)!.position[0]! - ex, dashes.at(-1)!.position[2]! - ez)).toBeLessThan(DASH_GAP);
   });
 
-  it('lets the arrowheads drift along the lane: a phase moves each a little further on', () => {
-    const still = dashPoints(slide, 0);
-    const moved = dashPoints(slide, 0.5);
-    const [x, , z] = still[3]!.position;
-    const [mx, , mz] = moved[3]!.position;
-    const ahead = [Math.sin(still[3]!.heading), Math.cos(still[3]!.heading)];
-    expect(ahead[0]! * (mx! - x!) + ahead[1]! * (mz! - z!)).toBeGreaterThan(0);
+  it("strings a rocket's arrowheads along its arc to the flag, each tilted to point along it", () => {
+    const curve = ladderCurve(ladder.from, ladder.to);
+    const dashes = dashPoints(ladder);
+    expect(dashes.length).toBe(Math.max(2, Math.floor(curve.getLength() / DASH_GAP)));
+    for (let i = 0; i + 1 < dashes.length; i++) expect(toward(dashes[i]!, dashes[i + 1]!)).toBeGreaterThan(0);
+    // They climb, then dive: the first points up, the last down, and the middle flies well above the board.
+    expect(dashes[0]!.pitch).toBeGreaterThan(0.2);
+    expect(dashes.at(-1)!.pitch).toBeLessThan(-0.2);
+    expect(dashes[Math.floor(dashes.length / 2)]!.position[1]).toBeGreaterThan(1);
+    const [fx, , fz] = tileToWorld(ladder.from);
+    expect(Math.hypot(dashes[0]!.position[0]! - fx, dashes[0]!.position[2]! - fz)).toBeLessThan(DASH_GAP);
+  });
+
+  it('lets the arrowheads drift along the way: a phase moves each a little further on', () => {
+    for (const jump of [slide, ladder]) {
+      const still = dashPoints(jump, 0);
+      const moved = dashPoints(jump, 0.5);
+      expect(toward(still[3]!, moved[3]!)).toBeGreaterThan(0);
+    }
   });
 });

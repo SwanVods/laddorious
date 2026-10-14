@@ -1,4 +1,4 @@
-import { BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeometry, IcosahedronGeometry, LatheGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
+import { BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeometry, LatheGeometry, Shape, SphereGeometry, Vector2, type BufferGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { PieceId } from '../service/matchService';
@@ -224,11 +224,6 @@ export function exitGeometry(): BufferGeometry {
 
 // The jumps' trails (round 5): low-poly pieces, one instanced mesh each.
 
-/** A rocket trail's smoke puff: a 20-faced ball of radius 1, drawn flat-shaded so it reads as low-poly. */
-export function puffGeometry(): BufferGeometry {
-  return new IcosahedronGeometry(1, 0);
-}
-
 /** The arrowhead's chevron, pointing +Y in its own plane. */
 function arrowheadShape(): Shape {
   const outline = [
@@ -242,7 +237,7 @@ function arrowheadShape(): Shape {
   return new Shape(outline.map(([x, y]) => new Vector2(x, y)));
 }
 
-/** A slide trail's arrowhead: a flat chevron, 0.04 thick, lying on its base and pointing +Z. */
+/** A trail's arrowhead: a flat chevron, 0.04 thick, lying on its base and pointing +Z. */
 export function arrowheadGeometry(): BufferGeometry {
   // Extruded up from the shape's plane, then laid down: the shape's +Y becomes +Z, the depth goes up.
   return new ExtrudeGeometry(arrowheadShape(), { depth: 0.04, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, 0.04, 0);
