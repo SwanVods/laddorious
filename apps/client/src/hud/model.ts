@@ -1,6 +1,4 @@
 import {
-  CARD_TYPES,
-  RARITY_ORDER,
   resolveConfig,
   type ChallengeChoice,
   type GameEvent,
@@ -193,7 +191,7 @@ export type DockModel =
   | { kind: 'roll'; windowId: number }
   | { kind: 'wait'; parts: FeedPart[] }
   | { kind: 'caption'; parts: FeedPart[]; totals: Array<{ player: PlayerId; total: number }> | null }
-  | { kind: 'queue'; caption: string; cards: QueueCard[] }
+  | { kind: 'queue'; caption: string | null; cards: QueueCard[] }
   | { kind: 'none' };
 
 export interface DockInput {
@@ -212,21 +210,15 @@ const MOVE_VERB: Partial<Record<Beat['kind'], string>> = {
   cardMove: ' leaps',
 };
 
-/** Cards in the order they resolve: by type, then Epic → Rare → Common; seat order within a group (spec #1 §5.4). */
+/** Cards in the order they resolve, which is the order the engine revealed them: last place first (2026-10-14). */
 export function resolutionQueue(record: RoundRecord, beat: Beat | null): QueueCard[] {
   const resolving = beat?.kind === 'cardResolved' ? beat.events.find((e) => e.type === 'CardResolved') : undefined;
-  const rank = (cardId: string) => {
-    const info = cardInfo(cardId);
-    return CARD_TYPES.indexOf(info.type) * RARITY_ORDER.length + RARITY_ORDER.indexOf(info.rarity);
-  };
-  return Object.entries(record.cards)
-    .map(([caster, card]) => ({
-      caster,
-      cardId: card.cardId,
-      result: card.result,
-      current: resolving?.type === 'CardResolved' && resolving.caster === caster,
-    }))
-    .sort((a, b) => rank(a.cardId) - rank(b.cardId));
+  return Object.entries(record.cards).map(([caster, card]) => ({
+    caster,
+    cardId: card.cardId,
+    result: card.result,
+    current: resolving?.type === 'CardResolved' && resolving.caster === caster,
+  }));
 }
 
 const moversOf = (events: GameEvent[]) => [...new Set(events.flatMap((e) => (e.type === 'Moved' || e.type === 'SnakeBlocked' ? [e.player] : [])))];
@@ -248,7 +240,7 @@ export function dockModel({ beat, view, record, me }: DockInput): DockModel {
       return { kind: 'caption', parts: ['A tie! The face-off goes again'], totals: null };
     }
     if (beat.kind === 'cardReveal' || beat.kind === 'cardResolved' || beat.kind === 'clash' || beat.kind === 'boardEdit') {
-      const caption = beat.kind === 'cardReveal' ? 'Cards revealed!' : 'Cards resolve: Movement → Defense → Attack → Risky → Misc, Epic first';
+      const caption = beat.kind === 'cardReveal' ? 'Cards revealed!' : null;
       return { kind: 'queue', caption, cards: resolutionQueue(record, beat) };
     }
   }

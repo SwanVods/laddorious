@@ -132,6 +132,16 @@ describe('selection and reveal', () => {
     expect(positions(second.state)).toEqual([7, 6]); // Sprint +3
   });
 
+  it('reveals the picks in the order they resolve: the last-placed player first (2026-10-14)', () => {
+    const s = play(
+      setup({ board, dice: [[6], [4]], cards: [offerValues('sprint', 'shove', 'coin-flip'), [...offerValues('snake-charm', 'steady-hand', 'cleanse'), 2]] }),
+      [roll('p1'), roll('p2')],
+    ).state;
+    const { events } = play(s, [pick('p1', 0), pick('p2', 0)]);
+    expect(ofType(events, 'CardSelected').map((e) => e.player)).toEqual(['p2', 'p1']);
+    expect(ofType(events, 'CardResolved').map((e) => e.caster)).toEqual(['p2', 'p1']);
+  });
+
   it('a timeout picks a random displayed card', () => {
     const s = twoEncounters();
     const { events } = play(s, [pick('p1', 0), timeout]);

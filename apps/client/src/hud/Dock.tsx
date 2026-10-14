@@ -77,9 +77,11 @@ export function Dock({ model, seats, onRoll }: DockProps) {
     case 'queue':
       return (
         <div className="dock">
-          <p className="pill" role="status">
-            {model.caption}
-          </p>
+          {model.caption && (
+            <p className="pill" role="status">
+              {model.caption}
+            </p>
+          )}
           <ol className="queue" aria-label="Cards in resolution order">
             {model.cards.map((card, i) => (
               <QueueItem key={card.caster} card={card} order={i + 1} seats={seats} />

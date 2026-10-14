@@ -107,8 +107,8 @@ export function mysteryAwaited(phase: SelectPhase): PlayerId[] {
 }
 
 /**
- * All picks are in: reveal them together, lock hidden targets in seat order
- * and resolve the groups (spec §5.2 step 6, D21).
+ * All picks are in: lock hidden targets in seat order (D21), then reveal the picks together in the
+ * order they resolve, last place first, and resolve them one at a time (2026-10-14).
  */
 export function beginResolution(s: MatchState, ev: GameEvent[]): void {
   const phase = s.phase as SelectPhase;
@@ -119,9 +119,13 @@ export function beginResolution(s: MatchState, ev: GameEvent[]): void {
     const cardId = offer.cards[offer.picked!]!;
     const card = cardById(s.config.cards, cardId);
     pending.push({ caster: p.id, cardId, target: selectTarget(s.players, p, card.target, s.rng.misc) });
-    ev.push(pub({ type: 'CardSelected', player: p.id, cardId, cardType: card.type, rarity: card.rarity, auto: offer.autoPicked }));
   }
-  s.resolution = groupPendingCards(s.config.cards, pending);
+  s.resolution = groupPendingCards(s.players, pending);
+  // The reveal lists the cards in the order they will resolve.
+  for (const [pc] of s.resolution) {
+    const card = cardById(s.config.cards, pc!.cardId);
+    ev.push(pub({ type: 'CardSelected', player: pc!.caster, cardId: pc!.cardId, cardType: card.type, rarity: card.rarity, auto: phase.offers[pc!.caster]!.autoPicked }));
+  }
   continueResolution(s, ev);
 }
 

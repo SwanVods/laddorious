@@ -120,18 +120,24 @@ describe('the dock (spec #2 §7.2)', () => {
     expect(dockModel({ beat: beat('slide', [slide]), view: view(), record, me: 'p0' })).toEqual({ kind: 'caption', parts: [{ player: 'p3' }, ' slides down'], totals: null });
   });
 
-  it('lists the cards in resolution order with their results, marking the one resolving', () => {
+  it('lists the cards in the order the engine revealed them (last place first), marking the one resolving', () => {
     const record: RoundRecord = {
       round: 7,
       dice: {},
-      cards: { p0: { cardId: 'aegis', result: null }, p1: { cardId: 'heavy-boots', result: null }, p3: { cardId: 'sprint', result: 'hit' } },
+      cards: { p1: { cardId: 'heavy-boots', result: 'hit' }, p3: { cardId: 'sprint', result: 'hit' }, p0: { cardId: 'aegis', result: null } },
     };
     const resolving: GameEvent = { type: 'CardResolved', caster: 'p0', cardId: 'aegis', target: 'p0', result: 'hit', visibility: 'public' };
     expect(resolutionQueue(record, beat('cardResolved', [resolving]))).toEqual([
+      { caster: 'p1', cardId: 'heavy-boots', result: 'hit', current: false },
       { caster: 'p3', cardId: 'sprint', result: 'hit', current: false },
       { caster: 'p0', cardId: 'aegis', result: null, current: true },
-      { caster: 'p1', cardId: 'heavy-boots', result: null, current: false },
     ]);
+  });
+
+  it('shows the card queue without a caption about the order while cards resolve (2026-10-14)', () => {
+    const record: RoundRecord = { round: 7, dice: {}, cards: { p0: { cardId: 'aegis', result: null } } };
+    const resolving: GameEvent = { type: 'CardResolved', caster: 'p0', cardId: 'aegis', target: 'p0', result: 'hit', visibility: 'public' };
+    expect(dockModel({ beat: beat('cardResolved', [resolving]), view: view(), record, me: 'p0' })).toMatchObject({ kind: 'queue', caption: null });
   });
 });
 

@@ -1,10 +1,8 @@
 import type { JumpKind, Rarity } from '../board/types';
 
 export type CardType = 'movement' | 'defense' | 'attack' | 'risky' | 'misc';
-/** Resolution order by type (spec §5.4). */
+/** Every card type. Cards no longer resolve by type: they go one at a time, last place first (2026-10-14). */
 export const CARD_TYPES: readonly CardType[] = ['movement', 'defense', 'attack', 'risky', 'misc'];
-/** Resolution order by rarity within a type (spec §5.4). */
-export const RARITY_ORDER: readonly Rarity[] = ['epic', 'rare', 'common'];
 
 export type MoveCause = 'dice' | 'snake' | 'ladder' | 'knockback' | 'card' | 'effect' | 'stepBack';
 

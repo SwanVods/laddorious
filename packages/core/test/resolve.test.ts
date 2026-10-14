@@ -12,19 +12,25 @@ function resolve(s: MatchState, group: PendingCard[]): GameEvent[] {
 const card = (caster: string, cardId: string, target: string | null = null): PendingCard => ({ caster, cardId, target });
 
 describe('groupPendingCards', () => {
-  it('orders by type (Movement → Defense → Attack → Risky → Misc), then Epic → Rare → Common', () => {
-    const groups = groupPendingCards(STARTER_CARDS, [
-      card('p1', 'cleanse'),
-      card('p2', 'shove'),
-      card('p3', 'sprint'),
-      card('p4', 'overdrive'),
-      card('p5', 'shield'),
-      card('p6', 'jackpot'),
-      card('p7', 'shove'),
-    ]);
-    expect(groups.map((g) => g.map((c) => c.cardId))).toEqual([
-      ['overdrive'], ['sprint'], ['shield'], ['shove', 'shove'], ['jackpot'], ['cleanse'],
-    ]);
+  it('resolves one card at a time, from the last-placed caster to the leader (2026-10-14)', () => {
+    const s = setup({ players: 3, positions: [40, 12, 77] });
+    const groups = groupPendingCards(s.players, [card('p1', 'shove'), card('p2', 'sprint'), card('p3', 'cleanse')]);
+    expect(groups.map((g) => g.map((c) => c.caster))).toEqual([['p2'], ['p1'], ['p3']]);
+  });
+
+  it('breaks a tie on one tile by seat', () => {
+    const s = setup({ players: 3, positions: [20, 20, 5] });
+    const groups = groupPendingCards(s.players, [card('p2', 'shove'), card('p1', 'sprint'), card('p3', 'cleanse')]);
+    expect(groups.map((g) => g.map((c) => c.caster))).toEqual([['p3'], ['p1'], ['p2']]);
+  });
+
+  it('lets two swaps aimed at one player both happen, one after the other, with no clash', () => {
+    const s = setup({ players: 3, positions: [10, 30, 12] });
+    const ev: GameEvent[] = [];
+    for (const group of groupPendingCards(s.players, [card('p1', 'switcheroo', 'p2'), card('p3', 'switcheroo', 'p2')])) resolveGroup(s, ev, group);
+    expect(ofType(ev, 'Clash')).toEqual([]);
+    expect(ofType(ev, 'CardResolved').map((e) => [e.caster, e.result])).toEqual([['p1', 'hit'], ['p3', 'hit']]);
+    expect(positions(s)).not.toEqual([10, 30, 12]);
   });
 });
 

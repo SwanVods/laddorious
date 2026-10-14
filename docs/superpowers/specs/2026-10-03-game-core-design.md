@@ -69,6 +69,7 @@ Decisions made during design, recorded so later specs do not re-litigate them.
 | D19 | Match end | First victory ends the match; other players ranked by position. |
 | D20 | Encounter qualification | A player only gets a Mystery encounter if their position changed during this round's dice movement/settle. Standing still (0 total) on a Mystery tile does not re-trigger it. |
 | D21 | Card reveal timing | Selections are revealed together once every qualifying player has picked, so no one sees another's pick before choosing. |
+| D22 | Card resolution order | **One at a time, last place first** (amended 2026-10-14, replacing §5.4's order by type and rarity). Each card is its own group, ordered by the caster's position when the round's picks are revealed, lowest first; a tie on one tile goes by seat. Each card resolves and settles against the board the one before it left, so D11's Clash no longer happens in play. The reveal lists the cards in this order. The user: "Change card resolver order will be from the last position player to the first position player." 1,000 simulated matches: median 20 rounds before and after. |
 
 ---
 
@@ -284,7 +285,9 @@ When a card's group resolves, its locked target is re-checked against the card's
 
 ### 5.4 Resolution groups
 
-Cards resolve in groups ordered by **type** (Movement → Defense → Attack → Risky → Misc), then by **rarity** (Epic → Rare → Common). Cards sharing type and rarity form one simultaneous group. For each non-empty group:
+**Amended 2026-10-14 (D22):** every card is its own group, in order of the caster's position at the reveal, last place first, a tie by seat. The steps below still describe resolving a group, now always of one card.
+
+Originally: cards resolved in groups ordered by **type** (Movement → Defense → Attack → Risky → Misc), then by **rarity** (Epic → Rare → Common), and cards sharing type and rarity formed one simultaneous group. For each non-empty group:
 
 1. **Snapshot** the current state.
 2. **Re-check / re-select targets** against the snapshot (§5.3).

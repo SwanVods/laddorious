@@ -2,25 +2,21 @@ import { jumpKind } from '../board/types';
 import { applyPlannedEdit, planBoardEdit } from '../cards/boardEdit';
 import { cardById } from '../cards/catalog';
 import { isValidTarget, selectTarget } from '../cards/targeting';
-import { CARD_TYPES, RARITY_ORDER, type CardDef, type EffectOp, type EffectTemplate } from '../cards/types';
+import type { CardDef, EffectOp, EffectTemplate } from '../cards/types';
 import { pickWeighted } from '../rng/stream';
 import { addEffect, removeEffect, useAttackShield } from './effects';
 import type { BoardEdit, CardResult, GameEvent, MatchState, Mover, PendingCard, PlayerId } from './types';
 import { bounce, clonePlain, getPlayer, movePlayer, nextId, pub, seatOrder } from './util';
 
-/** Order pending cards into resolution groups: type, then rarity; same type+rarity = one group (spec §5.4). */
-export function groupPendingCards(cards: readonly CardDef[], pending: PendingCard[]): PendingCard[][] {
-  const groups: PendingCard[][] = [];
-  for (const type of CARD_TYPES) {
-    for (const rarity of RARITY_ORDER) {
-      const group = pending.filter((pc) => {
-        const c = cardById(cards, pc.cardId);
-        return c.type === type && c.rarity === rarity;
-      });
-      if (group.length > 0) groups.push(group);
-    }
-  }
-  return groups;
+/**
+ * Order pending cards for resolution: one card at a time, from the last-placed caster to the leader, a tie
+ * on one tile by seat (the user, 2026-10-14; replaces spec §5.4's order by type). Each card resolves against
+ * the board the one before it left, so cards never clash.
+ */
+export function groupPendingCards(players: ReadonlyArray<{ id: PlayerId; position: number }>, pending: PendingCard[]): PendingCard[][] {
+  const place = (id: PlayerId) => players.findIndex((p) => p.id === id);
+  const position = (id: PlayerId) => players[place(id)]!.position;
+  return [...pending].sort((a, b) => position(a.caster) - position(b.caster) || place(a.caster) - place(b.caster)).map((pc) => [pc]);
 }
 
 interface CardIntents {
