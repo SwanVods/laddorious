@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { DirectorState } from '../src/director/director';
 import { presentationFromView, type FaceOff } from '../src/director/presentation';
 import { STACK_HEIGHT, restPose } from '../src/scene/motion';
-import { START_STAGGER, TAG_HEIGHT, tagAnchor } from '../src/scene/tags';
+import { START_STAGGER, TAG_HEIGHT, TAG_PEEK_MS, createTagPeeks, tagAnchor, tagVisible } from '../src/scene/tags';
 import { openingUpdate } from './support/fixtures';
 
 function state(positions: Record<PlayerId, number>, arrivals: PlayerId[] = ['p0', 'p1', 'p2', 'p3'], faceOffs: FaceOff[] = []): DirectorState {
@@ -69,5 +69,28 @@ describe('name tags (spec #2 §7.2)', () => {
 
   it('has nothing to show before the first update', () => {
     expect(tagAnchor({ presentation: null, beat: null, settled: null, log: [] }, 'p0', 0, 0, 100)).toBeNull();
+  });
+});
+
+describe('which name tags show (round 5)', () => {
+  it('always shows my own tag', () => {
+    expect(tagVisible('p0', 'p0', createTagPeeks(), 0)).toBe(true);
+  });
+
+  it("hides another player's tag until the mouse is over their piece", () => {
+    const peeks = createTagPeeks();
+    expect(tagVisible('p1', 'p0', peeks, 0)).toBe(false);
+    peeks.hovered = 'p1';
+    expect(tagVisible('p1', 'p0', peeks, 0)).toBe(true);
+    expect(tagVisible('p2', 'p0', peeks, 0)).toBe(false);
+  });
+
+  it("shows another player's tag for a while after their piece is tapped, and a second tap starts the wait again", () => {
+    const peeks = createTagPeeks();
+    peeks.tap('p1', 1000);
+    expect(tagVisible('p1', 'p0', peeks, 1000 + TAG_PEEK_MS - 1)).toBe(true);
+    expect(tagVisible('p1', 'p0', peeks, 1000 + TAG_PEEK_MS)).toBe(false);
+    peeks.tap('p1', 2000);
+    expect(tagVisible('p1', 'p0', peeks, 1000 + TAG_PEEK_MS)).toBe(true);
   });
 });

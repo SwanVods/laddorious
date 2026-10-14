@@ -78,12 +78,15 @@ describe('the 3D scene (spec #2 §6)', () => {
       { camera: { position: [0, 20, 21] } },
     );
     await renderer.advanceFrames(2, 1 / 60);
-    for (const el of fakes) {
-      expect(el.style.visibility).toBe('visible');
-      expect(el.style.transform).toMatch(/^translate\(-?\d+(\.\d+)?px, -?\d+(\.\d+)?px\)$/);
-    }
+    for (const el of fakes) expect(el.style.transform).toMatch(/^translate\(-?\d+(\.\d+)?px, -?\d+(\.\d+)?px\)$/);
     // The four start spots stand side by side, and so do their tags.
     expect(new Set(fakes.map((el) => el.style.transform)).size).toBe(4);
+    // Only my own tag shows (round 5); tapping another piece shows its name for a while.
+    expect(fakes.map((el) => el.style.visibility)).toEqual(['visible', 'hidden', 'hidden', 'hidden']);
+    const piece = renderer.scene.find((node) => node.props.name === 'piece-p1');
+    await renderer.fireEvent(piece, 'onClick', { stopPropagation: () => {} });
+    await renderer.advanceFrames(1, 1 / 60);
+    expect(fakes.map((el) => el.style.visibility)).toEqual(['visible', 'visible', 'hidden', 'hidden']);
   });
 
   it('hides every path while no piece stands on a start tile (spec #5 A13)', async () => {

@@ -8,6 +8,7 @@ import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { clamp01, easeOut, poseAt, projectileAt, withIdle, type Pose } from './motion';
+import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
 
 /** Pieces render at 1.3 × their base size (spec #2 §6.2). */
@@ -31,10 +32,12 @@ interface PiecesProps {
   low?: boolean;
   reducedMotion: boolean;
   boardSize: number;
+  /** Pointing at or tapping a piece shows its name tag (round 5). */
+  tagPeeks?: TagPeeks;
 }
 
 /** Every seat's piece, its die and its shield bubble, and card projectiles (spec #2 §5.1, §6.2). */
-export function Pieces({ director, seats, shadows, clearcoat, low = false, reducedMotion, boardSize }: PiecesProps) {
+export function Pieces({ director, seats, shadows, clearcoat, low = false, reducedMotion, boardSize, tagPeeks }: PiecesProps) {
   const seatOf = useMemo(() => {
     const index = new Map(seats.map((s, i) => [s.playerId, i]));
     return (player: PlayerId) => index.get(player) ?? 0;
@@ -58,7 +61,7 @@ export function Pieces({ director, seats, shadows, clearcoat, low = false, reduc
   return (
     <>
       {seats.map((seat, i) => (
-        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} low={low} reducedMotion={reducedMotion} boardSize={boardSize} rollsRef={rollsRef} />
+        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} low={low} reducedMotion={reducedMotion} boardSize={boardSize} tagPeeks={tagPeeks} rollsRef={rollsRef} />
       ))}
       <Projectile director={director} seatOf={seatOf} />
     </>
@@ -95,7 +98,7 @@ interface ActorProps extends Omit<PiecesProps, 'seats'> {
   rollsRef: RefObject<Map<PlayerId, Roll>>;
 }
 
-function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, boardSize, rollsRef }: ActorProps) {
+function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, boardSize, tagPeeks, rollsRef }: ActorProps) {
   const bodyRef = useRef<Group>(null);
   const modelRef = useRef<Group>(null);
   const orbRef = useRef<Mesh>(null);
@@ -142,7 +145,24 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
 
   return (
     <>
-      <group ref={bodyRef}>
+      <group
+        ref={bodyRef}
+        name={`piece-${seat.playerId}`}
+        // Pointing at or tapping a piece shows its name, and the tile under it doesn't also peek a path.
+        onClick={(e) => {
+          e.stopPropagation();
+          tagPeeks?.tap(seat.playerId, Date.now());
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          if (tagPeeks) tagPeeks.hovered = seat.playerId;
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          if (tagPeeks?.hovered === seat.playerId) tagPeeks.hovered = null;
+          document.body.style.cursor = '';
+        }}
+      >
         <group ref={modelRef} scale={PIECE_SCALE}>
           <Slot
             name={slot}

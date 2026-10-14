@@ -1,12 +1,25 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo } from 'react';
 import { Vector3 } from 'three';
+import type { PlayerId } from '@laddorious/core';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
-import { tagAnchor, type TagRegistry } from './tags';
+import { tagAnchor, tagVisible, type TagPeeks, type TagRegistry } from './tags';
 
-/** Moves each registered name tag to its piece's place on screen, once per frame (spec #2 §7.2). */
-export function TagProjector({ director, seats, boardSize, tags }: { director: Director; seats: SeatInfo[]; boardSize: number; tags: TagRegistry }) {
+interface TagProjectorProps {
+  director: Director;
+  seats: SeatInfo[];
+  me: PlayerId;
+  boardSize: number;
+  tags: TagRegistry;
+  peeks: TagPeeks;
+}
+
+/**
+ * Moves each registered name tag to its piece's place on screen, once per frame (spec #2 §7.2). Only my
+ * own tag shows unless a player points at or taps another piece (round 5).
+ */
+export function TagProjector({ director, seats, me, boardSize, tags, peeks }: TagProjectorProps) {
   const point = useMemo(() => new Vector3(), []);
   useFrame(({ camera, size }) => {
     const state = director.store.getState();
@@ -20,7 +33,8 @@ export function TagProjector({ director, seats, boardSize, tags }: { director: D
         el.style.visibility = 'hidden';
         return;
       }
-      el.style.visibility = 'visible';
+      // A hidden tag still follows its piece, so a tap shows it in the right place at once.
+      el.style.visibility = tagVisible(seat.playerId, me, peeks, now) ? 'visible' : 'hidden';
       el.style.transform = `translate(${(((point.x + 1) / 2) * size.width).toFixed(1)}px, ${(((1 - point.y) / 2) * size.height).toFixed(1)}px)`;
     });
   });

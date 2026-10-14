@@ -13,7 +13,7 @@ import { ContextLossWatch, QualityWatch, StatsProbe } from './Probes';
 import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
 import { Surroundings } from './Surroundings';
 import { TagProjector } from './TagProjector';
-import type { TagRegistry } from './tags';
+import { createTagPeeks, type TagRegistry } from './tags';
 
 export const WEBGL_MESSAGE = "Your browser can't show the 3D board. Try a recent Chrome, Safari or Firefox.";
 
@@ -46,6 +46,7 @@ export interface SceneContentProps {
 export function SceneContent({ director, seats, me, board, level, watch, reducedMotion, tags, peeks }: SceneContentProps) {
   const profile = QUALITY[level];
   const own = useMemo(createPeeks, []);
+  const tagPeeks = useMemo(createTagPeeks, []);
   const peeked = peeks ?? own;
   const tap = useCallback((tile: number) => peeked.tap(tile, director.store.getState().presentation?.jumps ?? board.jumps, Date.now()), [peeked, director, board]);
   return (
@@ -53,9 +54,9 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
       <Surroundings shadows={profile.shadows} clouds={profile.clouds} clearcoat={profile.clearcoat} low={profile.lowModels} />
       <Board board={board} director={director} clearcoat={profile.clearcoat} onTap={tap} />
       <Jumps director={director} clearcoat={profile.clearcoat} peeks={peeked} modelEnds={profile.modelEnds} reducedMotion={reducedMotion} />
-      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} />
+      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} tagPeeks={tagPeeks} />
       <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} />
-      {tags && <TagProjector director={director} seats={seats} boardSize={board.size} tags={tags} />}
+      {tags && <TagProjector director={director} seats={seats} me={me} boardSize={board.size} tags={tags} peeks={tagPeeks} />}
     </>
   );
 }

@@ -14,6 +14,27 @@ export const TAG_SIDE = 1.1;
 /** On the start row, and in the row before a rocket or a flag, the pieces stand close together: every other tag hangs this much higher. */
 export const START_STAGGER = 0.55;
 
+/** How long another player's tag shows after their piece is tapped (round 5). */
+export const TAG_PEEK_MS = 3000;
+
+/** Which other players' tags a player asked to see: the piece under the mouse, and when each piece was last tapped. */
+export interface TagPeeks {
+  hovered: PlayerId | null;
+  tappedAt: Map<PlayerId, number>;
+  tap(player: PlayerId, nowMs: number): void;
+}
+
+export function createTagPeeks(): TagPeeks {
+  const tappedAt = new Map<PlayerId, number>();
+  return { hovered: null, tappedAt, tap: (player, nowMs) => void tappedAt.set(player, nowMs) };
+}
+
+/** Whether a tag shows (round 5): my own always; another player's while the mouse is over their piece, or for a while after a tap. */
+export function tagVisible(player: PlayerId, me: PlayerId, peeks: TagPeeks, nowMs: number): boolean {
+  const tapped = peeks.tappedAt.get(player);
+  return player === me || peeks.hovered === player || (tapped !== undefined && nowMs - tapped < TAG_PEEK_MS);
+}
+
 /** The tags' DOM elements by player: the HUD registers them, the scene moves them. */
 export interface TagRegistry {
   elements: Map<PlayerId, HTMLElement>;
