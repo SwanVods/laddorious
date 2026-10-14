@@ -31,6 +31,8 @@ export interface ShotInput {
   peeking?: boolean;
   /** The face-offs on the board (the presentation's), so the camera can watch other players' (2026-10-15). */
   faceOffs?: ReadonlyArray<{ tile: number; players: readonly PlayerId[] }>;
+  /** The overview's zoom from the wheel or a pinch: 1 as set, lower is closer (2026-10-15). */
+  zoom?: number;
 }
 
 const FOLLOW: Vec3 = [0, 7.5, 8.5];
@@ -119,10 +121,11 @@ function othersFaceOff({ beat, me, faceOffs = [] }: ShotInput): number | null {
 function overview(input: ShotInput): Shot {
   // How far back and how high come from tuning.json (2026-10-15).
   const { overview } = tuning().camera;
+  const zoom = input.zoom ?? 1;
   const angle = input.reducedMotion ? 0 : Math.sin(input.nowMs / 9000) * 0.12;
   return {
     mode: 'overview',
-    position: [Math.sin(angle) * overview.distance, overview.height, Math.cos(angle) * overview.distance + OVERVIEW_TARGET_Z],
+    position: [Math.sin(angle) * overview.distance * zoom, overview.height * zoom, Math.cos(angle) * overview.distance * zoom + OVERVIEW_TARGET_Z],
     target: [0, 0, OVERVIEW_TARGET_Z],
     cut: false,
   };

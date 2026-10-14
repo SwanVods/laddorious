@@ -3,6 +3,7 @@ import { PerspectiveCamera, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
 import { presentationFromView } from '../src/director/presentation';
+import { DEFAULT_TUNING } from '../src/app/tuning';
 import { cameraShot, type ShotInput } from '../src/scene/camera';
 import { BOARD_SCALE, COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from '../src/scene/layout';
 import { openingUpdate } from './support/fixtures';
@@ -18,7 +19,8 @@ function shot(over: Partial<ShotInput> = {}) {
 
 describe('camera rules (spec #2 §5.3)', () => {
   it('shows the whole board while everyone rolls, framed a little toward the start row so the dock never hides it', () => {
-    expect(shot()).toMatchObject({ mode: 'overview', target: [0, 0, 4 * BOARD_SCALE], position: [0, 23 * BOARD_SCALE, 26 * BOARD_SCALE] });
+    const { overview } = DEFAULT_TUNING.camera;
+    expect(shot()).toMatchObject({ mode: 'overview', target: [0, 0, 4 * BOARD_SCALE], position: [0, overview.height, overview.distance + 4 * BOARD_SCALE] });
   });
 
   it('keeps every corner of the bigger board on screen in the overview, on a landscape phone (round 5)', () => {
@@ -33,6 +35,16 @@ describe('camera rules (spec #2 §5.3)', () => {
       expect(Math.abs(p.x), `corner ${x}, ${z}`).toBeLessThan(1);
       expect(Math.abs(p.y), `corner ${x}, ${z}`).toBeLessThan(1);
     }
+  });
+
+  it('sits about 15% closer than before (2026-10-15), and zooms by the wheel or pinch setting', () => {
+    const near = shot({ reducedMotion: true });
+    const back = (sh: { position: Vec3; target: Vec3 }) => Math.hypot(sh.position[0] - sh.target[0], sh.position[1] - sh.target[1], sh.position[2] - sh.target[2]);
+    const before = Math.hypot(22 * BOARD_SCALE - 4 * BOARD_SCALE + 4 * BOARD_SCALE, 23 * BOARD_SCALE);
+    expect(back(near)).toBeLessThan(before * 0.9);
+    expect(back(shot({ reducedMotion: true, zoom: 0.5 }))).toBeCloseTo(back(near) * 0.5, 5);
+    // Only the overview zooms.
+    expect(shot({ beat: beatOf('move', [moved('p1')]), zoom: 0.5 })).toEqual(shot({ beat: beatOf('move', [moved('p1')]) }));
   });
 
   it('drifts gently over the overview, and holds still with reduced motion', () => {
