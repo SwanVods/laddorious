@@ -45,7 +45,7 @@ const CARD_SUMMARIES: Record<string, string> = {
   shield: 'Block the next attack',
   aegis: 'Block attacks and snakes, 2 rounds',
   shove: 'Nearest player ahead goes back 3',
-  'heavy-boots': "Leader's next total −3",
+  'heavy-boots': 'Leader: −3 on next roll',
   switcheroo: 'Swap with the furthest ahead',
   'coin-flip': '50/50: forward 4 or back 4',
   jackpot: '40%: forward 15 · 60%: back 8',

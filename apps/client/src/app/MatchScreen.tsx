@@ -11,6 +11,7 @@ import { useCardBubbles } from '../hud/bubbles';
 import { rankBadges } from '../hud/ranks';
 import { DevStats } from '../hud/DevStats';
 import { Dock } from '../hud/Dock';
+import { CardList } from '../hud/CardList';
 import { EventFeed } from '../hud/EventFeed';
 import { FaceOffPopup } from '../hud/FaceOffPopup';
 import { feedLines } from '../hud/feed';
@@ -23,6 +24,7 @@ import { roundRecord } from '../hud/record';
 import { StageBar } from '../hud/StageBar';
 import { YourPiece } from '../hud/YourPiece';
 import { MatchScene } from '../scene/MatchScene';
+import { tuning } from './tuning';
 import type { QualitySetting } from '../scene/quality';
 import { createTagRegistry } from '../scene/tags';
 import type { MatchFailure, MatchSession } from '../service/matchService';
@@ -148,18 +150,23 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
     onLeave();
   };
 
+  const dock = view && presentation ? dockModel({ beat, view, record, me }) : null;
   return (
-    <div className="screen match">
+    <div className={tuning().hud.phoneCompactCards ? 'screen match compact-cards' : 'screen match'}>
       <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} peeking={cardPick !== null && peekWindow === view?.awaiting.windowId} />
       <div className="layer">
         <NameTags seats={seats} me={me} tags={tags} ranks={rankBadges(beat, timeScale)} />
         {view && presentation && (
           <>
             <StageBar round={presentation.round} stage={stageIndex(beat, view.awaiting.window, stageFromLog(log))} timer={countdown(settled.timer, view.awaiting.durationMs, now)} />
-            <EventFeed lines={lines} seats={seats} />
+            {/* The action log, and on phones this round's cards as a compact list under it (2026-10-15). */}
+            <div className="left-stack">
+              <EventFeed lines={lines} seats={seats} />
+              <CardList cards={dock?.kind === 'queue' ? dock.cards : []} seats={seats} />
+            </div>
             <PlayerColumn rows={rows} bubbles={bubbles} onWatch={setWatch} reducedMotion={reducedMotion} />
             {mine && <YourPiece row={mine} mods={nextRollMods(presentation.effects, me)} players={rows.length} boardSize={view.board.size} />}
-            <Dock model={dockModel({ beat, view, record, me })} seats={seats} onRoll={() => session.send({ type: 'roll' })} />
+            <Dock model={dock!} seats={seats} onRoll={() => session.send({ type: 'roll' })} />
           </>
         )}
         {watched && (

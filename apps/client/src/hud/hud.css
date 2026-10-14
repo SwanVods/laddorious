@@ -114,10 +114,18 @@
 }
 
 /* ---------------------------------------------------------------- event feed, top left */
-.feed {
+/* The feed, and on phones the compact card list under it (2026-10-15), in one column. */
+.left-stack {
   position: absolute;
   left: calc(var(--safe-l) + var(--edge));
   top: calc(var(--safe-t) + var(--edge));
+  display: flex;
+  flex-direction: column;
+  gap: max(4px, 0.7cqh);
+  pointer-events: none;
+}
+
+.feed {
   display: flex;
   flex-direction: column;
   gap: max(3px, 0.55cqh);
@@ -776,4 +784,83 @@
   font-size: max(10px, 1.5cqh);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------- compact card list, phones (2026-10-15) */
+.card-list {
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  width: max(170px, 36cqh);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 8px;
+  background: var(--plate);
+  color: var(--white);
+  font: 500 11px / 1.2 var(--body);
+}
+
+.card-line.now {
+  outline: 2px solid var(--highlight);
+  outline-offset: -2px;
+}
+
+.card-line-chip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--card-type, var(--paper));
+  color: var(--ink);
+}
+
+.card-line.movement { --card-type: var(--type-movement); }
+.card-line.defense { --card-type: var(--type-defense); }
+.card-line.attack { --card-type: var(--type-attack); }
+.card-line.risky { --card-type: var(--type-risky); }
+.card-line.misc { --card-type: var(--type-misc); }
+
+.card-line-chip .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.card-line-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-line-text small {
+  opacity: 0.8;
+}
+
+.card-line-result {
+  flex: none;
+  margin-left: auto;
+  font: 700 10px / 1 var(--body);
+  font-style: normal;
+}
+
+/* On short screens the compact list stands in for the bubbles and the bottom queue, which covered the board. */
+@container (max-height: 500px) {
+  .compact-cards .card-list {
+    display: flex;
+  }
+
+  .compact-cards .pbubble,
+  .compact-cards .dock .queue {
+    display: none;
+  }
 }

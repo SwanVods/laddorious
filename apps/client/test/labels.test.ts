@@ -25,7 +25,7 @@ describe('card labels (spec #2 §7.2)', () => {
       rarity: 'rare',
       targetLine: 'The leader',
       icon: 'boot',
-      summary: "Leader's next total −3",
+      summary: 'Leader: −3 on next roll', // it doesn't move anyone now (2026-10-15)
     });
   });
 
