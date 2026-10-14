@@ -28,26 +28,28 @@
 
 After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-On `art/spec-5` after Spec #5 Step 2's fifth round: 89 test files and 726 tests pass, and `pnpm e2e` passes all 17 (about 8 minutes; in round 5 the online away test needed a rerun on a busy machine). A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
+On `fix/known-issues` after the user's known-issues list (2026-10-14): 89 test files and 746 tests pass, and `pnpm e2e` passes all 17 (about 8 minutes; the online away test has needed a rerun on a busy machine). A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
-## Next step: the user's list of issues, then plan 3
+## Next step: the user reviews the known-issues fixes, then the board theme
 
-**Built for the fifth Step 2 look (2026-10-14, spec #5 A17; plan `docs/superpowers/plans/2026-10-14-art-pass-step2-round5.md`), merged to `main` on 2026-10-14 at the user's request:**
-1. A bigger board: each square 2.0 across (was 1.6). The camera, island, shadow box and clouds scale with it; pieces and parts keep their size.
-2. On Low, the rocket, flag, whirlpool and splat are flat icons on their tiles (their models aren't loaded); pieces stay 3D.
-3. Trails are low-poly: a rocket's is twelve smoke puffs along its arc, a slide's a line of chevron arrowheads drifting down its lane, both in the pair colour with a dark ink outline (the user asked for the outline mid-round).
-4. Pieces on a rocket's or a flag's tile stand in a row in front of it, face-offs too. A rocket rocks as a piece launches; a flag swings and pops as one lands; flat icons only pop.
-5. Your own name tag always shows; another player's on hover or for 3 s after a tap on their piece; every tag once the match is won.
-6. The crown flies from tile 100 onto the winner's head with a bounce and gold sparkles, and stays there through the end screen.
+**Built for the user's "Known issues" list (2026-10-14; plan `docs/superpowers/plans/2026-10-14-known-issues.md`, branch `fix/known-issues`), awaiting the user's review:**
+1. Cards resolve one at a time, from the last-placed player to the leader (spec #1 D22); the camera visits each card's player in turn, and its effect plays right there.
+2. The face-off in steps: the FACE-OFF! intro alone, then the picks, then the result banner once the popup closes. After a won face-off the loser backflips away and the winner keeps the tile (no restacking).
+3. A piece landing on another wiggles, and the one under it squashes.
+4. "Peek at the board" shows the overview.
+5. HUD: four smaller feed lines; no idle "eye" icon; a tag hides while its piece's die shows; the player column below the round buttons.
+6. Rockets (smaller, no pad) and flags stand in their tile's top-right corner; pieces stack in the middle again. Rocket trails use the slide's outlined arrowheads, along the arc. Epic "?" tiles shine.
+7. Menu: the arrows alone choose the piece; a cleaner gear; the Sound switch is on while sound plays; a slow first load of Tone no longer leaves the sound silent.
+8. Found on the way: the card-pick popup stayed open while cards resolved after a timed-out pick; it now closes.
 
-The user is writing a list of issues to fix before plan 3 starts. Fix those first (each with a failing test, where the issue is testable), then amend plan 3 (the world) for the bigger board and run it on `art/spec-5`, branched again from `main`.
+After approval: fast-forward merge `fix/known-issues` into `main`. Then the **board theme** (the user's "Visual Board plan": the island, table and border need a real theme, with the energy of Fall Guys or Stumble Guys in our own palette): a design step first, with 3 or 4 visual directions on a page for the user to pick from; it replaces plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`).
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
 - **Try it on the Wi-Fi:** `pnpm serve` builds the game for the local server, starts `wrangler dev` on port 8787 on every network interface, and prints the addresses to open on phones (memory `multiplayer-lan-testing`).
 - **Deploy to Cloudflare:** follow `apps/server/README.md` (`wrangler login`, then `pnpm deploy:cloudflare`). Claude never deploys or touches the Cloudflare account (memory `hosting-cloudflare`).
 
-**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) was approved and merged to `main`. Step 2 (the board) has been through five review rounds; the fifth round's requests (above) are built and merged to `main` (2026-10-14); the review page is <https://claude.ai/artifact/Gk8E6V9hf18euZWULr4Sa4>. After the user's issue list is fixed, plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`, the world) is amended for the bigger board and runs. **Room for Step 3:** a busy match comes to 73 draw calls and about 135,600 triangles on High, 66,300 on Low, which leaves about 14,400 triangles on High and 33,700 on Low; plan 3's world needs about 32,000 at its limits, so its models have to come in well under those limits (the user asked to trim while making things look better by shape and colour).
+**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) was approved and merged to `main`. Step 2 (the board) has been through five review rounds; the fifth round's requests (above) are built and merged to `main` (2026-10-14); the review page is <https://claude.ai/artifact/Gk8E6V9hf18euZWULr4Sa4>. The user's known-issues list came next (above); the board theme's design step replaces plan 3. **Room for the theme:** a busy match comes to 71 draw calls and about 135,700 triangles on High, 66,300 on Low, which leaves about 14,300 triangles on High and 33,700 on Low; plan 3's world needs about 32,000 at its limits, so its models have to come in well under those limits (the user asked to trim while making things look better by shape and colour).
 
 The roadmap was renumbered on 2026-10-08 (sound design became #3). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
 
@@ -130,6 +132,10 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - Rank badges live inside name tags, so a tag hidden behind the camera hides its badge too (rare; the reveal uses the overview).
   - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
   - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
+- **Deferred known-issues minors** (from the self-review; not fixed):
+  - No browser run caught my own face-off or a landing on a stack during the screenshots; the face-off steps and the wiggle are covered by unit tests.
+  - The golden snapshot file (`packages/core/test/__snapshots__/golden.test.ts.snap`) is rewritten with LF line endings on every test run, so git shows it modified (no content change); `git checkout` it before committing.
+  - Card bubbles over the pieces still appear at the start of each card's beat, during the camera's 450 ms lead-in.
 - **Deferred Spec #5 Step 2 round 5 minors** (from the self-review; not fixed):
   - A rocket's flame doesn't flare as it launches: the flame is part of the instanced rocket and its glow can't change per copy. The rocket rocks and squashes instead.
   - In fast e2e builds (beats × 0.05) the 3 s victory beat ends before the crown's 1.2 s flight, so it appears on the head at once; the flight is covered by unit tests, not seen in a browser.
