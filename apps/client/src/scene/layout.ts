@@ -4,6 +4,9 @@ import { CatmullRomCurve3, Vector3 } from 'three';
 export type Vec3 = [number, number, number];
 
 /** World units per tile (spec #2 §6.1, §6.3). */
+/** The scene scales piece models by this. */
+export const PIECE_SCALE = 1.3;
+
 export const TILE_SIZE = 2.0;
 /** How much bigger the board is than the first one (1.6 a square): the camera, island and shadows fitted to it scale by this (Step 2, round 5). */
 export const BOARD_SCALE = TILE_SIZE / 1.6;
@@ -31,7 +34,9 @@ export const PARTS = {
    * A ladder's rocket and flag stand in their tile's top-right corner (the user, 2026-10-14): right is +X,
    * the far side is -Z. The middle stays free, so pieces stack there like on any tile.
    */
-  corner: { x: 0.45, z: -0.5 },
+  corner: { x: 0.6, z: -0.65 },
+  /** The flag stands a little further in: its pennant reaches right of its pole. */
+  flagCorner: { x: 0.5, z: -0.7 },
   /** A ladder's start is a small launch rocket, standing on its fins (2026-10-14): the symbol stands here, just in front of its porthole, facing the camera (+Z). */
   rocket: { y: 0.413, z: 0.193, height: 0.71 },
   /** At most 0.44: lanes a clearance apart never overlap, vortices and exits included (polish spec 4.1). */

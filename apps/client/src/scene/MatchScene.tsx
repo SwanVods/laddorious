@@ -1,6 +1,6 @@
 import type { PlayerId, PlayerView } from '@laddorious/core';
 import { Canvas } from '@react-three/fiber';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
@@ -13,6 +13,7 @@ import { ContextLossWatch, QualityWatch, StatsProbe } from './Probes';
 import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
 import { Surroundings } from './Surroundings';
 import { Crown, type PieceRegistry } from './Crown';
+import { setSeatPieces } from './footprint';
 import { TagProjector } from './TagProjector';
 import { createTagPeeks, type TagRegistry } from './tags';
 
@@ -52,6 +53,8 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
   const tagPeeks = useMemo(createTagPeeks, []);
   const pieces = useMemo((): PieceRegistry => new Map(), []);
   const rolls = useMemo(() => new Map<PlayerId, Roll>(), []);
+  // Pieces stand by their measured sizes, so nothing overlaps (2026-10-14).
+  useLayoutEffect(() => setSeatPieces(Object.fromEntries(seats.map((s) => [s.playerId, s.piece]))), [seats]);
   const peeked = peeks ?? own;
   const tap = useCallback((tile: number) => peeked.tap(tile, director.store.getState().presentation?.jumps ?? board.jumps, Date.now()), [peeked, director, board]);
   return (

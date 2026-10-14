@@ -2,7 +2,8 @@ import type { PlayerId } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
 import type { DirectorState } from '../src/director/director';
 import { presentationFromView, type FaceOff } from '../src/director/presentation';
-import { STACK_HEIGHT, restPose } from '../src/scene/motion';
+import { sizeOf } from '../src/scene/footprint';
+import { restPose } from '../src/scene/motion';
 import { TAG_HEIGHT, TAG_PEEK_MS, createTagPeeks, tagAnchor, tagVisible } from '../src/scene/tags';
 import { openingUpdate } from './support/fixtures';
 
@@ -32,7 +33,7 @@ describe('name tags (spec #2 §7.2)', () => {
     const under = anchor(s, 'p1');
     const [x] = restPose(s.presentation!, 'p1', 1).position;
     expect(top[0]).toBeCloseTo(x);
-    expect(top[1]).toBeCloseTo(STACK_HEIGHT + TAG_HEIGHT);
+    expect(top[1]).toBeCloseTo(sizeOf('knight').height + TAG_HEIGHT);
     expect(Math.abs(under[0] - x)).toBeGreaterThan(0.5);
     expect(under[1]).toBeLessThan(top[1]);
   });

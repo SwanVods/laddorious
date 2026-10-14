@@ -7,13 +7,14 @@ import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
+import { PIECE_SCALE } from './layout';
 import { clamp01, easeOut, landingPose, poseAt, projectileAt, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
 
 /** Pieces render at 1.3 × their base size (spec #2 §6.2). */
-export const PIECE_SCALE = 1.3;
+export { PIECE_SCALE } from './layout';
 const DIE_LIFT = 2.2;
 const SHIELD_HOOKS = new Set(['beforeSnake', 'beforeAttack']);
 

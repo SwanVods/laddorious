@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { BEAT_MS, buildTimeline } from '../src/director/beats';
 import type { DirectorState, PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
+import { sizeOf } from '../src/scene/footprint';
 import { PARTS, tileToWorld } from '../src/scene/layout';
-import { CROWN_FLY_MS, FACE_OFF_GAP, crownPose, crownWinner, landingPose, stackLandings, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
+import { CROWN_FLY_MS, END_TILE_FORWARD, crownPose, crownWinner, landingPose, stackLandings, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
@@ -48,38 +49,38 @@ describe('rest poses', () => {
 
   it('stands a later arrival on top of the stack', () => {
     const state = { ...at({ p0: PLAIN, p1: PLAIN }), arrivals: ['p1', 'p0', 'p2', 'p3'] };
-    expect(restPose(state, 'p0', 0).position[1] - restPose(state, 'p1', 1).position[1]).toBeCloseTo(STACK_HEIGHT);
+    expect(restPose(state, 'p0', 0).position[1] - restPose(state, 'p1', 1).position[1]).toBeCloseTo(sizeOf('knight').height);
   });
 
   it('stands face-off opponents side by side, facing each other', () => {
     const state = { ...at({ p0: 6, p1: 6 }), faceOffs: [{ challengeId: 'c1', tile: 6, players: ['p0', 'p1'] }] };
     const left = restPose(state, 'p0', 0);
     const right = restPose(state, 'p1', 1);
-    expect(right.position[0] - left.position[0]).toBeCloseTo(FACE_OFF_GAP);
-    expect(left.rotation[1]).toBeCloseTo(Math.PI / 2);
-    expect(right.rotation[1]).toBeCloseTo(-Math.PI / 2);
+    expect(right.position[0]).toBeGreaterThan(left.position[0]);
+    expect(Math.sin(left.rotation[1])).toBeGreaterThan(0.7); // facing +X, toward the other
+    expect(Math.sin(right.rotation[1])).toBeLessThan(-0.7);
   });
 });
 
 describe('pieces at a rocket or a flag (2026-10-14)', () => {
   const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
 
-  it('stacks pieces in the middle of a flag or rocket tile, like any tile, the end standing in its corner', () => {
+  it('stacks pieces in the middle of a flag or rocket tile, a little toward the camera, the end standing in its corner', () => {
     for (const tile of [ladder.from, ladder.to]) {
       const state = { ...at({ p0: tile, p1: tile }), arrivals: ['p0', 'p1', 'p2', 'p3'] };
       const [x, , z] = tileToWorld(tile);
-      expectNear(restPose(state, 'p0', 0).position, [x, 0, z]);
-      expect(restPose(state, 'p1', 1).position[1]).toBeCloseTo(STACK_HEIGHT);
+      expectNear(restPose(state, 'p0', 0).position, [x, 0, z + END_TILE_FORWARD]);
+      expect(restPose(state, 'p1', 1).position[1]).toBeCloseTo(sizeOf('knight').height);
     }
   });
 
   it('keeps a face-off on a flag tile side by side in the middle, clear of the flag in its corner', () => {
     const state = { ...at({ p0: ladder.to, p1: ladder.to }), faceOffs: [{ challengeId: 'c1', tile: ladder.to, players: ['p0', 'p1'] }] };
     const [x, , z] = tileToWorld(ladder.to);
-    const pole = [x + PARTS.corner.x + PARTS.flag.pole, z + PARTS.corner.z];
+    const pole = [x + PARTS.flagCorner.x + PARTS.flag.pole, z + PARTS.flagCorner.z];
     for (const id of ['p0', 'p1']) {
       const [px, , pz] = restPose(state, id, Number(id.slice(1))).position;
-      expect(pz).toBeCloseTo(z);
+      expect(pz).toBeCloseTo(z + END_TILE_FORWARD);
       expect(Math.hypot(px - pole[0]!, pz - pole[1]!)).toBeGreaterThan(0.35);
     }
   });

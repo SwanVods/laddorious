@@ -2,6 +2,7 @@ import type { GameEvent, Jump, PlayerId } from '@laddorious/core';
 import { BEAT_MS, hopSchedule, landsOnStack } from '../director/beats';
 import type { DirectorState, PlayingBeat } from '../director/director';
 import { stackOn, type PresentationState } from '../director/presentation';
+import { faceOffSpots, pieceOf, sizeOf } from './footprint';
 import { arcPoint, slideCurve, tileCell, tilePath, tileToWorld, type Vec3 } from './layout';
 
 /** Where a piece is and how it is turned and squashed. `orb` swaps the piece for a glowing orb (inside a slide). */
@@ -12,9 +13,8 @@ export interface Pose {
   orb: boolean;
 }
 
-/** How far a stacked piece rises, and how far apart face-off opponents stand (world units). */
+/** About how far a stacked piece rises: name tags beside a stack use it (stacks themselves use each piece's height). */
 export const STACK_HEIGHT = 1.05;
-export const FACE_OFF_GAP = 0.85;
 const HOP_HEIGHT = 0.55;
 const STEP_HEIGHT = 0.15;
 
@@ -37,18 +37,28 @@ export function headingOf(tile: number): number {
   return tile <= 0 || tileCell(tile).row % 2 === 0 ? Math.PI / 2 : -Math.PI / 2;
 }
 
+/** On a flag's or a rocket's tile, pieces stand this far toward the camera, clear of it in its corner (2026-10-14). */
+export const END_TILE_FORWARD = 0.25;
+
+/**
+ * Where a piece stands between beats (2026-10-14: nothing overlaps): on its tile, on the head of the piece
+ * under it, or in a face-off, nose to nose with its opponent. On a rocket's or a flag's tile, a little
+ * toward the camera, clear of the end in its corner.
+ */
 export function restPose(state: PresentationState, player: PlayerId, seat: number): Pose {
   const tile = state.positions[player] ?? 0;
   const at = tileToWorld(tile, seat);
   const facing: Vec3 = [0, headingOf(tile), 0];
   if (tile === 0) return still(at, facing);
+  const forward = state.jumps.some((j) => j.to > j.from && (j.from === tile || j.to === tile)) ? END_TILE_FORWARD : 0;
   const faceOff = state.faceOffs.find((f) => f.tile === tile && f.players.includes(player));
   if (faceOff) {
-    const offset = (faceOff.players.indexOf(player) - (faceOff.players.length - 1) / 2) * FACE_OFF_GAP;
-    return still([at[0] + offset, at[1], at[2]], [0, offset < 0 ? Math.PI / 2 : -Math.PI / 2, 0]);
+    const spot = faceOffSpots(faceOff.players)[faceOff.players.indexOf(player)]!;
+    return still([at[0] + spot.dx, at[1], at[2] + spot.dz + forward], [0, spot.heading, 0]);
   }
-  const level = Math.max(0, stackOn(state, tile).indexOf(player));
-  return still([at[0], at[1] + level * STACK_HEIGHT, at[2]], facing);
+  const stack = stackOn(state, tile);
+  const lift = stack.slice(0, Math.max(0, stack.indexOf(player))).reduce((sum, id) => sum + sizeOf(pieceOf(id)).height, 0);
+  return still([at[0], at[1] + lift, at[2] + forward], facing);
 }
 
 /** How a rocket or a flag is moving: a sway (radians), a squash (height scale) and a pop (overall scale). */

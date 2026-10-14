@@ -148,13 +148,13 @@ describe('the 3D scene (spec #2 §6)', () => {
     const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
     const at = new Matrix4();
     const p = new Vector3();
-    for (const [name, tile] of [['pads', ladder.from], ['targets', ladder.to]] as const) {
+    for (const [name, tile, corner] of [['pads', ladder.from, PARTS.corner], ['targets', ladder.to, PARTS.flagCorner]] as const) {
       (root.getObjectByName(name) as InstancedMesh).getMatrixAt(0, at);
       p.setFromMatrixPosition(at);
       const [x, , z] = tileToWorld(tile);
-      expect(p.x, name).toBeCloseTo(x + PARTS.corner.x, 5);
-      expect(p.z, name).toBeCloseTo(z + PARTS.corner.z, 5);
-      expect(Math.hypot(PARTS.corner.x, PARTS.corner.z)).toBeGreaterThan(0.6); // clear of a stack in the middle
+      expect(p.x, name).toBeCloseTo(x + corner.x, 5);
+      expect(p.z, name).toBeCloseTo(z + corner.z, 5);
+      expect(Math.hypot(corner.x, corner.z)).toBeGreaterThan(0.6); // clear of a stack in the middle
     }
   });
 
@@ -244,9 +244,9 @@ describe('the 3D scene (spec #2 §6)', () => {
     const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
     at.decompose(p, q, s);
     const [x, , z] = tileToWorld(ladder.to);
-    expect(p.x).toBeCloseTo(x + PARTS.corner.x + PARTS.flag.x, 5);
+    expect(p.x).toBeCloseTo(x + PARTS.flagCorner.x + PARTS.flag.x, 5);
     expect(p.y).toBeCloseTo(PARTS.flag.y, 5);
-    expect(p.z).toBeCloseTo(z + PARTS.corner.z + PARTS.flag.z, 5);
+    expect(p.z).toBeCloseTo(z + PARTS.flagCorner.z + PARTS.flag.z, 5);
     expect(new Vector3(0, 1, 0).applyQuaternion(q).z).toBeCloseTo(1, 5); // its face looks along +Z
   });
 
