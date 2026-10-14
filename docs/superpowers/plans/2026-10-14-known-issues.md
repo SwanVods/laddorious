@@ -241,6 +241,40 @@ A rocket's trail becomes the same outlined chevron arrowheads as a slide's, one 
 - [ ] Self-review against the Review Focus. Critical and Important findings get a failing test first; Minor ones go to the HANDOFF.
 - [ ] A review page with before and after screenshots, one row per issue. Then stop for the user's review. After approval: fast-forward merge to `main`.
 
+## Amendment: the animations, against the mockup (the user, 2026-10-14, after K10)
+
+> "The 'wobble' animation, stacking animation, and faceoff animation is worse than from the artifact", then: no overlapping objects when stacking or in a face-off; the camera follows each player's resolution, especially landing on rockets and slides; ease in and out on all piece animation; a short pause after the last die roll, after each player's card and after the last card; and a check that a card can still push a player off tile 100 before the game ends.
+
+The finish-tile check needed no change: the engine only looks for a winner at the end of the round, after every card. A test now pins it (`mystery.test.ts`, "lets a card push a player off tile 100").
+
+### Task K11: Turn pieces about their own sides; ease every hop; land with a squash
+- Flips and wobbles go on an inner layer under the piece's turn, as in the mockup, so they turn about the piece's own sides: the wobble rocks it left and right on screen, and a flip is a real somersault, not a roll toward the camera.
+- Every hop eases in and out along the ground, and lands with a short squash (90 ms). The hop up onto a stack is slower (1.4 times) and higher (0.9).
+- Tests (`motion.test.ts`): a quarter of the way through a hop the piece has gone less than a quarter of the way; each hop ends in a squash; the stack hop is slower and higher; a flip's rotation is about the piece's side axis (`Pieces` applies rotation x and z to the inner group).
+
+### Task K12: Measured pieces, so nothing overlaps
+- A table of each piece's height and width, measured from the built models (`assets/pieceSizes.ts`; an art test fails if it drifts from the files).
+- Stacks sit each piece on the head of the one below it.
+- Face-off spots stand far enough apart for the widest pieces, a little toward the camera. The rocket and flag move further into their corner, clear of a stack in the middle.
+- Tests: pure geometry over every pair of pieces: no two face-off pieces overlap, no stacked piece sinks into the one below, and neither a stack nor a face-off touches the rocket or the flag.
+
+### Task K13: The face-off like the mockup
+- My face-off opens with a collision moment: the pieces still stacked, the camera close, and a "COLLISION!" banner. Then the top piece hops down beside the other, and both turn to face each other three-quarters toward the camera. Then the pick popup opens.
+- After a win, the loser backflips (1.8 high) away to its knock-back tile and lands with a squash. Then the winner settles into the middle of the tile.
+- Tests (`motion.test.ts`, `beats.test.ts`, `model.test.ts`): the intro's stacked, hop-down and facing phases; the banner; the loser's arc, its flip about its side and its landing squash; the winner settling only after the loser lands.
+
+### Task K14: The camera follows each player's resolution
+- Slides, launches, knock-backs and card moves follow the piece that moves, whoever's it is (mine still swoops).
+- Tests (`camera.test.ts`): another player's slide and launch follow that player.
+
+### Task K15: Pauses to see what happened
+- A short pause (700 ms) after the last die roll, with the dice still showing, before the pieces move.
+- A short pause (600 ms) after each player's card, its moves included, and after the last card.
+- Built as `pause` beats with no events. The camera, the HUD and the dice keep showing the moment they follow.
+- Tests (`beats.test.ts`, `camera.test.ts`, `model.test.ts`).
+
+### Task K16: Docs, the gate, side-by-side recordings with the mockup, then stop for review
+
 ## Not in this plan
 
 - The board theme ("change the board/island/table shape … do it better"). This is its own design step after these fixes. It replaces plan 3 (the world).

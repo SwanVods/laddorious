@@ -112,6 +112,18 @@ describe('rerolls', () => {
   });
 });
 
+describe('a win the cards can still undo (the user, 2026-10-14)', () => {
+  it('lets a card push a player off tile 100 before the round ends, so nobody wins yet', () => {
+    const s = setup({ board, positions: [96, 0], dice: [[4], [4]], cards: [[], offerValues('shove', 'sprint', 'coin-flip')] });
+    const { state, events } = play(s, [roll('p1'), roll('p2'), pick('p2', 0)]);
+    expect(ofType(events, 'Moved').map((e) => [e.player, e.to])).toContainEqual(['p1', 100]);
+    expect(ofType(events, 'CardResolved')).toMatchObject([{ caster: 'p2', cardId: 'shove', target: 'p1', result: 'hit' }]);
+    expect(positions(state)).toEqual([97, 4]);
+    expect(ofType(events, 'MatchWon')).toEqual([]);
+    expect(state.phase.kind).not.toBe('finished');
+  });
+});
+
 describe('selection and reveal', () => {
   const twoEncounters = () =>
     play(
