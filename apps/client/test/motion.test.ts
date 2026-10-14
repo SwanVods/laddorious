@@ -100,12 +100,16 @@ describe('pieces at a rocket or a flag (round 5)', () => {
     expect(high![1] - low![1]).toBeCloseTo(STACK_HEIGHT);
   });
 
-  it('keeps a face-off on a flag tile side by side, as on any tile', () => {
+  it('keeps a face-off on a flag tile side by side, moved forward clear of the pole', () => {
     const state = { ...at({ p0: ladder.to, p1: ladder.to }), faceOffs: [{ challengeId: 'c1', tile: ladder.to, players: ['p0', 'p1'] }] };
     const left = restPose(state, 'p0', 0).position;
     const right = restPose(state, 'p1', 1).position;
     expect(right[0] - left[0]).toBeCloseTo(FACE_OFF_GAP);
-    expect(left[2]).toBeCloseTo(tileToWorld(ladder.to)[2]);
+    const [x, , z] = tileToWorld(ladder.to);
+    for (const spot of [left, right]) {
+      expect(spot[2]).toBeCloseTo(z + END_ROW.forward);
+      expect(apart(flat(spot), [x + PARTS.flag.pole, z])).toBeGreaterThan(0.35);
+    }
   });
 });
 

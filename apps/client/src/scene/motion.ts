@@ -57,7 +57,9 @@ export function restPose(state: PresentationState, player: PlayerId, seat: numbe
   const faceOff = state.faceOffs.find((f) => f.tile === tile && f.players.includes(player));
   if (faceOff) {
     const offset = (faceOff.players.indexOf(player) - (faceOff.players.length - 1) / 2) * FACE_OFF_GAP;
-    return still([at[0] + offset, at[1], at[2]], [0, offset < 0 ? Math.PI / 2 : -Math.PI / 2, 0]);
+    // Before a rocket or a flag they face off in front of it, like the row there.
+    const forward = standsInRow(state, tile) ? END_ROW.forward : 0;
+    return still([at[0] + offset, at[1], at[2] + forward], [0, offset < 0 ? Math.PI / 2 : -Math.PI / 2, 0]);
   }
   if (standsInRow(state, tile)) {
     const offset = (Math.max(0, rowOn(state, tile).indexOf(player)) - (rowOn(state, tile).length - 1) / 2) * END_ROW.gap;
