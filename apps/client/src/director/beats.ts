@@ -47,6 +47,8 @@ export const BEAT_MS = {
   faceOffResult: 1100,
   /** In my own face-off's result, the popup first shows both picks, then closes for the result banner. */
   faceOffReveal: 1000,
+  /** Then the result banner plays out in full before anything else, a draw's re-pick popup included (BANNER_MS). */
+  faceOffBanner: 1700,
   cardReveal: 1700,
   card: { hit: 1400, blocked: 1200, fizzled: 900 } satisfies Record<CardResult, number>,
   /** Before each card plays, so the camera reaches its player first (2026-10-14). */
@@ -167,7 +169,7 @@ function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
     case 'faceOff':
       return beat.events.some((e) => e.type === 'ChallengeStarted' && e.players.includes(me)) ? BEAT_MS.faceOffIntro : BEAT_MS.faceOff;
     case 'faceOffResult':
-      return beat.events.some((e) => e.type === 'ChallengeResolved' && me in e.picks) ? BEAT_MS.faceOffReveal + BEAT_MS.faceOffResult : BEAT_MS.faceOffResult;
+      return beat.events.some((e) => e.type === 'ChallengeResolved' && me in e.picks) ? BEAT_MS.faceOffReveal + BEAT_MS.faceOffBanner : BEAT_MS.faceOffResult;
     case 'cardReveal':
       return BEAT_MS.cardReveal;
     case 'cardResolved': {
