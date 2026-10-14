@@ -63,7 +63,7 @@ Decisions made during design, recorded so later specs do not re-litigate them.
 | D13 | Bonus roll | **None** (amended 2026-10-04). Every player rolls one die per round. Extra rolls come only from cards (sub-project c). |
 | D14 | Stack | **TypeScript** monorepo. |
 | D15 | Determinism scope | **Full match**, not just board: (config, seed, input log) reproduces an entire match. |
-| D16 | Generated-board chains | Generated boards contain **no chains** (no jump ends on another jump's start). Card edits may create chains. |
+| D16 | Generated-board chains | Generated boards contain **no chains** (no jump ends on another jump's start). ~~Card edits may create chains.~~ **Amended 2026-10-15:** no tile holds two jump ends, on any board, card edits included: no chains, no two jumps ending on one tile. A card edit with no free tile fizzles. The user: "both flag and warp, rocket and splat should never be in one tile." 1,000 simulated matches: board attempts 1.11 (1.12 before), median 20 rounds. |
 | D17 | Modifier stacking | Add values sum. Multiply values multiply together. Multiple Replace → newest wins. |
 | D18 | Disconnects | Deferred to server spec. Until then an absent player simply times out on everything. |
 | D19 | Match end | First victory ends the match; other players ranked by position. |

@@ -120,7 +120,7 @@ function drawCandidate(seed: string, cfg: BoardConfig, rng: RngStream): Board | 
         from = intBetween(rng, 1, N - 1 - len);
         to = from + len;
       }
-      if (starts.has(from) || ends.has(from) || starts.has(to)) continue; // one start per tile, no chains
+      if (starts.has(from) || ends.has(from) || starts.has(to) || ends.has(to)) continue; // one jump end per tile (2026-10-15), so no chains
       const inZone = kind === 'snake' && from >= zoneStart;
       if (inZone && (finishZoneSnakes >= cfg.finishZone.maxSnakes || len > cfg.finishZone.maxSnakeLength)) continue;
       if (kind === 'snake' && wouldExceedSnakeRun(jumps, from, cfg.maxConsecutiveSnakeHeads)) continue;

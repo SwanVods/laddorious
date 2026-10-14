@@ -20,6 +20,17 @@ describe('planBoardEdit', () => {
     expect(planBoardEdit(board, create('ladder', 13), 10, 'x1')).toEqual({ added: [{ id: 'x1', from: 13, to: 26 }], removed: [] });
   });
 
+  it("create skips a tile holding another jump's end, and its end avoids one too (2026-10-15)", () => {
+    // +2 (tile 12) is where the ladder 5→12 lands; a slide from 13 would end on 5, that ladder's start; tile 14 works.
+    const board = makeBoard(100, [[5, 12]]);
+    expect(planBoardEdit(board, create('snake', 8), 10, 'x1')).toEqual({ added: [{ id: 'x1', from: 14, to: 6 }], removed: [] });
+  });
+
+  it('create fizzles when every tile it could use holds a jump end', () => {
+    const board = makeBoard(100, [[1, 12], [2, 13], [3, 14], [4, 15], [6, 16]]);
+    expect(planBoardEdit(board, create('ladder', 20), 10, 'x1')).toBeNull();
+  });
+
   it('create returns null when no tile works (e.g. a ladder that would reach N)', () => {
     expect(planBoardEdit(makeBoard(100), create('ladder', 15), 90, 'x1')).toBeNull();
   });

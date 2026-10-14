@@ -84,7 +84,9 @@ describe('generateBoard', () => {
       generateBoard('nope', impossible);
     } catch (e) {
       expect((e as GenerationError).seed).toBe('nope');
-      expect((e as GenerationError).rejections['analysis-median']).toBe(5);
+      const rejections = (e as GenerationError).rejections;
+      expect(Object.values(rejections).reduce((sum, n) => sum + (n ?? 0), 0)).toBe(5);
+      expect(rejections['analysis-median']).toBeGreaterThan(0);
     }
   });
 });

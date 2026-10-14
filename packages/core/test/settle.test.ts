@@ -16,9 +16,9 @@ describe('snakes and ladders', () => {
     expect(ofType(events, 'Moved').map((e) => e.cause)).toEqual(['dice', 'dice', 'ladder', 'snake']);
   });
 
-  it('follows chains created by card edits', () => {
+  it('refuses a board with a chain: no tile holds two jump ends any more (2026-10-15)', () => {
     const board = makeBoard(100, [[3, 22], [22, 40]]);
-    expect(positions(play(setup({ board, dice: [[3], [1]] }), [roll('p1'), roll('p2')]).state)).toEqual([40, 1]);
+    expect(() => setup({ board, dice: [[3], [1]] })).toThrow(/shares tile 22/);
   });
 
   it('a snake shield cancels the snake and spends its charge', () => {

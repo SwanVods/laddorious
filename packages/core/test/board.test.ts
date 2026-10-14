@@ -33,7 +33,13 @@ describe('boardViolations', () => {
     expect(boardViolations(board).length).toBeGreaterThan(0);
   });
 
-  it('allows chains without cycles', () => {
-    expect(boardViolations(makeBoard(100, [[10, 30], [30, 50]]))).toEqual([]);
+  // No tile holds two jump ends (the user, 2026-10-15: "flag and warp, rocket and splat should never be in one tile").
+  it.each([
+    ['a ladder ending where a slide starts (a flag on a whirlpool)', [[10, 30], [30, 5]]],
+    ['a slide ending where a ladder starts (a splat on a rocket)', [[50, 20], [20, 60]]],
+    ['a chain of two ladders', [[10, 30], [30, 50]]],
+    ['two jumps ending on one tile', [[10, 30], [50, 30]]],
+  ] as Array<[string, Array<[number, number]>]>)('rejects %s', (_, jumps) => {
+    expect(boardViolations(makeBoard(100, jumps)).some((v) => v.includes('shares tile'))).toBe(true);
   });
 });

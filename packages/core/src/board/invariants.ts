@@ -18,6 +18,17 @@ export function boardViolations(board: Board): string[] {
     if (board.mystery[j.from] !== undefined) out.push(`${j.id}: starts on Mystery tile ${j.from}`);
   }
 
+  // No tile holds two jump ends, generated or edited by a card (2026-10-15, amending D16): never a flag
+  // on a whirlpool, a splat on a rocket, two flags on one tile, or a chain of jumps.
+  const ends = new Map<number, string>();
+  for (const j of board.jumps) {
+    for (const tile of [j.from, j.to]) {
+      const other = ends.get(tile);
+      if (other !== undefined && other !== j.id) out.push(`${j.id}: shares tile ${tile} with ${other}`);
+      else ends.set(tile, j.id);
+    }
+  }
+
   for (const key of Object.keys(board.mystery)) {
     const tile = Number(key);
     if (!Number.isInteger(tile) || tile < 1 || tile > N - 1) out.push(`mystery tile ${key} outside 1..${N - 1}`);
