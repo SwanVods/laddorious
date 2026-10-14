@@ -12,7 +12,7 @@ export type IconName =
   | 'arrow' | 'die' | 'x2' | 'pad' | 'charm' | 'shield' | 'aegis' | 'push' | 'boot' | 'swap' | 'coin' | 'bait'
   | 'jackpot' | 'steady' | 'cleanse' | 'slide' | 'card' | 'lock' | 'check' | 'bolt' | 'eye' | 'reroll' | 'target'
   | 'qmark' | 'swords' | 'gear' | 'close' | 'play' | 'back' | 'next' | 'menu' | 'pencil' | 'trophy'
-  | 'rock' | 'paper' | 'scissors' | 'speaker' | 'speaker-off';
+  | 'rock' | 'paper' | 'scissors' | 'speaker' | 'speaker-off' | 'expand' | 'shrink';
 
 const CARD_ICONS: Record<string, IconName> = {
   sprint: 'arrow',

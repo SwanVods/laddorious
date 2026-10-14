@@ -29,6 +29,7 @@ import type { QualitySetting } from '../scene/quality';
 import { createTagRegistry } from '../scene/tags';
 import type { MatchFailure, MatchSession } from '../service/matchService';
 import { Dialog } from '../ui/Dialog';
+import { FullscreenButton } from '../ui/FullscreenButton';
 import { Icon } from '../ui/Icon';
 import { ToastHost, showToast } from '../ui/toasts';
 import { useHotkeys } from '../ui/useHotkeys';
@@ -191,6 +192,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
             <Icon name={muted ? 'speaker-off' : 'speaker'} />
           </button>
         )}
+        <FullscreenButton className="match-fullscreen-btn" />
         <button type="button" className="round-btn menu-btn live" aria-label="Leave match" onClick={() => setLeaving(true)}>
           <Icon name="menu" />
         </button>

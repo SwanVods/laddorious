@@ -92,6 +92,13 @@
   top: calc(var(--safe-t) + var(--edge));
 }
 
+/* Full screen, left of the mute button (2026-10-15). */
+.match-fullscreen-btn {
+  position: absolute;
+  right: calc(var(--safe-r) + var(--edge) + 2 * (max(44px, 8cqh) + 10px));
+  top: calc(var(--safe-t) + var(--edge));
+}
+
 /* Quick mute, left of the menu button (spec #3 §4). */
 .sound-btn {
   position: absolute;

@@ -137,6 +137,13 @@
   letter-spacing: 0.6px;
 }
 
+/* Full screen, left of the settings gear (2026-10-15). */
+.menu-fullscreen-btn {
+  position: absolute;
+  right: calc(var(--safe-r) + 3cqh + max(44px, 8cqh) + 10px);
+  top: calc(var(--safe-t) + 3cqh);
+}
+
 .gear-btn {
   position: absolute;
   right: calc(var(--safe-r) + 3cqh);

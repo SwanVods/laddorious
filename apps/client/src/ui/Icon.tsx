@@ -119,6 +119,9 @@ const PATHS: Record<IconName, ReactNode> = {
   back: <path d="M15 4l-8 8 8 8" {...stroke} strokeWidth={3.5} />,
   next: <path d="M9 4l8 8-8 8" {...stroke} strokeWidth={3.5} />,
   menu: <path d="M4 6.5h16M4 12h16M4 17.5h16" {...stroke} strokeWidth={3} />,
+  // Full screen (2026-10-15): four corners reaching out, or tucking in.
+  expand: <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" {...stroke} strokeWidth={3} />,
+  shrink: <path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" {...stroke} strokeWidth={3} />,
   speaker: (
     <>
       <path d="M3.5 9h4l5-4.5v15l-5-4.5h-4z" />

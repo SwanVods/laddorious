@@ -5,6 +5,7 @@ import { PIECE_NAMES } from '../hud/labels';
 import { MenuScene, type MenuAnchor } from '../scene/MenuScene';
 import { createTagRegistry } from '../scene/tags';
 import { PIECES, type FindOptions } from '../service/matchService';
+import { FullscreenButton } from '../ui/FullscreenButton';
 import { Icon } from '../ui/Icon';
 import { Portrait } from '../ui/PieceIcon';
 import { NICKNAME_MAX, type PrefsState } from './prefs';
@@ -123,6 +124,7 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
           <small>RACE TO 100</small>
         </h1>
 
+        <FullscreenButton className="menu-fullscreen-btn" />
         <button type="button" className="round-btn gear-btn live" aria-label="Settings" onClick={onSettings}>
           <Icon name="gear" />
         </button>
