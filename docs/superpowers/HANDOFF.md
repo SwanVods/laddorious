@@ -32,6 +32,13 @@ On `art/spec-5` after Spec #5 Step 2's review rounds: 89 test files and 702 test
 
 ## Next step: the user reviews Spec #5 Step 2
 
+**Requested at the fifth Step 2 look (2026-10-14), not started yet:**
+1. Low quality shows the jump ends as images on the tiles; the 3D objects (rockets, flags, whirlpools, splats) only on High.
+2. The board's tiles wider.
+3. Pieces that land on a rocket or a flag animate or stand aside so they don't clash with it, one piece or several.
+4. Pieces' name tags hidden, shown on hover or tap.
+5. On the finish tile, the crown animates and sits on top of the piece that finishes.
+
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
 - **Try it on the Wi-Fi:** `pnpm serve` builds the game for the local server, starts `wrangler dev` on port 8787 on every network interface, and prints the addresses to open on phones (memory `multiplayer-lan-testing`).
