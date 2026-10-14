@@ -12,6 +12,8 @@ import { clamp01, easeOut, landingPose, poseAt, projectileAt, stackLandings, wit
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
+import { tuning } from '../app/tuning';
+import { isTap } from './pan';
 
 /** Pieces render at 1.3 × their base size (spec #2 §6.2). */
 export { PIECE_SCALE } from './layout';
@@ -175,6 +177,8 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
         // Pointing at or tapping a piece shows its name, and the tile under it doesn't also peek a path.
         onClick={(e) => {
           e.stopPropagation();
+          // A drag that pans the zoomed-in view isn't a tap (board theme spec §5).
+          if (!isTap(e.delta, tuning().camera.pan.tapSlopPx)) return;
           tagPeeks?.tap(seat.playerId, Date.now());
         }}
         onPointerOver={(e) => {

@@ -118,6 +118,7 @@ The game reads `tuning.json` (served next to the page) when it starts, so an adm
 | `camera.overview.distance` | 31.6 | How far back the whole-board view sits. |
 | `camera.overview.height` | 32.9 | How high it sits. |
 | `camera.overview.zoomMin`, `zoomMax` | 0.45, 1.4 | How far a mouse wheel or pinch can zoom the overview (1 = as set; lower is closer). |
+| `camera.pan.lockAbove`, `tapSlopPx` | 0.95, 6 | Zoomed in closer than lockAbove, a drag pans the overview over the board; at the overview it stays locked. A press moving more than tapSlopPx pixels is a drag, not a tap. |
 | `camera.follow.ease` | 3.2 | How quickly the camera reaches a piece it follows (higher is quicker). |
 | `camera.swoop.ease` | 2.8 | The same for the close swoop on my own moments. |
 | `timing.hopMs` | 230 | Each tile hop, in the air and landing (ms). Hop sounds follow it. |
@@ -172,7 +173,7 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 - **Landings on a stack** (`stackLandings`, `landingPose` in `src/scene/motion.ts`): the piece on top wobbles for 0.8 s and the one under it squashes once.
 - **Turning pieces** (`placePiece` in `src/scene/Pieces.tsx`): the body moves, squashes and turns to face its way; flips, wobbles and the idle sway turn the inner model about the piece's own side axis (rotation x), which the camera sees side-on.
 - **Nothing overlaps** (`src/scene/footprint.ts`, `src/assets/pieceSizes.ts`): pieces stand by their measured sizes, stacked head to foot, nose to nose in a face-off. `pnpm test` checks the size table against the built models and every pair of pieces as turned footprints.
-- **Camera zoom** (`src/scene/zoom.ts`, `CameraRig.tsx`): a mouse wheel or two-finger pinch over the board zooms the overview between `camera.overview.zoomMin` and `zoomMax`; follow and swoop shots don't zoom. While other players face off and I don't, the camera frames their tile.
+- **Camera zoom** (`src/scene/zoom.ts`, `CameraRig.tsx`): a mouse wheel or two-finger pinch over the board zooms the overview between `camera.overview.zoomMin` and `zoomMax`; follow and swoop shots don't zoom. Zoomed in closer than `camera.pan.lockAbove`, one finger or the mouse drags the view over the board (`src/scene/pan.ts`); the camera never turns, and the pan resets when the game takes the camera. While other players face off and I don't, the camera frames their tile.
 - **Compact card info on phones** (`src/hud/CardList.tsx`): on short screens the card bubbles and the bottom queue give way to one line per card under the action log (`hud.phoneCompactCards`).
 - **Full screen** (`src/ui/FullscreenButton.tsx`): a round button in the menu and in matches, hidden where the Fullscreen API isn't available.
 - **Pauses** (`withPauses` in `src/director/beats.ts`): beats with no events after the last roll and after each card; `heldBeat` gives the moment they hold, for the camera and the HUD.

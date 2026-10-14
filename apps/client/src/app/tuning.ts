@@ -8,6 +8,8 @@ export interface Tuning {
   camera: {
     /** The whole-board view: how far back and how high the camera sits, and how far a wheel or pinch can zoom it (1 = as set). */
     overview: { distance: number; height: number; zoomMin: number; zoomMax: number };
+    /** Dragging the zoomed-in overview: it pans only below this zoom (1 = the overview as set), and a press that moves further than tapSlopPx is a drag, not a tap. */
+    pan: { lockAbove: number; tapSlopPx: number };
     /** How quickly the camera reaches a new shot, following a piece or swooping in for my own moments (higher is quicker). */
     follow: { ease: number };
     swoop: { ease: number };
@@ -37,6 +39,7 @@ export interface Tuning {
 export const DEFAULT_TUNING: Tuning = {
   camera: {
     overview: { distance: 31.6, height: 32.9, zoomMin: 0.45, zoomMax: 1.4 },
+    pan: { lockAbove: 0.95, tapSlopPx: 6 },
     follow: { ease: 3.2 },
     swoop: { ease: 2.8 },
   },
@@ -46,7 +49,7 @@ export const DEFAULT_TUNING: Tuning = {
 
 /** Settings that must be whole numbers, and ones that must be above zero (not just zero or more). */
 const WHOLE = new Set(['hud.feedLines']);
-const POSITIVE = new Set(['camera.overview.distance', 'camera.overview.height', 'camera.overview.zoomMin', 'camera.overview.zoomMax', 'camera.follow.ease', 'camera.swoop.ease', 'timing.hopMs', 'hud.feedLines']);
+const POSITIVE = new Set(['camera.overview.distance', 'camera.overview.height', 'camera.overview.zoomMin', 'camera.overview.zoomMax', 'camera.pan.lockAbove', 'camera.follow.ease', 'camera.swoop.ease', 'timing.hopMs', 'hud.feedLines']);
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -78,6 +81,11 @@ export function mergeTuning(raw: unknown, defaults: Tuning = DEFAULT_TUNING): { 
     problems.push('camera.overview.zoomMin should be 1 or less', 'camera.overview.zoomMax should be 1 or more');
     overview.zoomMin = defaults.camera.overview.zoomMin;
     overview.zoomMax = defaults.camera.overview.zoomMax;
+  }
+  const { pan } = tuning.camera;
+  if (pan.lockAbove > 1 || pan.lockAbove <= overview.zoomMin) {
+    problems.push('camera.pan.lockAbove should be above zoomMin and 1 or less');
+    pan.lockAbove = defaults.camera.pan.lockAbove;
   }
   return { tuning, problems };
 }

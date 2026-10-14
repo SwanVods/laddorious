@@ -5,9 +5,10 @@ import { Vector3 } from 'three';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { tuning } from '../app/tuning';
-import { cameraShot } from './camera';
+import { OVERVIEW_TARGET_Z, cameraShot, type ShotMode } from './camera';
 import { pinchZoom, wheelZoom } from './zoom';
-import type { Vec3 } from './layout';
+import { BOARD_HALF, type Vec3 } from './layout';
+import { NO_PAN, PanDrag, clampPan, dragPan, panAfterShot, panBox, panReach, unitsPerPixel, type Pan } from './pan';
 import { poseAt } from './motion';
 
 interface CameraRigProps {
@@ -26,10 +27,14 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
   const canvas = useThree((s) => s.gl.domElement);
   // The overview's zoom (2026-10-15): a mouse wheel or a two-finger pinch over the board.
   const zoomRef = useRef(1);
+  // The zoomed-in overview's pan (board theme spec B5), and the last shot's kind: only the overview pans.
+  const panRef = useRef<Pan>(NO_PAN);
+  const modeRef = useRef<ShotMode>('overview');
   useEffect(() => {
     const limits = () => ({ min: tuning().camera.overview.zoomMin, max: tuning().camera.overview.zoomMax });
     const fingers = new Map<number, { x: number; y: number }>();
     let pinch: { gap: number; zoom: number } | null = null;
+    const drag = new PanDrag();
     const gap = () => {
       const [a, b] = [...fingers.values()];
       return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
@@ -39,15 +44,24 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       zoomRef.current = wheelZoom(zoomRef.current, e.deltaY, limits());
     };
     const onDown = (e: PointerEvent) => {
+      drag.down(e.pointerId, e.clientX, e.clientY);
       fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (fingers.size === 2) pinch = { gap: gap(), zoom: zoomRef.current };
     };
     const onMove = (e: PointerEvent) => {
       if (!fingers.has(e.pointerId)) return;
       fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pinch && fingers.size === 2) zoomRef.current = pinchZoom(pinch.zoom, pinch.gap, gap(), limits());
+      if (pinch && fingers.size === 2) {
+        zoomRef.current = pinchZoom(pinch.zoom, pinch.gap, gap(), limits());
+        return;
+      }
+      const { overview, pan } = tuning().camera;
+      const step = drag.move(e.pointerId, e.clientX, e.clientY, pan.tapSlopPx);
+      if (!step || modeRef.current !== 'overview' || zoomRef.current >= pan.lockAbove) return;
+      panRef.current = dragPan(panRef.current, step.dx, step.dy, unitsPerPixel(overview.height * zoomRef.current, canvas.clientHeight));
     };
     const onUp = (e: PointerEvent) => {
+      drag.up(e.pointerId);
       fingers.delete(e.pointerId);
       if (fingers.size < 2) pinch = null;
     };
@@ -73,6 +87,8 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
     const state = director.store.getState();
     const now = Date.now();
     const offer = state.settled?.view.myOffer;
+    const { overview, pan } = tuning().camera;
+    panRef.current = clampPan(panRef.current, panBox(panReach(zoomRef.current, pan.lockAbove, overview.zoomMin), BOARD_HALF, OVERVIEW_TARGET_Z));
     const shot = cameraShot({
       beat: state.beat,
       window: state.settled?.view.awaiting.window ?? null,
@@ -84,8 +100,11 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       peeking,
       faceOffs: state.presentation?.faceOffs ?? [],
       zoom: zoomRef.current,
+      pan: panRef.current,
       piece: (id): Vec3 => poseAt(state, id, seatOf.get(id) ?? 0, now, boardSize)?.position ?? [0, 0, 0],
     });
+    modeRef.current = shot.mode;
+    panRef.current = panAfterShot(panRef.current, shot.mode);
     const { follow, swoop } = tuning().camera;
     const k = shot.cut ? 1 : 1 - Math.exp(-delta * (shot.mode === 'swoop' ? swoop.ease : follow.ease));
     camera.position.lerp(aim.position.set(...shot.position), k);

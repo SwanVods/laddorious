@@ -84,7 +84,7 @@ describe('the 3D scene (spec #2 §6)', () => {
     // Only my own tag shows (round 5); tapping another piece shows its name for a while.
     expect(fakes.map((el) => el.style.visibility)).toEqual(['visible', 'hidden', 'hidden', 'hidden']);
     const piece = renderer.scene.find((node) => node.props.name === 'piece-p1');
-    await renderer.fireEvent(piece, 'onClick', { stopPropagation: () => {} });
+    await renderer.fireEvent(piece, 'onClick', { delta: 0, stopPropagation: () => {} });
     await renderer.advanceFrames(1, 1 / 60);
     expect(fakes.map((el) => el.style.visibility)).toEqual(['visible', 'visible', 'hidden', 'hidden']);
   });
@@ -138,9 +138,19 @@ describe('the 3D scene (spec #2 §6)', () => {
     const ladder = jumps.find((j) => j.to > j.from)!;
     const { renderer, root } = await renderSceneWith('high');
     const tiles = renderer.scene.find((node) => node.props.name === 'tiles');
-    await renderer.fireEvent(tiles, 'onClick', { instanceId: ladder.to - 1, stopPropagation: () => {} });
+    await renderer.fireEvent(tiles, 'onClick', { instanceId: ladder.to - 1, delta: 0, stopPropagation: () => {} });
     await frames(renderer, 2);
     expect(trailCounts(root).arrows).toBeGreaterThan(0);
+  });
+
+  it("doesn't peek when the press was a drag that panned the view (board theme spec §5)", async () => {
+    const { jumps } = openingUpdate().view.board;
+    const ladder = jumps.find((j) => j.to > j.from)!;
+    const { renderer, root } = await renderSceneWith('high');
+    const tiles = renderer.scene.find((node) => node.props.name === 'tiles');
+    await renderer.fireEvent(tiles, 'onClick', { instanceId: ladder.to - 1, delta: 20, stopPropagation: () => {} });
+    await frames(renderer, 2);
+    expect(trailCounts(root).arrows).toBe(0);
   });
 
   it("stands each rocket and flag in its tile's top-right corner (2026-10-14)", async () => {

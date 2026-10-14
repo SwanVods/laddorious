@@ -2,6 +2,7 @@ import type { PlayerId, WindowKind } from '@laddorious/core';
 import { tuning } from '../app/tuning';
 import { heldBeat, type Beat } from '../director/beats';
 import { BOARD_SCALE, TILE_SIZE, tileToWorld, type Vec3 } from './layout';
+import type { Pan } from './pan';
 
 export type ShotMode = 'overview' | 'follow' | 'swoop';
 
@@ -33,12 +34,14 @@ export interface ShotInput {
   faceOffs?: ReadonlyArray<{ tile: number; players: readonly PlayerId[] }>;
   /** The overview's zoom from the wheel or a pinch: 1 as set, lower is closer (2026-10-15). */
   zoom?: number;
+  /** The overview's pan when zoomed in (board theme spec B5): the look-at point's offset, already kept over the board. */
+  pan?: Pan;
 }
 
 const FOLLOW: Vec3 = [0, 7.5, 8.5];
 const SWOOP: Vec3 = [0, 3.4, 4.6];
 /** The overview looks a little toward the start row, so the bottom dock never hides it, even 390 px tall (Phase 5). */
-const OVERVIEW_TARGET_Z = 4 * BOARD_SCALE;
+export const OVERVIEW_TARGET_Z = 4 * BOARD_SCALE;
 
 const offset = (at: Vec3, by: Vec3): Vec3 => [at[0] + by[0], at[1] + by[1], at[2] + by[2]];
 const follow = (at: Vec3): Shot => ({ mode: 'follow', position: offset(at, FOLLOW), target: at, cut: false });
@@ -119,15 +122,12 @@ function othersFaceOff({ beat, me, faceOffs = [] }: ShotInput): number | null {
 }
 
 function overview(input: ShotInput): Shot {
-  // How far back and how high come from tuning.json (2026-10-15). It never turns (board theme spec B5).
+  // How far back and how high come from tuning.json (2026-10-15). It never turns; zoomed in, it pans (board theme spec B5).
   const { overview } = tuning().camera;
   const zoom = input.zoom ?? 1;
-  return {
-    mode: 'overview',
-    position: [0, overview.height * zoom, overview.distance * zoom + OVERVIEW_TARGET_Z],
-    target: [0, 0, OVERVIEW_TARGET_Z],
-    cut: false,
-  };
+  const [x, z] = input.pan ?? [0, 0];
+  const aim = OVERVIEW_TARGET_Z + z;
+  return { mode: 'overview', position: [x, overview.height * zoom, overview.distance * zoom + aim], target: [x, 0, aim], cut: false };
 }
 
 function swoop(at: Vec3, input: ShotInput): Shot {

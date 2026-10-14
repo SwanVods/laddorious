@@ -54,6 +54,14 @@ describe('camera rules (spec #2 §5.3)', () => {
     }
   });
 
+  it('moves the overview by the pan, camera and aim together, and only the overview (board theme spec B5)', () => {
+    const still = shot({ zoom: 0.5 });
+    const panned = shot({ zoom: 0.5, pan: [3, -4] });
+    expect(panned.target).toEqual([still.target[0] + 3, 0, still.target[2] - 4]);
+    expect(panned.position).toEqual([still.position[0] + 3, still.position[1], still.position[2] - 4]);
+    expect(shot({ beat: beatOf('move', [moved('p1')]), pan: [3, -4] })).toEqual(shot({ beat: beatOf('move', [moved('p1')]) }));
+  });
+
   it('follows my piece while another piece moves', () => {
     expect(shot({ beat: beatOf('move', [moved('p1')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p0 });
   });

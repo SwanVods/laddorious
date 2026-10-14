@@ -91,4 +91,14 @@ describe('the camera reaches my piece sooner after the roll (2026-10-15)', () =>
   it('scales the overview with the 27-wide board (board theme spec §5)', () => {
     expect(DEFAULT_TUNING.camera.overview).toEqual({ distance: 31.6, height: 32.9, zoomMin: 0.45, zoomMax: 1.4 });
   });
+
+  it('reads the pan settings, and refuses a lock zoom above 1 or at the closest zoom (board theme spec §5)', () => {
+    expect(DEFAULT_TUNING.camera.pan).toEqual({ lockAbove: 0.95, tapSlopPx: 6 });
+    expect(mergeTuning({ camera: { pan: { lockAbove: 0.8, tapSlopPx: 10 } } }).tuning.camera.pan).toEqual({ lockAbove: 0.8, tapSlopPx: 10 });
+    for (const lockAbove of [1.5, 0.45, 0.2]) {
+      const { tuning, problems } = mergeTuning({ camera: { pan: { lockAbove } } });
+      expect(tuning.camera.pan.lockAbove).toBe(0.95);
+      expect(problems.join()).toContain('camera.pan.lockAbove');
+    }
+  });
 });

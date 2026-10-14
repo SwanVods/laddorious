@@ -6,6 +6,10 @@
       "zoomMin": 0.45,
       "zoomMax": 1.4
     },
+    "pan": {
+      "lockAbove": 0.95,
+      "tapSlopPx": 6
+    },
     "follow": {
       "ease": 3.2
     },

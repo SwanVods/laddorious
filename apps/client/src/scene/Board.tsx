@@ -8,6 +8,8 @@ import { useSlotMesh } from '../assets/slotMesh';
 import type { Director } from '../director/director';
 import { COLUMNS, TILE_ACROSS, TILE_SIZE, TILE_THICKNESS, squareColorIndex, tileToWorld } from './layout';
 import { boardOverlayTexture, sheenTexture } from './textures';
+import { tuning } from '../app/tuning';
+import { isTap } from './pan';
 
 type PublicBoard = PlayerView['board'];
 
@@ -134,6 +136,8 @@ export function Board({ board, director, clearcoat, onTap }: BoardProps) {
         receiveShadow
         onClick={(e: ThreeEvent<MouseEvent>) => {
           e.stopPropagation();
+          // A drag that pans the zoomed-in view isn't a tap (board theme spec §5).
+          if (!isTap(e.delta, tuning().camera.pan.tapSlopPx)) return;
           if (e.instanceId !== undefined) onTap?.(e.instanceId + 1);
         }}
         onPointerMove={(e: ThreeEvent<PointerEvent>) => {
