@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
+import { loadTuning } from './app/tuning';
 import { browserStorage, createPrefsStore } from './app/prefs';
 import { AudioEngine } from './audio/engine';
 import { SoundProvider } from './audio/SoundProvider';
@@ -34,10 +35,11 @@ const prefs = createPrefsStore(browserStorage(), {
   prefersReducedMotion: typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
 });
 
-createRoot(document.getElementById('root')!).render(
+// Admin settings (tuning.json) first, so the first match plays by them (2026-10-15).
+void loadTuning().then(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SoundProvider engine={sound} prefs={prefs}>
       <App service={online ?? local} offline={online ? local : undefined} resume={resume} prefs={prefs} dev={import.meta.env.DEV} test={test} />
     </SoundProvider>
   </StrictMode>,
-);
+));

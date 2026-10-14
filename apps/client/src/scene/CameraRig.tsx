@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import { Vector3 } from 'three';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
+import { tuning } from '../app/tuning';
 import { cameraShot } from './camera';
 import type { Vec3 } from './layout';
 import { poseAt } from './motion';
@@ -40,7 +41,8 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       peeking,
       piece: (id): Vec3 => poseAt(state, id, seatOf.get(id) ?? 0, now, boardSize)?.position ?? [0, 0, 0],
     });
-    const k = shot.cut ? 1 : 1 - Math.exp(-delta * (shot.mode === 'swoop' ? 2.8 : 1.8));
+    const { follow, swoop } = tuning().camera;
+    const k = shot.cut ? 1 : 1 - Math.exp(-delta * (shot.mode === 'swoop' ? swoop.ease : follow.ease));
     camera.position.lerp(aim.position.set(...shot.position), k);
     lookRef.current.lerp(aim.target.set(...shot.target), k);
     camera.lookAt(lookRef.current);

@@ -109,6 +109,26 @@ Open the **Network** address Vite prints (for example `http://192.168.1.20:5173`
 - [ ] **Rotation:** turning the phone upright shows "Turn your phone sideways", and turning it back returns to the game.
 - [ ] **Pause on lock:** locking the phone mid-match pauses the bots and the timers; unlocking resumes them.
 
+## Admin settings (`public/tuning.json`)
+
+The game reads `tuning.json` (served next to the page) when it starts, so an admin can change these without touching the code or rebuilding: edit the file on the server and players get the new values on their next load. A future admin dashboard can write the same file. Every value is checked (`src/app/tuning.ts`); a missing key keeps its default, and a bad value (a wrong type, a negative number, a zoom range that leaves out 1) falls back to its default with one warning in the browser console.
+
+| Key | Default | What it does |
+|---|---|---|
+| `camera.overview.distance` | 27.5 | How far back the whole-board view sits. |
+| `camera.overview.height` | 28.75 | How high it sits. |
+| `camera.overview.zoomMin`, `zoomMax` | 0.6, 1.4 | How far a mouse wheel or pinch can zoom the overview (1 = as set; lower is closer). |
+| `camera.follow.ease` | 1.8 | How quickly the camera reaches a piece it follows (higher is quicker). |
+| `camera.swoop.ease` | 2.8 | The same for the close swoop on my own moments. |
+| `timing.hopMs` | 230 | Each tile hop, in the air and landing (ms). Hop sounds follow it. |
+| `timing.rollPauseMs` | 700 | The pause after the last die roll, before the pieces move (ms). |
+| `timing.cardLeadMs` | 450 | Before each card plays, while the camera reaches its player (ms). |
+| `timing.cardPauseMs` | 600 | The pause after each card and its moves (ms). |
+| `timing.faceOffIntroMs` | 1900 | My own face-off's opening: the collision, then the hop down (ms). |
+| `timing.knockbackMs` | 850 | A face-off loser's flight backwards (ms). |
+| `hud.feedLines` | 4 | Lines in the action log (a whole number). |
+| `hud.phoneCompactCards` | true | On landscape phones, card info as a compact list under the action log. |
+
 ## Graphics quality
 
 Settings → Graphics quality:

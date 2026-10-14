@@ -1,4 +1,5 @@
 import type { PlayerId, WindowKind } from '@laddorious/core';
+import { tuning } from '../app/tuning';
 import { heldBeat, type Beat } from '../director/beats';
 import { BOARD_SCALE, TILE_SIZE, tileToWorld, type Vec3 } from './layout';
 
@@ -32,8 +33,6 @@ export interface ShotInput {
 
 const FOLLOW: Vec3 = [0, 7.5, 8.5];
 const SWOOP: Vec3 = [0, 3.4, 4.6];
-const OVERVIEW_RADIUS = 22 * BOARD_SCALE;
-const OVERVIEW_HEIGHT = 23 * BOARD_SCALE;
 /** The overview looks a little toward the start row, so the bottom dock never hides it, even 390 px tall (Phase 5). */
 const OVERVIEW_TARGET_Z = 4 * BOARD_SCALE;
 
@@ -104,10 +103,12 @@ function resolvingPiece({ beat, me, piece }: ShotInput): PlayerId | null {
 }
 
 function overview(input: ShotInput): Shot {
+  // How far back and how high come from tuning.json (2026-10-15).
+  const { overview } = tuning().camera;
   const angle = input.reducedMotion ? 0 : Math.sin(input.nowMs / 9000) * 0.12;
   return {
     mode: 'overview',
-    position: [Math.sin(angle) * OVERVIEW_RADIUS, OVERVIEW_HEIGHT, Math.cos(angle) * OVERVIEW_RADIUS + OVERVIEW_TARGET_Z],
+    position: [Math.sin(angle) * overview.distance, overview.height, Math.cos(angle) * overview.distance + OVERVIEW_TARGET_Z],
     target: [0, 0, OVERVIEW_TARGET_Z],
     cut: false,
   };

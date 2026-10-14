@@ -1,3 +1,4 @@
+import { DEFAULT_TUNING, tuning } from '../app/tuning';
 import type { ChallengeChoice, GameEvent, PlayerId } from '@laddorious/core';
 import type { LoggedEvent } from '../director/director';
 import { cardInfo } from './labels';
@@ -15,7 +16,8 @@ export interface FeedLine {
 }
 
 /** How many lines the feed keeps; phones show the first 3 (§7.2). */
-export const FEED_LINES = 4;
+/** The action log's lines by default; tuning.json can change it (2026-10-15). */
+export const FEED_LINES = DEFAULT_TUNING.hud.feedLines;
 
 const RARITY_PHRASE = { common: 'a Common', rare: 'a Rare', epic: 'an Epic' } as const;
 const RPS_WORD: Record<string, string> = { rock: 'Rock', paper: 'Paper', scissors: 'Scissors' };
@@ -95,7 +97,7 @@ function lineFor(e: GameEvent, themes: ReadonlyMap<string, [string, string] | nu
 }
 
 /** The newest feed lines first, at most `max`. */
-export function feedLines(log: readonly LoggedEvent[], max = FEED_LINES): FeedLine[] {
+export function feedLines(log: readonly LoggedEvent[], max = tuning().hud.feedLines): FeedLine[] {
   const themes = new Map<string, [string, string] | null>();
   const lines: FeedLine[] = [];
   for (const { seq, event } of log) {

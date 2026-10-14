@@ -1,4 +1,5 @@
 import type { CardResult, GameEvent, MoveCause, PlayerId } from '@laddorious/core';
+import { tuning } from '../app/tuning';
 import { applyEvent, stackOn, type PresentationState } from './presentation';
 
 export type BeatKind =
@@ -71,13 +72,20 @@ function withPauses(beats: Beat[]): Beat[] {
 /** Starting durations from spec #2 §5.1, to be tuned against the 3D scene. */
 export const BEAT_MS = {
   roll: 900,
-  hopPerTile: 230,
+  /** Tunable in tuning.json (2026-10-15): each read takes the setting in use. */
+  get hopPerTile() {
+    return tuning().timing.hopMs;
+  },
   /** Of each hop, the time in the air; the rest is the squash on landing (2026-10-14, as in the mockup). */
-  hopAir: 160,
+  get hopAir() {
+    return (tuning().timing.hopMs * 160) / 230;
+  },
   landing: 70,
   slide: 2000,
   launch: 1300,
-  knockback: 850,
+  get knockback() {
+    return tuning().timing.knockbackMs;
+  },
   /** After a face-off's knock-back flight: the loser's landing squash, then the winner settling into the middle (2026-10-14, as in the mockup). */
   knockbackLand: 90,
   knockbackSettle: 300,
@@ -86,7 +94,9 @@ export const BEAT_MS = {
   snakeBlocked: 600,
   faceOff: 500,
   /** My own face-off's intro (2026-10-14, as in the mockup): the collision held for its banner, then the top piece hops down. */
-  faceOffIntro: 1900,
+  get faceOffIntro() {
+    return tuning().timing.faceOffIntroMs;
+  },
   /** The top piece's hop down beside the other, at the end of any face-off's intro. */
   unstack: 460,
   faceOffResult: 1100,
@@ -97,10 +107,16 @@ export const BEAT_MS = {
   cardReveal: 1700,
   card: { hit: 1400, blocked: 1200, fizzled: 900 } satisfies Record<CardResult, number>,
   /** Before each card plays, so the camera reaches its player first (2026-10-14). */
-  cardLead: 450,
+  get cardLead() {
+    return tuning().timing.cardLeadMs;
+  },
   /** The pause after each card and its moves, and after the last die roll (2026-10-14). */
-  cardPause: 600,
-  rollPause: 700,
+  get cardPause() {
+    return tuning().timing.cardPauseMs;
+  },
+  get rollPause() {
+    return tuning().timing.rollPauseMs;
+  },
   clash: 900,
   boardEdit: 600,
   victory: 3000,
