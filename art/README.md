@@ -35,8 +35,8 @@ Both scripts also run inside an open Blender (see their docstrings), in scenes o
 - Budgets and sizes for every model are in `contract.ts`; `pnpm test` checks each built file against them.
 - Board parts stand on the tile top with their origin at the base, and face −Y; the game turns them only about the vertical.
 - A model with `Tint` has only that material: instance colours tint every material of a mesh.
-- Flat shapes drawn from above (the pad's notch, cut with `sculpt.carve`) use `shapes.outline(…, view='top', lift=…)`. A shape stacked from one outline at several heights is `shapes.stack` (the tile, its top shaded flat with `flat_top`). A surface coloured along a twisted grid (the vortex's spiral ridges) is `shapes.grid`.
-- The jump parts (pad, target, vortex, exit) are built to `PARTS` in `apps/client/src/scene/layout.ts`, where the game lays each pair's symbol; the contract checks the pad's top against it. Their coloured parts are `Tint`, so each takes its pair colour.
+- Flat shapes drawn from above use `shapes.outline(…, view='top', lift=…)`. A shape stacked from one outline at several heights is `shapes.stack` (the tile, its top shaded flat with `flat_top`). A surface coloured along a twisted grid (the vortex's spiral ridges) is `shapes.grid`.
+- The jump parts (the rocket `pad`, the flag `target`, the whirlpool `vortex`, the splat `exit`) are built to `PARTS` in `apps/client/src/scene/layout.ts`, where the game places each pair's symbol; the contract checks the rocket's porthole and the splat's top against it. Their coloured parts are `Tint`, so each takes its pair colour; a part that must keep its own colour on a tinted model (the rocket's porthole and flame) is a `finish.glow` with a dark `base`, since the instance colour never tints a glow.
 - `art/test/budget.test.ts` prices a busy match with the built models; a heavy model fails it before the browser tests do.
 
 ## Sculpting
