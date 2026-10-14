@@ -1,7 +1,7 @@
 import type { PlayerId } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import type { Group, Mesh, MeshBasicMaterial } from 'three';
+import type { Group, Mesh, MeshBasicMaterial, Object3D } from 'three';
 import { WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
@@ -94,10 +94,16 @@ function Projectile({ director, seatOf }: { director: Director; seatOf: (player:
   );
 }
 
-function place(target: Group | Mesh, pose: Pose) {
-  target.position.set(...pose.position);
-  target.rotation.set(...pose.rotation);
-  target.scale.set(...pose.scale);
+/**
+ * Places a piece (2026-10-14, as in the mockup): the body moves, squashes and turns to face its way; the
+ * inner model flips and wobbles about the piece's own sides, so a backflip turns it over and a wobble
+ * rocks it, both seen side-on by the camera.
+ */
+export function placePiece(body: Object3D, inner: Object3D, pose: Pose) {
+  body.position.set(...pose.position);
+  body.rotation.set(0, pose.rotation[1], 0);
+  body.scale.set(...pose.scale);
+  inner.rotation.set(pose.rotation[0], 0, pose.rotation[2]);
 }
 
 interface ActorProps extends Omit<PiecesProps, 'seats'> {
@@ -132,7 +138,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
     const pose = poseAt(state, seat.playerId, index, now, boardSize);
     if (!pose || !bodyRef.current || !modelRef.current || !orbRef.current || !dieRef.current || !shieldRef.current) return;
     const acting = state.beat?.events.some((e) => (e.type === 'Moved' && e.player === seat.playerId) || (e.type === 'MatchWon' && e.winner === seat.playerId)) ?? false;
-    place(bodyRef.current, landingPose(reducedMotion || acting ? pose : withIdle(pose, now, index * 1.7), seat.playerId, landingsRef.current, now, reducedMotion));
+    placePiece(bodyRef.current, modelRef.current, landingPose(reducedMotion || acting ? pose : withIdle(pose, now, index * 1.7), seat.playerId, landingsRef.current, now, reducedMotion));
     modelRef.current.visible = !pose.orb;
     orbRef.current.visible = pose.orb;
     if (blobRef.current) {

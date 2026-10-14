@@ -1,5 +1,5 @@
 import type { CardResult, GameEvent, MoveCause, PlayerId } from '@laddorious/core';
-import { applyEvent, type PresentationState } from './presentation';
+import { applyEvent, stackOn, type PresentationState } from './presentation';
 
 export type BeatKind =
   | 'roll'
@@ -34,6 +34,8 @@ export interface Beat {
 export const BEAT_MS = {
   roll: 900,
   hopPerTile: 230,
+  /** Of each hop, the time in the air; the rest is the squash on landing (2026-10-14, as in the mockup). */
+  hopAir: 160,
   landing: 70,
   slide: 2000,
   launch: 1300,
@@ -141,8 +143,25 @@ export function buildTimeline(events: GameEvent[], start: PresentationState, me:
   return beats;
 }
 
+/** Whether a move ends on top of other pieces (not in a face-off, where they stand apart). */
+export function landsOnStack(after: PresentationState, e: GameEvent): boolean {
+  if (e.type !== 'Moved' || e.to <= 0) return false;
+  const stack = stackOn(after, e.to);
+  return stack.length > 1 && stack.at(-1) === e.player && !after.faceOffs.some((f) => f.tile === e.to);
+}
+
+/** The hop up onto a stack is this much slower than a hop between tiles (2026-10-14, as in the mockup). */
+export const STACK_HOP_SLOWER = 1.4;
+
+/** When each of a move's hops starts and how long it lasts: the last is slower when it lands on a stack. */
+export function hopSchedule(tiles: number, stacked: boolean, perTile: number): { legStart: (i: number) => number; legMs: (i: number) => number; total: number } {
+  const legMs = (i: number) => (stacked && i === tiles - 1 ? perTile * STACK_HOP_SLOWER : perTile);
+  const legStart = (i: number) => i * perTile;
+  return { legStart, legMs, total: tiles > 0 ? legStart(tiles - 1) + legMs(tiles - 1) : 0 };
+}
+
 /** Tiles a move covers: a bounce runs up to the last tile and back. */
-function tilesTravelled(event: GameEvent, boardSize: number): number {
+export function tilesTravelled(event: GameEvent, boardSize: number): number {
   if (event.type !== 'Moved') return 0;
   return event.bounced ? boardSize - event.from + (boardSize - event.to) : Math.abs(event.to - event.from);
 }
@@ -153,7 +172,7 @@ function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
     case 'roll':
       return BEAT_MS.roll;
     case 'move':
-      return longest() * BEAT_MS.hopPerTile + BEAT_MS.landing;
+      return Math.max(...beat.events.map((e) => (e.type === 'Moved' ? hopSchedule(tilesTravelled(e, boardSize), landsOnStack(beat.after, e), BEAT_MS.hopPerTile).total : 0))) + BEAT_MS.landing;
     case 'stepBack':
       return longest() * BEAT_MS.stepBackPerTile;
     case 'slide':

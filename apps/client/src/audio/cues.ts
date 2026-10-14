@@ -1,5 +1,5 @@
 import type { GameEvent, PlayerId } from '@laddorious/core';
-import { BEAT_MS, type Beat } from '../director/beats';
+import { BEAT_MS, hopSchedule, landsOnStack, tilesTravelled, type Beat } from '../director/beats';
 import type { LoggedEvent } from '../director/director';
 import { stackOn } from '../director/presentation';
 import type { Cue } from './engine';
@@ -46,7 +46,9 @@ export function cuesForBeat(beat: Beat, { me, boardSize }: CueContext): Cue[] {
       const soft = !mineMoving;
       const cues = Array.from({ length: tiles }, (_, i) => cue('H1', i * BEAT_MS.hopPerTile, soft, { arg: i }));
       const stacked = moves.some((e) => stackOn(beat.after, e.to).length > 1);
-      cues.push(cue(stacked ? 'H3' : 'H2', tiles * BEAT_MS.hopPerTile, soft));
+      // The landing sound comes as the last hop lands, later when that hop climbs onto a stack.
+      const landing = Math.max(...moves.map((e) => hopSchedule(tilesTravelled(e, boardSize), landsOnStack(beat.after, e), BEAT_MS.hopPerTile).total));
+      cues.push(cue(stacked ? 'H3' : 'H2', landing, soft));
       return cues;
     }
     case 'cardMove': {

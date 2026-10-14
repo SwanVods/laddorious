@@ -129,8 +129,8 @@ describe('landing on a stack (2026-10-14)', () => {
 
   it('wiggles the piece that landed, dying away by 800 ms', () => {
     const landings = stackLandings(hop, SIZE);
-    expect(landingPose(still, 'p0', landings, landed + 200, false).rotation[2]).not.toBeCloseTo(still.rotation[2], 3);
-    expect(landingPose(still, 'p0', landings, landed + 800, false).rotation[2]).toBeCloseTo(still.rotation[2], 6);
+    expect(landingPose(still, 'p0', landings, landed + 200, false).rotation[0]).not.toBeCloseTo(still.rotation[0], 3);
+    expect(landingPose(still, 'p0', landings, landed + 800, false).rotation[0]).toBeCloseTo(still.rotation[0], 6);
   });
 
   it('squashes only the piece directly under it, and only briefly', () => {
@@ -173,6 +173,38 @@ describe('after a face-off (2026-10-14)', () => {
     expectNear(beatPose(knockback, result.after, 'p1', 1, 0, SIZE).position, spot('p1'));
     const [x, , z] = tileToWorld(PLAIN);
     expectNear(beatPose(knockback, result.after, 'p1', 1, knockback.durationMs, SIZE).position, [x, 0, z]);
+  });
+});
+
+describe('hops, like the mockup (2026-10-14)', () => {
+  const from = at({ p0: 10 });
+  const hop = beat([moved('p0', 10, 13)], from);
+  const start = tileToWorld(10);
+  const next = tileToWorld(11);
+  const across = (t: number) => {
+    const p = beatPose(hop, from, 'p0', 0, t, SIZE).position;
+    return Math.hypot(p[0] - start[0], p[2] - start[2]) / Math.hypot(next[0] - start[0], next[2] - start[2]);
+  };
+
+  it('eases each hop in and out: slow off the ground, slow into the landing', () => {
+    expect(across(BEAT_MS.hopAir * 0.25)).toBeLessThan(0.2);
+    expect(across(BEAT_MS.hopAir * 0.75)).toBeGreaterThan(0.8);
+  });
+
+  it('lands every hop with a short squash, not just the last', () => {
+    const squash = beatPose(hop, from, 'p0', 0, BEAT_MS.hopAir + (BEAT_MS.hopPerTile - BEAT_MS.hopAir) / 2, SIZE);
+    expect(squash.scale[1]).toBeLessThan(0.95);
+    expect(beatPose(hop, from, 'p0', 0, BEAT_MS.hopPerTile * 1.01, SIZE).scale[1]).toBeGreaterThan(1); // stretching up into the next hop
+  });
+
+  it('takes the hop up onto a stack slower and higher', () => {
+    const stacked = { ...at({ p0: 12, p1: 13 }), arrivals: ['p1', 'p2', 'p3', 'p0'] };
+    const up = beat([moved('p0', 12, 13)], stacked);
+    const plain = beat([moved('p0', 10, 11)], from);
+    expect(up.durationMs - plain.durationMs).toBeCloseTo(BEAT_MS.hopPerTile * 0.4, 0);
+    const top = restPose(up.after, 'p0', 0).position[1];
+    const peak = Math.max(...Array.from({ length: 40 }, (_, i) => beatPose(up, stacked, 'p0', 0, (i / 40) * up.durationMs, SIZE).position[1]));
+    expect(peak).toBeGreaterThan(top / 2 + 0.85);
   });
 });
 

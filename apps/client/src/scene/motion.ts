@@ -1,5 +1,5 @@
 import type { GameEvent, Jump, PlayerId } from '@laddorious/core';
-import { BEAT_MS } from '../director/beats';
+import { BEAT_MS, hopSchedule, landsOnStack } from '../director/beats';
 import type { DirectorState, PlayingBeat } from '../director/director';
 import { stackOn, type PresentationState } from '../director/presentation';
 import { arcPoint, slideCurve, tileCell, tilePath, tileToWorld, type Vec3 } from './layout';
@@ -94,9 +94,9 @@ export function beatPose(beat: PlayingBeat, from: PresentationState, player: Pla
   if (move) {
     switch (beat.kind) {
       case 'move':
-        return hops(move, start, end, elapsed, BEAT_MS.hopPerTile, HOP_HEIGHT, boardSize, true);
+        return hops(move, start, end, elapsed, BEAT_MS.hopPerTile, HOP_HEIGHT, boardSize, true, landsOnStack(beat.after, move));
       case 'stepBack':
-        return hops(move, start, end, elapsed, BEAT_MS.stepBackPerTile, STEP_HEIGHT, boardSize, false);
+        return hops(move, start, end, elapsed, BEAT_MS.stepBackPerTile, STEP_HEIGHT, boardSize, false, false);
       case 'slide':
         return slide(move, end, t);
       case 'launch':
@@ -118,23 +118,38 @@ export function beatPose(beat: PlayingBeat, from: PresentationState, player: Pla
   return { ...end, position: lerp3(start.position, end.position, k), rotation: lerp3(start.rotation, end.rotation, k) };
 }
 
-/** Tile-by-tile hops: each tile takes `perTile` ms, then dice moves land with a squash. */
-function hops(move: MovedEvent, start: Pose, end: Pose, elapsed: number, perTile: number, height: number, boardSize: number, squash: boolean): Pose {
+/** How high the hop up onto a stack arcs (2026-10-14, as in the mockup). */
+const STACK_HOP_HEIGHT = 0.9;
+
+/**
+ * Tile-by-tile hops (2026-10-14, as in the mockup): each takes `perTile` ms, first in the air, easing in and
+ * out along the ground and stretching, then landing with a short squash. The hop up onto a stack is slower
+ * and higher. A step back squashes less.
+ */
+function hops(move: MovedEvent, start: Pose, end: Pose, elapsed: number, perTile: number, height: number, boardSize: number, bouncy: boolean, stacked: boolean): Pose {
   const path = tilePath(move.from, move.to, move.bounced, boardSize);
   const legs = path.length - 1;
-  const leg = Math.floor(elapsed / perTile);
-  if (legs <= 0 || leg >= legs) {
-    const since = elapsed - legs * perTile;
-    const s = squash && since < BEAT_MS.landing ? 1 - 0.18 * Math.sin((since / BEAT_MS.landing) * Math.PI) : 1;
-    return { ...end, scale: [2 - s, s, 2 - s] };
-  }
-  const f = (elapsed - leg * perTile) / perTile;
+  const plan = hopSchedule(legs, stacked, perTile);
+  if (legs <= 0 || elapsed >= plan.total) return end;
+  let leg = 0;
+  while (leg + 1 < legs && elapsed >= plan.legStart(leg + 1)) leg++;
+  const local = elapsed - plan.legStart(leg);
+  const ms = plan.legMs(leg);
+  const air = ms * (BEAT_MS.hopAir / BEAT_MS.hopPerTile);
   const a = leg === 0 ? start.position : tileToWorld(path[leg]!);
   const b = leg + 1 === legs ? end.position : tileToWorld(path[leg + 1]!);
+  if (local >= air) {
+    const s = 1 - (bouncy ? 0.18 : 0.1) * Math.sin(((local - air) / (ms - air)) * Math.PI);
+    const wide = 1 + (1 - s) * 0.7;
+    return { position: b, rotation: end.rotation, scale: [wide, s, wide], orb: false };
+  }
+  const f = local / air;
+  const k = easeInOut(f);
+  const arc = stacked && leg + 1 === legs ? STACK_HOP_HEIGHT : height;
   const stretch = 1 + 0.12 * Math.sin(f * Math.PI);
   const across = 1 / Math.sqrt(stretch);
   return {
-    position: [lerp(a[0], b[0], f), lerp(a[1], b[1], f) + height * 4 * f * (1 - f), lerp(a[2], b[2], f)],
+    position: [lerp(a[0], b[0], k), lerp(a[1], b[1], k) + arc * 4 * f * (1 - f), lerp(a[2], b[2], k)],
     rotation: end.rotation,
     scale: [across, stretch, across],
     orb: false,
@@ -214,14 +229,14 @@ export function stackLandings(beat: PlayingBeat, boardSize: number): Landing[] {
   return landings;
 }
 
-/** A pose with its landing on top: the lander wobbles side to side, dying away; the piece under it squashes once. */
+/** A pose with its landing on top: the lander wobbles side to side (about its own side, which the camera sees), dying away; the piece under it squashes once. */
 export function landingPose(pose: Pose, player: PlayerId, landings: readonly Landing[], nowMs: number, reducedMotion: boolean): Pose {
   if (reducedMotion) return pose;
   for (const l of landings) {
     const since = nowMs - l.atMs;
     if (l.player === player && since >= 0 && since < WIGGLE_MS) {
       const t = since / WIGGLE_MS;
-      return { ...pose, rotation: [pose.rotation[0], pose.rotation[1], pose.rotation[2] + Math.sin(t * Math.PI * 6) * 0.25 * (1 - t)] };
+      return { ...pose, rotation: [pose.rotation[0] + Math.sin(t * Math.PI * 6) * 0.25 * (1 - t), pose.rotation[1], pose.rotation[2]] };
     }
     if (l.under === player && since >= 0 && since < SQUASH_MS) {
       const s = 1 - 0.22 * Math.sin((since / SQUASH_MS) * Math.PI);
@@ -236,7 +251,7 @@ export function withIdle(pose: Pose, nowMs: number, phase: number): Pose {
   return {
     ...pose,
     position: [pose.position[0], pose.position[1] + 0.035 * (1 + Math.sin(nowMs / 520 + phase)), pose.position[2]],
-    rotation: [pose.rotation[0], pose.rotation[1], pose.rotation[2] + 0.045 * Math.sin(nowMs / 830 + phase)],
+    rotation: [pose.rotation[0] + 0.045 * Math.sin(nowMs / 830 + phase), pose.rotation[1], pose.rotation[2]],
   };
 }
 
