@@ -30,9 +30,9 @@ After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm
 
 On `art/spec-5` after Spec #5 Step 2's fifth round: 89 test files and 726 tests pass, and `pnpm e2e` passes all 17 (about 8 minutes; in round 5 the online away test needed a rerun on a busy machine). A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
-## Next step: the user reviews Spec #5 Step 2
+## Next step: the user's list of issues, then plan 3
 
-**Built for the fifth Step 2 look (2026-10-14, spec #5 A17; plan `docs/superpowers/plans/2026-10-14-art-pass-step2-round5.md`), awaiting the user's review:**
+**Built for the fifth Step 2 look (2026-10-14, spec #5 A17; plan `docs/superpowers/plans/2026-10-14-art-pass-step2-round5.md`), merged to `main` on 2026-10-14 at the user's request:**
 1. A bigger board: each square 2.0 across (was 1.6). The camera, island, shadow box and clouds scale with it; pieces and parts keep their size.
 2. On Low, the rocket, flag, whirlpool and splat are flat icons on their tiles (their models aren't loaded); pieces stay 3D.
 3. Trails are low-poly: a rocket's is twelve smoke puffs along its arc, a slide's a line of chevron arrowheads drifting down its lane, both in the pair colour with a dark ink outline (the user asked for the outline mid-round).
@@ -40,14 +40,14 @@ On `art/spec-5` after Spec #5 Step 2's fifth round: 89 test files and 726 tests 
 5. Your own name tag always shows; another player's on hover or for 3 s after a tap on their piece; every tag once the match is won.
 6. The crown flies from tile 100 onto the winner's head with a bounce and gold sparkles, and stays there through the end screen.
 
-After approval: merge `art/spec-5` into `main` locally, then amend plan 3 (the world) for the bigger board and run it.
+The user is writing a list of issues to fix before plan 3 starts. Fix those first (each with a failing test, where the issue is testable), then amend plan 3 (the world) for the bigger board and run it on `art/spec-5`, branched again from `main`.
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
 - **Try it on the Wi-Fi:** `pnpm serve` builds the game for the local server, starts `wrangler dev` on port 8787 on every network interface, and prints the addresses to open on phones (memory `multiplayer-lan-testing`).
 - **Deploy to Cloudflare:** follow `apps/server/README.md` (`wrangler login`, then `pnpm deploy:cloudflare`). Claude never deploys or touches the Cloudflare account (memory `hosting-cloudflare`).
 
-**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) was approved and merged to `main`. Step 2 (the board) has been through five review rounds; the fifth round's requests (above) are built and await the user's look in the Step 2 section of the review page <https://claude.ai/artifact/Gk8E6V9hf18euZWULr4Sa4>. After approval, the branch is merged to `main` locally, and plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`, the world) is amended for the bigger board and runs. **Room for Step 3:** a busy match comes to 73 draw calls and about 135,600 triangles on High, 66,300 on Low, which leaves about 14,400 triangles on High and 33,700 on Low; plan 3's world needs about 32,000 at its limits, so its models have to come in well under those limits (the user asked to trim while making things look better by shape and colour).
+**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) was approved and merged to `main`. Step 2 (the board) has been through five review rounds; the fifth round's requests (above) are built and merged to `main` (2026-10-14); the review page is <https://claude.ai/artifact/Gk8E6V9hf18euZWULr4Sa4>. After the user's issue list is fixed, plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`, the world) is amended for the bigger board and runs. **Room for Step 3:** a busy match comes to 73 draw calls and about 135,600 triangles on High, 66,300 on Low, which leaves about 14,400 triangles on High and 33,700 on Low; plan 3's world needs about 32,000 at its limits, so its models have to come in well under those limits (the user asked to trim while making things look better by shape and colour).
 
 The roadmap was renumbered on 2026-10-08 (sound design became #3). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
 
