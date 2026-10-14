@@ -85,6 +85,10 @@ describe('which name tags show (round 5)', () => {
     expect(tagVisible('p2', 'p0', peeks, 0)).toBe(false);
   });
 
+  it('shows every tag once the match is won, so the ranks reveal can hang its badges on them', () => {
+    expect(tagVisible('p1', 'p0', createTagPeeks(), 0, true)).toBe(true);
+  });
+
   it("shows another player's tag for a while after their piece is tapped, and a second tap starts the wait again", () => {
     const peeks = createTagPeeks();
     peeks.tap('p1', 1000);

@@ -29,10 +29,13 @@ export function createTagPeeks(): TagPeeks {
   return { hovered: null, tappedAt, tap: (player, nowMs) => void tappedAt.set(player, nowMs) };
 }
 
-/** Whether a tag shows (round 5): my own always; another player's while the mouse is over their piece, or for a while after a tap. */
-export function tagVisible(player: PlayerId, me: PlayerId, peeks: TagPeeks, nowMs: number): boolean {
+/**
+ * Whether a tag shows (round 5): my own always; another player's while the mouse is over their piece, or for a
+ * while after a tap. Once the match is `won` every tag shows, since the ranks reveal hangs its badges on them.
+ */
+export function tagVisible(player: PlayerId, me: PlayerId, peeks: TagPeeks, nowMs: number, won = false): boolean {
   const tapped = peeks.tappedAt.get(player);
-  return player === me || peeks.hovered === player || (tapped !== undefined && nowMs - tapped < TAG_PEEK_MS);
+  return won || player === me || peeks.hovered === player || (tapped !== undefined && nowMs - tapped < TAG_PEEK_MS);
 }
 
 /** The tags' DOM elements by player: the HUD registers them, the scene moves them. */
