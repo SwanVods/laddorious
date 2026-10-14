@@ -80,8 +80,15 @@ export class PanDrag {
     this.last = { x, y };
   }
 
-  /** The movement since the last step once the press is past the slop; null before that, or for another finger. */
-  move(id: number, x: number, y: number, slopPx: number): { dx: number; dy: number } | null {
+  /**
+   * The movement since the last step once the press is past the slop; null before that, or for another
+   * finger. `pressed` false (no button held: it was let go off the canvas, over the HUD) ends the drag.
+   */
+  move(id: number, x: number, y: number, slopPx: number, pressed = true): { dx: number; dy: number } | null {
+    if (!pressed) {
+      this.up(id);
+      return null;
+    }
     if (id !== this.id) return null;
     if (!this.moving) {
       if (Math.hypot(x - this.start.x, y - this.start.y) <= slopPx) return null;

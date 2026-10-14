@@ -48,8 +48,18 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (fingers.size === 2) pinch = { gap: gap(), zoom: zoomRef.current };
     };
+    const onUp = (e: PointerEvent) => {
+      drag.up(e.pointerId);
+      fingers.delete(e.pointerId);
+      if (fingers.size < 2) pinch = null;
+    };
     const onMove = (e: PointerEvent) => {
       if (!fingers.has(e.pointerId)) return;
+      // Let go off the canvas (over the HUD): its pointerup never came here, so end it now.
+      if (e.buttons === 0) {
+        onUp(e);
+        return;
+      }
       fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pinch && fingers.size === 2) {
         zoomRef.current = pinchZoom(pinch.zoom, pinch.gap, gap(), limits());
@@ -59,11 +69,6 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       const step = drag.move(e.pointerId, e.clientX, e.clientY, pan.tapSlopPx);
       if (!step || modeRef.current !== 'overview' || zoomRef.current >= pan.lockAbove) return;
       panRef.current = dragPan(panRef.current, step.dx, step.dy, unitsPerPixel(overview.height * zoomRef.current, canvas.clientHeight));
-    };
-    const onUp = (e: PointerEvent) => {
-      drag.up(e.pointerId);
-      fingers.delete(e.pointerId);
-      if (fingers.size < 2) pinch = null;
     };
     canvas.style.touchAction = 'none'; // the browser leaves pinches on the board to the game
     canvas.addEventListener('wheel', onWheel, { passive: false });

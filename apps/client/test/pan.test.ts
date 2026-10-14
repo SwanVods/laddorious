@@ -71,4 +71,16 @@ describe('PanDrag', () => {
     drag.down(3, 0, 0);
     expect(drag.move(3, 10, 0, 6)).toEqual({ dx: 10, dy: 0 });
   });
+
+  it('stops when the button was let go off the canvas (over the HUD), so the camera never pans unpressed', () => {
+    const drag = new PanDrag();
+    drag.down(1, 0, 0);
+    expect(drag.move(1, 20, 0, 6)).toEqual({ dx: 20, dy: 0 });
+    // The pointer comes back over the canvas with no button held: the drag is over.
+    expect(drag.move(1, 60, 0, 6, false)).toBeNull();
+    expect(drag.dragging).toBe(false);
+    expect(drag.move(1, 90, 0, 6)).toBeNull();
+    drag.down(2, 0, 0);
+    expect(drag.move(2, 10, 0, 6)).toEqual({ dx: 10, dy: 0 });
+  });
 });

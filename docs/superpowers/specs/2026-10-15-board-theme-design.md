@@ -82,7 +82,7 @@ All in world units. The board is centred at the origin; +Z is toward the camera.
   Each prop sits on the deck, turned a little toward the camera. The exact spots are settled at the review.
 - **Obstacles:** outside the platform, at the sides and back, between 30 and 60 from the centre, at y between 1 and 8. None is in front of the board (z > 19), so nothing passes between the camera and the board.
 - **Clouds:** a ring 45 to 85 from the centre, at y ≈ −16. High draws 8 clouds and Low 4 (`QualityProfile.clouds`).
-- **Shadows:** the sun's shadow box grows to cover the platform and its props.
+- **Shadows:** the sun's shadow box covers the board and the start row, as before; the world casts no shadows (it only receives the pieces'), to keep within the budget.
 
 ## 5. Camera (B5)
 
