@@ -57,7 +57,8 @@ export function Pieces({ director, seats, shadows, clearcoat, low = false, reduc
       director.store.subscribe((s, prev) => {
         if (!s.beat || s.beat === prev.beat) return;
         landingsRef.current = [...landingsRef.current.filter((l) => l.atMs > s.beat!.startedAt - 2000), ...stackLandings(s.beat, boardSize)];
-        if (s.beat.kind !== 'roll') {
+        // A pause after the last roll keeps the dice up (2026-10-14).
+        if (s.beat.kind !== 'roll' && s.beat.kind !== 'pause') {
           rollsRef.current.clear();
           return;
         }

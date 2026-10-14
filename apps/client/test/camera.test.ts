@@ -68,6 +68,15 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ beat: beatOf('faceOff', [started]) }).mode).toBe('swoop');
   });
 
+  it('holds the shot of the moment a pause follows (2026-10-14)', () => {
+    const card: GameEvent = { type: 'CardResolved', caster: 'p2', cardId: 'shove', target: 'p2', result: 'hit', visibility: 'public' };
+    const held = beatOf('cardResolved', [card]);
+    const pause: Beat = { kind: 'pause', durationMs: 600, events: [], after, holds: held };
+    expect(shot({ beat: pause })).toEqual(shot({ beat: held }));
+    const roll: Beat = { kind: 'pause', durationMs: 700, events: [], after, holds: beatOf('roll', []) };
+    expect(shot({ beat: roll }).mode).toBe('overview');
+  });
+
   describe('visits each card as it resolves (2026-10-14)', () => {
     const card = (caster: PlayerId, target: PlayerId | null): GameEvent => ({ type: 'CardResolved', caster, cardId: 'shove', target, result: 'hit', visibility: 'public' });
     const mid = (a: Vec3, b: Vec3): Vec3 => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];

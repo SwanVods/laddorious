@@ -18,6 +18,8 @@ export type BeatKind =
   | 'boardEdit'
   | 'victory'
   | 'ranks'
+  /** A moment to see what just happened (2026-10-14): no events, holding the beat before it. */
+  | 'pause'
   | 'info';
 
 /** One step of an update's playback (spec #2 §5.1). */
@@ -28,6 +30,42 @@ export interface Beat {
   events: GameEvent[];
   /** The presentation once the beat has played. */
   after: PresentationState;
+  /** A pause holds the beat it follows: the camera and the HUD keep showing that moment. */
+  holds?: Beat;
+}
+
+/** The beat whose moment is on screen: a pause shows the one it holds. */
+export function heldBeat<B extends Beat>(beat: B): Beat {
+  return beat.kind === 'pause' && beat.holds ? beat.holds : beat;
+}
+
+/** Beats that carry a card's effect on: they belong to the card before them. */
+const CARD_FOLLOW: ReadonlySet<BeatKind> = new Set(['cardMove', 'slide', 'launch', 'knockback', 'stepBack', 'snakeBlocked', 'boardEdit', 'clash', 'faceOff', 'faceOffResult']);
+
+/**
+ * Pauses to see what happened (the user, 2026-10-14): after the last die roll, with the dice still up,
+ * before the pieces move; and after each card, its moves included, before the next card or what follows.
+ */
+function withPauses(beats: Beat[]): Beat[] {
+  const out: Beat[] = [];
+  const pause = (holds: Beat, durationMs: number): Beat => ({ kind: 'pause', durationMs, events: [], after: out.at(-1)!.after, holds });
+  let roll: Beat | null = null;
+  let card: Beat | null = null;
+  for (const beat of beats) {
+    if (card && (beat.kind === 'cardResolved' || !CARD_FOLLOW.has(beat.kind))) {
+      out.push(pause(card, BEAT_MS.cardPause));
+      card = null;
+    }
+    if (beat.kind === 'move' && roll) {
+      out.push(pause(roll, BEAT_MS.rollPause));
+      roll = null;
+    }
+    out.push(beat);
+    if (beat.kind === 'roll') roll = beat;
+    if (beat.kind === 'cardResolved') card = beat;
+  }
+  if (card) out.push(pause(card, BEAT_MS.cardPause));
+  return out;
 }
 
 /** Starting durations from spec #2 §5.1, to be tuned against the 3D scene. */
@@ -60,6 +98,9 @@ export const BEAT_MS = {
   card: { hit: 1400, blocked: 1200, fizzled: 900 } satisfies Record<CardResult, number>,
   /** Before each card plays, so the camera reaches its player first (2026-10-14). */
   cardLead: 450,
+  /** The pause after each card and its moves, and after the last die roll (2026-10-14). */
+  cardPause: 600,
+  rollPause: 700,
   clash: 900,
   boardEdit: 600,
   victory: 3000,
@@ -145,7 +186,7 @@ export function buildTimeline(events: GameEvent[], start: PresentationState, me:
     beats.splice(victory + 1, 0, { kind: 'ranks', durationMs: 0, events: won.events.filter((e) => e.type === 'MatchWon'), after: won.after });
   }
   for (const beat of beats) beat.durationMs = durationOf(beat, boardSize, me);
-  return beats;
+  return withPauses(beats);
 }
 
 /** Whether a move ends on top of other pieces (not in a face-off, where they stand apart). */
@@ -211,6 +252,8 @@ function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
       const places = won?.type === 'MatchWon' ? new Set(won.rankings.filter((r) => r.player !== won.winner).map((r) => r.rank)).size : 0;
       return places * BEAT_MS.rankStep + BEAT_MS.rankHold;
     }
+    case 'pause':
+      return beat.durationMs;
     case 'info':
       return 0;
   }

@@ -1,5 +1,5 @@
 import type { PlayerId, WindowKind } from '@laddorious/core';
-import type { Beat } from '../director/beats';
+import { heldBeat, type Beat } from '../director/beats';
 import { BOARD_SCALE, TILE_SIZE, tileToWorld, type Vec3 } from './layout';
 
 export type ShotMode = 'overview' | 'follow' | 'swoop';
@@ -41,7 +41,9 @@ const offset = (at: Vec3, by: Vec3): Vec3 => [at[0] + by[0], at[1] + by[1], at[2
 const follow = (at: Vec3): Shot => ({ mode: 'follow', position: offset(at, FOLLOW), target: at, cut: false });
 
 /** The camera rules of spec #2 §5.3. */
-export function cameraShot(input: ShotInput): Shot {
+export function cameraShot(shown: ShotInput): Shot {
+  // A pause holds the shot of the moment it follows (2026-10-14).
+  const input = shown.beat ? { ...shown, beat: heldBeat(shown.beat) } : shown;
   const { beat, me } = input;
   const won = beat?.kind === 'victory' ? beat.events.find((e) => e.type === 'MatchWon') : undefined;
   if (won?.type === 'MatchWon') return won.winner === me ? swoop(input.piece(me), input) : follow(input.piece(won.winner));

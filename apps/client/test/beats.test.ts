@@ -1,6 +1,6 @@
 import type { BoardEdit, GameEvent, MoveCause, PlayerId } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
-import { BEAT_MS, buildTimeline } from '../src/director/beats';
+import { BEAT_MS, buildTimeline, heldBeat } from '../src/director/beats';
 import { BANNER_MS } from '../src/hud/Banner';
 import { presentationFromView, stackOn, type PresentationState } from '../src/director/presentation';
 import { openingUpdate } from './support/fixtures';
@@ -120,11 +120,13 @@ describe('buildTimeline', () => {
     expect(beats.map((b) => [b.kind, b.durationMs])).toEqual([
       ['cardReveal', BEAT_MS.cardReveal],
       ['cardResolved', BEAT_MS.cardLead + BEAT_MS.card.hit],
+      ['pause', BEAT_MS.cardPause],
       ['cardResolved', BEAT_MS.cardLead + BEAT_MS.card.blocked],
       ['cardMove', BEAT_MS.cardMove],
+      ['pause', BEAT_MS.cardPause],
     ]);
     expect(beats[1]!.events[0]).toMatchObject({ caster: 'p0' });
-    expect(beats[2]!.events[0]).toMatchObject({ caster: 'p1' });
+    expect(beats[3]!.events[0]).toMatchObject({ caster: 'p1' });
   });
 
   it('plays each card and the move it makes before the next card (2026-10-14)', () => {
@@ -135,8 +137,24 @@ describe('buildTimeline', () => {
       moved('p0', 20, 23, 'card'),
     ];
     const beats = buildTimeline(events, start({ p0: 20, p1: 10 }), 'p0', SIZE);
-    expect(beats.map((b) => b.kind)).toEqual(['cardResolved', 'cardMove', 'cardResolved', 'cardMove']);
+    expect(beats.map((b) => b.kind)).toEqual(['cardResolved', 'cardMove', 'pause', 'cardResolved', 'cardMove', 'pause']);
+    // Each pause holds the card it follows, so the camera and the HUD stay on it (2026-10-14).
+    expect(heldBeat(beats[2]!)).toBe(beats[0]);
+    expect(heldBeat(beats[5]!)).toBe(beats[3]);
+    expect(heldBeat(beats[1]!)).toBe(beats[1]);
     expect(BEAT_MS.cardLead).toBeGreaterThanOrEqual(400);
+  });
+
+  it('pauses with the dice showing after the last roll, before the pieces move (2026-10-14)', () => {
+    const rolled: GameEvent = { type: 'DieRolled', player: 'p0', natural: 3, face: 3, forced: false, auto: false, visibility: 'public' };
+    const beats = buildTimeline([rolled, moved('p0', 2, 5)], start({ p0: 2 }), 'p0', SIZE);
+    expect(beats.map((b) => [b.kind, b.durationMs])).toEqual([
+      ['roll', beats[0]!.durationMs],
+      ['pause', BEAT_MS.rollPause],
+      ['move', hops(3)],
+    ]);
+    expect(heldBeat(beats[1]!)).toBe(beats[0]);
+    expect(beats[1]!.after).toBe(beats[0]!.after);
   });
 
   it('ends a won match with the victory beat', () => {

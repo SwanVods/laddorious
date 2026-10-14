@@ -7,7 +7,7 @@ import {
   type Rarity,
   type WindowKind,
 } from '@laddorious/core';
-import { BEAT_MS, type Beat } from '../director/beats';
+import { BEAT_MS, heldBeat, type Beat } from '../director/beats';
 import type { LoggedEvent, PlayingBeat } from '../director/director';
 import type { PresentationState } from '../director/presentation';
 import type { SeatInfo } from '../service/matchService';
@@ -55,7 +55,8 @@ const WINDOW_STAGE: Partial<Record<WindowKind, number>> = { dice: 0, challenge: 
  * The current stage (index into STAGES). Beats that follow from another (a slide, a launch,
  * a knockback, a board edit) keep the stage they happen in, so the bar doesn't jump back.
  */
-export function stageIndex(beat: Beat | null, window: WindowKind | null, previous: number | null): number | null {
+export function stageIndex(shown: Beat | null, window: WindowKind | null, previous: number | null): number | null {
+  const beat = shown && heldBeat(shown);
   if (beat) return BEAT_STAGE[beat.kind] ?? previous ?? 1;
   return (window ? WINDOW_STAGE[window] : undefined) ?? previous;
 }
@@ -224,7 +225,9 @@ export function resolutionQueue(record: RoundRecord, beat: Beat | null): QueueCa
 const moversOf = (events: GameEvent[]) => [...new Set(events.flatMap((e) => (e.type === 'Moved' || e.type === 'SnakeBlocked' ? [e.player] : [])))];
 
 /** Bottom centre (spec #2 §7.2): ROLL, a waiting pill, a move caption, or the card queue. */
-export function dockModel({ beat, view, record, me }: DockInput): DockModel {
+export function dockModel({ beat: shown, view, record, me }: DockInput): DockModel {
+  // A pause shows the moment it follows (2026-10-14).
+  const beat = shown && heldBeat(shown);
   if (beat) {
     if (beat.kind === 'move') {
       const totals = Object.entries(record.dice).map(([player, d]) => ({ player, total: d.total ?? d.faces.reduce((a, b) => a + b, 0) }));
@@ -374,7 +377,7 @@ const RESOLVING: ReadonlySet<Beat['kind']> = new Set(['cardReveal', 'cardResolve
 export function cardPickModel(view: PlayerView, beat: Beat | null = null, maxRerolls = MAX_REROLLS): CardPickModel | null {
   const offer = view.myOffer;
   if (view.phase.kind !== 'mysterySelect' || !offer || offer.picked !== null) return null;
-  if (beat && RESOLVING.has(beat.kind)) return null;
+  if (beat && RESOLVING.has(heldBeat(beat).kind)) return null;
   const rerollsLeft = Math.max(0, maxRerolls - offer.rerollsUsed);
   return {
     rarity: offer.rarity,

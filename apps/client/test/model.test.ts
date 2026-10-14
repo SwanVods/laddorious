@@ -226,6 +226,15 @@ describe('the card-pick popup (spec #2 §7.2)', () => {
     expect(cardPickModel(view())).toBeNull();
   });
 
+  it('stays closed, and the card queue stays up, through the pause after a card (2026-10-14)', () => {
+    const offer = offerView([false, false, false], 0);
+    const resolving: GameEvent = { type: 'CardResolved', caster: 'p0', cardId: 'aegis', target: 'p0', result: 'hit', visibility: 'public' };
+    const pause: Beat = { kind: 'pause', durationMs: 600, events: [], after: presentationFromView(view()), holds: beat('cardResolved', [resolving]) };
+    expect(cardPickModel(offer, pause)).toBeNull();
+    const record: RoundRecord = { round: 7, dice: {}, cards: { p0: { cardId: 'aegis', result: 'hit' } } };
+    expect(dockModel({ beat: pause, view: view(), record, me: 'p0' })).toMatchObject({ kind: 'queue' });
+  });
+
   it('closes while the cards resolve, even if my window timed out before I picked (2026-10-14)', () => {
     const offer = offerView([false, false, false], 0);
     for (const kind of ['cardReveal', 'cardResolved', 'cardMove', 'boardEdit'] as const) expect(cardPickModel(offer, beat(kind))).toBeNull();
