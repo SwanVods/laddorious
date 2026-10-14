@@ -28,7 +28,7 @@
 
 After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-On `fix/adjustments` (2026-10-15): 95 test files and 896 tests pass, and `pnpm e2e` passes all 17 (about 10 minutes); the online away test can still flake, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
+On `art/board-theme` (2026-10-15): 97 test files and 939 tests pass; `pnpm e2e` passes 16 of 17, the online away test flaking as below. Before that, on `fix/adjustments`: 95 test files and 896 tests pass, and `pnpm e2e` passes all 17 (about 10 minutes); the online away test can still flake, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
 ## Next step: the board theme (plan 3, as a design step)
 
@@ -38,7 +38,8 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
   - TFT-style props on the platform's wings;
   - a fixed camera that pans only when zoomed in.
 - The spec is `docs/superpowers/specs/2026-10-15-board-theme-design.md`. It replaces Spec #5 §4.3 and plan 3.
-- **Next:** the user reviews the spec, then the plan is written.
+- **Built** on branch `art/board-theme` (plan `docs/superpowers/plans/2026-10-15-board-theme.md`, 2026-10-15): 2.3 squares on a 2.7 step; the overview ×1.35 and never turning; drag to pan when zoomed in (`camera.pan` in tuning.json); the world as placements of Blender models (`scene/world.ts`, `WorldParts.tsx`): the striped inflatable platform, the wings' props, five floating obstacles, stepping pads and clouds; the menu's podium on a little platform. Every model is a headless Blender script (lathed or sculpted). **Awaiting the user's review** (the review page's "Board theme" section), then a local merge to `main`.
+- **Room left:** a busy match prices at 94 draw calls and 149,614 triangles on High (386 to spare), 73 calls and 80,298 on Low. The trails' arrowheads are spaced by the board's step to make that room. Anything new in the match must come with a trim.
 - Every 3D object is a Blender model; the artifact is a preview only (the user, 2026-10-15).
 
 **Noted by the user for a later fix batch (2026-10-15):**
@@ -115,6 +116,9 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 ## Open items
 
 - **Blender:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`). On 2026-10-09 a build run inside the user's open Blender (through the MCP link) crashed it; the bug is fixed (`art/lib/export.py` kept the scene graph's copies of materials), and since then every build and preview runs headless (`pnpm art`, `blender --background --factory-startup --python art/preview.py -- out.png ids`), never in the user's Blender.
+- **Deferred board-theme minors** (2026-10-15; not fixed):
+  - The course pads' mint rim is four profile points, so it shows facets up close; it reads round at 30–60 units, and smoothing it costs about 1,000 triangles the budget doesn't have.
+  - The wings' crown prop is low-poly (700 triangles), faceted when zoomed right in.
 - **Deferred Phase 4 minors** (from the self-review; not fixed):
   - The crown is placed at tile 100 directly (`crownPose` in `src/scene/motion.ts`), not at the board's last tile.
   - `webglAvailable()` (`src/scene/MatchScene.tsx`) never releases its probe context.

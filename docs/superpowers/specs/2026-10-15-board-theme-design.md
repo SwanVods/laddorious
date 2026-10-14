@@ -152,21 +152,23 @@ The overview's aim point (toward the start row) scales the same way. The follow,
 
 Priced as `art/test/budget.test.ts` prices a busy match. The code-built island, bumpers and clouds were never in that price, so the room is about 14,300 triangles on High. The world aims at about 13,000 triangles and 23 draw calls, and no world part casts a shadow.
 
-| Part | Copies | Triangles each (target) | Draw calls |
+Measured with the built models (2026-10-15):
+
+| Part | Copies | Triangles each | Draw calls |
 |---|---|---|---|
-| Platform | 1 | ≤ 3,600 | 3 |
-| Cloud | 8 | about 200 | 1 |
+| Platform | 1 | 3,192 | 3 |
+| Cloud | 8 | 200 | 1 |
 | Stepping pad | 5 | 96 | 1 |
 | Course pad | 5 | 324 | 3 |
-| Sweeper, fan, ramp | 1 each | about 300 each | 1 each |
+| Sweeper, fan, ramp | 1 each | 300, 350, 300 | 1 each |
 | Mushroom | 3 | 288 | 1 |
-| Hoop | 3 | about 200 | 1 |
+| Hoop | 3 | 200 | 1 |
 | Chip | 6 | 112 | 1 |
-| Card | 3 | ≤ 600 | 2 |
-| Die prop, crown prop | 1 each | ≤ 900 each | 2, 1 |
+| Card | 3 | 350 | 2 |
+| Die prop, crown prop | 1 each | 610, 700 | 2, 1 |
 | Rocket and flag (reused) | 1 each | 1,014, 600 | 3, 1 |
 
-The table is replaced by the measured numbers once the models are built. The whole-match limits (§1) are the ones that hold.
+The world comes to 13,952 triangles and 23 draw calls. A busy match prices at 94 draw calls and 149,614 triangles on High, and 73 calls and 80,298 triangles on Low. To make that room, the trails' arrowheads are spaced by the board's step (0.3 of a step, as many to a tile as on the 2.0 board): the 27-wide board had made every trail 1.35 times as long. The whole-match limits (§1) are the ones that hold.
 
 Menu models: the podium ≤ 1,600 and the menu platform ≤ 1,000 (both lathed).
 
