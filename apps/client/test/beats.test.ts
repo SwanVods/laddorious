@@ -49,7 +49,10 @@ describe('buildTimeline', () => {
     ];
     const beats = buildTimeline(chain, start({ p0: 10, p1: 6 }), 'p0', SIZE);
     expect(beats.map((b) => b.kind)).toEqual(['move', 'slide', 'faceOff', 'faceOffResult', 'knockback', 'slide']);
-    expect(beats.map((b) => b.durationMs)).toEqual([hops(6), BEAT_MS.slide, BEAT_MS.faceOff, BEAT_MS.faceOffResult, BEAT_MS.knockback, BEAT_MS.slide]);
+    // My own face-off: the intro holds for its banner, and the result first shows the picks (2026-10-14).
+    expect(beats.map((b) => b.durationMs)).toEqual([hops(6), BEAT_MS.slide, BEAT_MS.faceOffIntro, BEAT_MS.faceOffReveal + BEAT_MS.faceOffResult, BEAT_MS.knockback, BEAT_MS.slide]);
+    const watching = buildTimeline(chain, start({ p0: 10, p1: 6 }), 'p2', SIZE);
+    expect(watching.map((b) => b.durationMs).slice(2, 4)).toEqual([BEAT_MS.faceOff, BEAT_MS.faceOffResult]);
     expect(beats[2]!.after.faceOffs).toEqual([{ challengeId: 'c1', tile: 6, players: ['p0', 'p1'] }]);
     expect(beats[3]!.after.faceOffs).toEqual([]);
     expect(beats[5]!.after.positions.p0).toBe(1);

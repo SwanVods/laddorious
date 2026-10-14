@@ -42,7 +42,11 @@ export const BEAT_MS = {
   stepBackPerTile: 300,
   snakeBlocked: 600,
   faceOff: 500,
+  /** My own face-off's intro: long enough for its banner before the popup opens (2026-10-14). */
+  faceOffIntro: 1500,
   faceOffResult: 1100,
+  /** In my own face-off's result, the popup first shows both picks, then closes for the result banner. */
+  faceOffReveal: 1000,
   cardReveal: 1700,
   card: { hit: 1400, blocked: 1200, fizzled: 900 } satisfies Record<CardResult, number>,
   /** Before each card plays, so the camera reaches its player first (2026-10-14). */
@@ -131,7 +135,7 @@ export function buildTimeline(events: GameEvent[], start: PresentationState, me:
     const won = beats[victory]!;
     beats.splice(victory + 1, 0, { kind: 'ranks', durationMs: 0, events: won.events.filter((e) => e.type === 'MatchWon'), after: won.after });
   }
-  for (const beat of beats) beat.durationMs = durationOf(beat, boardSize);
+  for (const beat of beats) beat.durationMs = durationOf(beat, boardSize, me);
   return beats;
 }
 
@@ -141,7 +145,7 @@ function tilesTravelled(event: GameEvent, boardSize: number): number {
   return event.bounced ? boardSize - event.from + (boardSize - event.to) : Math.abs(event.to - event.from);
 }
 
-function durationOf(beat: Beat, boardSize: number): number {
+function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
   const longest = () => Math.max(...beat.events.map((e) => tilesTravelled(e, boardSize)));
   switch (beat.kind) {
     case 'roll':
@@ -161,9 +165,9 @@ function durationOf(beat: Beat, boardSize: number): number {
     case 'snakeBlocked':
       return BEAT_MS.snakeBlocked;
     case 'faceOff':
-      return BEAT_MS.faceOff;
+      return beat.events.some((e) => e.type === 'ChallengeStarted' && e.players.includes(me)) ? BEAT_MS.faceOffIntro : BEAT_MS.faceOff;
     case 'faceOffResult':
-      return BEAT_MS.faceOffResult;
+      return beat.events.some((e) => e.type === 'ChallengeResolved' && me in e.picks) ? BEAT_MS.faceOffReveal + BEAT_MS.faceOffResult : BEAT_MS.faceOffResult;
     case 'cardReveal':
       return BEAT_MS.cardReveal;
     case 'cardResolved': {

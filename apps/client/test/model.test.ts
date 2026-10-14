@@ -1,8 +1,9 @@
 import type { ActiveEffect, GameEvent, PlayerView, PublicChallenge } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
+import type { PlayingBeat } from '../src/director/director';
 import { presentationFromView } from '../src/director/presentation';
-import { KNOCKBACK, MAX_REROLLS, STAGES, bannerFor, cardPickModel, countdown, dockModel, faceOffModel, playerRows, resolutionQueue, stageFromLog, stageIndex } from '../src/hud/model';
+import { FACE_OFF_REVEAL_MS, KNOCKBACK, MAX_REROLLS, STAGES, bannerFor, cardPickModel, countdown, dockModel, faceOffModel, playerRows, resolutionQueue, stageFromLog, stageIndex } from '../src/hud/model';
 import type { RoundRecord } from '../src/hud/record';
 import { SEATS, openingUpdate } from './support/fixtures';
 
@@ -19,6 +20,8 @@ function challenge(over: Partial<PublicChallenge> = {}): PublicChallenge {
 }
 
 const beat = (kind: Beat['kind'], events: GameEvent[] = []): Beat => ({ kind, durationMs: 500, events, after: presentationFromView(view()) });
+/** A beat on stage, started at time 0. */
+const playing = (kind: Beat['kind'], events: GameEvent[] = []): PlayingBeat => ({ ...beat(kind, events), startedAt: 0 });
 
 function rows(v: PlayerView, record = EMPTY, watch: string | null = null) {
   return playerRows({ view: v, presentation: presentationFromView(v), record, seats: SEATS, me: 'p0', watch });
@@ -149,30 +152,45 @@ describe('the face-off popup (spec #2 §7.2, C11)', () => {
 
   it('shows only to its players, with lock states, and lets me pick once', () => {
     const v = view({}, settle(challenge({ picked: ['p1'] })));
-    expect(faceOffModel({ beat: null, view: { ...v, me: 'p2' }, me: 'p2' })).toBeNull();
-    const model = faceOffModel({ beat: null, view: v, me: 'p0' })!;
+    expect(faceOffModel({ beat: null, view: { ...v, me: 'p2' }, me: 'p2', nowMs: 0 })).toBeNull();
+    const model = faceOffModel({ beat: null, view: v, me: 'p0', nowMs: 0 })!;
     expect(model).toMatchObject({ challengeId: 'c4', tile: 23, kind: 'rps', canPick: true, myPick: null });
     expect(model.choices.map((c) => c.label)).toEqual(['Rock', 'Paper', 'Scissors']);
     expect(model.fighters).toEqual([
       { player: 'p0', locked: false, pick: null, out: false },
       { player: 'p1', locked: true, pick: null, out: false },
     ]);
-    const picked = faceOffModel({ beat: null, view: { ...v, myPicks: { c4: 'rock' } }, me: 'p0' })!;
+    const picked = faceOffModel({ beat: null, view: { ...v, myPicks: { c4: 'rock' } }, me: 'p0', nowMs: 0 })!;
     expect(picked).toMatchObject({ canPick: false, myPick: 'rock' });
   });
 
   it("uses the Minority theme's two choices", () => {
     const v = view({}, settle(challenge({ participants: ['p0', 'p1', 'p2'], contesting: ['p0', 'p1', 'p2'], kind: 'minority', theme: ['Sun', 'Moon'] })));
-    expect(faceOffModel({ beat: null, view: v, me: 'p0' })!.choices).toEqual([
+    expect(faceOffModel({ beat: null, view: v, me: 'p0', nowMs: 0 })!.choices).toEqual([
       { choice: 'A', label: 'Sun' },
       { choice: 'B', label: 'Moon' },
     ]);
   });
 
+  it('opens only after the FACE-OFF! intro, never during it (2026-10-14)', () => {
+    const started: GameEvent = { type: 'ChallengeStarted', challengeId: 'c4', tile: 23, players: ['p0', 'p1'], kind: 'rps', theme: null, visibility: 'public' };
+    const v = view({}, settle(challenge({})));
+    expect(faceOffModel({ beat: playing('faceOff', [started]), view: v, me: 'p0', nowMs: 100 })).toBeNull();
+  });
+
+  it('closes for the result once the picks have shown, and stays shut while the knock-back plays (2026-10-14)', () => {
+    const v = view({}, settle(challenge({ picked: ['p0', 'p1'] })));
+    const resolved: GameEvent = { type: 'ChallengeResolved', challengeId: 'c4', pickRound: 1, picks: { p0: 'rock', p1: 'paper' }, winner: 'p1', losers: ['p0'], outcome: 'win', visibility: 'public' };
+    expect(faceOffModel({ beat: playing('faceOffResult', [resolved]), view: v, me: 'p0', nowMs: FACE_OFF_REVEAL_MS })).toBeNull();
+    const open = view({}, settle(challenge({})));
+    expect(faceOffModel({ beat: playing('knockback', []), view: open, me: 'p0', nowMs: 100 })).toBeNull();
+    expect(faceOffModel({ beat: playing('info', []), view: open, me: 'p0', nowMs: 100 })).not.toBeNull();
+  });
+
   it('reveals the picks while the result plays', () => {
     const v = view({}, settle(challenge({ picked: ['p0', 'p1'] })));
     const resolved: GameEvent = { type: 'ChallengeResolved', challengeId: 'c4', pickRound: 1, picks: { p0: 'rock', p1: 'paper' }, winner: 'p1', losers: ['p0'], outcome: 'win', visibility: 'public' };
-    expect(faceOffModel({ beat: beat('faceOffResult', [resolved]), view: v, me: 'p0' })).toMatchObject({
+    expect(faceOffModel({ beat: playing('faceOffResult', [resolved]), view: v, me: 'p0', nowMs: FACE_OFF_REVEAL_MS - 1 })).toMatchObject({
       canPick: false,
       result: { winner: 'p1' },
       fighters: [
@@ -226,9 +244,11 @@ describe('banners (spec #2 §5.1)', () => {
     const started: GameEvent = { type: 'ChallengeStarted', challengeId: 'c4', tile: 23, players: ['p0', 'p1'], kind: 'rps', theme: null, visibility: 'public' };
     expect(banner('faceOff', [started])).toEqual({ text: 'FACE-OFF!', tone: 'bad' });
     expect(banner('faceOff', [{ ...started, players: ['p2', 'p3'] }])).toBeNull();
-    expect(banner('faceOffResult', [resolved({})])).toEqual({ text: 'YOU LOSE', tone: 'bad' });
-    expect(banner('faceOffResult', [resolved({ winner: 'p0', losers: ['p1'] })])).toEqual({ text: 'YOU WIN!', tone: 'good' });
-    expect(banner('faceOffResult', [resolved({ winner: null, losers: [], outcome: 'replay' })])).toEqual({ text: 'DRAW!', tone: 'info' });
+    // The result waits until the popup has shown both picks and closed (2026-10-14).
+    const after = { delayMs: FACE_OFF_REVEAL_MS };
+    expect(banner('faceOffResult', [resolved({})])).toEqual({ text: 'YOU LOSE', tone: 'bad', ...after });
+    expect(banner('faceOffResult', [resolved({ winner: 'p0', losers: ['p1'] })])).toEqual({ text: 'YOU WIN!', tone: 'good', ...after });
+    expect(banner('faceOffResult', [resolved({ winner: null, losers: [], outcome: 'replay' })])).toEqual({ text: 'DRAW!', tone: 'info', ...after });
     expect(banner('faceOffResult', [resolved({ picks: { p2: 'rock', p3: 'paper' }, winner: 'p3', losers: ['p2'] })])).toBeNull();
   });
 

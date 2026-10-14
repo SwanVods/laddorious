@@ -7,8 +7,8 @@ import {
   type Rarity,
   type WindowKind,
 } from '@laddorious/core';
-import type { Beat } from '../director/beats';
-import type { LoggedEvent } from '../director/director';
+import { BEAT_MS, type Beat } from '../director/beats';
+import type { LoggedEvent, PlayingBeat } from '../director/director';
 import type { PresentationState } from '../director/presentation';
 import type { SeatInfo } from '../service/matchService';
 import { listParts, type FeedPart } from './feed';
@@ -303,9 +303,18 @@ function choicesFor(kind: 'rps' | 'minority', theme: [string, string] | null): F
 }
 
 /** The face-off popup, only for its players (spec #2 §7.2, C11); null for everyone else. */
-export function faceOffModel({ beat, view, me }: { beat: Beat | null; view: PlayerView; me: PlayerId }): FaceOffModel | null {
+/** How long my face-off's popup shows both picks before it closes for the result banner (2026-10-14). */
+export const FACE_OFF_REVEAL_MS = BEAT_MS.faceOffReveal;
+
+/**
+ * The face-off popup, in clear steps (2026-10-14): the FACE-OFF! intro plays alone; then the popup opens
+ * for the picks; at the result it shows both picks for FACE_OFF_REVEAL_MS, then closes for the result
+ * banner. While other beats play, the settled view's challenge is stale, so the popup stays shut.
+ */
+export function faceOffModel({ beat, view, me, nowMs }: { beat: PlayingBeat | null; view: PlayerView; me: PlayerId; nowMs: number }): FaceOffModel | null {
   const resolved = beat?.kind === 'faceOffResult' ? beat.events.find((e) => e.type === 'ChallengeResolved') : undefined;
   if (resolved?.type === 'ChallengeResolved' && me in resolved.picks) {
+    if (nowMs - beat!.startedAt >= FACE_OFF_REVEAL_MS) return null;
     const challenge = view.phase.kind === 'settle' ? view.phase.challenges.find((c) => c.id === resolved.challengeId) : undefined;
     const kind = challenge?.kind ?? (Object.keys(resolved.picks).length === 2 ? 'rps' : 'minority');
     return {
@@ -320,20 +329,7 @@ export function faceOffModel({ beat, view, me }: { beat: Beat | null; view: Play
       result: { winner: resolved.winner },
     };
   }
-  const started = beat?.kind === 'faceOff' ? beat.events.find((e) => e.type === 'ChallengeStarted' && e.players.includes(me)) : undefined;
-  if (started?.type === 'ChallengeStarted') {
-    return {
-      challengeId: started.challengeId,
-      tile: started.tile,
-      kind: started.kind,
-      pickRound: 1,
-      choices: choicesFor(started.kind, started.theme),
-      fighters: started.players.map((player) => ({ player, locked: false, pick: null, out: false })),
-      myPick: null,
-      canPick: false,
-      result: null,
-    };
-  }
+  if (beat && beat.kind !== 'info') return null;
   if (view.phase.kind !== 'settle') return null;
   const challenge = view.phase.challenges.find((c) => c.winner === null && c.participants.includes(me));
   if (!challenge) return null;
@@ -400,6 +396,8 @@ export interface BannerModel {
   text: string;
   /** good = gold, bad = coral, info = white, cool = cyan. */
   tone: 'good' | 'bad' | 'info' | 'cool';
+  /** Wait this long into the beat before showing: a face-off's result waits for its picks to show. */
+  delayMs?: number;
 }
 
 /**
@@ -415,9 +413,9 @@ export function bannerFor(beat: Beat, me: PlayerId, seats: readonly SeatInfo[]):
         break;
       case 'ChallengeResolved':
         if (!(me in e.picks)) break;
-        if (e.winner === me) return { text: 'YOU WIN!', tone: 'good' };
-        if (e.losers.includes(me)) return { text: 'YOU LOSE', tone: 'bad' };
-        return { text: 'DRAW!', tone: 'info' };
+        if (e.winner === me) return { text: 'YOU WIN!', tone: 'good', delayMs: FACE_OFF_REVEAL_MS };
+        if (e.losers.includes(me)) return { text: 'YOU LOSE', tone: 'bad', delayMs: FACE_OFF_REVEAL_MS };
+        return { text: 'DRAW!', tone: 'info', delayMs: FACE_OFF_REVEAL_MS };
       case 'CardResolved':
         if (e.caster !== me && e.target !== me) break;
         if (e.result === 'blocked') return { text: 'BLOCKED!', tone: 'cool' };
