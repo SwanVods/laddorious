@@ -28,7 +28,7 @@
 
 After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-On `fix/known-issues` after the user's known-issues list (2026-10-14): 89 test files and 746 tests pass, and `pnpm e2e` passes all 17 (about 8 minutes; the online away test has needed a rerun on a busy machine). A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
+On `fix/known-issues` after the user's known-issues list (2026-10-14): 89 test files and 746 tests pass, and `pnpm e2e` passes 16 of 17 (about 10 minutes): the online away test is flaky, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
 ## Next step: the user reviews the known-issues fixes, then the board theme
 
@@ -133,6 +133,7 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
   - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
 - **Deferred known-issues minors** (from the self-review; not fixed):
+  - The online e2e test "a player who drops shows as away, and a reload brings them back" is flaky. Cause: e2e bot matches are fast (40-50 s); while B reloads (shader compile included), the match can be won, and the room closes every socket 10 s after a win (`END_LINGER_MS` in `apps/server/src/room.ts`), so A never hears B come back and the Away badge stays. The rejoin itself works. A reliable test needs a match that can't end mid-test (new scaffolding), so it is deferred per the user's rule on multiplayer tests.
   - No browser run caught my own face-off or a landing on a stack during the screenshots; the face-off steps and the wiggle are covered by unit tests.
   - The golden snapshot file (`packages/core/test/__snapshots__/golden.test.ts.snap`) is rewritten with LF line endings on every test run, so git shows it modified (no content change); `git checkout` it before committing.
   - Card bubbles over the pieces still appear at the start of each card's beat, during the camera's 450 ms lead-in.

@@ -50,9 +50,13 @@ test('keeps the piece arrows on screen beside the podium on a landscape phone (2
   for (const name of ['Previous piece', 'Next piece']) {
     const arrow = page.getByRole('button', { name });
     await expect(arrow).toBeVisible();
-    const box = (await arrow.boundingBox())!;
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(844);
+    // The arrows follow the podium on screen once the 3D menu has drawn (shaders compile first).
+    await expect
+      .poll(async () => {
+        const box = await arrow.boundingBox();
+        return box !== null && box.x >= 0 && box.x + box.width <= 844;
+      }, { timeout: 60_000 })
+      .toBe(true);
   }
 });
 

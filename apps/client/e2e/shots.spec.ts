@@ -9,10 +9,12 @@ const slug = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
 
 test('the menu podium with each piece', async ({ page }) => {
   await page.goto('/');
+  // The arrows are the only way to choose a piece (2026-10-14): step through all seven from the Knight.
   for (const name of PIECES) {
-    await page.getByRole('button', { name, exact: true }).click();
+    await expect(page.getByTestId('piece-name')).toHaveText(name);
     await page.waitForTimeout(1200); // the podium swaps pieces with a little hop
     await page.screenshot({ path: `${OUT}/menu-${slug(name)}.png` });
+    await page.getByRole('button', { name: 'Next piece' }).click();
   }
 });
 
