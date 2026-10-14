@@ -6,7 +6,7 @@ import { MenuScene, type MenuAnchor } from '../scene/MenuScene';
 import { createTagRegistry } from '../scene/tags';
 import { PIECES, type FindOptions } from '../service/matchService';
 import { Icon } from '../ui/Icon';
-import { PieceIcon, Portrait } from '../ui/PieceIcon';
+import { Portrait } from '../ui/PieceIcon';
 import { NICKNAME_MAX, type PrefsState } from './prefs';
 import { SEAT_COLORS } from './theme';
 
@@ -31,8 +31,9 @@ interface MenuScreenProps {
 
 /**
  * The main menu (spec #2 §7.1, per the menu mockup): your piece turning on a podium with your
- * name on its plate, the profile chip (tap to rename), the logo, the settings gear, the piece
- * picker with arrows beside the podium, PLAY, and rotating rule tips.
+ * name and the piece's name on its plate, arrows beside the podium to choose the piece (the strip of
+ * pieces went on 2026-10-14), the profile chip (tap to rename), the logo, the settings gear, PLAY, and
+ * rotating rule tips.
  */
 export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: MenuScreenProps) {
   const profile = useStore(prefs, (s) => s.profile);
@@ -70,6 +71,7 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
       <div className="layer">
         <div ref={anchor('plate')} className="menu-anchor menu-plate display">
           {profile.nickname}
+          <small data-testid="piece-name">{PIECE_NAMES[profile.piece]}</small>
         </div>
         <button ref={anchor('prev')} type="button" className="menu-anchor round-btn live" aria-label="Previous piece" data-sound="U2" data-sound-arg={stepped(-1)} onClick={() => cycle(-1)}>
           <Icon name="back" />
@@ -128,16 +130,6 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
           <input className="seed-input live" aria-label="Board seed (dev)" placeholder="Board seed (dev)" value={seed} onChange={(e) => setSeed(e.target.value)} />
         )}
 
-        <div className="picker live" role="group" aria-label="Choose your piece">
-          {PIECES.map((piece) => (
-            <button key={piece} type="button" className="picker-tile display" aria-pressed={piece === profile.piece} data-sound="U2" data-sound-arg={PIECES.indexOf(piece)} onClick={() => prefs.getState().setPiece(piece)}>
-              <span className="picker-icon">
-                <PieceIcon piece={piece} />
-              </span>
-              {PIECE_NAMES[piece]}
-            </button>
-          ))}
-        </div>
 
         <div className="play-wrap live">
           <span className="pill play-caption">4-player match</span>

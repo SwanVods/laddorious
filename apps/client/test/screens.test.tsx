@@ -189,10 +189,13 @@ describe('SettingsDialog (spec #2 §7.1, §9.2)', () => {
   it('mutes sound and sets the effects and music volumes (spec #3 §4)', () => {
     const prefs = createPrefsStore(null, { prefersReducedMotion: false });
     render(<SettingsDialog prefs={prefs} device={{ coarsePointer: false, shortSide: 900 }} onClose={() => {}} />);
-    const mute = screen.getByRole('switch', { name: 'Mute sound' });
-    expect(mute.getAttribute('data-sound')).toBe('U3');
-    fireEvent.click(mute);
+    // The switch reads as its row says, "Sound": on while sound plays (the user, 2026-10-14).
+    const sound = screen.getByRole('switch', { name: 'Sound' });
+    expect(sound.getAttribute('data-sound')).toBe('U3');
+    expect(sound.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(sound);
     expect(prefs.getState().settings.sound.muted).toBe(true);
+    expect(sound.getAttribute('aria-checked')).toBe('false');
     fireEvent.change(screen.getByRole('slider', { name: 'Effects volume' }), { target: { value: '40' } });
     fireEvent.change(screen.getByRole('slider', { name: 'Music volume' }), { target: { value: '25' } });
     expect(prefs.getState().settings.sound).toEqual({ muted: true, effects: 0.4, music: 0.25 });

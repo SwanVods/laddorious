@@ -76,8 +76,8 @@ export function SettingsDialog({ prefs, onClose, device = deviceEnv() }: Setting
           type="button"
           className="switch"
           role="switch"
-          aria-label="Mute sound"
-          aria-checked={settings.sound.muted}
+          aria-label="Sound"
+          aria-checked={!settings.sound.muted}
           data-sound="U3"
           data-sound-arg={settings.sound.muted ? 1 : 0}
           onClick={() => prefs.getState().setMuted(!settings.sound.muted)}

@@ -144,6 +144,15 @@ describe('AudioEngine (spec #3 §3, §7)', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('chunk failed'));
   });
 
+  it("wakes the audio on a later tap when the first tap's permission ran out while Tone loaded (2026-10-14)", async () => {
+    const { engine, raw } = setup();
+    engine.unlock(); // Tone loads after this tap; the browser keeps the audio asleep
+    await engine.start();
+    expect(raw.resume).not.toHaveBeenCalled();
+    engine.unlock(); // any later tap or key wakes it, inside that gesture
+    expect(raw.resume).toHaveBeenCalledTimes(1);
+  });
+
   it('suspends and resumes the audio context', async () => {
     const { engine, raw } = setup();
     engine.suspend();

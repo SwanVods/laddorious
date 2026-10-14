@@ -107,8 +107,12 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M5 14.5l4.5 4.5M19 14.5L14.5 19M4.5 20.5l2-2M19.5 20.5l-2-2" {...stroke} />
     </>
   ),
+  // A chunky ring with eight stubby teeth, stroked like the arrows and the menu icon (2026-10-14).
   gear: (
-    <path d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7c.1.6.1 1.3 0 1.9l2 1.7-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.7c-.1-.6-.1-1.3 0-1.9l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8z" transform="translate(0 1.5) scale(1 .92)" />
+    <>
+      <circle cx="12" cy="12" r="5.6" {...stroke} strokeWidth={3.4} />
+      <path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3M5.4 5.4l2.1 2.1M16.5 16.5l2.1 2.1M18.6 5.4l-2.1 2.1M7.5 16.5l-2.1 2.1" {...stroke} strokeWidth={3.4} />
+    </>
   ),
   close: <path d="M6 6l12 12M18 6L6 18" {...stroke} strokeWidth={3.5} />,
   play: <path d="M7 4.5v15l12.5-7.5z" />,

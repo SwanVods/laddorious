@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MenuScreen, TIPS, TIP_MS } from '../src/app/MenuScreen';
 import { createPrefsStore } from '../src/app/prefs';
@@ -64,30 +64,32 @@ describe('MenuScreen (spec #2 §7.1)', () => {
     expect(prefs.getState().profile.nickname).toBe('Mika');
   });
 
-  it('picks my piece from the picker or the arrows beside the podium', () => {
+  it('picks my piece with the arrows beside the podium only, naming it on the plate (2026-10-14)', () => {
     const { prefs } = open();
-    fireEvent.click(screen.getByRole('button', { name: 'Dragon head' }));
-    expect(prefs.getState().profile.piece).toBe('dragon');
-    expect(screen.getByRole('button', { name: 'Dragon head' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('img', { name: 'Podium with the dragon, auto' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Choose your piece' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Next piece' }));
-    expect(prefs.getState().profile.piece).toBe('rook');
+    expect(prefs.getState().profile.piece).toBe('pawn');
+    expect(screen.getByText('Pawn')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Previous piece' }));
-    expect(prefs.getState().profile.piece).toBe('dragon');
+    fireEvent.click(screen.getByRole('button', { name: 'Previous piece' }));
+    expect(prefs.getState().profile.piece).toBe('duck');
+    expect(screen.getByRole('img', { name: 'Podium with the duck, auto' })).toBeTruthy();
   });
 
-  it("gives each piece its own pick sound, on the picker and the arrows (spec #3 §5)", () => {
+  it("gives each piece its own pick sound on the arrows (spec #3 §5)", () => {
     open();
-    const dragon = screen.getByRole('button', { name: 'Dragon head' });
-    expect([dragon.getAttribute('data-sound'), dragon.getAttribute('data-sound-arg')]).toEqual(['U2', '3']);
     expect(screen.getByRole('button', { name: 'Next piece' }).getAttribute('data-sound-arg')).toBe('1');
     expect(screen.getByRole('button', { name: 'Previous piece' }).getAttribute('data-sound-arg')).toBe('6');
   });
 
-  it('offers all seven pieces in the picker (spec #5 §4.1)', () => {
+  it('cycles through all seven pieces with the arrows (spec #5 §4.1)', () => {
     open();
-    const picker = screen.getByRole('group', { name: 'Choose your piece' });
-    expect(within(picker).getAllByRole('button').map((b) => b.textContent)).toEqual(['Knight', 'Pawn', 'Meeple', 'Dragon head', 'Rook', 'Top hat', 'Rubber duck']);
+    const names: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      names.push(screen.getByTestId('piece-name').textContent ?? '');
+      fireEvent.click(screen.getByRole('button', { name: 'Next piece' }));
+    }
+    expect(names).toEqual(['Knight', 'Pawn', 'Meeple', 'Dragon head', 'Rook', 'Top hat', 'Rubber duck']);
   });
 
   it('turns over the rule tips every few seconds', () => {

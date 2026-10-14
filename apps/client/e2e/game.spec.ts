@@ -44,15 +44,16 @@ test('keeps a match within 100 draw calls and 150,000 triangles, models included
   expect(Math.max(...triangles)).toBeLessThanOrEqual(150_000);
 });
 
-test('fits the seven-piece picker beside PLAY on a landscape phone (spec #5 §4.1)', async ({ page }) => {
+test('keeps the piece arrows on screen beside the podium on a landscape phone (2026-10-14)', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await page.goto('/');
-  const picker = await page.getByRole('group', { name: 'Choose your piece' }).boundingBox();
-  const play = await page.getByRole('button', { name: 'PLAY' }).boundingBox();
-  expect(picker).not.toBeNull();
-  expect(play).not.toBeNull();
-  expect(picker!.x).toBeGreaterThanOrEqual(0);
-  expect(picker!.x + picker!.width).toBeLessThanOrEqual(play!.x);
+  for (const name of ['Previous piece', 'Next piece']) {
+    const arrow = page.getByRole('button', { name });
+    await expect(arrow).toBeVisible();
+    const box = (await arrow.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(844);
+  }
 });
 
 test('asks to turn the phone sideways in portrait (spec #2 §7.3)', async ({ page }) => {

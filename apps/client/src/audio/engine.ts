@@ -58,9 +58,14 @@ export class AudioEngine {
     private readonly opts: EngineOptions = {},
   ) {}
 
-  /** A user gesture happened: sound may start now. */
+  /**
+   * A user gesture happened: sound may start now. Tone loads after the first one, and if that took longer
+   * than the gesture's permission lasts, the browser keeps the audio asleep; so every gesture also wakes
+   * it once Tone is here (2026-10-14: "sometimes the sound doesn't work").
+   */
   unlock(): void {
     this.unlocked = true;
+    if (this.tone) this.resume();
     void this.start();
   }
 

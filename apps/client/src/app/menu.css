@@ -31,6 +31,14 @@
   translate: -50% -50%;
 }
 
+/* The piece's name under the player's, now the arrows are the only way to choose (2026-10-14). */
+.menu-plate small {
+  display: block;
+  margin-top: 2px;
+  font: 600 max(11px, 1.9cqh) / 1 var(--body);
+  text-align: center;
+}
+
 .menu .menu-anchor.round-btn {
   translate: -50% -50%;
 }
@@ -149,65 +157,6 @@
   font: 500 13px / 1 ui-monospace, monospace;
 }
 
-/* Piece picker, bottom centre */
-.picker {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--safe-b) + 3cqh);
-  display: flex;
-  gap: max(6px, 1.4cqh);
-  padding: max(5px, 1.1cqh);
-  border-radius: max(14px, 2.8cqh);
-  background: var(--plate);
-  transform: translateX(-50%);
-}
-
-.picker-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: max(2px, 0.4cqh);
-  width: max(50px, 10cqh);
-  height: max(60px, 13.5cqh);
-  padding: max(3px, 0.6cqh) 2px 0;
-  border: 3px solid var(--ink);
-  border-radius: max(10px, 2cqh);
-  background: var(--paper);
-  box-shadow: 0 max(3px, 0.6cqh) 0 var(--ink);
-  color: var(--ink);
-  font-size: max(9px, 1.7cqh);
-  line-height: 1;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4);
-}
-
-.picker-tile[aria-pressed='true'] {
-  background: var(--highlight);
-  transform: translateY(-0.9cqh);
-}
-
-.picker-tile:hover:not([aria-pressed='true']) {
-  background: var(--paper-alt);
-}
-
-.picker-icon {
-  display: grid;
-  place-items: center;
-  width: 64%;
-  aspect-ratio: 1;
-  border: 2.5px solid var(--ink);
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.picker-icon .piece-icon {
-  width: 76%;
-  height: 76%;
-}
-
-/* PLAY, bottom right */
 .play-wrap {
   position: absolute;
   right: calc(var(--safe-r) + 3cqh);
