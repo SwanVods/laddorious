@@ -32,13 +32,20 @@ On `fix/adjustments` (2026-10-15): 95 test files and 896 tests pass, and `pnpm e
 
 ## Next step: the board theme (plan 3, as a design step)
 
-The adjustments were approved and merged to `main` (2026-10-15). Next is the board theme, which replaces plan 3's island, bumpers and props: brainstorm it, show 3 or 4 visual directions for the user to pick, write the spec, then the plan.
+The adjustments were approved and merged to `main` (2026-10-15). The board theme's design step came next.
+- The user picked the **Sky Course** from three 3D directions (<https://claude.ai/artifact/W5hpRymv44SgtJGrjAqj78>), adding:
+  - bigger squares with wider gaps;
+  - TFT-style props on the platform's wings;
+  - a fixed camera that pans only when zoomed in.
+- The spec is `docs/superpowers/specs/2026-10-15-board-theme-design.md`. It replaces Spec #5 §4.3 and plan 3.
+- **Next:** the user reviews the spec, then the plan is written.
+- Every 3D object is a Blender model; the artifact is a preview only (the user, 2026-10-15).
 
 **Noted by the user for a later fix batch (2026-10-15):**
 1. **Low quality ends:** on Low, every rocket and flag image stands in the centre of its tile, the same size as the "?" icons (not in the corner).
-2. **Reduced motion:** it should reduce motion, not switch it off. Today it turns off wobbles, flips, drift and swoops entirely; it should keep gentler, shorter versions.
+2. **Reduced motion:** it should reduce motion, not switch it off. Today it turns off wobbles, flips, drift and swoops entirely; it should keep gentler, shorter versions. (The board theme already does this for its own world motion.)
 3. **Phone card info:** keep it looking like cards or chat bubbles (not plain log lines), on the left under the action log, as wide as the player-status card at the bottom left.
-4. **Zoomed overview:** when zoomed in, the camera can be panned with one finger or by dragging; at the default zoom it stays locked.
+4. ~~Zoomed overview pan~~: moved into the board theme spec (B5).
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 

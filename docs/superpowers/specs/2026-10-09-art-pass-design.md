@@ -125,6 +125,8 @@ The pieces keep today's size (about 1 unit tall, origin at the base); the scene'
 
 ### 4.3 Step 3: the world
 
+> **Replaced (2026-10-15)** by the board theme spec, `docs/superpowers/specs/2026-10-15-board-theme-design.md` (the Sky Course). The table below is kept for history only.
+
 | Slot | Model | Budget |
 |---|---|---|
 | `island` | A cream satin slab under the board on a low-poly, flat-shaded candy rock, as in the mockup | ≤ 8,000 |
