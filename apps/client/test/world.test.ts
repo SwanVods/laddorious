@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { MESH_SLOTS } from '../src/assets/slotFiles';
+import { slotsToPreload } from '../src/assets/slotMesh';
 import { BOARD_HALF, PLATFORM, TILE_THICKNESS } from '../src/scene/layout';
 import { REDUCED_SHARE, matchWorld, menuWorld, worldPose, type Placement } from '../src/scene/world';
 
@@ -86,5 +88,21 @@ describe('the menu world', () => {
     expect(platform.at[0]).toBe(-0.6);
     expect(platform.at[1]).toBeLessThan(podium.at[1]);
     expect(world.filter((p) => p.slot === 'cloud')).toHaveLength(8);
+  });
+});
+
+describe('loading the world', () => {
+  it('preloads every world model with the menu, so a match never starts with the world popping in (spec #5 §6)', () => {
+    const slots = new Set([...matchWorld(8), ...menuWorld(8, 0)].map((p) => p.slot));
+    for (const slot of slots) expect(MESH_SLOTS.has(slot), slot).toBe(true);
+  });
+
+  it("preloads the rocket and flag on Low too, for the wings' props, but not the whirlpool and splat (board theme spec B4)", () => {
+    const low = slotsToPreload(false);
+    expect(low).toContain('pad');
+    expect(low).toContain('pad.target');
+    expect(low).not.toContain('slide.vortex');
+    expect(low).not.toContain('slide.exit');
+    expect(slotsToPreload(true)).toEqual([...MESH_SLOTS]);
   });
 });

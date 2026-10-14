@@ -123,13 +123,17 @@ export function matchWorld(clouds: number): Placement[] {
   ];
 }
 
+/** How big the menu's platform is drawn: just wider than the podium (2026-10-15 review shots). */
+const MENU_PLATFORM_SCALE = 0.78;
+
 /** The menu's world: the podium on its little platform, and clouds below and behind (spec §3). */
 export function menuWorld(clouds: number, podiumX: number): Placement[] {
   // The podium's base, where the code-built one stood.
   const base = -0.2;
   return [
     { slot: 'podium', at: [podiumX, base, 0] },
-    { slot: 'menu.platform', at: [podiumX, base - MENU_PLATFORM.deckTop, 0] },
+    // Drawn smaller than built, so its rim stays below the menu's close camera.
+    { slot: 'menu.platform', at: [podiumX, base - MENU_PLATFORM.deckTop * MENU_PLATFORM_SCALE, 0], scale: MENU_PLATFORM_SCALE },
     ...Array.from({ length: clouds }, (_, i): Placement => ({ slot: 'cloud', at: [-9 + i * 2.6, -3.6 + (i % 3) * 0.6, -6 - (i % 2) * 3], scale: 0.45 + (i % 3) * 0.08, turn: i, motion: { bob: { amp: 0.15, speed: 0.4, phase: i } } })),
   ];
 }

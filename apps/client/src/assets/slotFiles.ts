@@ -66,8 +66,33 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   'menu.platform': 'menu_platform',
 };
 
-/** Slots drawn many times through instancing (spec #5 §6): useSlotMesh loads them as one mesh each. */
-export const MESH_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['tile', 'pad', 'pad.target', 'slide.vortex', 'slide.exit']);
+/**
+ * Slots drawn through instancing (spec #5 §6): useSlotMesh loads them as one mesh each, and the menu
+ * preloads them, so a match never starts with them popping in. The world round the board is drawn the same
+ * way (board theme spec §6).
+ */
+export const MESH_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>([
+  'tile',
+  'pad',
+  'pad.target',
+  'slide.vortex',
+  'slide.exit',
+  'platform',
+  'cloud',
+  'step',
+  'course.pad',
+  'course.sweeper',
+  'course.mushroom',
+  'course.hoop',
+  'course.fan',
+  'course.ramp',
+  'prop.chip',
+  'prop.card',
+  'prop.die',
+  'prop.crown',
+  'podium',
+  'menu.platform',
+]);
 
 /** Slots with a lighter model for Low quality (spec #5 A14): `<id>-low.glb`, about a third of the triangles. The pieces only:
  * the crown is one model, and thinning it lost its points. */

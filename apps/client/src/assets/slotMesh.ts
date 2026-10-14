@@ -56,13 +56,20 @@ export function loadSlotMesh(url: string): Promise<SlotMesh> {
   return load;
 }
 
-/** The ladder and portal ends, drawn as 3D models on High only (Step 2, round 5). */
-const END_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['pad', 'pad.target', 'slide.vortex', 'slide.exit']);
+/**
+ * The portal ends, drawn as 3D models on High only (Step 2, round 5). The ladder ends (the rocket and the
+ * flag) are drawn on Low too, as the props on the platform's wings (board theme spec B4).
+ */
+const END_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['slide.vortex', 'slide.exit']);
 
-/** Start loading every instanced model the game will draw (the menu calls this with preloadModels): the ends only on High. */
+/** Every instanced model the game will draw at this quality: the portal ends only on High. */
+export function slotsToPreload(modelEnds: boolean): SlotName[] {
+  return [...MESH_SLOTS].filter((name) => modelEnds || !END_SLOTS.has(name));
+}
+
+/** Start loading every instanced model the game will draw (the menu calls this with preloadModels). */
 export function preloadSlotMeshes(modelEnds = true): void {
-  for (const name of MESH_SLOTS) {
-    if (!modelEnds && END_SLOTS.has(name)) continue;
+  for (const name of slotsToPreload(modelEnds)) {
     const url = slotUrl(name);
     // A failure warns when a scene uses the slot.
     if (url) void loadSlotMesh(url).catch(() => undefined);
