@@ -187,6 +187,27 @@ The mockup's behaviour: the arriving piece hops up onto the stack and wobbles si
 - [ ] Browser check: High and Low, a rocket, a flag and an Epic tile up close.
 - [ ] Commit: `feat(client): rockets and flags in the tile's corner, pieces stack again, Epic tiles shine`.
 
+### Task K8b: The rocket's trail uses the slide's arrowheads
+
+> "Also use the rocket trail the same as slide's trail." (the user, 2026-10-14, after the plan)
+
+A rocket's trail becomes the same outlined chevron arrowheads as a slide's, one every `DASH_GAP` along the rocket's arc to its flag, drifting toward the flag. They follow the arc through the air, each tilted to point along it. The smoke puffs and their outlines go.
+
+**Files:**
+- `src/scene/tracks.ts` (`dashPoints` takes a ladder too: points along the arc, each with a heading and a pitch);
+- `Jumps.tsx` (ladders draw into `slide-arrows`; the `trail-puffs` meshes go);
+- `assets/models.ts` (the puff goes);
+- `art/test/budget.test.ts`;
+- tests.
+
+- [ ] Tests first:
+  - `tracks.test.ts`: a ladder's dashes run from the rocket to the flag along the arc, one every `DASH_GAP` along the curve. Each one's heading and pitch point toward the next. The middle one sits well above the board, and a phase moves them on toward the flag.
+  - `scene.test.tsx`: a tapped ladder shows arrowheads in its pair colour, with outlines, and the scene has no `trail-puffs` mesh.
+  - Budget: shown paths are priced as arrowheads only (2 draw calls).
+- [ ] Watch them fail, then implement. `PUFFS` and `puffPoints` go, with their tests.
+- [ ] Browser check: tap a rocket and a whirlpool on seed `review-2`.
+- [ ] Commit: `feat(client): rocket trails use the slide's arrowheads, along the arc`.
+
 ### Task K9: Menu, lobby and sound
 
 > "Remove pieces picker/list on the main menu … choose their piece with arrow only", "the gear button in lobby looks weird", "current sound settings switch button is reversed", "sometimes the music and the sound doesn't load when opening the page".
