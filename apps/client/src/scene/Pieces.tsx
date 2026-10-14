@@ -8,6 +8,7 @@ import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { clamp01, easeOut, poseAt, projectileAt, withIdle, type Pose } from './motion';
+import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
 
@@ -34,10 +35,12 @@ interface PiecesProps {
   boardSize: number;
   /** Pointing at or tapping a piece shows its name tag (round 5). */
   tagPeeks?: TagPeeks;
+  /** Where each piece is registered, so the crown can find the winner's head (round 5). */
+  registry?: PieceRegistry;
 }
 
 /** Every seat's piece, its die and its shield bubble, and card projectiles (spec #2 §5.1, §6.2). */
-export function Pieces({ director, seats, shadows, clearcoat, low = false, reducedMotion, boardSize, tagPeeks }: PiecesProps) {
+export function Pieces({ director, seats, shadows, clearcoat, low = false, reducedMotion, boardSize, tagPeeks, registry }: PiecesProps) {
   const seatOf = useMemo(() => {
     const index = new Map(seats.map((s, i) => [s.playerId, i]));
     return (player: PlayerId) => index.get(player) ?? 0;
@@ -61,7 +64,7 @@ export function Pieces({ director, seats, shadows, clearcoat, low = false, reduc
   return (
     <>
       {seats.map((seat, i) => (
-        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} low={low} reducedMotion={reducedMotion} boardSize={boardSize} tagPeeks={tagPeeks} rollsRef={rollsRef} />
+        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} low={low} reducedMotion={reducedMotion} boardSize={boardSize} tagPeeks={tagPeeks} registry={registry} rollsRef={rollsRef} />
       ))}
       <Projectile director={director} seatOf={seatOf} />
     </>
@@ -98,7 +101,7 @@ interface ActorProps extends Omit<PiecesProps, 'seats'> {
   rollsRef: RefObject<Map<PlayerId, Roll>>;
 }
 
-function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, boardSize, tagPeeks, rollsRef }: ActorProps) {
+function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, boardSize, tagPeeks, registry, rollsRef }: ActorProps) {
   const bodyRef = useRef<Group>(null);
   const modelRef = useRef<Group>(null);
   const orbRef = useRef<Mesh>(null);
@@ -109,6 +112,13 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
   const dieShape = useMemo(() => dieGeometry(), []);
   const atlas = useMemo(() => dieAtlasTexture(WORLD_COLORS.die, WORLD_COLORS.pip), []);
   const slot = `piece.${seat.piece}` as SlotName;
+  useEffect(() => {
+    const body = bodyRef.current;
+    const model = modelRef.current;
+    if (!registry || !body || !model) return;
+    registry.set(seat.playerId, { body, model });
+    return () => void registry.delete(seat.playerId);
+  }, [registry, seat.playerId]);
 
   useFrame(() => {
     const state = director.store.getState();

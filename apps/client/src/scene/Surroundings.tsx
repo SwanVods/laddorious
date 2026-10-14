@@ -1,10 +1,9 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import { BufferAttribute, Color, CylinderGeometry, DoubleSide, Fog, Object3D, type Group, type InstancedMesh } from 'three';
+import { BufferAttribute, Color, CylinderGeometry, Fog, Object3D, type Group, type InstancedMesh } from 'three';
 import { WORLD_COLORS } from '../app/theme';
-import { crownGeometry } from '../assets/models';
 import { Slot } from '../assets/slots';
-import { BOARD_SCALE, COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from './layout';
+import { BOARD_SCALE, COLUMNS, TILE_SIZE, type Vec3 } from './layout';
 
 /** Half the shadow camera's box: the board and what stands on it. */
 const SHADOW_REACH = 13 * BOARD_SCALE;
@@ -49,13 +48,11 @@ const PUFFS: Vec3[] = [
   [0.9, -0.05, 0.95],
 ];
 
-/** Sky, fog, light, the island with its bumpers, the clouds and the crown on tile 100 (spec #2 §6.1). */
-export function Surroundings({ shadows, clouds, clearcoat, low = false }: { shadows: boolean; clouds: number; clearcoat: boolean; low?: boolean }) {
+/** Sky, fog, light, the island with its bumpers and the clouds (spec #2 §6.1); the crown is its own part (Crown.tsx). */
+export function Surroundings({ shadows, clouds }: { shadows: boolean; clouds: number }) {
   const scene = useThree((s) => s.scene);
   const sky = useMemo(() => skyTexture(WORLD_COLORS.sky), []);
   const island = useMemo(() => islandGeometry(), []);
-  const crown = useMemo(() => crownGeometry(), []);
-  const crownRef = useRef<Group>(null);
   const cloudsRef = useRef<Group>(null);
   const bumpersRef = useRef<InstancedMesh>(null);
   const puffsRef = useRef<InstancedMesh>(null);
@@ -104,11 +101,9 @@ export function Surroundings({ shadows, clouds, clearcoat, low = false }: { shad
   }, [clouds]);
 
   useFrame((_, delta) => {
-    if (crownRef.current) crownRef.current.rotation.y += delta * 0.9;
     if (cloudsRef.current) cloudsRef.current.rotation.y += delta * 0.01;
   });
 
-  const goal = tileToWorld(100);
   return (
     <>
       <hemisphereLight args={[WORLD_COLORS.sky[2], WORLD_COLORS.islandRock, 1.15]} />
@@ -142,19 +137,6 @@ export function Surroundings({ shadows, clouds, clearcoat, low = false }: { shad
           <sphereGeometry args={[1, 14, 10]} />
           <meshLambertMaterial color={WORLD_COLORS.cloud} />
         </instancedMesh>
-      </group>
-      <group ref={crownRef} position={[goal[0], 0.01, goal[2]]}>
-        <Slot
-          name="crown"
-          low={low}
-          clearcoat={clearcoat}
-          shadows={shadows}
-          fallback={
-            <mesh geometry={crown} castShadow={shadows}>
-              <meshStandardMaterial color={WORLD_COLORS.crown} metalness={0.55} roughness={0.28} side={DoubleSide} />
-            </mesh>
-          }
-        />
       </group>
     </>
   );

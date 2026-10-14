@@ -207,3 +207,37 @@ export function withIdle(pose: Pose, nowMs: number, phase: number): Pose {
     rotation: [pose.rotation[0], pose.rotation[1], pose.rotation[2] + 0.045 * Math.sin(nowMs / 830 + phase)],
   };
 }
+
+/** The crown flies from tile 100 to the winner's head for this long, bounces there for this long, and its sparkles burst for this long (round 5). */
+export const CROWN_FLY_MS = 1200;
+const CROWN_BOUNCE_MS = 600;
+export const CROWN_SPARKLE_MS = 800;
+
+/** Who wins: from the victory or ranks beat on stage, or from the finished match's view once they've played. */
+export function crownWinner(state: DirectorState): PlayerId | null {
+  const won = state.beat?.events.find((e) => e.type === 'MatchWon');
+  if (won?.type === 'MatchWon') return won.winner;
+  const phase = state.settled?.view.phase;
+  return phase?.kind === 'finished' ? phase.winner : null;
+}
+
+/**
+ * Where the crown is `nowMs` in (round 5): spinning on tile 100 until the win, then flying along an arc onto
+ * the winner's head (`head`, where it is right now, so the crown follows a piece that is still moving),
+ * bouncing as it lands, and turning slowly there through the ranks and the end screen. `sparkle` is how
+ * far its landing burst has gone, 0 to 1, while it shows.
+ */
+export function crownPose(state: DirectorState, head: Vec3 | null, nowMs: number, reducedMotion = false): { position: Vec3; turn: number; sparkle: number | null } {
+  const goal = tileToWorld(100);
+  const home: Vec3 = [goal[0], 0.01, goal[2]];
+  if (!head || !crownWinner(state)) return { position: home, turn: (nowMs / 1000) * 0.9, sparkle: null };
+  const turn = (nowMs / 1000) * 0.4;
+  const beat = state.beat;
+  if (reducedMotion || beat?.kind !== 'victory') return { position: head, turn, sparkle: null };
+  const elapsed = nowMs - beat.startedAt;
+  if (elapsed < CROWN_FLY_MS) return { position: arcPoint(home, head, easeInOut(clamp01(elapsed / CROWN_FLY_MS)), 2.5), turn, sparkle: null };
+  const landed = elapsed - CROWN_FLY_MS;
+  const k = clamp01(landed / CROWN_BOUNCE_MS);
+  const bounce = 0.35 * Math.abs(Math.sin(2 * Math.PI * k)) * (1 - k);
+  return { position: [head[0], head[1] + bounce, head[2]], turn, sparkle: landed < CROWN_SPARKLE_MS ? landed / CROWN_SPARKLE_MS : null };
+}

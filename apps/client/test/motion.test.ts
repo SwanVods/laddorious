@@ -1,10 +1,10 @@
 import type { GameEvent, MoveCause, PlayerId } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
 import { BEAT_MS, buildTimeline } from '../src/director/beats';
-import type { PlayingBeat } from '../src/director/director';
+import type { DirectorState, PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
 import { PARTS, tileToWorld } from '../src/scene/layout';
-import { END_ROW, FACE_OFF_GAP, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
+import { CROWN_FLY_MS, END_ROW, FACE_OFF_GAP, crownPose, crownWinner, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
@@ -187,5 +187,52 @@ describe('beat poses (spec #2 §5.1)', () => {
     expect(projectileAt(b, from, seatOf, b.durationMs * 0.25)![1]).toBeGreaterThan(1.5);
     expect(projectileAt(b, from, seatOf, b.durationMs * 0.6)).toBeNull();
     expect(projectileAt({ ...b, events: [{ ...card, target: 'p1' }] }, from, seatOf, 0)).toBeNull();
+  });
+});
+
+describe('the crown (round 5)', () => {
+  const goal = tileToWorld(100);
+  const head: [number, number, number] = [3, 2.4, -1];
+  const rankings = [{ player: 'p2', rank: 1, position: 100 }];
+  const from = at({ p2: 100 });
+  const victory = beat([{ type: 'MatchWon', winner: 'p2', rankings, visibility: 'public' }], from);
+  const during = (b: PlayingBeat | null): DirectorState => ({ presentation: from, beat: b, settled: null, log: [] });
+  const { view } = openingUpdate();
+  const after: DirectorState = { presentation: from, beat: null, settled: { view: { ...view, phase: { kind: 'finished', winner: 'p2', rankings } }, events: [], timer: null }, log: [] };
+
+  it('knows the winner from the victory beat, and after it from the settled view', () => {
+    expect(crownWinner(during(null))).toBeNull();
+    expect(crownWinner(during(victory))).toBe('p2');
+    expect(crownWinner(after)).toBe('p2');
+  });
+
+  it('spins on tile 100 before the win', () => {
+    const a = crownPose(during(null), null, 1000);
+    expectNear(a.position, [goal[0], 0.01, goal[2]]);
+    expect(crownPose(during(null), null, 2000).turn).not.toBeCloseTo(a.turn);
+  });
+
+  it('flies from tile 100 over an arc onto the head, and bounces there as the bounce dies away', () => {
+    expectNear(crownPose(during(victory), head, 0).position, [goal[0], 0.01, goal[2]]);
+    const mid = crownPose(during(victory), head, CROWN_FLY_MS / 2).position;
+    expect(mid[1]).toBeGreaterThan((0.01 + head[1]) / 2 + 1);
+    expect(crownPose(during(victory), head, CROWN_FLY_MS + 100).position[1]).toBeGreaterThan(head[1]);
+    expectNear(crownPose(during(victory), head, victory.durationMs).position, head);
+  });
+
+  it('bursts its sparkles as it lands, not before', () => {
+    expect(crownPose(during(victory), head, CROWN_FLY_MS - 1).sparkle).toBeNull();
+    expect(crownPose(during(victory), head, CROWN_FLY_MS + 100).sparkle).toBeGreaterThan(0);
+  });
+
+  it('stays on the head through the ranks and after', () => {
+    expectNear(crownPose(during({ ...victory, kind: 'ranks' }), head, 0).position, head);
+    expectNear(crownPose(after, head, 99_000).position, head);
+  });
+
+  it('cuts straight to the head with reduced motion, with no sparkles', () => {
+    const pose = crownPose(during(victory), head, 0, true);
+    expectNear(pose.position, head);
+    expect(pose.sparkle).toBeNull();
   });
 });

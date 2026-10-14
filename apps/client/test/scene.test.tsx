@@ -89,6 +89,24 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(fakes.map((el) => el.style.visibility)).toEqual(['visible', 'visible', 'hidden', 'hidden']);
   });
 
+  it("sets the crown on the winner's head once the match is won (round 5)", async () => {
+    const director = new Director('p0', () => {}, () => {}, 0);
+    director.push(openingUpdate());
+    const { view } = openingUpdate();
+    const rankings = [{ player: 'p2', rank: 1, position: 100 }];
+    director.push({ view: { ...view, phase: { kind: 'finished', winner: 'p2', rankings } }, events: [{ type: 'MatchWon', winner: 'p2', rankings, visibility: 'public' }], timer: null });
+    const renderer = await ReactThreeTestRenderer.create(
+      <SceneContent director={director} seats={SEATS} me="p0" board={view.board} level="high" watch={null} reducedMotion />,
+    );
+    await frames(renderer, 3);
+    const root = renderer.scene.instance as Object3D;
+    const crown = root.getObjectByName('crown-holder')!.position;
+    const piece = root.getObjectByName('piece-p2')!.position;
+    expect(crown.x).toBeCloseTo(piece.x);
+    expect(crown.z).toBeCloseTo(piece.z);
+    expect(crown.y).toBeGreaterThan(piece.y + 0.8);
+  });
+
   it('hides every path while no piece stands on a start tile (spec #5 A13)', async () => {
     expect(trailCounts(await renderScene('high'))).toEqual({ puffs: 0, arrows: 0 });
   });

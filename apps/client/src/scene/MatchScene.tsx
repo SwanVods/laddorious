@@ -12,6 +12,7 @@ import { Pieces } from './Pieces';
 import { ContextLossWatch, QualityWatch, StatsProbe } from './Probes';
 import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
 import { Surroundings } from './Surroundings';
+import { Crown, type PieceRegistry } from './Crown';
 import { TagProjector } from './TagProjector';
 import { createTagPeeks, type TagRegistry } from './tags';
 
@@ -47,14 +48,16 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
   const profile = QUALITY[level];
   const own = useMemo(createPeeks, []);
   const tagPeeks = useMemo(createTagPeeks, []);
+  const pieces = useMemo((): PieceRegistry => new Map(), []);
   const peeked = peeks ?? own;
   const tap = useCallback((tile: number) => peeked.tap(tile, director.store.getState().presentation?.jumps ?? board.jumps, Date.now()), [peeked, director, board]);
   return (
     <>
-      <Surroundings shadows={profile.shadows} clouds={profile.clouds} clearcoat={profile.clearcoat} low={profile.lowModels} />
+      <Surroundings shadows={profile.shadows} clouds={profile.clouds} />
       <Board board={board} director={director} clearcoat={profile.clearcoat} onTap={tap} />
       <Jumps director={director} clearcoat={profile.clearcoat} peeks={peeked} modelEnds={profile.modelEnds} reducedMotion={reducedMotion} />
-      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} tagPeeks={tagPeeks} />
+      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} tagPeeks={tagPeeks} registry={pieces} />
+      <Crown director={director} pieces={pieces} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} />
       <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} />
       {tags && <TagProjector director={director} seats={seats} me={me} boardSize={board.size} tags={tags} peeks={tagPeeks} />}
     </>
