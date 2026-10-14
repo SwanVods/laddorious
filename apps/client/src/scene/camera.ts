@@ -26,6 +26,8 @@ export interface ShotInput {
   piece: (player: PlayerId) => Vec3;
   reducedMotion: boolean;
   nowMs: number;
+  /** I'm peeking at the board from my card pick: show all of it (2026-10-14). */
+  peeking?: boolean;
 }
 
 const FOLLOW: Vec3 = [0, 7.5, 8.5];
@@ -45,6 +47,7 @@ export function cameraShot(input: ShotInput): Shot {
   if (won?.type === 'MatchWon') return won.winner === me ? swoop(input.piece(me), input) : follow(input.piece(won.winner));
   // After the winner cam, the whole board while the other places are revealed (polish spec §4.5).
   if (beat?.kind === 'ranks') return overview(input);
+  if (input.peeking) return overview(input);
   if (input.watch) return follow(input.piece(input.watch));
   const card = cardShot(input);
   if (card) return card;

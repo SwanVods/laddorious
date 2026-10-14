@@ -190,12 +190,15 @@ describe('CardPickPopup (spec #2 §7.2)', () => {
 
   it('peeks at the board and comes back, and picks by 1–3', () => {
     const onPick = vi.fn();
-    render(<CardPickPopup model={offer()} onPick={onPick} onReroll={() => {}} />);
+    const onPeek = vi.fn();
+    render(<CardPickPopup model={offer()} onPick={onPick} onReroll={() => {}} onPeek={onPeek} />);
     fireEvent.click(screen.getByRole('button', { name: 'Peek at the board' }));
+    expect(onPeek).toHaveBeenLastCalledWith(true);
     expect(screen.queryByRole('button', { name: /^Aegis/ })).toBeNull();
     press('1');
     expect(onPick).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Back to the cards' }));
+    expect(onPeek).toHaveBeenLastCalledWith(false);
     press('3');
     expect(onPick).toHaveBeenCalledWith(2);
   });

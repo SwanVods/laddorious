@@ -15,10 +15,11 @@ interface CameraRigProps {
   watch: PlayerId | null;
   reducedMotion: boolean;
   boardSize: number;
+  peeking?: boolean;
 }
 
 /** Moves the camera by the rules of spec #2 §5.3, easing between shots unless a shot is a cut. */
-export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize }: CameraRigProps) {
+export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize, peeking = false }: CameraRigProps) {
   const camera = useThree((s) => s.camera);
   const lookRef = useRef(new Vector3(0, 0, 0));
   const aim = useMemo(() => ({ position: new Vector3(), target: new Vector3() }), []);
@@ -36,6 +37,7 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       watch,
       reducedMotion,
       nowMs: now,
+      peeking,
       piece: (id): Vec3 => poseAt(state, id, seatOf.get(id) ?? 0, now, boardSize)?.position ?? [0, 0, 0],
     });
     const k = shot.cut ? 1 : 1 - Math.exp(-delta * (shot.mode === 'swoop' ? 2.8 : 1.8));

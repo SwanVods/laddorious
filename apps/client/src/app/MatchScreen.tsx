@@ -65,6 +65,8 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const [leaving, setLeaving] = useState(false);
   // The window I picked a card in: the pick closes at once, before the host's view catches up (polish spec §4.3).
   const [pickedWindow, setPickedWindow] = useState<number | null>(null);
+  // The pick window I'm peeking at the board from, so a new pick never opens already peeking.
+  const [peekWindow, setPeekWindow] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Who is away (spec #4 §3.3); the ref holds the last list so a change can be announced once.
   const [away, setAway] = useState<PlayerId[]>([]);
@@ -148,7 +150,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
 
   return (
     <div className="screen match">
-      <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} />
+      <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} peeking={cardPick !== null && peekWindow === view?.awaiting.windowId} />
       <div className="layer">
         <NameTags seats={seats} me={me} tags={tags} ranks={rankBadges(beat, timeScale)} />
         {view && presentation && (
@@ -197,6 +199,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
               session.send({ type: 'pickCard', slot });
             }}
             onReroll={(slot) => session.send({ type: 'reroll', slot })}
+            onPeek={(peeking) => setPeekWindow(peeking ? view.awaiting.windowId : null)}
           />
         )}
         {leaving && (

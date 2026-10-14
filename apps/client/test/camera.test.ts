@@ -90,6 +90,10 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ window: 'mystery', myPick: true }).mode).toBe('swoop');
   });
 
+  it('shows the whole board while I peek during my Mystery pick (2026-10-14)', () => {
+    expect(shot({ window: 'mystery', myPick: true, peeking: true }).mode).toBe('overview');
+  });
+
   it('follows the watched piece instead of mine', () => {
     expect(shot({ watch: 'p2', beat: beatOf('slide', [moved('p0', 'snake')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p2 });
   });

@@ -8,6 +8,8 @@ interface CardPickPopupProps {
   model: CardPickModel;
   onPick: (slot: number) => void;
   onReroll: (slot: number) => void;
+  /** Peeking at the board: the camera shows all of it (2026-10-14). */
+  onPeek?: (peeking: boolean) => void;
 }
 
 /**
@@ -15,7 +17,7 @@ interface CardPickPopupProps {
  * framed by rarity, a reroll button under each, and "Peek at the board". Tapping a card (or
  * pressing 1–3) picks it at once; only the offer's owner ever sees this.
  */
-export function CardPickPopup({ model, onPick, onReroll }: CardPickPopupProps) {
+export function CardPickPopup({ model, onPick, onReroll, onPeek }: CardPickPopupProps) {
   const titleId = useId();
   // The hand as shown: a pick or a reroll waits for the next view, so nothing is sent twice.
   const hand = model.slots.map((s) => `${s.info.id}:${s.rerolled}`).join(' ');
@@ -87,7 +89,10 @@ export function CardPickPopup({ model, onPick, onReroll }: CardPickPopupProps) {
           </>
         )}
         <div className="popup-foot">
-          <button type="button" className="btn peek-btn" onClick={() => setPeeking((p) => !p)}>
+          <button type="button" className="btn peek-btn" onClick={() => {
+              setPeeking(!peeking);
+              onPeek?.(!peeking);
+            }}>
             {peeking ? 'Back to the cards' : 'Peek at the board'}
           </button>
         </div>

@@ -36,6 +36,8 @@ export interface SceneContentProps {
   board: PlayerView['board'];
   level: QualityLevel;
   watch: PlayerId | null;
+  /** I'm peeking at the board from my card pick. */
+  peeking?: boolean;
   reducedMotion: boolean;
   /** Name tags to keep over the pieces (spec #2 §7.2). */
   tags?: TagRegistry;
@@ -44,7 +46,7 @@ export interface SceneContentProps {
 }
 
 /** Everything inside the canvas: the world, the pieces and the camera (spec #2 §6). */
-export function SceneContent({ director, seats, me, board, level, watch, reducedMotion, tags, peeks }: SceneContentProps) {
+export function SceneContent({ director, seats, me, board, level, watch, reducedMotion, tags, peeks, peeking = false }: SceneContentProps) {
   const profile = QUALITY[level];
   const own = useMemo(createPeeks, []);
   const tagPeeks = useMemo(createTagPeeks, []);
@@ -58,7 +60,7 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
       <Jumps director={director} clearcoat={profile.clearcoat} peeks={peeked} modelEnds={profile.modelEnds} reducedMotion={reducedMotion} />
       <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} tagPeeks={tagPeeks} registry={pieces} />
       <Crown director={director} pieces={pieces} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} />
-      <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} />
+      <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} peeking={peeking} />
       {tags && <TagProjector director={director} seats={seats} me={me} boardSize={board.size} tags={tags} peeks={tagPeeks} />}
     </>
   );
@@ -70,6 +72,7 @@ export interface MatchSceneProps {
   me: PlayerId;
   setting: QualitySetting;
   watch?: PlayerId | null;
+  peeking?: boolean;
   reducedMotion?: boolean;
   showStats?: boolean;
   tags?: TagRegistry;
@@ -79,7 +82,7 @@ export interface MatchSceneProps {
  * The match in 3D. To change the quality setting, remount it with a new `key`:
  * antialiasing is fixed when the WebGL context is made. Auto steps down to Low live.
  */
-export function MatchScene({ director, seats, me, setting, watch = null, reducedMotion = false, showStats = false, tags }: MatchSceneProps) {
+export function MatchScene({ director, seats, me, setting, watch = null, reducedMotion = false, showStats = false, tags, peeking = false }: MatchSceneProps) {
   const [supported] = useState(webglAvailable);
   const [lost, setLost] = useState(false);
   const [level, setLevel] = useState<QualityLevel>(() => startLevel(setting, deviceEnv()));
@@ -93,7 +96,7 @@ export function MatchScene({ director, seats, me, setting, watch = null, reduced
     <div className="scene-frame">
       {/* 'percentage' is PCF: three 0.186 dropped the soft PCF type R3F would pick for `true`. */}
       <Canvas shadows={profile.shadows ? 'percentage' : false} dpr={[1, profile.dpr]} gl={{ antialias: profile.antialias }} camera={{ fov: 42, near: 0.5, far: 200, position: [0, 23, 26] }}>
-        <SceneContent director={director} seats={seats} me={me} board={board} level={level} watch={watch} reducedMotion={reducedMotion} tags={tags} />
+        <SceneContent director={director} seats={seats} me={me} board={board} level={level} watch={watch} reducedMotion={reducedMotion} tags={tags} peeking={peeking} />
         {showStats && <StatsProbe />}
         {setting === 'auto' && level === 'high' && <QualityWatch onStepDown={stepDown} />}
         <ContextLossWatch onLost={loseContext} />
