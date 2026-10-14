@@ -14,13 +14,15 @@ interface TagProjectorProps {
   boardSize: number;
   tags: TagRegistry;
   peeks: TagPeeks;
+  /** The players whose dice show over their pieces right now. */
+  rolling?: ReadonlyMap<PlayerId, unknown>;
 }
 
 /**
  * Moves each registered name tag to its piece's place on screen, once per frame (spec #2 §7.2). Only my
  * own tag shows unless a player points at or taps another piece, or the match is won (round 5).
  */
-export function TagProjector({ director, seats, me, boardSize, tags, peeks }: TagProjectorProps) {
+export function TagProjector({ director, seats, me, boardSize, tags, peeks, rolling }: TagProjectorProps) {
   const point = useMemo(() => new Vector3(), []);
   useFrame(({ camera, size }) => {
     const state = director.store.getState();
@@ -36,7 +38,7 @@ export function TagProjector({ director, seats, me, boardSize, tags, peeks }: Ta
         return;
       }
       // A hidden tag still follows its piece, so a tap shows it in the right place at once.
-      el.style.visibility = tagVisible(seat.playerId, me, peeks, now, won) ? 'visible' : 'hidden';
+      el.style.visibility = tagVisible(seat.playerId, me, peeks, now, won, rolling?.has(seat.playerId) ?? false) ? 'visible' : 'hidden';
       el.style.transform = `translate(${(((point.x + 1) / 2) * size.width).toFixed(1)}px, ${(((1 - point.y) / 2) * size.height).toFixed(1)}px)`;
     });
   });

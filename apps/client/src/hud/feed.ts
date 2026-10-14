@@ -15,7 +15,7 @@ export interface FeedLine {
 }
 
 /** How many lines the feed keeps; phones show the first 3 (§7.2). */
-export const FEED_LINES = 5;
+export const FEED_LINES = 4;
 
 const RARITY_PHRASE = { common: 'a Common', rare: 'a Rare', epic: 'an Epic' } as const;
 const RPS_WORD: Record<string, string> = { rock: 'Rock', paper: 'Paper', scissors: 'Scissors' };

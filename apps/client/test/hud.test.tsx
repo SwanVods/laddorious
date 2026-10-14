@@ -105,6 +105,17 @@ describe('PlayerColumn (spec #2 §7.2, §9.2)', () => {
     expect(within(rowOf(/^You \(you\)/)).queryByText('Away')).toBeNull();
   });
 
+  it('shows no status icon for a player with nothing to do (2026-10-14)', () => {
+    const rows = mysteryRows();
+    render(<PlayerColumn rows={rows} onWatch={() => {}} reducedMotion={false} />);
+    const idle = rows.filter((r) => r.status === 'idle');
+    expect(idle.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      const icon = rowOf(new RegExp(`^${r.me ? 'You' : r.seat.nickname}`)).querySelector('.prow-status');
+      expect(icon === null, r.seat.nickname).toBe(r.status === 'idle');
+    }
+  });
+
   it('lists the players front-runner first, with rank badges and my row marked', () => {
     render(<PlayerColumn rows={mysteryRows()} onWatch={() => {}} reducedMotion={false} />);
     const names = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label')!.split(',')[0]);

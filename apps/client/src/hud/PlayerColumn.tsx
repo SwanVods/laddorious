@@ -11,9 +11,11 @@ export const LONG_PRESS_MS = 500;
 /** How long a re-sorted row takes to slide to its new place. */
 const RESORT_MS = 450;
 
-const STATUS_ICON: Record<Exclude<RowStatus, 'waiting'>, 'bolt' | 'check' | 'lock' | 'eye'> = { turn: 'bolt', done: 'check', locked: 'lock', idle: 'eye' };
+const STATUS_ICON: Record<Exclude<RowStatus, 'waiting' | 'idle'>, 'bolt' | 'check' | 'lock'> = { turn: 'bolt', done: 'check', locked: 'lock' };
 
+/** A player with nothing to do shows no icon (2026-10-14); the old eye read as nothing in particular. */
 function StatusIcon({ status }: { status: RowStatus }) {
+  if (status === 'idle') return null;
   return <span className={`prow-status ${status}`}>{status === 'waiting' ? <span className="spinner" /> : <Icon name={STATUS_ICON[status]} />}</span>;
 }
 

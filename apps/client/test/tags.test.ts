@@ -85,6 +85,11 @@ describe('which name tags show (round 5)', () => {
     expect(tagVisible('p2', 'p0', peeks, 0)).toBe(false);
   });
 
+  it("hides a tag while its piece's die shows, even mine, so the die isn't behind it (2026-10-14)", () => {
+    expect(tagVisible('p0', 'p0', createTagPeeks(), 0, false, true)).toBe(false);
+    expect(tagVisible('p0', 'p0', createTagPeeks(), 0, true, true)).toBe(false);
+  });
+
   it('shows every tag once the match is won, so the ranks reveal can hang its badges on them', () => {
     expect(tagVisible('p1', 'p0', createTagPeeks(), 0, true)).toBe(true);
   });

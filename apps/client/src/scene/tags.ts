@@ -33,7 +33,9 @@ export function createTagPeeks(): TagPeeks {
  * Whether a tag shows (round 5): my own always; another player's while the mouse is over their piece, or for a
  * while after a tap. Once the match is `won` every tag shows, since the ranks reveal hangs its badges on them.
  */
-export function tagVisible(player: PlayerId, me: PlayerId, peeks: TagPeeks, nowMs: number, won = false): boolean {
+export function tagVisible(player: PlayerId, me: PlayerId, peeks: TagPeeks, nowMs: number, won = false, rolling = false): boolean {
+  // A piece's die hangs where its tag would: the tag steps aside while the die shows (2026-10-14).
+  if (rolling) return false;
   const tapped = peeks.tappedAt.get(player);
   return won || player === me || peeks.hovered === player || (tapped !== undefined && nowMs - tapped < TAG_PEEK_MS);
 }

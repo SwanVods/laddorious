@@ -76,6 +76,10 @@ describe('feed lines (spec #2 §7.2)', () => {
     expect(text(pub({ type: 'MatchWon', winner: 'p2', rankings: [] }))).toBe('<p2> wins the match!');
   });
 
+  it('keeps the feed to four lines (2026-10-14)', () => {
+    expect(FEED_LINES).toBe(4);
+  });
+
   it(`keeps at most ${FEED_LINES} lines`, () => {
     const many = Array.from({ length: 9 }, (_, i) => pub({ type: 'RoundStarted', round: i + 1 }));
     const lines = feedLines(logOf(many));

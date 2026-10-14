@@ -8,7 +8,7 @@ import { Board } from './Board';
 import { CameraRig } from './CameraRig';
 import { Jumps } from './Jumps';
 import { createPeeks, type Peeks } from './paths';
-import { Pieces } from './Pieces';
+import { Pieces, type Roll } from './Pieces';
 import { ContextLossWatch, QualityWatch, StatsProbe } from './Probes';
 import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
 import { Surroundings } from './Surroundings';
@@ -51,6 +51,7 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
   const own = useMemo(createPeeks, []);
   const tagPeeks = useMemo(createTagPeeks, []);
   const pieces = useMemo((): PieceRegistry => new Map(), []);
+  const rolls = useMemo(() => new Map<PlayerId, Roll>(), []);
   const peeked = peeks ?? own;
   const tap = useCallback((tile: number) => peeked.tap(tile, director.store.getState().presentation?.jumps ?? board.jumps, Date.now()), [peeked, director, board]);
   return (
@@ -58,10 +59,10 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
       <Surroundings shadows={profile.shadows} clouds={profile.clouds} />
       <Board board={board} director={director} clearcoat={profile.clearcoat} onTap={tap} />
       <Jumps director={director} clearcoat={profile.clearcoat} peeks={peeked} modelEnds={profile.modelEnds} reducedMotion={reducedMotion} />
-      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} tagPeeks={tagPeeks} registry={pieces} />
+      <Pieces director={director} seats={seats} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} boardSize={board.size} tagPeeks={tagPeeks} registry={pieces} rolls={rolls} />
       <Crown director={director} pieces={pieces} shadows={profile.shadows} clearcoat={profile.clearcoat} low={profile.lowModels} reducedMotion={reducedMotion} />
       <CameraRig director={director} seats={seats} me={me} watch={watch} reducedMotion={reducedMotion} boardSize={board.size} peeking={peeking} />
-      {tags && <TagProjector director={director} seats={seats} me={me} boardSize={board.size} tags={tags} peeks={tagPeeks} />}
+      {tags && <TagProjector director={director} seats={seats} me={me} boardSize={board.size} tags={tags} peeks={tagPeeks} rolling={rolls} />}
     </>
   );
 }

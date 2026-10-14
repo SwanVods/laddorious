@@ -17,7 +17,7 @@ export const PIECE_SCALE = 1.3;
 const DIE_LIFT = 2.2;
 const SHIELD_HOOKS = new Set(['beforeSnake', 'beforeAttack']);
 
-interface Roll {
+export interface Roll {
   face: number;
   forced: boolean;
   startedAt: number;
@@ -37,16 +37,18 @@ interface PiecesProps {
   tagPeeks?: TagPeeks;
   /** Where each piece is registered, so the crown can find the winner's head (round 5). */
   registry?: PieceRegistry;
+  /** The dice showing over the pieces, by player; the name tags read it (2026-10-14). */
+  rolls?: Map<PlayerId, Roll>;
 }
 
 /** Every seat's piece, its die and its shield bubble, and card projectiles (spec #2 §5.1, §6.2). */
-export function Pieces({ director, seats, shadows, clearcoat, low = false, reducedMotion, boardSize, tagPeeks, registry }: PiecesProps) {
+export function Pieces({ director, seats, shadows, clearcoat, low = false, reducedMotion, boardSize, tagPeeks, registry, rolls }: PiecesProps) {
   const seatOf = useMemo(() => {
     const index = new Map(seats.map((s, i) => [s.playerId, i]));
     return (player: PlayerId) => index.get(player) ?? 0;
   }, [seats]);
   // A die shows from its roll beat until the pieces start moving.
-  const rollsRef = useRef(new Map<PlayerId, Roll>());
+  const rollsRef = useRef(rolls ?? new Map<PlayerId, Roll>());
   // Pieces that land on a stack wiggle a little after their beat (2026-10-14).
   const landingsRef = useRef<Landing[]>([]);
   useEffect(
