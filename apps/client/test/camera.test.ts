@@ -47,9 +47,11 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ beat: beatOf('move', [moved('p1')]), zoom: 0.5 })).toEqual(shot({ beat: beatOf('move', [moved('p1')]) }));
   });
 
-  it('drifts gently over the overview, and holds still with reduced motion', () => {
-    expect(shot({ nowMs: 4000 }).position).not.toEqual(shot({ nowMs: 0 }).position);
-    expect(shot({ nowMs: 4000, reducedMotion: true }).position).toEqual(shot({ nowMs: 0, reducedMotion: true }).position);
+  it('never turns: the overview stays square to the board, whatever the time (board theme spec B5)', () => {
+    for (const nowMs of [0, 2250, 4500, 9000, 14_000]) {
+      const { position, target } = shot({ nowMs });
+      expect(position[0]).toBe(target[0]);
+    }
   });
 
   it('follows my piece while another piece moves', () => {

@@ -1,6 +1,6 @@
 import { LANE_CLEARANCE, laneCenterline, tileCell as coreTileCell } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
-import { COLUMNS, LANE, PARTS, TILE_SIZE, slideCurve, squareColorIndex, tileCell, tilePath, tileToWorld } from '../src/scene/layout';
+import { BOARD_HALF, COLUMNS, LANE, PARTS, PLATFORM, TILE_ACROSS, TILE_SIZE, TILE_THICKNESS, slideCurve, squareColorIndex, tileCell, tilePath, tileToWorld } from '../src/scene/layout';
 
 function expectAt(point: number[], x: number, z: number) {
   expect(point[0]).toBeCloseTo(x);
@@ -9,20 +9,35 @@ function expectAt(point: number[], x: number, z: number) {
 }
 
 describe('board layout (spec #2 §6.1)', () => {
-  it('makes each square 2.0 across, so the board spans 20 units (Step 2, round 5)', () => {
-    expect(TILE_SIZE).toBe(2);
+  it('steps 2.7 from square to square, so the board spans 27 units (board theme spec B3)', () => {
+    expect(TILE_SIZE).toBe(2.7);
     const [x1] = tileToWorld(1);
     const [x2] = tileToWorld(2);
-    expect(x2 - x1).toBeCloseTo(2, 5);
-    expect(TILE_SIZE * COLUMNS).toBe(20);
+    expect(x2 - x1).toBeCloseTo(2.7, 5);
+    expect(TILE_SIZE * COLUMNS).toBeCloseTo(27);
   });
 
-  it('lays the tiles on a serpentine 10×10 grid, 2.0 units apart, tile 1 at the front left', () => {
-    expectAt(tileToWorld(1), -9, 9);
-    expectAt(tileToWorld(10), 9, 9);
-    expectAt(tileToWorld(11), 9, 7);
-    expectAt(tileToWorld(100), -9, -9);
-    expect(TILE_SIZE * COLUMNS).toBeCloseTo(20);
+  it('lays the tiles on a serpentine 10×10 grid, 2.7 units apart, tile 1 at the front left', () => {
+    expectAt(tileToWorld(1), -12.15, 12.15);
+    expectAt(tileToWorld(10), 12.15, 12.15);
+    expectAt(tileToWorld(11), 12.15, 9.45);
+    expectAt(tileToWorld(100), -12.15, -12.15);
+    expect(TILE_SIZE * COLUMNS).toBeCloseTo(27);
+  });
+
+  it('draws 2.3 squares on a 2.7 step, leaving a 0.4 gap (board theme spec B3)', () => {
+    expect(TILE_ACROSS).toBe(2.3);
+    expect(TILE_SIZE - TILE_ACROSS).toBeCloseTo(0.4);
+    expect(BOARD_HALF).toBeCloseTo(13.5);
+  });
+
+  it('stands the start spots on the deck, inside the platform (board theme spec §4)', () => {
+    for (let seat = 0; seat < 4; seat++) {
+      const [x, y, z] = tileToWorld(0, seat);
+      expect(y).toBe(-TILE_THICKNESS);
+      expect(Math.abs(x)).toBeLessThan(PLATFORM.halfWidth);
+      expect(z).toBeLessThan(PLATFORM.halfDepth - 1.5);
+    }
   });
 
   it('puts one start spot per seat in front of the board', () => {

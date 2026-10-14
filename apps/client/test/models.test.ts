@@ -2,7 +2,7 @@ import { Euler, Vector3, type BufferGeometry } from 'three';
 import { describe, expect, it } from 'vitest';
 import { islandGeometry } from '../src/scene/Surroundings';
 import { DIE_FACES, PIECE_GEOMETRY, crownGeometry, dieGeometry, dieRotationFor, exitGeometry, padGeometry, targetGeometry, tileGeometry, vortexGeometry } from '../src/assets/models';
-import { PARTS, TILE_SIZE, TILE_THICKNESS } from '../src/scene/layout';
+import { PARTS, TILE_ACROSS, TILE_SIZE, TILE_THICKNESS } from '../src/scene/layout';
 import { PIECES } from '../src/service/matchService';
 
 const triangles = (g: BufferGeometry) => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
@@ -25,7 +25,7 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
     const box = g.boundingBox!;
     expect(box.min.y).toBeCloseTo(0, 5);
     expect(box.max.y).toBeCloseTo(TILE_THICKNESS, 5);
-    expect(box.max.x - box.min.x).toBeCloseTo(TILE_SIZE * 0.95, 5);
+    expect(box.max.x - box.min.x).toBeCloseTo(TILE_ACROSS, 5);
     expect(triangles(g)).toBeLessThanOrEqual(200);
   });
 

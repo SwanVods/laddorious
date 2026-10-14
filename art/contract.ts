@@ -77,7 +77,7 @@ export const MODELS: Record<string, ModelRule> = {
   crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 8000, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: [] },
   // The board (spec #5 §4.2, A13): parts stand on the tile top; instancing draws each once per material, and
   // the instance colour (each jump's pair colour) paints Tint, so every jump part has it.
-  tile: { slot: 'tile', origin: 'base', height: [0.29, 0.31], maxWidth: 1.91, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  tile: { slot: 'tile', origin: 'base', height: [0.29, 0.31], maxWidth: 2.31, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
   // A ladder's start is a launch rocket: Tint, a glowing cream porthole facing the camera, a glowing flame (A16).
   pad: { slot: 'pad', origin: 'base', height: [0.65, 0.8], maxWidth: 0.62, maxTriangles: 1500, maxMaterials: 3, requiredMaterials: ['Tint', 'Window'], checks: [facesCamera('Window', PARTS.rocket)] },
   // A ladder's end is a flag, all Tint; a portal's end is a flat splat.

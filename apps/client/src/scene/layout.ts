@@ -3,17 +3,32 @@ import { CatmullRomCurve3, Vector3 } from 'three';
 
 export type Vec3 = [number, number, number];
 
-/** World units per tile (spec #2 §6.1, §6.3). */
 /** The scene scales piece models by this. */
 export const PIECE_SCALE = 1.3;
 
-export const TILE_SIZE = 2.0;
-/** How much bigger the board is than the first one (1.6 a square): the camera, island and shadows fitted to it scale by this (Step 2, round 5). */
+/** World units from one square's centre to the next (board theme spec B3: bigger squares, wider gaps). */
+export const TILE_SIZE = 2.7;
+/** A square's width across (the tile model, art/models/tile.py): 0.4 of deck shows between squares. */
+export const TILE_ACROSS = 2.3;
+/** How much bigger the board is than the first one (1.6 a square): the camera's aim and the shadows scale by this. */
 export const BOARD_SCALE = TILE_SIZE / 1.6;
 /** Tiles are this thick; their top faces sit at y = 0. */
 export const TILE_THICKNESS = 0.3;
 export const COLUMNS = BOARD_COLUMNS;
 const HALF = (COLUMNS - 1) / 2;
+/** Half the board's width, edge to edge. */
+export const BOARD_HALF = (TILE_SIZE * COLUMNS) / 2;
+
+/**
+ * The platform the board stands on (board theme spec §3, §4), built to these by art/models/platform.py,
+ * heights from the model's base (its cushion's knot): the deck's top, where the tiles stand; the rim's top;
+ * and the deck's half sizes.
+ */
+export const PLATFORM = { deckTop: 6.0, rimTop: 7.3, halfWidth: 26, halfDepth: 19 } as const;
+/** A floating obstacle's pad (art/models/course_pad.py): its top, where its obstacle stands, and its radius. */
+export const COURSE = { padTop: 2.0, padRadius: 5 } as const;
+/** The menu's little platform under the podium (art/models/menu_platform.py): its deck's top and its radius. */
+export const MENU_PLATFORM = { deckTop: 1.2, radius: 2.3 } as const;
 
 /** A tile's grid cell, from core's layout (polish spec §3.3): tile 1 at the front left, rows alternating direction. */
 export { tileCell };
@@ -66,7 +81,8 @@ export const PARTS = {
 
 /** Centre of a tile's top face; row 0 is nearest the camera (+Z). Tile 0 is a start spot in front of the board, one per seat. */
 export function tileToWorld(tile: number, seat = 0): Vec3 {
-  if (tile <= 0) return [(seat - 1.5) * TILE_SIZE * 0.8, 0, (HALF + 1.4) * TILE_SIZE];
+  // Start spots stand on the deck in front of the board (board theme spec §4).
+  if (tile <= 0) return [(seat - 1.5) * TILE_SIZE * 0.8, -TILE_THICKNESS, (HALF + 1.4) * TILE_SIZE];
   const { col, row } = tileCell(tile);
   return [(col - HALF) * TILE_SIZE, 0, (HALF - row) * TILE_SIZE];
 }

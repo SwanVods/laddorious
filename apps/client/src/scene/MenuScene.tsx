@@ -6,7 +6,7 @@ import { PIECE_GEOMETRY, tileGeometry } from '../assets/models';
 import { preloadSlotMeshes, useSlotMesh } from '../assets/slotMesh';
 import { Slot, preloadModels, type SlotName } from '../assets/slots';
 import type { PieceId } from '../service/matchService';
-import { TILE_SIZE, TILE_THICKNESS, type Vec3 } from './layout';
+import { TILE_ACROSS, TILE_THICKNESS, type Vec3 } from './layout';
 import { webglAvailable } from './MatchScene';
 import { clamp01, easeOutBack } from './motion';
 import { ContextLossWatch } from './Probes';
@@ -34,7 +34,7 @@ const TILES = Array.from({ length: 18 }, (_, i) => {
   return { x: Math.cos(a) * r + 1.2, y: -0.4 + ((i * 7) % 9) * 0.45, z: -2.2 - Math.abs(Math.sin(a)) * 4 - (i % 3), phase: i * 1.7, spin: 0.2 + (i % 5) * 0.08 };
 });
 /** The floating tiles are the board's tile, shrunk to 0.6 across and 0.14 thick (spec #5 §4.2). */
-const MENU_TILE = { across: 0.6 / (TILE_SIZE * 0.95), up: 0.14 / TILE_THICKNESS } as const;
+const MENU_TILE = { across: 0.6 / TILE_ACROSS, up: 0.14 / TILE_THICKNESS } as const;
 /** Clouds below and behind the podium: four puffs each. */
 const PUFFS = Array.from({ length: 8 }, (_, i) =>
   Array.from({ length: 4 }, (_, k) => {

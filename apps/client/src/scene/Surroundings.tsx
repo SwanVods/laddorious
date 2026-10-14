@@ -60,7 +60,8 @@ export function Surroundings({ shadows, clouds }: { shadows: boolean; clouds: nu
   useLayoutEffect(() => {
     const { background, fog } = scene;
     scene.background = sky ?? new Color(WORLD_COLORS.sky[1]);
-    scene.fog = new Fog(WORLD_COLORS.fog, 36, 95);
+    // The overview sits about 46 from the board (board theme spec §5): the fog starts beyond it.
+    scene.fog = new Fog(WORLD_COLORS.fog, 70, 190);
     return () => {
       scene.background = background;
       scene.fog = fog;

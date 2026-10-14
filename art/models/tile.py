@@ -1,11 +1,11 @@
 """A board tile (spec #5 §4.2, A13): a soft slab with rounded corners and a top edge that rolls over like
 moulded plastic, 0.30 tall. White Tint: instancing paints each square its colour. Only the top edge is
-rounded: the bottom rests on the island, out of sight, and the board draws a hundred of these."""
+rounded: the bottom rests on the deck, out of sight, and the board draws a hundred of these."""
 import math
 
 from lib import finish, palette, shapes
 
-SIZE = 1.9   # 0.95 of the game's TILE_SIZE (2.0)
+SIZE = 2.3   # the game's TILE_ACROSS: 0.4 of deck shows between squares on the 2.7 step
 THICKNESS = 0.30   # the game's TILE_THICKNESS
 CORNER = 0.17      # the corners' radius, seen from above
 ROLL = 0.07        # the top edge's radius

@@ -87,4 +87,8 @@ describe('the camera reaches my piece sooner after the roll (2026-10-15)', () =>
     expect(DEFAULT_TUNING.camera.follow.ease).toBeGreaterThanOrEqual(3);
     expect(DEFAULT_TUNING.timing.rollPauseMs).toBeLessThanOrEqual(400);
   });
+
+  it('scales the overview with the 27-wide board (board theme spec §5)', () => {
+    expect(DEFAULT_TUNING.camera.overview).toEqual({ distance: 31.6, height: 32.9, zoomMin: 0.45, zoomMax: 1.4 });
+  });
 });

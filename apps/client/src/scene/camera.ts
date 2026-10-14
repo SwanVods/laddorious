@@ -64,7 +64,7 @@ export function cameraShot(shown: ShotInput): Shot {
   if (watching !== null) return follow(tileToWorld(watching));
   const busy = beat !== null && beat.kind !== 'roll' && beat.kind !== 'info';
   if (busy || input.window === 'challenge' || input.window === 'mystery') return follow(mine);
-  // Everyone rolls: the whole board, drifting gently.
+  // Everyone rolls: the whole board.
   return overview(input);
 }
 
@@ -119,13 +119,12 @@ function othersFaceOff({ beat, me, faceOffs = [] }: ShotInput): number | null {
 }
 
 function overview(input: ShotInput): Shot {
-  // How far back and how high come from tuning.json (2026-10-15).
+  // How far back and how high come from tuning.json (2026-10-15). It never turns (board theme spec B5).
   const { overview } = tuning().camera;
   const zoom = input.zoom ?? 1;
-  const angle = input.reducedMotion ? 0 : Math.sin(input.nowMs / 9000) * 0.12;
   return {
     mode: 'overview',
-    position: [Math.sin(angle) * overview.distance * zoom, overview.height * zoom, Math.cos(angle) * overview.distance * zoom + OVERVIEW_TARGET_Z],
+    position: [0, overview.height * zoom, overview.distance * zoom + OVERVIEW_TARGET_Z],
     target: [0, 0, OVERVIEW_TARGET_Z],
     cut: false,
   };

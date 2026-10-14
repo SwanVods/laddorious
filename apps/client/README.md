@@ -115,9 +115,9 @@ The game reads `tuning.json` (served next to the page) when it starts, so an adm
 
 | Key | Default | What it does |
 |---|---|---|
-| `camera.overview.distance` | 23.4 | How far back the whole-board view sits. |
-| `camera.overview.height` | 24.4 | How high it sits. |
-| `camera.overview.zoomMin`, `zoomMax` | 0.6, 1.4 | How far a mouse wheel or pinch can zoom the overview (1 = as set; lower is closer). |
+| `camera.overview.distance` | 31.6 | How far back the whole-board view sits. |
+| `camera.overview.height` | 32.9 | How high it sits. |
+| `camera.overview.zoomMin`, `zoomMax` | 0.45, 1.4 | How far a mouse wheel or pinch can zoom the overview (1 = as set; lower is closer). |
 | `camera.follow.ease` | 3.2 | How quickly the camera reaches a piece it follows (higher is quicker). |
 | `camera.swoop.ease` | 2.8 | The same for the close swoop on my own moments. |
 | `timing.hopMs` | 230 | Each tile hop, in the air and landing (ms). Hop sounds follow it. |

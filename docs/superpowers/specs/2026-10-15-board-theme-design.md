@@ -33,7 +33,7 @@ Success means:
 | B1 | **Sky Course.** The board on a floating inflatable platform; obstacle platforms float around it; clouds below; no audience. | User's pick of three directions ("I like simple things like sky course"). |
 | B2 | **Every 3D object is a Blender model**, sculpted headless from `art/` scripts (`pnpm art`), as in Spec #5. The browser preview's shapes are never shipped. | User: "remember to use blender for every 3d obj. what's on the artifact is only for preview". |
 | B3 | **Bigger squares, wider gaps.** The step between squares goes from 2.0 to 2.7. The square model goes from 1.9 to 2.3 across, so the gap goes from 0.1 to 0.4 and the deck shows between squares. The board becomes 27 × 27. Pieces, jump ends, symbols, lanes and the shapes of trails keep their size; only positions spread out. | User: "make the tiles bigger, and also with the gaps wider". |
-| B4 | **Props on the wings, TFT-style.** The platform is wider than the board, with a wing on each side. Left wing: a rocket, a big die and a stack of poker chips. Right wing: a fan of "?" cards, the crown on a cushion, and a flag. Nothing stands in front of the board or between the camera and any square. | User: "add some objects like cards, or rockets, or any random objects on the side of the board. just like TFT". |
+| B4 | **Props on the wings, TFT-style.** The platform is wider than the board, with a wing on each side. Left wing: a rocket, a big die and a stack of poker chips. Right wing: a fan of "?" cards, the crown, and a flag. Nothing stands in front of the board or between the camera and any square. | User: "add some objects like cards, or rockets, or any random objects on the side of the board. just like TFT". |
 | B5 | **The camera never turns, and pans only when zoomed in.** At the overview zoom, dragging does nothing. Closer than the overview, one finger or the mouse drags the view. The limit grows the closer the zoom, up to the board's edges. Zooming back out pulls it home. | User: "the in game camera must not be able to rotate. only dragging … to have a closer look of the furthest tiles … but limited … the camera must be zoomed in a bit". This was the user's later-fix note 4 (2026-10-15), now built here. |
 | B6 | **Reduced motion slows the world, not stops it.** The world's idle motion (props, obstacles, clouds) runs at a quarter of the speed and amplitude. | User's later-fix note 2 ("reduced motion is different than disable motion"), applied to everything new here. The rest of the game's reduced-motion pass stays in the later-fix batch. |
 | B7 | **Old plan 3's world is dropped:** the candy rock, the bumper posts, the sphere clouds and the five floating toy props. | Replaced by B1 and B4. |
@@ -58,11 +58,10 @@ Colours come from `theme.ts` (`WORLD_COLORS`, renamed where a token's meaning ch
 
 Props reuse the game's models where they exist, scaled up:
 - the rocket: `pad.glb`, the jump start, tinted pink, no symbol;
-- the die: `die.glb`;
-- the crown: `crown.glb`;
+- the die and the crown: new light models (`prop_die`, `prop_crown`; the game's die and crown would take 8,000 of the budget's triangles); the crown stands on the deck, without a cushion;
 - the flag: `target.glb`, the jump end, tinted tangerine, no symbol.
 
-New props: the chips and the cards. Each card has a purple face with a raised cream "?" and a pink back.
+New props: the chips, the cards, the die and the crown. Each card has a purple face with a raised cream "?" and a pink back.
 
 **The board sits on the deck.** The squares rest on the deck's top. The start row's waiting spots (tile 0) stay in front of the board, on the deck.
 
@@ -71,6 +70,7 @@ New props: the chips and the cards. Each card has a purple face with a raised cr
 All in world units. The board is centred at the origin; +Z is toward the camera.
 
 - **Board half-width:** 13.5 (10 × 2.7 / 2).
+- **Start spots:** tile 0's start spots stand on the deck (y = −0.3), so the pieces waiting to start don't float.
 - **Platform deck:** half-width 26, half-depth 19, top at y = 0, so the squares stand on it as they stand on the island today.
 - **Props:** centred on the wings, |x| between 19 and 22:
 
@@ -122,11 +122,7 @@ The overview's aim point (toward the start row) scales the same way. The follow,
 
 `SLOT_FILES` lists each once its model lands.
 
-**Moving parts.** An obstacle's moving part is its own mesh, named in the `.glb`. The game animates it by name:
-- `Spin` turns about Y (sweeper bar, fan blades, hoops swaying);
-- `Squash` scales about its base (mushroom caps).
-
-The whole obstacle also bobs. Props idle gently: the rocket bobs, the cards sway, the crown turns, the flag's pennant swings.
+**Moving parts.** A moving part is its own model, standing on a shared `course_pad` model: the sweeper, the fan, each hoop and each mushroom. The game spins, sways or squashes the whole part, and bobs it together with its pad. Props idle gently: the rocket bobs, the cards sway, the crown turns, the flag's pennant swings.
 
 **Fallbacks.** A file that fails to load leaves a plain stand-in and warns once (Spec #5 §6):
 - a flat cream deck for the platform;
@@ -154,22 +150,25 @@ The whole obstacle also bobs. Props idle gently: the rocket bobs, the cards sway
 
 ## 7. Budget
 
-On High, today's busy match has about 135,700 triangles and 71 draw calls.
+Priced as `art/test/budget.test.ts` prices a busy match. The code-built island, bumpers and clouds were never in that price, so the room is about 14,300 triangles on High. The world aims at about 13,000 triangles and 23 draw calls, and no world part casts a shadow.
 
-**Removed:** the island, the bumpers and the sphere clouds, about 8,900 triangles. That leaves about 23,000 of room on High, and more on Low.
+| Part | Copies | Triangles each (target) | Draw calls |
+|---|---|---|---|
+| Platform | 1 | ≤ 3,600 | 3 |
+| Cloud | 8 | about 200 | 1 |
+| Stepping pad | 5 | 96 | 1 |
+| Course pad | 5 | 324 | 3 |
+| Sweeper, fan, ramp | 1 each | about 300 each | 1 each |
+| Mushroom | 3 | 288 | 1 |
+| Hoop | 3 | about 200 | 1 |
+| Chip | 6 | 112 | 1 |
+| Card | 3 | ≤ 600 | 2 |
+| Die prop, crown prop | 1 each | ≤ 900 each | 2, 1 |
+| Rocket and flag (reused) | 1 each | 1,014, 600 | 3, 1 |
 
-| Part | Triangles (target, A11) | Draw calls |
-|---|---|---|
-| Platform | ≤ 6,000 | ≤ 3 |
-| Obstacles (5) | ≤ 1,200 each | ≤ 2 each |
-| Stepping pad (instanced ×5) | ≤ 150 | 1 |
-| Cloud (instanced) | ≤ 300 | 1 |
-| Chips, cards (new) | ≤ 1,000 each | ≤ 2 each |
-| Rocket, die, crown, flag (reused) | their models | their materials |
+The table is replaced by the measured numbers once the models are built. The whole-match limits (§1) are the ones that hold.
 
-The whole world aims at about 20,000 triangles. A busy match must stay at or under 95 draw calls. Both are checked with the existing stats measurement; the whole-match limits (§1) are the ones that hold.
-
-Menu models: the podium ≤ 3,000 and the menu platform ≤ 2,500.
+Menu models: the podium ≤ 1,600 and the menu platform ≤ 1,000 (both lathed).
 
 ## 8. Checks and review
 
@@ -180,13 +179,10 @@ These stay simple, as the user asked.
   - the layout tests updated to the new step;
   - the shot rule that resets the pan when the shot leaves the overview.
 - **Art:**
-  - the model contract (`art/contract.ts`) covers each new model's size, materials, its named moving parts and triangle target;
+  - the model contract (`art/contract.ts`) covers each new model's size, materials, and triangle target;
   - `art/test` checks the built files, as for the pieces;
   - the tile model is 2.3 across.
-- **End-to-end:** one Playwright check:
-  - a drag at the overview leaves the camera where it was;
-  - after zooming in, a drag moves it;
-  - a tap still peeks at a tile.
+- **Drag:** a unit test of the drag controller (`PanDrag`) stands in for a browser check, since a fast e2e match moves the camera itself. The review screenshots show the pan.
 - **Review:** match and menu screenshots from the headless browser (Spec #5 A8) go on the review page. The user reviews the world in the game before it's merged.
 
 ## 9. Out of scope

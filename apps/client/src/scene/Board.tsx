@@ -6,7 +6,7 @@ import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
 import { tileGeometry } from '../assets/models';
 import { useSlotMesh } from '../assets/slotMesh';
 import type { Director } from '../director/director';
-import { COLUMNS, TILE_SIZE, TILE_THICKNESS, squareColorIndex, tileToWorld } from './layout';
+import { COLUMNS, TILE_ACROSS, TILE_SIZE, TILE_THICKNESS, squareColorIndex, tileToWorld } from './layout';
 import { boardOverlayTexture, sheenTexture } from './textures';
 
 type PublicBoard = PlayerView['board'];
@@ -47,7 +47,7 @@ export function Board({ board, director, clearcoat, onTap }: BoardProps) {
     const map = sheenTexture(WORLD_COLORS.cloud);
     if (map) map.repeat.x = 0.5;
     return {
-      geometry: new PlaneGeometry(TILE_SIZE * 0.9, TILE_SIZE * 0.9).rotateX(-Math.PI / 2),
+      geometry: new PlaneGeometry(TILE_ACROSS * 0.95, TILE_ACROSS * 0.95).rotateX(-Math.PI / 2),
       material: new MeshBasicMaterial({ ...(map ? { map } : { visible: false }), transparent: true, opacity: 0.7, blending: AdditiveBlending, depthWrite: false }),
     };
   }, []);

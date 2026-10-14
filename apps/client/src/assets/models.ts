@@ -2,7 +2,7 @@ import { BoxGeometry, CircleGeometry, ConeGeometry, CylinderGeometry, ExtrudeGeo
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { PieceId } from '../service/matchService';
-import { PARTS, TILE_SIZE, TILE_THICKNESS, type Vec3 } from '../scene/layout';
+import { PARTS, TILE_ACROSS, TILE_THICKNESS, type Vec3 } from '../scene/layout';
 
 // Code-built defaults for the asset slots (spec #2 §6.2, §6.3): about one unit tall,
 // origin at the feet, +Z forward, Y up. The scene scales pieces by 1.3.
@@ -194,7 +194,7 @@ export function crownGeometry(): BufferGeometry {
 
 /** A board tile's stand-in (spec #5 §4.2): a rounded slab 0.95 of a tile across, standing on its base. Instancing paints it. */
 export function tileGeometry(): BufferGeometry {
-  return new RoundedBoxGeometry(TILE_SIZE * 0.95, TILE_THICKNESS, TILE_SIZE * 0.95, 1, 0.05).translate(0, TILE_THICKNESS / 2, 0);
+  return new RoundedBoxGeometry(TILE_ACROSS, TILE_THICKNESS, TILE_ACROSS, 1, 0.05).translate(0, TILE_THICKNESS / 2, 0);
 }
 
 // The jumps' stand-ins (spec #5 §4.2): lying flat a hair above the tile top, facing +Z like the models.
