@@ -205,6 +205,50 @@ export function poseAt(state: DirectorState, player: PlayerId, seat: number, now
   return state.beat ? beatPose(state.beat, state.presentation, player, seat, nowMs, boardSize) : restPose(state.presentation, player, seat);
 }
 
+/** A piece that landed on top of another: who, the piece directly under it, and when (epoch ms). */
+export interface Landing {
+  player: PlayerId;
+  under: PlayerId;
+  atMs: number;
+}
+
+/** How long a piece that lands on a stack wiggles, and how long the one under it squashes (2026-10-14). */
+const WIGGLE_MS = 800;
+const SQUASH_MS = 260;
+
+/** The pieces a beat lands on top of others: hops land after their last tile, everything else at the beat's end. */
+export function stackLandings(beat: PlayingBeat, boardSize: number): Landing[] {
+  const landings: Landing[] = [];
+  for (const e of beat.events) {
+    if (e.type !== 'Moved' || e.to <= 0) continue;
+    const stack = stackOn(beat.after, e.to);
+    const under = stack[stack.indexOf(e.player) - 1];
+    if (stack.at(-1) !== e.player || under === undefined) continue;
+    if (beat.after.faceOffs.some((f) => f.tile === e.to)) continue;
+    const perTile = beat.kind === 'move' ? BEAT_MS.hopPerTile : beat.kind === 'stepBack' ? BEAT_MS.stepBackPerTile : 0;
+    const legs = tilePath(e.from, e.to, e.bounced, boardSize).length - 1;
+    landings.push({ player: e.player, under, atMs: beat.startedAt + (perTile > 0 ? legs * perTile : beat.durationMs) });
+  }
+  return landings;
+}
+
+/** A pose with its landing on top: the lander wobbles side to side, dying away; the piece under it squashes once. */
+export function landingPose(pose: Pose, player: PlayerId, landings: readonly Landing[], nowMs: number, reducedMotion: boolean): Pose {
+  if (reducedMotion) return pose;
+  for (const l of landings) {
+    const since = nowMs - l.atMs;
+    if (l.player === player && since >= 0 && since < WIGGLE_MS) {
+      const t = since / WIGGLE_MS;
+      return { ...pose, rotation: [pose.rotation[0], pose.rotation[1], pose.rotation[2] + Math.sin(t * Math.PI * 6) * 0.25 * (1 - t)] };
+    }
+    if (l.under === player && since >= 0 && since < SQUASH_MS) {
+      const s = 1 - 0.22 * Math.sin((since / SQUASH_MS) * Math.PI);
+      return { ...pose, scale: [pose.scale[0] * (1 + (1 - s) * 0.7), pose.scale[1] * s, pose.scale[2] * (1 + (1 - s) * 0.7)] };
+    }
+  }
+  return pose;
+}
+
 /** Idle bob and sway (spec #2 §6.2); the scene leaves it off with reduced motion. */
 export function withIdle(pose: Pose, nowMs: number, phase: number): Pose {
   return {

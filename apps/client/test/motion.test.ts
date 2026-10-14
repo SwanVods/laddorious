@@ -4,7 +4,7 @@ import { BEAT_MS, buildTimeline } from '../src/director/beats';
 import type { DirectorState, PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
 import { PARTS, tileToWorld } from '../src/scene/layout';
-import { CROWN_FLY_MS, END_ROW, FACE_OFF_GAP, crownPose, crownWinner, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
+import { CROWN_FLY_MS, END_ROW, FACE_OFF_GAP, crownPose, crownWinner, landingPose, stackLandings, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
@@ -136,6 +136,43 @@ describe('the ends react (round 5)', () => {
     expect(endReaction(launch, other, 200)).toEqual({ rocket: STILL_END, flag: STILL_END });
     expect(endReaction(launch, ladder, 200, true)).toEqual({ rocket: STILL_END, flag: STILL_END });
     expect(endReaction(null, ladder, 200)).toEqual({ rocket: STILL_END, flag: STILL_END });
+  });
+});
+
+describe('landing on a stack (2026-10-14)', () => {
+  // p1 and p2 already stand on PLAIN, p2 on top; p0 hops 3 tiles onto them.
+  const from = { ...at({ p0: PLAIN - 3, p1: PLAIN, p2: PLAIN }), arrivals: ['p3', 'p1', 'p2', 'p0'] };
+  const hop = { ...beat([moved('p0', PLAIN - 3, PLAIN)], from), startedAt: 1000 };
+  const landed = 1000 + 3 * BEAT_MS.hopPerTile;
+  const still = restPose(hop.after, 'p0', 0);
+
+  it('records who landed on whom, and when', () => {
+    expect(stackLandings(hop, SIZE)).toEqual([{ player: 'p0', under: 'p2', atMs: landed }]);
+  });
+
+  it('records nothing for a landing on an empty tile', () => {
+    const lone = { ...beat([moved('p3', 2, 5)], at({ p3: 2 })), startedAt: 0 };
+    expect(stackLandings(lone, SIZE)).toEqual([]);
+  });
+
+  it('wiggles the piece that landed, dying away by 800 ms', () => {
+    const landings = stackLandings(hop, SIZE);
+    expect(landingPose(still, 'p0', landings, landed + 200, false).rotation[2]).not.toBeCloseTo(still.rotation[2], 3);
+    expect(landingPose(still, 'p0', landings, landed + 800, false).rotation[2]).toBeCloseTo(still.rotation[2], 6);
+  });
+
+  it('squashes only the piece directly under it, and only briefly', () => {
+    const landings = stackLandings(hop, SIZE);
+    const under = restPose(hop.after, 'p2', 2);
+    expect(landingPose(under, 'p2', landings, landed + 130, false).scale[1]).toBeLessThan(0.9);
+    expect(landingPose(under, 'p2', landings, landed + 260, false).scale[1]).toBeCloseTo(1, 6);
+    const bottom = restPose(hop.after, 'p1', 1);
+    expect(landingPose(bottom, 'p1', landings, landed + 130, false)).toEqual(bottom);
+  });
+
+  it('keeps everything still with reduced motion', () => {
+    const landings = stackLandings(hop, SIZE);
+    expect(landingPose(still, 'p0', landings, landed + 200, true)).toEqual(still);
   });
 });
 

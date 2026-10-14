@@ -7,7 +7,7 @@ import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
-import { clamp01, easeOut, poseAt, projectileAt, withIdle, type Pose } from './motion';
+import { clamp01, easeOut, landingPose, poseAt, projectileAt, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
@@ -47,10 +47,13 @@ export function Pieces({ director, seats, shadows, clearcoat, low = false, reduc
   }, [seats]);
   // A die shows from its roll beat until the pieces start moving.
   const rollsRef = useRef(new Map<PlayerId, Roll>());
+  // Pieces that land on a stack wiggle a little after their beat (2026-10-14).
+  const landingsRef = useRef<Landing[]>([]);
   useEffect(
     () =>
       director.store.subscribe((s, prev) => {
         if (!s.beat || s.beat === prev.beat) return;
+        landingsRef.current = [...landingsRef.current.filter((l) => l.atMs > s.beat!.startedAt - 2000), ...stackLandings(s.beat, boardSize)];
         if (s.beat.kind !== 'roll') {
           rollsRef.current.clear();
           return;
@@ -59,12 +62,12 @@ export function Pieces({ director, seats, shadows, clearcoat, low = false, reduc
           if (e.type === 'DieRolled') rollsRef.current.set(e.player, { face: e.face, forced: e.forced, startedAt: s.beat.startedAt, durationMs: s.beat.durationMs });
         }
       }),
-    [director],
+    [director, boardSize],
   );
   return (
     <>
       {seats.map((seat, i) => (
-        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} low={low} reducedMotion={reducedMotion} boardSize={boardSize} tagPeeks={tagPeeks} registry={registry} rollsRef={rollsRef} />
+        <Actor key={seat.playerId} director={director} seat={seat} index={i} shadows={shadows} clearcoat={clearcoat} low={low} reducedMotion={reducedMotion} boardSize={boardSize} tagPeeks={tagPeeks} registry={registry} rollsRef={rollsRef} landingsRef={landingsRef} />
       ))}
       <Projectile director={director} seatOf={seatOf} />
     </>
@@ -99,9 +102,10 @@ interface ActorProps extends Omit<PiecesProps, 'seats'> {
   seat: SeatInfo;
   index: number;
   rollsRef: RefObject<Map<PlayerId, Roll>>;
+  landingsRef: RefObject<Landing[]>;
 }
 
-function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, boardSize, tagPeeks, registry, rollsRef }: ActorProps) {
+function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, boardSize, tagPeeks, registry, rollsRef, landingsRef }: ActorProps) {
   const bodyRef = useRef<Group>(null);
   const modelRef = useRef<Group>(null);
   const orbRef = useRef<Mesh>(null);
@@ -126,7 +130,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
     const pose = poseAt(state, seat.playerId, index, now, boardSize);
     if (!pose || !bodyRef.current || !modelRef.current || !orbRef.current || !dieRef.current || !shieldRef.current) return;
     const acting = state.beat?.events.some((e) => (e.type === 'Moved' && e.player === seat.playerId) || (e.type === 'MatchWon' && e.winner === seat.playerId)) ?? false;
-    place(bodyRef.current, reducedMotion || acting ? pose : withIdle(pose, now, index * 1.7));
+    place(bodyRef.current, landingPose(reducedMotion || acting ? pose : withIdle(pose, now, index * 1.7), seat.playerId, landingsRef.current, now, reducedMotion));
     modelRef.current.visible = !pose.orb;
     orbRef.current.visible = pose.orb;
     if (blobRef.current) {
