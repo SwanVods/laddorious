@@ -13,6 +13,7 @@ import { readGlb, type GlbSummary } from '../glb';
 // 8 slides and 10 pads; cards add a few, so this prices 12 and 14. Paths hide unless a piece stands on
 // their start or a player taps an end (spec #5 A13): at most five show, priced as the costliest kind.
 // A trail is a line of arrowheads with dark outlines (2026-10-14): two instanced meshes in all.
+// And the world round the board: the platform, props, obstacles and clouds, each one instanced mesh (board theme spec §7).
 
 const DIR = new URL('../../apps/client/public/models/', import.meta.url);
 const SLIDES = 12;
@@ -24,7 +25,7 @@ const SHOWN = SEATS + 1;
 const CODE = { calls: 7, triangles: 3_200 };
 
 /** How the game draws each model: its copies, whether each copy is its own draw (not instanced), and whether it casts a shadow. */
-const USES: Record<string, { copies: number; separate?: boolean; shadows?: boolean }> = {
+const USES: Record<string, { copies: number; separate?: boolean; shadows?: boolean; model?: string }> = {
   die: { copies: SEATS, separate: true, shadows: true },
   crown: { copies: 1, separate: true, shadows: true },
   tile: { copies: 100 },
@@ -32,14 +33,23 @@ const USES: Record<string, { copies: number; separate?: boolean; shadows?: boole
   target: { copies: PADS },
   vortex: { copies: SLIDES },
   exit: { copies: SLIDES },
-  island: { copies: 1, separate: true },
-  bumper: { copies: 36 },
+  // The world (board theme spec §7): every model instanced, none casting a shadow.
+  platform: { copies: 1 },
   cloud: { copies: 8 },
-  prop_die: { copies: 1, separate: true },
-  prop_cards: { copies: 1, separate: true },
-  prop_spinner: { copies: 1, separate: true },
-  prop_hourglass: { copies: 1, separate: true },
-  prop_chips: { copies: 1, separate: true },
+  step: { copies: 5 },
+  course_pad: { copies: 5 },
+  sweeper: { copies: 1 },
+  mushroom: { copies: 3 },
+  hoop: { copies: 3 },
+  fan: { copies: 1 },
+  ramp: { copies: 1 },
+  chip: { copies: 6 },
+  card: { copies: 3 },
+  prop_die: { copies: 1 },
+  prop_crown: { copies: 1 },
+  // The rocket and the flag on the wings are the jump models, drawn again (spec B4).
+  prop_rocket: { copies: 1, model: 'pad' },
+  prop_flag: { copies: 1, model: 'target' },
 };
 
 /**
@@ -102,7 +112,7 @@ function price(level: 'high' | 'low') {
   if (low) add('flat ends', 4, 2 * 2 * (SLIDES + PADS));
   for (const [id, use] of Object.entries(USES)) {
     if (low && ENDS.includes(id)) continue;
-    const model = builtFor(id, low);
+    const model = builtFor(use.model ?? id, low);
     if (!model) continue;
     const each = use.shadows && shadows ? shadowed(model) : flat(model);
     add(id, each.calls * (use.separate ? use.copies : 1), each.triangles * use.copies);

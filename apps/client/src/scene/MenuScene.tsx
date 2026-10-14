@@ -142,7 +142,7 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
 
   return (
     <>
-      <hemisphereLight args={[WORLD_COLORS.sky[2], WORLD_COLORS.islandRock, 1.25]} />
+      <hemisphereLight args={[WORLD_COLORS.sky[2], WORLD_COLORS.groundLight, 1.25]} />
       <directionalLight
         position={[-4, 8, 6]}
         intensity={2.4}
@@ -175,11 +175,11 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
         </mesh>
         <mesh rotation-x={Math.PI} position-y={-1.4}>
           <coneGeometry args={[1.55, 2.4, 7]} />
-          <meshStandardMaterial color={PODIUM_COLORS.island} roughness={0.9} flatShading />
+          <meshStandardMaterial color={WORLD_COLORS.cushion} roughness={0.9} flatShading />
         </mesh>
         <mesh rotation-x={Math.PI} position={[0.9, -1.05, 0.5]}>
           <coneGeometry args={[0.7, 1.3, 6]} />
-          <meshStandardMaterial color={PODIUM_COLORS.chunk} roughness={0.9} flatShading />
+          <meshStandardMaterial color={WORLD_COLORS.deck} roughness={0.9} flatShading />
         </mesh>
         {!profile.shadows && (
           <mesh rotation-x={-Math.PI / 2} position-y={TOP_Y + 0.008}>

@@ -133,6 +133,17 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(REVEAL_MS).toBeGreaterThan(0);
   });
 
+  it('stands the board on the platform, and draws each world model once, hidden until it loads (board theme spec §6)', async () => {
+    const root = await renderScene('high');
+    const platform = root.getObjectByName('world-platform') as InstancedMesh;
+    expect(platform.count).toBe(1);
+    expect(platform.visible).toBe(true); // its stand-in is a plain deck
+    const clouds = root.getObjectByName('world-cloud') as InstancedMesh;
+    expect(clouds.count).toBe(8);
+    expect(clouds.visible).toBe(false); // nothing drawn until the model loads (unit tests never load models)
+    expect(root.getObjectByName('world-course.pad')).toBeTruthy();
+  });
+
   it("peeks at a jump's trail when a player taps a tile at either end", async () => {
     const { jumps } = openingUpdate().view.board;
     const ladder = jumps.find((j) => j.to > j.from)!;

@@ -1,8 +1,7 @@
 import { Euler, Vector3, type BufferGeometry } from 'three';
 import { describe, expect, it } from 'vitest';
-import { islandGeometry } from '../src/scene/Surroundings';
 import { DIE_FACES, PIECE_GEOMETRY, crownGeometry, dieGeometry, dieRotationFor, exitGeometry, padGeometry, targetGeometry, tileGeometry, vortexGeometry } from '../src/assets/models';
-import { PARTS, TILE_ACROSS, TILE_SIZE, TILE_THICKNESS } from '../src/scene/layout';
+import { PARTS, PLATFORM, TILE_ACROSS, TILE_SIZE, TILE_THICKNESS } from '../src/scene/layout';
 import { PIECES } from '../src/service/matchService';
 
 const triangles = (g: BufferGeometry) => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
@@ -46,17 +45,10 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
     expect(rocket.boundingBox!.max.y).toBeCloseTo(PARTS.rocket.height, 5);
   });
 
-  it("spreads the island past every corner of the bigger board, wobble and all (round 5)", () => {
-    const island = islandGeometry();
-    const position = island.getAttribute('position');
-    const corner = Math.hypot(TILE_SIZE * 5, TILE_SIZE * 5);
-    let nearest = Infinity;
-    // The top rim's vertices (not the top face's centre).
-    for (let i = 0; i < position.count; i++) {
-      const r = Math.hypot(position.getX(i), position.getZ(i));
-      if (position.getY(i) > 1 && r > 1) nearest = Math.min(nearest, r);
-    }
-    expect(nearest).toBeGreaterThan(corner);
+  it('spreads the platform past every corner of the bigger board, with room for the props on its wings (board theme spec §4)', () => {
+    const corner = TILE_SIZE * 5;
+    expect(PLATFORM.halfWidth).toBeGreaterThan(corner + 10);
+    expect(PLATFORM.halfDepth).toBeGreaterThan(corner + 4);
   });
 
   it('maps each die face into its own cell of the pip atlas', () => {

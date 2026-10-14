@@ -22,6 +22,6 @@ describe('design tokens (spec #2 §7.4)', () => {
   });
 
   it('has the Tangerine Dusk podium colours', () => {
-    expect(PODIUM_COLORS).toEqual({ top: '#fff3e3', band: '#ff9a3d', base: '#147676', ring: '#ff5470', island: '#0f5d63', chunk: '#ffb070' });
+    expect(PODIUM_COLORS).toEqual({ top: '#fff3e3', band: '#ff9a3d', base: '#147676', ring: '#ff5470' });
   });
 });

@@ -17,9 +17,16 @@ export const BOARD_COLORS = {
 export const WORLD_COLORS = {
   sky: ['#0b4a5a', '#2f8f8a', '#ffc184'],
   fog: '#ffc79a',
-  islandTop: '#ffb070',
-  islandRock: '#0f5d63',
-  bumper: ['#ff5470', '#5ff0c5'],
+  /** The platform's deck and the course's pads (board theme spec §3). */
+  deck: '#fff7ec',
+  /** The soft cushions under the platform and the pads. */
+  cushion: '#ff9a3d',
+  /** The platform's rim stripes, pink and cream. */
+  rim: ['#ff5470', '#fff7ec'],
+  /** The obstacle pads' rims. */
+  course: '#5ff0c5',
+  /** The hemisphere light's ground colour (was the island's rock). */
+  groundLight: '#0f5d63',
   cloud: '#fff7ec',
   ink: '#0f2e36',
   crown: '#ffcc33',
@@ -57,6 +64,4 @@ export const PODIUM_COLORS = {
   band: '#ff9a3d',
   base: '#147676',
   ring: '#ff5470',
-  island: '#0f5d63',
-  chunk: '#ffb070',
 } as const;
