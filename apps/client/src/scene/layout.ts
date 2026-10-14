@@ -34,7 +34,7 @@ export const PARTS = {
   /** The still cap in a whirlpool's eye: its radius, and its top, where the symbol lies. */
   cap: { radius: 0.21, top: 0.07 },
   /** A ladder's end is a flag (the user's pick, Step 2 review 3): the gold symbol stands on its pennant, facing the camera (+Z). */
-  flag: { x: 0.15, y: 1.0, z: 0.052, height: 1.27 },
+  flag: { x: 0.15, y: 1.0, z: 0.052, height: 1.27, pole: -0.17 },
   /** A portal's end is a flat splat, at most this far across from its centre, its symbol on its top. */
   splat: { radius: 0.43, top: 0.04 },
   /**

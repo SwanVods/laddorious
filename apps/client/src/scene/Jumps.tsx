@@ -1,7 +1,7 @@
 import type { Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import { Color, DoubleSide, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
+import { Color, DoubleSide, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, PAIR_COLORS, WORLD_COLORS } from '../app/theme';
 import { arrowheadGeometry, exitGeometry, padGeometry, puffGeometry, targetGeometry, vortexGeometry } from '../assets/models';
@@ -9,7 +9,7 @@ import { useSlotMesh } from '../assets/slotMesh';
 import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
 import { PARTS, tileToWorld } from './layout';
-import { clamp01, easeOutBack } from './motion';
+import { STILL_END, clamp01, easeOutBack, endReaction, type EndMotion } from './motion';
 import { SYMBOLS, pairStyles, type SymbolName } from './pairs';
 import { REVEAL_MS, shownPaths, type Peeks } from './paths';
 import { endIconTexture, swirlTexture, type EndIcon } from './textures';
@@ -114,9 +114,11 @@ interface JumpsProps {
   peeks: Peeks;
   /** The ends as 3D models (High), or flat images on the tiles (Low; round 5). */
   modelEnds?: boolean;
+  /** Keeps the rockets and flags from reacting. */
+  reducedMotion?: boolean;
 }
 
-export function Jumps({ director, clearcoat, peeks, modelEnds = true }: JumpsProps) {
+export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMotion = false }: JumpsProps) {
   const shown = useStore(director.store, (s) => s.presentation?.jumps);
   const editing = useStore(director.store, (s) => (s.beat?.kind === 'boardEdit' ? s.beat.after.jumps : undefined));
   const jumps = useMemo(() => [...new Map([...(shown ?? []), ...(editing ?? [])].map((j) => [j.id, j])).values()], [shown, editing]);
@@ -158,6 +160,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true }: JumpsPro
   const padsRef = useRef<InstancedMesh>(null);
   const targetsRef = useRef<InstancedMesh>(null);
   const place = useMemo(() => new Object3D(), []);
+  const base = useMemo(() => new Matrix4(), []);
 
   useFrame(({ clock }) => {
     const { beat, presentation } = director.store.getState();
@@ -180,58 +183,77 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true }: JumpsPro
       if (before && !after) return 1 - t;
       return !before && after ? Math.max(0, easeOutBack(t)) : 1;
     };
-    // Every part stands on its tile's top, turns only about Y, and takes its pair's colour (spec #5 A13).
-    const stamp = (mesh: InstancedMesh | null, list: Jump[], tile: (j: Jump) => number, turn: (j: Jump) => number) => {
+    // How each ladder's rocket and flag react to a launch (round 5).
+    const reactions = new Map(ladders.map((j) => [j.id, endReaction(beat, j, now, reducedMotion)]));
+    const react = (j: Jump) => reactions.get(j.id) ?? { rocket: STILL_END, flag: STILL_END };
+    /**
+     * Where an end stands: on its tile's top, turned only about Y (spec #5 A13), popping in or out with a
+     * board edit, and moving as it reacts. A rocket rocks about its base; a flag swings about its pole.
+     * A flat icon only pops.
+     */
+    const endMatrix = (j: Jump, tile: number, turn: number, motion: EndMotion = STILL_END, pole = 0) => {
+      const m = modelEnds ? motion : { ...STILL_END, pop: motion.pop };
+      const [x, , z] = tileToWorld(tile);
+      const swing = pole ? m.sway : 0;
+      place.position.set(x + pole - pole * Math.cos(swing), 0, z + pole * Math.sin(swing));
+      place.rotation.set(0, turn + swing, pole ? 0 : m.sway);
+      const s = pop(j.id) * m.pop;
+      place.scale.set(s, s * m.squash, s);
+      place.updateMatrix();
+      return place.matrix;
+    };
+    // Every part takes its pair's colour (spec #5 A13).
+    const stamp = (mesh: InstancedMesh | null, list: Jump[], matrix: (j: Jump) => Matrix4) => {
       if (!mesh) return;
       list.forEach((j, i) => {
-        const [x, , z] = tileToWorld(tile(j));
-        place.position.set(x, 0, z);
-        place.rotation.set(0, turn(j), 0);
-        place.scale.setScalar(pop(j.id));
-        place.updateMatrix();
-        mesh.setMatrixAt(i, place.matrix);
+        mesh.setMatrixAt(i, matrix(j));
         mesh.setColorAt(i, colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud));
       });
       mesh.count = list.length;
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     };
-    stamp(vorticesRef.current, snakes, (j) => j.from, () => clock.elapsedTime * 2.5);
-    stamp(exitsRef.current, snakes, (j) => j.to, () => 0);
-    stamp(padsRef.current, ladders, (j) => j.from, () => 0); // a rocket's porthole faces the camera
-    stamp(targetsRef.current, ladders, (j) => j.to, () => 0);
+    const rocketAt = (j: Jump) => endMatrix(j, j.from, 0, react(j).rocket); // a rocket's porthole faces the camera
+    const flagAt = (j: Jump) => endMatrix(j, j.to, 0, react(j).flag, PARTS.flag.pole);
+    stamp(vorticesRef.current, snakes, (j) => endMatrix(j, j.from, clock.elapsedTime * 2.5));
+    stamp(exitsRef.current, snakes, (j) => endMatrix(j, j.to, 0));
+    stamp(padsRef.current, ladders, rocketAt);
+    stamp(targetsRef.current, ladders, flagAt);
     // The symbols lie flat and upright to the camera; a landing's glowing gold breathes.
     const marks = new Map<SymbolName, number>();
     const breathe = 0.78 + 0.22 * Math.sin(clock.elapsedTime * 3);
-    // A symbol at an offset from its tile's centre, standing upright facing the camera (+Z) or lying flat.
-    const mark = (j: Jump, tile: number, y: number, size: number, tint: Color, at?: { x: number; z: number }, upright = at !== undefined) => {
+    /**
+     * A symbol at an offset from its tile's centre, standing upright facing the camera (+Z) or lying flat.
+     * On a rocket or a flag it rides on `on`, that end's own matrix, so it moves as the end reacts.
+     */
+    const mark = (j: Jump, tile: number, y: number, size: number, tint: Color, at?: { x: number; z: number }, upright = at !== undefined, on?: Matrix4) => {
       const style = styles.get(j.id);
       const mesh = style ? symbolsRef.current[style.symbol] : null;
       if (!style || !mesh) return;
       const i = marks.get(style.symbol) ?? 0;
       if (i >= MAX_MARKS) return;
       marks.set(style.symbol, i + 1);
-      const [x, , z] = tileToWorld(tile);
-      const s = size * pop(j.id);
+      const [x, , z] = on ? [0, 0, 0] : tileToWorld(tile);
+      const s = on ? size : size * pop(j.id);
       place.position.set(x + (at?.x ?? 0), y, z + (at?.z ?? 0));
       place.rotation.set(upright ? Math.PI / 2 : 0, 0, 0);
       place.scale.set(s, 1, s);
       place.updateMatrix();
-      mesh.setMatrixAt(i, place.matrix);
+      mesh.setMatrixAt(i, on ? place.matrix.premultiply(on) : place.matrix);
       mesh.setColorAt(i, tint);
     };
     const { flat } = PARTS;
     // On a flat image the symbol lies on it, at its spot.
-    const lie = (j: Jump, tile: number, at: { x: number; z: number; size: number }, tint: Color) => mark(j, tile, flat.y + 0.006, at.size, tint, at, false);
+    const lie = (j: Jump, tile: number, at: { x: number; z: number; size: number }, tint: Color, on?: Matrix4) => mark(j, tile, flat.y + 0.006, at.size, tint, at, false, on);
     for (const j of ladders) {
       const pair = colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud);
       if (modelEnds) {
         // On the rocket's cream porthole, in the pair's colour; in glowing gold on the flag's pennant.
-        mark(j, j.from, PARTS.rocket.y, PARTS.symbol.pad, pair, { x: 0, z: PARTS.rocket.z });
-        mark(j, j.to, PARTS.flag.y, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe), PARTS.flag);
+        mark(j, j.from, PARTS.rocket.y, PARTS.symbol.pad, pair, { x: 0, z: PARTS.rocket.z }, true, base.copy(rocketAt(j)));
+        mark(j, j.to, PARTS.flag.y, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe), PARTS.flag, true, base.copy(flagAt(j)));
       } else {
-        lie(j, j.from, flat.rocket.symbol, pair);
-        lie(j, j.to, flat.flag.symbol, colour.copy(GOLD).multiplyScalar(breathe));
+        lie(j, j.from, flat.rocket.symbol, pair, base.copy(rocketAt(j)));
+        lie(j, j.to, flat.flag.symbol, colour.copy(GOLD).multiplyScalar(breathe), base.copy(flagAt(j)));
       }
     }
     for (const j of snakes) {

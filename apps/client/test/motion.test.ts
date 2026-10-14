@@ -3,11 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { BEAT_MS, buildTimeline } from '../src/director/beats';
 import type { PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
-import { tileToWorld } from '../src/scene/layout';
-import { FACE_OFF_GAP, STACK_HEIGHT, beatPose, projectileAt, restPose } from '../src/scene/motion';
+import { PARTS, tileToWorld } from '../src/scene/layout';
+import { END_ROW, FACE_OFF_GAP, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
+
+/** A tile no rocket or flag stands on, where pieces stack. */
+const PLAIN = (() => {
+  const ends = new Set(openingUpdate().view.board.jumps.filter((j) => j.to > j.from).flatMap((j) => [j.from, j.to]));
+  return Array.from({ length: 98 }, (_, i) => i + 2).find((t) => !ends.has(t))!;
+})();
 
 function at(positions: Record<PlayerId, number> = {}): PresentationState {
   const shown = presentationFromView(openingUpdate().view);
@@ -41,7 +47,7 @@ describe('rest poses', () => {
   });
 
   it('stands a later arrival on top of the stack', () => {
-    const state = { ...at({ p0: 5, p1: 5 }), arrivals: ['p1', 'p0', 'p2', 'p3'] };
+    const state = { ...at({ p0: PLAIN, p1: PLAIN }), arrivals: ['p1', 'p0', 'p2', 'p3'] };
     expect(restPose(state, 'p0', 0).position[1] - restPose(state, 'p1', 1).position[1]).toBeCloseTo(STACK_HEIGHT);
   });
 
@@ -55,14 +61,88 @@ describe('rest poses', () => {
   });
 });
 
+describe('pieces at a rocket or a flag (round 5)', () => {
+  const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
+  const players = ['p0', 'p1', 'p2', 'p3'];
+  const flat = (p: readonly number[]) => [p[0]!, p[2]!] as const;
+  const apart = (a: readonly number[], b: readonly number[]) => Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!);
+
+  /** Where n pieces stand on a tile, and that tile's centre on the ground. */
+  function row(tile: number, n: number) {
+    const state = at(Object.fromEntries(players.slice(0, n).map((id) => [id, tile])));
+    return players.slice(0, n).map((id, seat) => restPose(state, id, seat).position);
+  }
+
+  it.each([1, 2, 3, 4])('stands %i pieces in a row in front of a flag, clear of its pole and of each other', (n) => {
+    const [x, , z] = tileToWorld(ladder.to);
+    const pole = [x + PARTS.flag.pole, z];
+    const spots = row(ladder.to, n);
+    for (const [i, spot] of spots.entries()) {
+      expect(spot[1]).toBe(0); // side by side, not stacked
+      expect(spot[2]).toBeCloseTo(z + END_ROW.forward);
+      expect(apart(flat(spot), pole)).toBeGreaterThan(0.35);
+      for (const other of spots.slice(i + 1)) expect(apart(flat(spot), flat(other))).toBeGreaterThan(0.35);
+    }
+  });
+
+  it('stands pieces in a row in front of a rocket too, clear of it', () => {
+    const [x, , z] = tileToWorld(ladder.from);
+    const spots = row(ladder.from, 4);
+    for (const spot of spots) {
+      expect(spot[1]).toBe(0);
+      expect(apart(flat(spot), [x, z])).toBeGreaterThan(0.35);
+    }
+    expect(new Set(spots.map((s) => s[0])).size).toBe(4);
+  });
+
+  it('still stacks pieces on a plain tile', () => {
+    const [low, high] = row(PLAIN, 2);
+    expect(high![1] - low![1]).toBeCloseTo(STACK_HEIGHT);
+  });
+
+  it('keeps a face-off on a flag tile side by side, as on any tile', () => {
+    const state = { ...at({ p0: ladder.to, p1: ladder.to }), faceOffs: [{ challengeId: 'c1', tile: ladder.to, players: ['p0', 'p1'] }] };
+    const left = restPose(state, 'p0', 0).position;
+    const right = restPose(state, 'p1', 1).position;
+    expect(right[0] - left[0]).toBeCloseTo(FACE_OFF_GAP);
+    expect(left[2]).toBeCloseTo(tileToWorld(ladder.to)[2]);
+  });
+});
+
+describe('the ends react (round 5)', () => {
+  const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
+  const other = openingUpdate().view.board.jumps.find((j) => j.to > j.from && j.id !== ladder.id)!;
+  const from = at({ p0: ladder.from });
+  const launch = beat([moved('p0', ladder.from, ladder.to, 'ladder')], from);
+
+  it('shakes a rocket as a piece launches from it, and leaves its flag still till the landing', () => {
+    const early = endReaction(launch, ladder, 200);
+    expect(early.rocket).not.toEqual(STILL_END);
+    expect(early.flag).toEqual(STILL_END);
+  });
+
+  it('waves the flag as the piece lands at it, and the rocket has settled', () => {
+    const late = endReaction(launch, ladder, launch.durationMs - 250);
+    expect(late.flag.sway).not.toBe(0);
+    expect(late.flag.pop).toBeGreaterThan(1);
+    expect(late.rocket).toEqual(STILL_END);
+  });
+
+  it("leaves other jumps' ends still, and every end still with reduced motion or no beat", () => {
+    expect(endReaction(launch, other, 200)).toEqual({ rocket: STILL_END, flag: STILL_END });
+    expect(endReaction(launch, ladder, 200, true)).toEqual({ rocket: STILL_END, flag: STILL_END });
+    expect(endReaction(null, ladder, 200)).toEqual({ rocket: STILL_END, flag: STILL_END });
+  });
+});
+
 describe('beat poses (spec #2 §5.1)', () => {
   it('hops tile by tile on a dice move', () => {
     const from = at({ p0: 2 });
     const b = beat([moved('p0', 2, 5)], from);
-    expectNear(beatPose(b, from, 'p0', 0, 0, SIZE).position, tileToWorld(2));
+    expectNear(beatPose(b, from, 'p0', 0, 0, SIZE).position, restPose(from, 'p0', 0).position);
     expectNear(beatPose(b, from, 'p0', 0, BEAT_MS.hopPerTile, SIZE).position, tileToWorld(3));
     expect(beatPose(b, from, 'p0', 0, BEAT_MS.hopPerTile * 1.5, SIZE).position[1]).toBeGreaterThan(0.3);
-    expectNear(beatPose(b, from, 'p0', 0, b.durationMs, SIZE).position, tileToWorld(5));
+    expectNear(beatPose(b, from, 'p0', 0, b.durationMs, SIZE).position, restPose(b.after, 'p0', 0).position);
   });
 
   it('walks a bounce up to the last tile and back', () => {
@@ -78,7 +158,7 @@ describe('beat poses (spec #2 §5.1)', () => {
     expect(beatPose(b, from, 'p0', 0, b.durationMs / 2, SIZE).orb).toBe(true);
     const end = beatPose(b, from, 'p0', 0, b.durationMs, SIZE);
     expect(end.orb).toBe(false);
-    expectNear(end.position, tileToWorld(26));
+    expectNear(end.position, restPose(b.after, 'p0', 0).position);
     expectNear(end.scale, [1, 1, 1]);
   });
 
@@ -102,8 +182,8 @@ describe('beat poses (spec #2 §5.1)', () => {
     const b = beat([card], from);
     const seatOf = (id: PlayerId) => Number(id.slice(1));
     const start = projectileAt(b, from, seatOf, 0)!;
-    expect(start[0]).toBeCloseTo(tileToWorld(20)[0]);
-    expect(start[2]).toBeCloseTo(tileToWorld(20)[2]);
+    expect(start[0]).toBeCloseTo(restPose(from, 'p1', 1).position[0]);
+    expect(start[2]).toBeCloseTo(restPose(from, 'p1', 1).position[2]);
     expect(projectileAt(b, from, seatOf, b.durationMs * 0.25)![1]).toBeGreaterThan(1.5);
     expect(projectileAt(b, from, seatOf, b.durationMs * 0.6)).toBeNull();
     expect(projectileAt({ ...b, events: [{ ...card, target: 'p1' }] }, from, seatOf, 0)).toBeNull();

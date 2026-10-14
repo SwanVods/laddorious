@@ -1,4 +1,4 @@
-import type { GameEvent, PlayerId } from '@laddorious/core';
+import type { GameEvent, Jump, PlayerId } from '@laddorious/core';
 import { BEAT_MS } from '../director/beats';
 import type { DirectorState, PlayingBeat } from '../director/director';
 import { stackOn, type PresentationState } from '../director/presentation';
@@ -15,6 +15,8 @@ export interface Pose {
 /** How far a stacked piece rises, and how far apart face-off opponents stand (world units). */
 export const STACK_HEIGHT = 1.05;
 export const FACE_OFF_GAP = 0.85;
+/** Pieces on a rocket's or a flag's tile stand in a row this far in front of it (toward the camera), this far apart (round 5). */
+export const END_ROW = { forward: 0.55, gap: 0.5 } as const;
 const HOP_HEIGHT = 0.55;
 const STEP_HEIGHT = 0.15;
 
@@ -37,6 +39,16 @@ export function headingOf(tile: number): number {
   return tile <= 0 || tileCell(tile).row % 2 === 0 ? Math.PI / 2 : -Math.PI / 2;
 }
 
+/** A rocket or a flag fills the middle of its tile: pieces there stand in a row in front of it, not on it (round 5). */
+export function standsInRow(state: PresentationState, tile: number): boolean {
+  return state.jumps.some((j) => j.to > j.from && (j.from === tile || j.to === tile));
+}
+
+/** The pieces in the row on a rocket's or a flag's tile, left to right: those not in a face-off, in arrival order. */
+export function rowOn(state: PresentationState, tile: number): PlayerId[] {
+  return stackOn(state, tile).filter((id) => !state.faceOffs.some((f) => f.tile === tile && f.players.includes(id)));
+}
+
 export function restPose(state: PresentationState, player: PlayerId, seat: number): Pose {
   const tile = state.positions[player] ?? 0;
   const at = tileToWorld(tile, seat);
@@ -47,8 +59,42 @@ export function restPose(state: PresentationState, player: PlayerId, seat: numbe
     const offset = (faceOff.players.indexOf(player) - (faceOff.players.length - 1) / 2) * FACE_OFF_GAP;
     return still([at[0] + offset, at[1], at[2]], [0, offset < 0 ? Math.PI / 2 : -Math.PI / 2, 0]);
   }
+  if (standsInRow(state, tile)) {
+    const offset = (Math.max(0, rowOn(state, tile).indexOf(player)) - (rowOn(state, tile).length - 1) / 2) * END_ROW.gap;
+    return still([at[0] + offset, at[1], at[2] + END_ROW.forward], facing);
+  }
   const level = Math.max(0, stackOn(state, tile).indexOf(player));
   return still([at[0], at[1] + level * STACK_HEIGHT, at[2]], facing);
+}
+
+/** How a rocket or a flag is moving: a sway (radians), a squash (height scale) and a pop (overall scale). */
+export interface EndMotion {
+  sway: number;
+  squash: number;
+  pop: number;
+}
+
+export const STILL_END: EndMotion = { sway: 0, squash: 1, pop: 1 };
+/** A rocket shakes for this long as a piece launches; a flag waves for this long up to the landing. */
+const ROCKET_SHAKE_MS = 500;
+const FLAG_WAVE_MS = 600;
+
+/**
+ * How a ladder's rocket and flag react `nowMs` into a beat (round 5): the rocket shakes and squashes as a
+ * piece launches from it, and the flag waves and pops as the piece comes down onto it. Still otherwise.
+ */
+export function endReaction(beat: PlayingBeat | null, jump: Jump, nowMs: number, reducedMotion = false): { rocket: EndMotion; flag: EndMotion } {
+  const still = { rocket: STILL_END, flag: STILL_END };
+  if (reducedMotion || beat?.kind !== 'launch') return still;
+  if (!beat.events.some((e) => e.type === 'Moved' && e.from === jump.from && e.to === jump.to)) return still;
+  const elapsed = nowMs - beat.startedAt;
+  const shake = elapsed / ROCKET_SHAKE_MS;
+  const wave = (elapsed - (beat.durationMs - FLAG_WAVE_MS)) / FLAG_WAVE_MS;
+  const bump = (k: number) => Math.sin(Math.PI * k);
+  return {
+    rocket: shake > 0 && shake < 1 ? { sway: 0.1 * Math.sin(6 * Math.PI * shake) * (1 - shake), squash: 1 - 0.12 * bump(shake), pop: 1 + 0.12 * bump(shake) } : STILL_END,
+    flag: wave > 0 && wave < 1 ? { sway: 0.35 * Math.sin(3 * Math.PI * wave) * bump(wave), squash: 1, pop: 1 + 0.12 * bump(wave) } : STILL_END,
+  };
 }
 
 /**
