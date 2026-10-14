@@ -28,7 +28,7 @@
 
 After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-On `fix/known-issues` after the user's known-issues list (2026-10-14): 89 test files and 746 tests pass, and `pnpm e2e` passes 16 of 17 (about 10 minutes): the online away test is flaky, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
+On `fix/known-issues` after the user's known-issues list and the animation round (2026-10-14): 91 test files and 872 tests pass, and `pnpm e2e` passes 16 of 17 (about 10 minutes): the online away test is flaky, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
 ## Next step: the user reviews the known-issues fixes, then the board theme
 
@@ -41,6 +41,7 @@ On `fix/known-issues` after the user's known-issues list (2026-10-14): 89 test f
 6. Rockets (smaller, no pad) and flags stand in their tile's top-right corner; pieces stack in the middle again. Rocket trails use the slide's outlined arrowheads, along the arc. Epic "?" tiles shine.
 7. Menu: the arrows alone choose the piece; a cleaner gear; the Sound switch is on while sound plays; a slow first load of Tone no longer leaves the sound silent.
 8. Found on the way: the card-pick popup stayed open while cards resolved after a timed-out pick; it now closes.
+9. Then, after the user compared the animations with the match mockup (spec #2 C17): flips and wobbles turn about the piece's own side (the camera sees them side-on); hops ease in and out and land with a squash, slower and higher onto a stack; pieces stand by measured sizes so nothing overlaps; the face-off opens on the collision, the top piece hops down, the loser backflips and lands, then the winner settles; the camera follows each player's slide, launch and knock-back; pauses after the last roll and after each card. A card can still push a player off tile 100 before the round ends (engine test).
 
 After approval: fast-forward merge `fix/known-issues` into `main`. Then the **board theme** (the user's "Visual Board plan": the island, table and border need a real theme, with the energy of Fall Guys or Stumble Guys in our own palette): a design step first, with 3 or 4 visual directions on a page for the user to pick from; it replaces plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`).
 
@@ -137,6 +138,8 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - No browser run caught my own face-off or a landing on a stack during the screenshots; the face-off steps and the wiggle are covered by unit tests.
   - The golden snapshot file (`packages/core/test/__snapshots__/golden.test.ts.snap`) is rewritten with LF line endings on every test run, so git shows it modified (no content change); `git checkout` it before committing.
   - Card bubbles over the pieces still appear at the start of each card's beat, during the camera's 450 ms lead-in.
+  - A face-off of three or four pieces stands in a ring that can reach past its tile into a neighbour's (rare).
+  - No recording compares the new animations with the mockup: a face-off can't be forced in a real match, and the headless browser draws about 10 fps. A dev-only demo page that plays a scripted stack and face-off would make them easy to check.
 - **Deferred Spec #5 Step 2 round 5 minors** (from the self-review; not fixed):
   - A rocket's flame doesn't flare as it launches: the flame is part of the instanced rocket and its glow can't change per copy. The rocket rocks and squashes instead.
   - In fast e2e builds (beats × 0.05) the 3 s victory beat ends before the crown's 1.2 s flight, so it appears on the head at once; the flight is covered by unit tests, not seen in a browser.
