@@ -1,6 +1,6 @@
 import type { PlayerId, WindowKind } from '@laddorious/core';
 import type { Beat } from '../director/beats';
-import { BOARD_SCALE, type Vec3 } from './layout';
+import { BOARD_SCALE, TILE_SIZE, tileToWorld, type Vec3 } from './layout';
 
 export type ShotMode = 'overview' | 'follow' | 'swoop';
 
@@ -53,6 +53,8 @@ export function cameraShot(input: ShotInput): Shot {
   if (card) return card;
   const mine = input.piece(me);
   if (isMyMoment(input)) return swoop(mine, input);
+  const resolving = resolvingPiece(input);
+  if (resolving) return follow(input.piece(resolving));
   const busy = beat !== null && beat.kind !== 'roll' && beat.kind !== 'info';
   if (busy || input.window === 'challenge' || input.window === 'mystery') return follow(mine);
   // Everyone rolls: the whole board, drifting gently.
@@ -76,6 +78,27 @@ function cardShot(input: ShotInput): Shot | null {
   const at: Vec3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
   const back = 1 + Math.hypot(b[0] - a[0], b[2] - a[2]) / 10;
   return { mode: 'follow', position: offset(at, [FOLLOW[0] * back, FOLLOW[1] * back, FOLLOW[2] * back]), target: at, cut: input.reducedMotion };
+}
+
+/**
+ * Whose moment a beat is (2026-10-14: the camera follows each player's resolution): the piece that slides,
+ * launches or dodges a slide, and the piece knocked back from a face-off, unless I won that face-off, when
+ * the camera stays with me on the tile, as in the mockup.
+ */
+function resolvingPiece({ beat, me, piece }: ShotInput): PlayerId | null {
+  if (!beat) return null;
+  if (beat.kind === 'slide' || beat.kind === 'launch' || beat.kind === 'snakeBlocked') {
+    const e = beat.events.find((ev) => ev.type === 'Moved' || ev.type === 'SnakeBlocked');
+    return e?.type === 'Moved' || e?.type === 'SnakeBlocked' ? e.player : null;
+  }
+  if (beat.kind === 'knockback') {
+    const e = beat.events.find((ev) => ev.type === 'Moved');
+    if (e?.type !== 'Moved') return null;
+    const [x, , z] = tileToWorld(e.from);
+    const [mx, , mz] = piece(me);
+    return Math.hypot(mx - x, mz - z) < TILE_SIZE / 2 ? me : e.player;
+  }
+  return null;
 }
 
 function overview(input: ShotInput): Shot {

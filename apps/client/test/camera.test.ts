@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
 import { presentationFromView } from '../src/director/presentation';
 import { cameraShot, type ShotInput } from '../src/scene/camera';
-import { BOARD_SCALE, COLUMNS, TILE_SIZE, type Vec3 } from '../src/scene/layout';
+import { BOARD_SCALE, COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from '../src/scene/layout';
 import { openingUpdate } from './support/fixtures';
 
 const SPOTS: Record<PlayerId, Vec3> = { p0: [1, 0, 1], p1: [5, 0, -3], p2: [-4, 0, 2], p3: [0, 0, -6] };
@@ -48,10 +48,19 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ window: 'challenge' })).toMatchObject({ mode: 'follow', target: SPOTS.p0 });
   });
 
-  it("swoops in for my own slide or launch, but not for anyone else's", () => {
+  it("swoops in for my own slide or launch, and follows anyone else's (2026-10-14)", () => {
     expect(shot({ beat: beatOf('slide', [moved('p0', 'snake')]) }).mode).toBe('swoop');
     expect(shot({ beat: beatOf('launch', [moved('p0', 'ladder')]) }).mode).toBe('swoop');
-    expect(shot({ beat: beatOf('slide', [moved('p2', 'snake')]) }).mode).toBe('follow');
+    expect(shot({ beat: beatOf('slide', [moved('p2', 'snake')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p2 });
+    expect(shot({ beat: beatOf('launch', [moved('p3', 'ladder')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p3 });
+    expect(shot({ beat: beatOf('snakeBlocked', [{ type: 'SnakeBlocked', player: 'p1', tile: 9, visibility: 'public' } as GameEvent]) })).toMatchObject({ target: SPOTS.p1 });
+  });
+
+  it("follows another player's knock-back, but stays on me when I won it (2026-10-14)", () => {
+    expect(shot({ beat: beatOf('knockback', [moved('p2', 'knockback')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p2 });
+    // I won: I'm standing on the tile the loser flies from.
+    const won = { type: 'Moved', player: 'p2', from: 9, to: 6, cause: 'knockback', bounced: false, visibility: 'public' } as GameEvent;
+    expect(shot({ beat: beatOf('knockback', [won]), piece: (id) => (id === 'p0' ? tileToWorld(9) : SPOTS[id]!) }).target).toEqual(tileToWorld(9));
   });
 
   it('swoops in for a face-off I am in', () => {
