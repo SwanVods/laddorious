@@ -48,7 +48,6 @@ export class MatchRoom {
   private readonly timers = new Set<Timer>();
   private sweeper: ReturnType<typeof setInterval> | null = null;
   private empty: Timer | null = null;
-  private won = false;
   private closed = false;
 
   constructor(opts: { fast?: boolean } = {}) {
@@ -199,9 +198,8 @@ export class MatchRoom {
     }
   }
 
-  /** Everyone connected hears who is away. Not after the win: end screens don't need it. */
+  /** Everyone connected hears who is away, after the win too: a player reloading then comes back on the end screen. */
   private presence(): void {
-    if (this.won) return;
     const away = [...this.away];
     for (const human of this.humans.values()) human.conn?.send({ type: 'presence', away });
   }
@@ -217,7 +215,6 @@ export class MatchRoom {
       this.close(); // the host has told everyone
       return;
     }
-    this.won = true;
     this.later(END_LINGER_MS, () => this.close());
   }
 

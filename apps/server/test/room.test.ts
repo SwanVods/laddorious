@@ -211,16 +211,17 @@ describe('MatchRoom away and rejoin (spec #4 §5.2)', () => {
 });
 
 describe('MatchRoom end (spec #4 §5.2)', () => {
-  it('closes every socket 10 s after the win, and tells nobody who left after it', () => {
+  it('closes every socket 10 s after the win, still telling everyone who leaves and comes back until then', () => {
     const { room, tokens, connect } = setup({ fast: true });
     const ari = connect(tokens.p0!);
     const bo = connect(tokens.p1!);
     const won = () => ari.updates().some((u) => u.view.phase.kind === 'finished');
     for (let t = 0; t < 600_000 && !won(); t += 1000) pass(room, 1000, ari, bo);
     expect(won()).toBe(true);
-    const presences = ari.of('presence').length;
     room.drop(bo);
-    expect(ari.of('presence')).toHaveLength(presences);
+    expect(ari.lastPresence()).toEqual(['p1']);
+    connect(tokens.p1!); // a reload just after the win
+    expect(ari.lastPresence()).toEqual([]);
     vi.advanceTimersByTime(END_LINGER_MS);
     expect(ari.closed).toBe(true);
     expect(connect().sent[0]).toMatchObject({ type: 'failed', reason: 'server-error' });

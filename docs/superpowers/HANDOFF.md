@@ -127,7 +127,6 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 - **Deferred Spec #4 minors** (from the self-review; not fixed):
   - The lobby socket has no silence check: a half-open lobby socket freezes the overlay's clock, and its seat becomes an away seat once someone calls in bots.
   - A duplicated browser tab copies `sessionStorage`, so the two tabs take the same seat from each other in a loop.
-  - A rejoin during the 10 s after the win can leave the "Reconnecting…" pill under the end screen (the server sends no presence after the win).
   - A match that fails to start shows the server's raw error text in the unreachable overlay.
   - A session that never connected at all ends with "The match carried on without you" after 60 s.
   - The Away badge and the "Reconnecting…" pill were checked through the DOM only (the browser pane was hidden); worth a look on a phone.
@@ -141,7 +140,6 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - `useSlotMesh` clones the prepared materials on each quality change and never disposes the copies.
   - The vortex's spiral ridges show small kinks close up (about 20° of turn per ring).
   - A match entered without the menu hasn't preloaded the board's models either, so they pop in from the stand-ins once.
-  - The online "away, then reload" e2e test times out under a full run's load (twice now, at different steps); it passes alone. A fresh page under SwiftShader spends about 15 s compiling shaders, and the reload's page is fresh.
   - The whirlpool and splat stay within radius 0.43 (the lane clearance rule), so the whirlpool's symbol is a little smaller than the approved mockup's.
   - A card that removes a jump can change the style of a later jump that had collided with it in the pair assignment (rare).
   - The crown has no Low file: thinned to 30% it lost its points, so it stays one 6,000-triangle model on Low.
