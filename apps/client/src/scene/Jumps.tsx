@@ -13,16 +13,14 @@ import { clamp01, easeOutBack } from './motion';
 import { SYMBOLS, pairStyles, type PairStyle, type SymbolName } from './pairs';
 import { REVEAL_MS, shownPaths, type Peeks } from './paths';
 import { chevronTexture, swirlTexture } from './textures';
-import { CHANNEL, TRAIL, channelGeometry, padHeading, trailGeometry, trailPath } from './tracks';
+import { CHANNEL, TRAIL, channelGeometry, trailGeometry, trailPath } from './tracks';
 
 /** A cap that keeps a crowded board inside the draw-call and triangle budget (spec #2 §6.4). */
 const MAX_JUMPS = 24;
 /** Room in each symbol's instanced mesh: both ends of every jump, should one symbol take them all. */
 const MAX_MARKS = 4 * MAX_JUMPS;
-const INK = new Color(WORLD_COLORS.ink);
 const GOLD = new Color(WORLD_COLORS.crown);
 const CREAM = new Color(PAIR_COLORS.cap);
-const hsl = { h: 0, s: 0, l: 0 };
 
 /** A shown path's progress: when it began to grow in, and when it began to shrink away. */
 interface Reveal {
@@ -211,7 +209,7 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
     };
     stamp(vorticesRef.current, snakes, (j) => j.from, () => clock.elapsedTime * 2.5);
     stamp(exitsRef.current, snakes, (j) => j.to, () => 0);
-    stamp(padsRef.current, ladders, (j) => j.from, padHeading);
+    stamp(padsRef.current, ladders, (j) => j.from, () => 0); // a rocket's porthole faces the camera
     stamp(targetsRef.current, ladders, (j) => j.to, () => 0);
     // The symbols lie flat and upright to the camera; a landing's glowing gold breathes.
     const marks = new Map<SymbolName, number>();
@@ -234,17 +232,14 @@ export function Jumps({ director, clearcoat, peeks }: { director: Director; clea
       mesh.setColorAt(i, tint);
     };
     for (const j of ladders) {
-      // A dark pad (teal, plum) carries a cream symbol: a dark one would vanish on it.
-      colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud);
-      mark(j, j.from, PARTS.padTop + 0.004, PARTS.symbol.pad, colour.getHSL(hsl).l < 0.4 ? CREAM : INK);
+      // On the rocket's cream porthole, in the pair's colour.
+      mark(j, j.from, PARTS.rocket.y, PARTS.symbol.pad, colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud), { x: 0, z: PARTS.rocket.z });
       mark(j, j.to, PARTS.flag.y, PARTS.symbol.landing, colour.copy(GOLD).multiplyScalar(breathe), PARTS.flag);
     }
     for (const j of snakes) {
-      const pair = styles.get(j.id)?.colour ?? WORLD_COLORS.cloud;
-      // On the cream cap a cream symbol wouldn't show: the cream pair's symbol is drawn in ink there.
-      mark(j, j.from, PARTS.cap.top + 0.002, PARTS.symbol.eye, pair === PAIR_COLORS.cap ? INK : colour.set(pair));
-      // The splat is the pair's colour, so its symbol is cream (ink on a cream splat).
-      mark(j, j.to, PARTS.splat.top + 0.004, PARTS.symbol.exit, pair === PAIR_COLORS.cap ? INK : CREAM);
+      // On the whirlpool's cream cap in the pair's colour; on the splat, which is the pair's colour, in cream.
+      mark(j, j.from, PARTS.cap.top + 0.002, PARTS.symbol.eye, colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud));
+      mark(j, j.to, PARTS.splat.top + 0.004, PARTS.symbol.exit, CREAM);
     }
     for (const name of SYMBOLS) {
       const mesh = symbolsRef.current[name];

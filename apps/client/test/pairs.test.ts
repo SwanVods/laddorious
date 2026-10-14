@@ -1,4 +1,5 @@
 import type { Jump } from '@laddorious/core';
+import { Color, SRGBColorSpace } from 'three';
 import { describe, expect, it } from 'vitest';
 import { PAIR_COLORS } from '../src/app/theme';
 import { SYMBOLS, pairStyles } from '../src/scene/pairs';
@@ -18,9 +19,9 @@ describe('pair styles: a jump and its end share a colour and a symbol (spec #5 A
     }
   });
 
-  it("keeps portals off the dark colours, which vanish on a portal's dark bowl", () => {
-    const styles = pairStyles(busy);
-    for (const j of busy.filter((j) => j.to < j.from)) expect(PAIR_COLORS.portal).toContain(styles.get(j.id)!.colour);
+  it('uses only light palette colours, nothing near black (the user, Step 2 review 4)', () => {
+    const hsl = { h: 0, s: 0, l: 0 };
+    for (const colour of Object.values(PAIR_COLORS.all)) expect(new Color(colour).getHSL(hsl, SRGBColorSpace).l, colour).toBeGreaterThan(0.55);
   });
 
   it('keeps every style when a card adds a jump, and ignores the order the jumps come in', () => {

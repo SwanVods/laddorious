@@ -11,7 +11,8 @@ PODIUM_TOP = '#fff3e3'
 MINT = '#5ff0c5'
 PINK = '#ff5470'
 RED = '#ff5a5f'    # the board's red squares; the die's one pip
-SLIDE = '#2a2140'  # inside a slide's vortex
+SLIDE = '#2a2140'
+SHADE = '#9a9a9a'  # a Tint part's deep side (the whirlpool's bowl): the pair colour makes it a deeper shade of itself
 
 
 def linear(colour):

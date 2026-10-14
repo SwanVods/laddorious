@@ -34,17 +34,22 @@ export const WORLD_COLORS = {
 } as const;
 
 /**
- * Pair colours (spec #5 A13): a jump's start and end share one, with a matching symbol. Each reads on
- * every square colour with a dark rim. The dark ones are for ladders only: they vanish on a portal's dark bowl.
+ * Pair colours (spec #5 A13, A16): a jump's start and end share one, with a matching symbol. All light and
+ * from the Tangerine Dusk family, nothing near black (the user, Step 2 review 4); cream is left out so the
+ * cream caps, portholes and symbols always stand out on them.
  */
-const PAIR = { pink: '#ff4f9a', cyan: '#33d6ff', lime: '#b8f03c', cream: '#fff7ec', teal: '#0f5d63', plum: '#7a2e6e' } as const;
+const PAIR = { pink: '#ff4f9a', cyan: '#33d6ff', lime: '#b8f03c', peach: '#ffc184', violet: '#b48cff' } as const;
 export const PAIR_COLORS = {
   all: PAIR,
   /** In the order pairs take them. */
-  ladder: [PAIR.pink, PAIR.cyan, PAIR.lime, PAIR.cream, PAIR.teal, PAIR.plum],
-  portal: [PAIR.pink, PAIR.cyan, PAIR.lime, PAIR.cream],
-  /** The cap in a whirlpool's eye, under its symbol. */
-  cap: PAIR.cream,
+  ladder: [PAIR.pink, PAIR.cyan, PAIR.lime, PAIR.peach, PAIR.violet],
+  portal: [PAIR.pink, PAIR.cyan, PAIR.lime, PAIR.peach, PAIR.violet],
+  /** The cap in a whirlpool's eye, under its symbol, and the splat's symbol. */
+  cap: '#fff7ec',
+  /** Round the cap's side: a warm edge, not ink. */
+  capSide: '#ffc184',
+  /** A part's deep side (the whirlpool's bowl, art/lib/palette.py SHADE): the pair colour makes it a deeper shade of itself. */
+  shade: '#9a9a9a',
 } as const;
 
 /** The menu podium and its floating island (spec #2 §7.4 Podium tokens). */

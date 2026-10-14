@@ -32,14 +32,15 @@ function oneOnTop(model: GlbSummary): string | null {
   return `the one-pip face is not on top (+Y): its pip is at ${mid.map((v) => (v + 0).toFixed(2)).join(', ')}`;
 }
 
-/** A material's part points forward (+Z), the way the game turns pads toward their landing: it reaches further forward than back. */
-function forward(material: string) {
+/** A material's part faces the camera (+Z) where the game stands a symbol on it (the rocket's porthole, spec #5 A16). */
+function facesCamera(material: string, spot: { y: number; z: number }) {
   return (model: GlbSummary): string | null => {
     const part = model.byMaterial[material];
     if (!part) return null; // requiredMaterials reports it missing
-    const ahead = part.max[2]!;
-    const back = -part.min[2]!;
-    return ahead > back + 0.05 ? null : `the ${material} does not point forward (+Z): it reaches ${ahead.toFixed(2)} forward and ${back.toFixed(2)} back`;
+    const front = part.max[2]!;
+    if (Math.abs(front - spot.z) > 0.03) return `its ${material} faces away: its front is at ${front.toFixed(2)}, the symbol stands at ${spot.z}`;
+    const middle = (part.min[1]! + part.max[1]!) / 2;
+    return Math.abs(middle - spot.y) <= 0.04 ? null : `its ${material} is ${middle.toFixed(2)} high, the symbol stands at ${spot.y}`;
   };
 }
 
@@ -77,7 +78,8 @@ export const MODELS: Record<string, ModelRule> = {
   // The board (spec #5 §4.2, A13): parts stand on the tile top; instancing draws each once per material, and
   // the instance colour (each jump's pair colour) paints Tint, so every jump part has it.
   tile: { slot: 'tile', origin: 'base', height: [0.29, 0.31], maxWidth: 1.53, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
-  pad: { slot: 'pad', origin: 'base', height: [0.28, 0.34], maxWidth: 1.25, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Tint', 'Ink'], checks: [forward('Ink'), topAt(PARTS.padTop)] },
+  // A ladder's start is a launch rocket: Tint, a glowing cream porthole facing the camera, a glowing flame (A16).
+  pad: { slot: 'pad', origin: 'base', height: [1.05, 1.25], maxWidth: 1.0, maxTriangles: 1500, maxMaterials: 3, requiredMaterials: ['Tint', 'Window'], checks: [facesCamera('Window', PARTS.rocket)] },
   // A ladder's end is a flag, all Tint; a portal's end is a flat splat.
   target: { slot: 'pad.target', origin: 'base', height: [1.2, 1.35], maxWidth: 1.3, maxTriangles: 1500, maxMaterials: 1, requiredMaterials: ['Tint'] },
   vortex: { slot: 'slide.vortex', origin: 'base', height: [0.08, 0.14], maxWidth: 0.88, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Inside', 'Tint'] },

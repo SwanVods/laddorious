@@ -25,8 +25,8 @@ export const LANE = { width: 0.3, edge: 0.1 } as const;
  * art/contract.ts checks their heights; the stand-ins in assets/models.ts use them too.
  */
 export const PARTS = {
-  /** The pad plate's top, where its symbol lies. */
-  padTop: 0.31,
+  /** A ladder's start is a launch rocket (the user, Step 2 review 4): the symbol stands here, just in front of its porthole, facing the camera (+Z). */
+  rocket: { y: 0.66, z: 0.275, height: 1.15 },
   /** At most 0.44: lanes a clearance apart never overlap, vortices and exits included (polish spec 4.1). */
   vortexRadius: 0.43,
   /** The still cap in a whirlpool's eye: its radius, and its top, where the symbol lies. */
@@ -38,7 +38,7 @@ export const PARTS = {
   /** Symbols on tile tops sit just above the board overlay. */
   onTile: 0.012,
   /** Each symbol's size across. */
-  symbol: { pad: 0.5, landing: 0.34, eye: 0.33, exit: 0.34 },
+  symbol: { pad: 0.22, landing: 0.34, eye: 0.33, exit: 0.34 },
 } as const;
 
 /** Centre of a tile's top face; row 0 is nearest the camera (+Z). Tile 0 is a start spot in front of the board, one per seat. */

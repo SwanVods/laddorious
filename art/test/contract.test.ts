@@ -58,23 +58,19 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
     expect(contractProblems('teapot', knight())).toEqual(['teapot has no rule in art/contract.ts']);
   });
 
-  const pad = (notchZ: [number, number], top: number = PARTS.padTop): GlbSummary => ({
-    min: [-0.57, 0, -0.57],
-    max: [0.57, top, 0.57],
-    triangles: 1000,
+  const rocket = (front: number): GlbSummary => ({
+    min: [-0.4, 0, -0.4],
+    max: [0.4, PARTS.rocket.height, 0.4],
+    triangles: 900,
     shadowTriangles: 0,
-    materials: ['Tint', 'Ink'],
-    byMaterial: { Ink: { min: [-0.09, top - 0.04, notchZ[0]], max: [0.09, top, notchZ[1]] } },
+    materials: ['Tint', 'Window', 'Flame'],
+    byMaterial: { Window: { min: [-0.15, PARTS.rocket.y - 0.15, front - 0.06], max: [0.15, PARTS.rocket.y + 0.15, front] } },
     transformedNodes: [],
   });
 
-  it("checks a pad's notch points forward (+Z), the way the game turns it toward the landing (spec #5 A13)", () => {
-    expect(contractProblems('pad', pad([0.33, 0.47]))).toEqual([]);
-    expect(contractProblems('pad', pad([-0.47, -0.33]))).toEqual(['the Ink does not point forward (+Z): it reaches -0.33 forward and 0.47 back']);
-  });
-
-  it("keeps a pad's plate top where the game lays its symbol (PARTS.padTop)", () => {
-    expect(contractProblems('pad', pad([0.33, 0.47], PARTS.padTop + 0.03))).toEqual([`its top is at 0.340, but the symbol lies at ${PARTS.padTop}`]);
+  it("puts a launch rocket's porthole on its front, where the game stands its symbol (spec #5 A16)", () => {
+    expect(contractProblems('pad', rocket(PARTS.rocket.z))).toEqual([]);
+    expect(contractProblems('pad', rocket(-0.2))).toEqual([`its Window faces away: its front is at -0.20, the symbol stands at ${PARTS.rocket.z}`]);
   });
 
   it('keeps a tile to its one Tint material, so instancing can paint it, 0.30 tall (spec #5 A13)', () => {

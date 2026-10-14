@@ -33,10 +33,12 @@ def satin(name, colour):
     return material
 
 
-def glow(name, colour, strength=1.5):
-    """A lit accent: emission in the base colour (the dragon's eyes, rims, stars)."""
+def glow(name, colour, strength=1.5, base=None):
+    """A lit accent: emission in the base colour (the dragon's eyes, rims, stars). On an instanced part whose
+    instance colour tints every material, give it a dark `base`: the glow then shows its own colour whatever
+    the tint (a rocket's porthole and flame)."""
     material, bsdf = _material(name)
-    bsdf.inputs['Base Color'].default_value = linear(colour)
+    bsdf.inputs['Base Color'].default_value = linear(base or colour)
     bsdf.inputs['Roughness'].default_value = 0.3
     bsdf.inputs['Emission Color'].default_value = linear(colour)
     bsdf.inputs['Emission Strength'].default_value = strength

@@ -199,9 +199,12 @@ export function tileGeometry(): BufferGeometry {
 
 // The jumps' stand-ins (spec #5 §4.2): lying flat a hair above the tile top, facing +Z like the models.
 
-/** A launch pad: a short drum up to the plate, where its symbol lies (PARTS.padTop). */
+/** A ladder's start: a launch rocket on its little pad, a body and a nose cone up to PARTS.rocket.height. */
 export function padGeometry(): BufferGeometry {
-  return new CylinderGeometry(0.47, 0.57, PARTS.padTop, 28).translate(0, PARTS.padTop / 2, 0);
+  const base = new CylinderGeometry(0.38, 0.4, 0.06, 20).translate(0, 0.03, 0);
+  const body = new CylinderGeometry(0.24, 0.2, 0.74, 20).translate(0, 0.43, 0);
+  const nose = new ConeGeometry(0.24, PARTS.rocket.height - 0.8, 20).translate(0, (0.8 + PARTS.rocket.height) / 2, 0);
+  return mergeGeometries([base.toNonIndexed(), body.toNonIndexed(), nose.toNonIndexed()])!;
 }
 
 /** A ladder's end: a flag, its pole left of centre and its pennant where the game stands the gold symbol (PARTS.flag). */

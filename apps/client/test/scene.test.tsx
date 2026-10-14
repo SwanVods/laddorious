@@ -146,7 +146,7 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(root.getObjectByName(`trail-${ladder.id}`)).toBeInstanceOf(Mesh);
   });
 
-  it('stands the jump parts on their tiles and turns each pad toward its landing (spec #5 §4.2)', async () => {
+  it('stands the jump parts on their tiles, each rocket upright and facing the camera (spec #5 §4.2, A16)', async () => {
     const root = await renderScene('high');
     for (const name of ['vortices', 'exits', 'pads', 'targets']) expect(root.getObjectByName(name)).toBeInstanceOf(InstancedMesh);
     const pads = root.getObjectByName('pads') as InstancedMesh;
@@ -156,11 +156,26 @@ describe('the 3D scene (spec #2 §6)', () => {
     const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
     at.decompose(p, q, s);
     const [fx, , fz] = tileToWorld(ladder.from);
-    const [tx, , tz] = tileToWorld(ladder.to);
-    expect(p.x).toBeCloseTo(fx, 5);
-    expect(p.y).toBeCloseTo(0, 5);
-    expect(p.z).toBeCloseTo(fz, 5);
-    expect(new Vector3(0, 0, 1).applyQuaternion(q).dot(new Vector3(tx - fx, 0, tz - fz).normalize())).toBeCloseTo(1, 5);
+    expect([p.x, p.y, p.z].map((v) => +v.toFixed(5))).toEqual([+fx.toFixed(5), 0, +fz.toFixed(5)]);
+    expect(new Vector3(0, 0, 1).applyQuaternion(q).z).toBeCloseTo(1, 5); // its porthole looks at the camera
+  });
+
+  it("stands each rocket's symbol upright on its porthole, in the pair's colour (spec #5 A16)", async () => {
+    const root = await renderScene('high');
+    const { jumps } = openingUpdate().view.board;
+    const ladder = jumps.filter((j) => j.to > j.from)[0]!;
+    const style = pairStyles(jumps).get(ladder.id)!;
+    const mesh = root.getObjectByName(`symbols-${style.symbol}`) as InstancedMesh;
+    const at = new Matrix4();
+    mesh.getMatrixAt(0, at); // the rocket's symbol comes before its flag's
+    const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
+    at.decompose(p, q, s);
+    const [x, , z] = tileToWorld(ladder.from);
+    expect([p.x, p.y, p.z].map((v) => +v.toFixed(5))).toEqual([+x.toFixed(5), PARTS.rocket.y, +(z + PARTS.rocket.z).toFixed(5)]);
+    expect(new Vector3(0, 1, 0).applyQuaternion(q).z).toBeCloseTo(1, 5);
+    const colour = new Color();
+    mesh.getColorAt(0, colour);
+    expect(colour.getHex()).toBe(new Color(style.colour).getHex());
   });
 
   it("marks both ends of every jump with its pair's symbol, and each whirlpool's eye with a still cap (spec #5 A13)", async () => {

@@ -1,6 +1,6 @@
 """A slide's head (spec #5 §4.2, A13): a dark whirlpool bowl whose three ridges spiral down toward its
 eye, all one surface that rolls up into a rim. The ridges and rim are white Tint, so they take the
-pair's colour; the bowl stays dark. The eye sits under the still cap the game puts there (PARTS.cap),
+pair's colour; the bowl is grey, which the same colour makes a deeper shade of itself (no black). The eye sits under the still cap the game puts there (PARTS.cap),
 with the pair's symbol on it. The tile under it is solid, so the bowl can't sink in: its rim stands up
 and the bowl dips to the tile, which reads as sunken. The game spins it anticlockwise seen from above,
 so the ridges seem to pour inward."""
@@ -28,7 +28,7 @@ def turn(r):
 
 
 def build():
-    inside = finish.glossy('Inside', palette.SLIDE)
+    inside = finish.glossy('Inside', palette.SHADE)
     tint = finish.glossy('Tint', palette.WHITE)
     rows = []
     for r in BOWL:

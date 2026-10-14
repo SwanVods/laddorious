@@ -1,6 +1,6 @@
 import { BufferGeometry, Color, CylinderGeometry, Float32BufferAttribute, Shape, ShapeGeometry, Vector2 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PAIR_COLORS, WORLD_COLORS } from '../app/theme';
+import { PAIR_COLORS } from '../app/theme';
 import type { SymbolName } from '../scene/pairs';
 
 // The pair symbols (spec #5 A13), drawn as in the approved mockup: each in a 100-unit box, y down.
@@ -79,12 +79,15 @@ function paint(geometry: BufferGeometry, colour: Color): BufferGeometry {
   return geometry;
 }
 
-/** How much wider the dark rim is than the face. */
+/** How much wider the rim is than the face. */
 const RIM = 1.18;
+/** The rim's grey: the instance colour paints it a deeper shade of the symbol's own colour, never black. */
+const RIM_SHADE = 0.45;
 
 /**
  * A pair symbol lying flat, a unit across, upright to the board camera (its top toward -Z): a white
- * face, which the instance colour paints, over a slightly larger copy in ink, its rim.
+ * face, which the instance colour paints, over a slightly larger grey copy, its rim, which the same colour
+ * paints a deeper shade.
  */
 export function symbolGeometry(name: SymbolName): BufferGeometry {
   const face = new ShapeGeometry(shapeOf(name), 4);
@@ -104,15 +107,15 @@ export function symbolGeometry(name: SymbolName): BufferGeometry {
   }
   rim.translate(0, 0.002, 0);
   face.translate(0, 0.005, 0);
-  return mergeGeometries([paint(rim, new Color(WORLD_COLORS.ink)), paint(face, new Color(1, 1, 1))])!;
+  return mergeGeometries([paint(rim, new Color(RIM_SHADE, RIM_SHADE, RIM_SHADE)), paint(face, new Color(1, 1, 1))])!;
 }
 
-/** The still cap in a whirlpool's eye, under its symbol: a low disc, cream on top and ink round its side. */
+/** The still cap in a whirlpool's eye, under its symbol: a low disc, cream on top and peach round its side. */
 export function capGeometry(radius: number, height: number): BufferGeometry {
   const g = new CylinderGeometry(radius, radius, height, 24).translate(0, height / 2, 0);
   const normal = g.getAttribute('normal');
   const top = new Color(PAIR_COLORS.cap);
-  const side = new Color(WORLD_COLORS.ink);
+  const side = new Color(PAIR_COLORS.capSide);
   const colours: number[] = [];
   for (let i = 0; i < normal.count; i++) {
     const c = normal.getY(i) > 0.9 ? top : side;

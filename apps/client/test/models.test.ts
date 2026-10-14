@@ -28,7 +28,7 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
     expect(triangles(g)).toBeLessThanOrEqual(200);
   });
 
-  it("lays the jumps' stand-ins on the tile, the pad a drum up to its plate, where its symbol lies (spec #5 A13)", () => {
+  it("stands the jumps' stand-ins on the tile: a rocket, a flag, a flat whirlpool and a flat splat (spec #5 A13, A16)", () => {
     const flat = (g: BufferGeometry, y: number) => {
       g.computeBoundingBox();
       expect(g.boundingBox!.min.y).toBeCloseTo(y, 5);
@@ -39,10 +39,10 @@ describe('code-built models (spec #2 §6.2, §6.3)', () => {
     const flag = targetGeometry();
     flag.computeBoundingBox();
     expect(flag.boundingBox!.max.y).toBeCloseTo(PARTS.flag.height, 5);
-    const pad = padGeometry();
-    pad.computeBoundingBox();
-    expect(pad.boundingBox!.min.y).toBeCloseTo(0, 5);
-    expect(pad.boundingBox!.max.y).toBeCloseTo(PARTS.padTop, 5);
+    const rocket = padGeometry();
+    rocket.computeBoundingBox();
+    expect(rocket.boundingBox!.min.y).toBeCloseTo(0, 5);
+    expect(rocket.boundingBox!.max.y).toBeCloseTo(PARTS.rocket.height, 5);
   });
 
   it('maps each die face into its own cell of the pip atlas', () => {
