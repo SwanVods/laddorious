@@ -52,11 +52,14 @@ export function applyEvent(state: PresentationState, event: GameEvent): Presenta
         ...state,
         positions: { ...state.positions, [event.player]: event.to },
         arrivals: [...state.arrivals.filter((id) => id !== event.player), event.player],
+        // A face-off ends when its loser is knocked away: until then both stand apart (2026-10-14).
+        faceOffs: event.cause === 'knockback' ? state.faceOffs.filter((f) => !f.players.includes(event.player)) : state.faceOffs,
       };
     case 'ChallengeStarted':
       return { ...state, faceOffs: [...state.faceOffs, { challengeId: event.challengeId, tile: event.tile, players: [...event.players] }] };
     case 'ChallengeResolved':
-      return event.winner === null ? state : { ...state, faceOffs: state.faceOffs.filter((f) => f.challengeId !== event.challengeId) };
+      // Won or drawn, the pieces keep their face-off spots: the knock-back that follows a win ends it.
+      return state;
     case 'EffectAdded':
       return { ...state, effects: [...state.effects, event.effect] };
     case 'EffectRemoved':

@@ -139,6 +139,34 @@ describe('the ends react (round 5)', () => {
   });
 });
 
+describe('after a face-off (2026-10-14)', () => {
+  const players = ['p0', 'p1'];
+  const started: GameEvent = { type: 'ChallengeStarted', challengeId: 'c1', tile: PLAIN, players, kind: 'rps', theme: null, visibility: 'public' };
+  const resolved: GameEvent = { type: 'ChallengeResolved', challengeId: 'c1', pickRound: 1, picks: { p0: 'rock', p1: 'paper' }, winner: 'p1', losers: ['p0'], outcome: 'win', visibility: 'public' };
+  const knocked = moved('p0', PLAIN, PLAIN - 3, 'knockback');
+  const from = at({ p0: PLAIN, p1: PLAIN });
+  const timeline = buildTimeline([started, resolved, knocked], from, 'p0', SIZE).map((b) => ({ ...b, startedAt: 0 }));
+  const [faceOff, result, knockback] = timeline as [PlayingBeat, PlayingBeat, PlayingBeat];
+  const spot = (id: string) => restPose(faceOff.after, id, Number(id.slice(1))).position;
+
+  it('keeps both pieces at their face-off spots through the result, not back on a stack', () => {
+    for (const id of players) expectNear(beatPose(result, faceOff.after, id, Number(id.slice(1)), result.durationMs, SIZE).position, spot(id));
+  });
+
+  it('flips the loser away from its face-off spot, backwards, along an arc', () => {
+    expectNear(beatPose(knockback, result.after, 'p0', 0, 0, SIZE).position, spot('p0'));
+    const mid = beatPose(knockback, result.after, 'p0', 0, knockback.durationMs / 2, SIZE);
+    expect(mid.position[1]).toBeGreaterThan(1);
+    expect(Math.abs(mid.rotation[0])).toBeGreaterThan(1);
+  });
+
+  it('settles the winner from its face-off spot to the middle of the tile, alone', () => {
+    expectNear(beatPose(knockback, result.after, 'p1', 1, 0, SIZE).position, spot('p1'));
+    const [x, , z] = tileToWorld(PLAIN);
+    expectNear(beatPose(knockback, result.after, 'p1', 1, knockback.durationMs, SIZE).position, [x, 0, z]);
+  });
+});
+
 describe('beat poses (spec #2 §5.1)', () => {
   it('hops tile by tile on a dice move', () => {
     const from = at({ p0: 2 });
