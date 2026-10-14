@@ -30,21 +30,15 @@ After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm
 
 On `fix/adjustments` (2026-10-15): 95 test files and 896 tests pass, and `pnpm e2e` passes all 17 (about 10 minutes); the online away test can still flake, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
-## Next step: the user reviews the adjustments, then the board theme
+## Next step: the board theme (plan 3, as a design step)
 
-The known-issues list and the animation round were approved and merged to `main` (2026-10-15).
+The adjustments were approved and merged to `main` (2026-10-15). Next is the board theme, which replaces plan 3's island, bumpers and props: brainstorm it, show 3 or 4 visual directions for the user to pick, write the spec, then the plan.
 
-**Built for the user's adjustments (2026-10-15; plan `docs/superpowers/plans/2026-10-15-adjustments.md`, branch `fix/adjustments`), awaiting the user's review:**
-1. Admin settings in `apps/client/public/tuning.json`, read at startup (every key in the client README). The user plans an admin dashboard that writes the same file.
-2. After the last roll the camera reaches my piece sooner; while others face off and I don't, it frames their tile.
-3. The overview starts 15% closer and zooms by mouse wheel or pinch.
-4. On phones, card info is a compact list under the action log instead of bubbles and a bottom queue. Heavy Boots reads "Leader: −3 on next roll".
-5. No tile holds two jump ends, generated or edited by a card (spec #1 D16 amended): no more flag on a whirlpool or splat on a rocket.
-6. A test proves a reconnect during cards always ends on the server's true position. The user's tile-99 report was most likely Heavy Boots, which lowers the next roll and never moves anyone.
-7. A full-screen button in the menu and in matches.
-8. Kept as is at the user's choice: losers of one face-off knocked back together land on the same tile and face off again.
-
-After approval: fast-forward merge `fix/adjustments` into `main`. Then the **board theme** design step (visual directions for the user to pick), which replaces plan 3.
+**Noted by the user for a later fix batch (2026-10-15):**
+1. **Low quality ends:** on Low, every rocket and flag image stands in the centre of its tile, the same size as the "?" icons (not in the corner).
+2. **Reduced motion:** it should reduce motion, not switch it off. Today it turns off wobbles, flips, drift and swoops entirely; it should keep gentler, shorter versions.
+3. **Phone card info:** keep it looking like cards or chat bubbles (not plain log lines), on the left under the action log, as wide as the player-status card at the bottom left.
+4. **Zoomed overview:** when zoomed in, the camera can be panned with one finger or by dragging; at the default zoom it stays locked.
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
