@@ -102,6 +102,10 @@ export const MODELS: Record<string, ModelRule> = {
   hoop: { slot: 'course.hoop', origin: 'base', height: [4.1, 4.4], maxWidth: 4.1, maxTriangles: 250, maxMaterials: 1, requiredMaterials: ['Tint'] },
   fan: { slot: 'course.fan', origin: 'base', height: [2.7, 3.0], maxWidth: 9.2, maxTriangles: 450, maxMaterials: 1, requiredMaterials: ['Blade'] },
   ramp: { slot: 'course.ramp', origin: 'base', height: [2.5, 2.9], maxWidth: 6.6, maxTriangles: 350, maxMaterials: 1, requiredMaterials: ['Ramp'] },
+  chip: { slot: 'prop.chip', origin: 'base', height: [0.34, 0.38], maxWidth: 2.45, maxTriangles: 150, maxMaterials: 1, requiredMaterials: ['Tint'] },
+  card: { slot: 'prop.card', origin: 'base', height: [4.25, 4.4], maxWidth: 3.1, maxTriangles: 600, maxMaterials: 2, requiredMaterials: ['Card', 'Mark'] },
+  prop_die: { slot: 'prop.die', origin: 'base', height: [3.15, 3.35], maxWidth: 3.4, maxTriangles: 900, maxMaterials: 2, requiredMaterials: ['Body', 'Pip'] },
+  prop_crown: { slot: 'prop.crown', origin: 'base', height: [2.3, 2.8], maxWidth: 3.8, maxTriangles: 900, maxMaterials: 1, requiredMaterials: ['Gold'] },
   exit: { slot: 'slide.exit', origin: 'base', height: [0.03, 0.06], maxWidth: 0.88, maxTriangles: 800, maxMaterials: 1, requiredMaterials: ['Tint'], checks: [topAt(PARTS.splat.top)] },
 };
 
