@@ -106,6 +106,15 @@
 - [ ] If it fails, fix with `superpowers:systematic-debugging`. If it passes, the ledger records that the reconnect path is sound and the likely cause was Heavy Boots (T4 makes its wording clear).
 - [ ] Commit: `test(client): a resync after a missed card shows the true position`.
 
+### Task T8: Full-screen mode
+
+> "Oh also, add full screen mode." (the user, during T1)
+
+- A round full-screen button beside the sound and menu buttons in a match, and beside the gear on the menu. It toggles the browser's full screen (the Fullscreen API) and shows enter or exit to match. Where full screen isn't available (an iPhone's Safari), the button doesn't show.
+- [ ] Tests first (component tests with a stubbed `document.documentElement.requestFullscreen` and `fullscreenElement`): the button enters full screen, then exits it; its label follows `fullscreenchange`; it's absent when the API is missing.
+- [ ] Watch them fail, then implement. Browser check at desktop and phone sizes.
+- [ ] Commit: `feat(client): a full-screen button in the menu and in matches`.
+
 ### Task T7: Docs, the gate and the review
 
 - [ ] Spec #2 C18, spec #1 D16, the client README (each tuning key), the HANDOFF.
