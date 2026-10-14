@@ -27,8 +27,13 @@ export const LANE = { width: 0.3, edge: 0.1 } as const;
  * art/contract.ts checks their heights; the stand-ins in assets/models.ts use them too.
  */
 export const PARTS = {
-  /** A ladder's start is a launch rocket (the user, Step 2 review 4): the symbol stands here, just in front of its porthole, facing the camera (+Z). */
-  rocket: { y: 0.66, z: 0.275, height: 1.15 },
+  /**
+   * A ladder's rocket and flag stand in their tile's top-right corner (the user, 2026-10-14): right is +X,
+   * the far side is -Z. The middle stays free, so pieces stack there like on any tile.
+   */
+  corner: { x: 0.45, z: -0.5 },
+  /** A ladder's start is a small launch rocket, standing on its fins (2026-10-14): the symbol stands here, just in front of its porthole, facing the camera (+Z). */
+  rocket: { y: 0.413, z: 0.193, height: 0.71 },
   /** At most 0.44: lanes a clearance apart never overlap, vortices and exits included (polish spec 4.1). */
   vortexRadius: 0.43,
   /** The still cap in a whirlpool's eye: its radius, and its top, where the symbol lies. */
@@ -43,15 +48,15 @@ export const PARTS = {
    */
   flat: {
     y: 0.012,
-    rocket: { size: 1.0, symbol: { x: 0, z: -0.11, size: 0.2 } },
-    flag: { size: 1.0, symbol: { x: 0.06, z: -0.19, size: 0.26 } },
+    rocket: { size: 0.7, symbol: { x: 0, z: -0.077, size: 0.14 } },
+    flag: { size: 0.75, symbol: { x: 0.045, z: -0.143, size: 0.2 } },
     swirl: { size: 0.86 },
     splat: { size: 0.86, symbol: { x: 0, z: 0, size: 0.34 } },
   },
   /** Symbols on tile tops sit just above the board overlay. */
   onTile: 0.012,
   /** Each symbol's size across. */
-  symbol: { pad: 0.22, landing: 0.34, eye: 0.33, exit: 0.34 },
+  symbol: { pad: 0.154, landing: 0.34, eye: 0.33, exit: 0.34 },
 } as const;
 
 /** Centre of a tile's top face; row 0 is nearest the camera (+Z). Tile 0 is a start spot in front of the board, one per seat. */

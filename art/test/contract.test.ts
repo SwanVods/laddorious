@@ -59,8 +59,8 @@ describe('the model contract (spec #5 §4.1, §5)', () => {
   });
 
   const rocket = (front: number): GlbSummary => ({
-    min: [-0.4, 0, -0.4],
-    max: [0.4, PARTS.rocket.height, 0.4],
+    min: [-0.29, 0, -0.29],
+    max: [0.29, PARTS.rocket.height, 0.29],
     triangles: 900,
     shadowTriangles: 0,
     materials: ['Tint', 'Window', 'Flame'],

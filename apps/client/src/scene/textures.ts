@@ -1,5 +1,5 @@
 import type { Rarity } from '@laddorious/core';
-import { CanvasTexture, SRGBColorSpace } from 'three';
+import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three';
 import { COLUMNS, TILE_SIZE, tileToWorld } from './layout';
 
 /** Paint a canvas texture, or return null where there is no DOM (tests) or no 2D context. */
@@ -185,4 +185,21 @@ export function skyTexture(stops: readonly string[]): CanvasTexture | null {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 2, 256);
   });
+}
+
+/**
+ * The shine that sweeps across an Epic "?" tile (2026-10-14): one slanted soft band of `light` in an
+ * otherwise empty strip. Scrolling its offset sweeps the band across, then leaves a pause before the next.
+ */
+export function sheenTexture(light: string): CanvasTexture | null {
+  const texture = paint(256, 64, (ctx) => {
+    ctx.fillStyle = light;
+    ctx.setTransform(1, 0, -0.6, 1, 0, 0);
+    for (let i = 0; i < 40; i++) {
+      ctx.globalAlpha = Math.sin((Math.PI * i) / 40) ** 2;
+      ctx.fillRect(20 + i * 1.5, 0, 1.6, 64);
+    }
+  });
+  if (texture) texture.wrapS = RepeatWrapping;
+  return texture;
 }

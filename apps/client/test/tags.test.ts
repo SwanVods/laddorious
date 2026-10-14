@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { DirectorState } from '../src/director/director';
 import { presentationFromView, type FaceOff } from '../src/director/presentation';
 import { STACK_HEIGHT, restPose } from '../src/scene/motion';
-import { START_STAGGER, TAG_HEIGHT, TAG_PEEK_MS, createTagPeeks, tagAnchor, tagVisible } from '../src/scene/tags';
+import { TAG_HEIGHT, TAG_PEEK_MS, createTagPeeks, tagAnchor, tagVisible } from '../src/scene/tags';
 import { openingUpdate } from './support/fixtures';
 
 function state(positions: Record<PlayerId, number>, arrivals: PlayerId[] = ['p0', 'p1', 'p2', 'p3'], faceOffs: FaceOff[] = []): DirectorState {
@@ -11,7 +11,6 @@ function state(positions: Record<PlayerId, number>, arrivals: PlayerId[] = ['p0'
   return { presentation: { ...shown, positions: { ...shown.positions, ...positions }, arrivals, faceOffs }, beat: null, settled: null, log: [] };
 }
 
-const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
 /** A tile no rocket or flag stands on, where pieces stack. */
 const PLAIN = (() => {
   const ends = new Set(openingUpdate().view.board.jumps.filter((j) => j.to > j.from).flatMap((j) => [j.from, j.to]));
@@ -44,19 +43,6 @@ describe('name tags (spec #2 §7.2)', () => {
       const [x, y, z] = restPose(s.presentation!, p, Number(p.slice(1))).position;
       expect(anchor(s, p)).toEqual([x, y + TAG_HEIGHT, z]);
     }
-  });
-
-  it('hangs each tag over its own piece in the row before a flag, every other one higher (round 5)', () => {
-    const s = state({ p0: ladder.to, p1: ladder.to, p2: ladder.to });
-    const heights = ['p0', 'p1', 'p2'].map((p) => {
-      const [x, y, z] = restPose(s.presentation!, p, Number(p.slice(1))).position;
-      const [ax, ay, az] = anchor(s, p);
-      expect([ax, az]).toEqual([x, z]);
-      return ay - y;
-    });
-    expect(heights[0]).toBeCloseTo(TAG_HEIGHT);
-    expect(heights[1]).toBeCloseTo(TAG_HEIGHT + START_STAGGER);
-    expect(heights[2]).toBeCloseTo(TAG_HEIGHT);
   });
 
   it('staggers the tags on the start row, where the pieces stand close together', () => {

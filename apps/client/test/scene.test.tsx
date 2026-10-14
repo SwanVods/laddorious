@@ -144,6 +144,37 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(trailCounts(root).puffs).toBeGreaterThan(0);
   });
 
+  it("stands each rocket and flag in its tile's top-right corner (2026-10-14)", async () => {
+    const root = await renderScene('high');
+    const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
+    const at = new Matrix4();
+    const p = new Vector3();
+    for (const [name, tile] of [['pads', ladder.from], ['targets', ladder.to]] as const) {
+      (root.getObjectByName(name) as InstancedMesh).getMatrixAt(0, at);
+      p.setFromMatrixPosition(at);
+      const [x, , z] = tileToWorld(tile);
+      expect(p.x, name).toBeCloseTo(x + PARTS.corner.x, 5);
+      expect(p.z, name).toBeCloseTo(z + PARTS.corner.z, 5);
+      expect(Math.hypot(PARTS.corner.x, PARTS.corner.z)).toBeGreaterThan(0.6); // clear of a stack in the middle
+    }
+  });
+
+  it('gives Epic "?" tiles a shine, one sheen per Epic tile in one draw call (2026-10-14)', async () => {
+    const root = await renderScene('high');
+    const { mystery } = openingUpdate().view.board;
+    const epics = Object.entries(mystery).filter(([, r]) => r === 'epic').map(([t]) => Number(t));
+    const shine = root.getObjectByName('epic-shine') as InstancedMesh;
+    expect(shine).toBeInstanceOf(InstancedMesh);
+    expect(shine.count).toBe(epics.length);
+    if (epics.length > 0) {
+      const at = new Matrix4();
+      shine.getMatrixAt(0, at);
+      const p = new Vector3().setFromMatrixPosition(at);
+      const [x, , z] = tileToWorld(epics[0]!);
+      expect([p.x, p.z]).toEqual([expect.closeTo(x, 5), expect.closeTo(z, 5)]);
+    }
+  });
+
   it('stands the jump parts on their tiles, each rocket upright and facing the camera (spec #5 §4.2, A16)', async () => {
     const root = await renderScene('high');
     for (const name of ['vortices', 'exits', 'pads', 'targets']) expect(root.getObjectByName(name)).toBeInstanceOf(InstancedMesh);
@@ -154,7 +185,7 @@ describe('the 3D scene (spec #2 §6)', () => {
     const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
     at.decompose(p, q, s);
     const [fx, , fz] = tileToWorld(ladder.from);
-    expect([p.x, p.y, p.z].map((v) => +v.toFixed(5))).toEqual([+fx.toFixed(5), 0, +fz.toFixed(5)]);
+    expect([p.x, p.y, p.z].map((v) => +v.toFixed(5))).toEqual([+(fx + PARTS.corner.x).toFixed(5), 0, +(fz + PARTS.corner.z).toFixed(5)]);
     expect(new Vector3(0, 0, 1).applyQuaternion(q).z).toBeCloseTo(1, 5); // its porthole looks at the camera
   });
 
@@ -169,7 +200,7 @@ describe('the 3D scene (spec #2 §6)', () => {
     const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
     at.decompose(p, q, s);
     const [x, , z] = tileToWorld(ladder.from);
-    expect([p.x, p.y, p.z].map((v) => +v.toFixed(5))).toEqual([+x.toFixed(5), PARTS.rocket.y, +(z + PARTS.rocket.z).toFixed(5)]);
+    expect([p.x, p.y, p.z].map((v) => +v.toFixed(5))).toEqual([+(x + PARTS.corner.x).toFixed(5), PARTS.rocket.y, +(z + PARTS.corner.z + PARTS.rocket.z).toFixed(5)]);
     expect(new Vector3(0, 1, 0).applyQuaternion(q).z).toBeCloseTo(1, 5);
     const colour = new Color();
     mesh.getColorAt(0, colour);
@@ -214,9 +245,9 @@ describe('the 3D scene (spec #2 §6)', () => {
     const [p, q, s] = [new Vector3(), new Quaternion(), new Vector3()];
     at.decompose(p, q, s);
     const [x, , z] = tileToWorld(ladder.to);
-    expect(p.x).toBeCloseTo(x + PARTS.flag.x, 5);
+    expect(p.x).toBeCloseTo(x + PARTS.corner.x + PARTS.flag.x, 5);
     expect(p.y).toBeCloseTo(PARTS.flag.y, 5);
-    expect(p.z).toBeCloseTo(z + PARTS.flag.z, 5);
+    expect(p.z).toBeCloseTo(z + PARTS.corner.z + PARTS.flag.z, 5);
     expect(new Vector3(0, 1, 0).applyQuaternion(q).z).toBeCloseTo(1, 5); // its face looks along +Z
   });
 

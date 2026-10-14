@@ -4,7 +4,7 @@ import { BEAT_MS, buildTimeline } from '../src/director/beats';
 import type { DirectorState, PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
 import { PARTS, tileToWorld } from '../src/scene/layout';
-import { CROWN_FLY_MS, END_ROW, FACE_OFF_GAP, crownPose, crownWinner, landingPose, stackLandings, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
+import { CROWN_FLY_MS, FACE_OFF_GAP, crownPose, crownWinner, landingPose, stackLandings, STACK_HEIGHT, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
@@ -61,54 +61,26 @@ describe('rest poses', () => {
   });
 });
 
-describe('pieces at a rocket or a flag (round 5)', () => {
+describe('pieces at a rocket or a flag (2026-10-14)', () => {
   const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
-  const players = ['p0', 'p1', 'p2', 'p3'];
-  const flat = (p: readonly number[]) => [p[0]!, p[2]!] as const;
-  const apart = (a: readonly number[], b: readonly number[]) => Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!);
 
-  /** Where n pieces stand on a tile, and that tile's centre on the ground. */
-  function row(tile: number, n: number) {
-    const state = at(Object.fromEntries(players.slice(0, n).map((id) => [id, tile])));
-    return players.slice(0, n).map((id, seat) => restPose(state, id, seat).position);
-  }
-
-  it.each([1, 2, 3, 4])('stands %i pieces in a row in front of a flag, clear of its pole and of each other', (n) => {
-    const [x, , z] = tileToWorld(ladder.to);
-    const pole = [x + PARTS.flag.pole, z];
-    const spots = row(ladder.to, n);
-    for (const [i, spot] of spots.entries()) {
-      expect(spot[1]).toBe(0); // side by side, not stacked
-      expect(spot[2]).toBeCloseTo(z + END_ROW.forward);
-      expect(apart(flat(spot), pole)).toBeGreaterThan(0.35);
-      for (const other of spots.slice(i + 1)) expect(apart(flat(spot), flat(other))).toBeGreaterThan(0.35);
+  it('stacks pieces in the middle of a flag or rocket tile, like any tile, the end standing in its corner', () => {
+    for (const tile of [ladder.from, ladder.to]) {
+      const state = { ...at({ p0: tile, p1: tile }), arrivals: ['p0', 'p1', 'p2', 'p3'] };
+      const [x, , z] = tileToWorld(tile);
+      expectNear(restPose(state, 'p0', 0).position, [x, 0, z]);
+      expect(restPose(state, 'p1', 1).position[1]).toBeCloseTo(STACK_HEIGHT);
     }
   });
 
-  it('stands pieces in a row in front of a rocket too, clear of it', () => {
-    const [x, , z] = tileToWorld(ladder.from);
-    const spots = row(ladder.from, 4);
-    for (const spot of spots) {
-      expect(spot[1]).toBe(0);
-      expect(apart(flat(spot), [x, z])).toBeGreaterThan(0.35);
-    }
-    expect(new Set(spots.map((s) => s[0])).size).toBe(4);
-  });
-
-  it('still stacks pieces on a plain tile', () => {
-    const [low, high] = row(PLAIN, 2);
-    expect(high![1] - low![1]).toBeCloseTo(STACK_HEIGHT);
-  });
-
-  it('keeps a face-off on a flag tile side by side, moved forward clear of the pole', () => {
+  it('keeps a face-off on a flag tile side by side in the middle, clear of the flag in its corner', () => {
     const state = { ...at({ p0: ladder.to, p1: ladder.to }), faceOffs: [{ challengeId: 'c1', tile: ladder.to, players: ['p0', 'p1'] }] };
-    const left = restPose(state, 'p0', 0).position;
-    const right = restPose(state, 'p1', 1).position;
-    expect(right[0] - left[0]).toBeCloseTo(FACE_OFF_GAP);
     const [x, , z] = tileToWorld(ladder.to);
-    for (const spot of [left, right]) {
-      expect(spot[2]).toBeCloseTo(z + END_ROW.forward);
-      expect(apart(flat(spot), [x + PARTS.flag.pole, z])).toBeGreaterThan(0.35);
+    const pole = [x + PARTS.corner.x + PARTS.flag.pole, z + PARTS.corner.z];
+    for (const id of ['p0', 'p1']) {
+      const [px, , pz] = restPose(state, id, Number(id.slice(1))).position;
+      expect(pz).toBeCloseTo(z);
+      expect(Math.hypot(px - pole[0]!, pz - pole[1]!)).toBeGreaterThan(0.35);
     }
   });
 });

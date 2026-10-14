@@ -203,9 +203,10 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
      * board edit, and moving as it reacts. A rocket rocks about its base; a flag swings about its pole.
      * A flat icon only pops.
      */
-    const endMatrix = (j: Jump, tile: number, turn: number, motion: EndMotion = STILL_END, pole = 0) => {
+    const endMatrix = (j: Jump, tile: number, turn: number, motion: EndMotion = STILL_END, pole = 0, corner = false) => {
       const m = modelEnds ? motion : { ...STILL_END, pop: motion.pop };
-      const [x, , z] = tileToWorld(tile);
+      const [tx, , tz] = tileToWorld(tile);
+      const [x, z] = corner ? [tx + PARTS.corner.x, tz + PARTS.corner.z] : [tx, tz];
       const swing = pole ? m.sway : 0;
       place.position.set(x + pole - pole * Math.cos(swing), 0, z + pole * Math.sin(swing));
       place.rotation.set(0, turn + swing, pole ? 0 : m.sway);
@@ -225,8 +226,9 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     };
-    const rocketAt = (j: Jump) => endMatrix(j, j.from, 0, react(j).rocket); // a rocket's porthole faces the camera
-    const flagAt = (j: Jump) => endMatrix(j, j.to, 0, react(j).flag, PARTS.flag.pole);
+    // Rockets and flags stand in their tile's corner (2026-10-14); a rocket's porthole faces the camera.
+    const rocketAt = (j: Jump) => endMatrix(j, j.from, 0, react(j).rocket, 0, true);
+    const flagAt = (j: Jump) => endMatrix(j, j.to, 0, react(j).flag, PARTS.flag.pole, true);
     stamp(vorticesRef.current, snakes, (j) => endMatrix(j, j.from, clock.elapsedTime * 2.5));
     stamp(exitsRef.current, snakes, (j) => endMatrix(j, j.to, 0));
     stamp(padsRef.current, ladders, rocketAt);

@@ -1,13 +1,13 @@
 import type { PlayerView } from '@laddorious/core';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { Color, MeshStandardMaterial, Object3D, type InstancedMesh } from 'three';
+import { AdditiveBlending, Color, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type InstancedMesh } from 'three';
 import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
 import { tileGeometry } from '../assets/models';
 import { useSlotMesh } from '../assets/slotMesh';
 import type { Director } from '../director/director';
 import { COLUMNS, TILE_SIZE, TILE_THICKNESS, squareColorIndex, tileToWorld } from './layout';
-import { boardOverlayTexture } from './textures';
+import { boardOverlayTexture, sheenTexture } from './textures';
 
 type PublicBoard = PlayerView['board'];
 
@@ -41,6 +41,38 @@ export function Board({ board, director, clearcoat, onTap }: BoardProps) {
   const overlay = useMemo(() => boardOverlayTexture(size, mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink), [size, mystery]);
   // three.js frees a texture's GPU memory only on dispose().
   useEffect(() => () => overlay?.dispose(), [overlay]);
+  // Epic "?" tiles shine (2026-10-14): a soft band sweeps across each, all in one draw call.
+  const epics = useMemo(() => Object.entries(mystery).filter(([, rarity]) => rarity === 'epic').map(([t]) => Number(t)), [mystery]);
+  const shine = useMemo(() => {
+    const map = sheenTexture(WORLD_COLORS.cloud);
+    if (map) map.repeat.x = 0.5;
+    return {
+      geometry: new PlaneGeometry(TILE_SIZE * 0.9, TILE_SIZE * 0.9).rotateX(-Math.PI / 2),
+      material: new MeshBasicMaterial({ ...(map ? { map } : { visible: false }), transparent: true, opacity: 0.7, blending: AdditiveBlending, depthWrite: false }),
+    };
+  }, []);
+  useEffect(
+    () => () => {
+      shine.geometry.dispose();
+      shine.material.map?.dispose();
+      shine.material.dispose();
+    },
+    [shine],
+  );
+  const shineRef = useRef<InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const mesh = shineRef.current;
+    if (!mesh) return;
+    const at = new Object3D();
+    epics.forEach((tile, i) => {
+      const [x, , z] = tileToWorld(tile);
+      at.position.set(x, 0.008, z);
+      at.updateMatrix();
+      mesh.setMatrixAt(i, at.matrix);
+    });
+    mesh.count = epics.length;
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [epics]);
 
   // Placed and painted again when the model replaces the stand-in: that's a new instanced mesh.
   useLayoutEffect(() => {
@@ -60,7 +92,8 @@ export function Board({ board, director, clearcoat, onTap }: BoardProps) {
   }, [size, mystery, tile]);
 
   // A ring pulses on each "?" square with a piece on it, from the landing until the Mystery phase ends.
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
+    if (shine.material.map) shine.material.map.offset.x -= delta * 0.35;
     const mesh = ringsRef.current;
     if (!mesh) return;
     const { presentation, settled } = director.store.getState();
@@ -116,6 +149,7 @@ export function Board({ board, director, clearcoat, onTap }: BoardProps) {
           <meshBasicMaterial map={overlay} transparent depthWrite={false} />
         </mesh>
       )}
+      <instancedMesh ref={shineRef} name="epic-shine" args={[shine.geometry, shine.material, Math.max(1, epics.length)]} />
       <instancedMesh ref={ringsRef} args={[undefined, undefined, MAX_RINGS]}>
         <ringGeometry args={[0.6, 0.74, 32]} />
         <meshBasicMaterial color={WORLD_COLORS.ring} transparent opacity={0.9} />

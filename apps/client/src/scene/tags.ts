@@ -2,7 +2,7 @@ import type { PlayerId } from '@laddorious/core';
 import type { DirectorState } from '../director/director';
 import { stackOn } from '../director/presentation';
 import type { Vec3 } from './layout';
-import { STACK_HEIGHT, poseAt, rowOn, standsInRow } from './motion';
+import { STACK_HEIGHT, poseAt } from './motion';
 
 // In-world name tags (spec #2 §7.2): DOM elements over the canvas, moved every frame to
 // their piece's place on screen, without re-rendering React.
@@ -11,7 +11,7 @@ import { STACK_HEIGHT, poseAt, rowOn, standsInRow } from './motion';
 export const TAG_HEIGHT = 1.6;
 /** How far beside a stack a piece underneath shows its tag. */
 export const TAG_SIDE = 1.1;
-/** On the start row, and in the row before a rocket or a flag, the pieces stand close together: every other tag hangs this much higher. */
+/** On the start row the pieces stand close together: every other tag hangs this much higher. */
 export const START_STAGGER = 0.55;
 
 /** How long another player's tag shows after their piece is tapped (round 5). */
@@ -60,8 +60,6 @@ export function tagAnchor(state: DirectorState, player: PlayerId, seat: number, 
   const [x, y, z] = pose.position;
   const moving = state.beat?.events.some((e) => e.type === 'Moved' && e.player === player) ?? false;
   const tile = shown.positions[player] ?? 0;
-  // In the row before a rocket or a flag the pieces stand close together: every other tag hangs higher.
-  if (!moving && tile > 0 && standsInRow(shown, tile)) return [x, y + TAG_HEIGHT + (rowOn(shown, tile).indexOf(player) % 2 === 1 ? START_STAGGER : 0), z];
   if (!moving && tile > 0 && !shown.faceOffs.some((f) => f.tile === tile && f.players.includes(player))) {
     const stack = stackOn(shown, tile);
     const level = stack.indexOf(player);
