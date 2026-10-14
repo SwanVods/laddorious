@@ -409,7 +409,7 @@ export function bannerFor(beat: Beat, me: PlayerId, seats: readonly SeatInfo[]):
   for (const e of beat.events) {
     switch (e.type) {
       case 'ChallengeStarted':
-        if (e.players.includes(me)) return { text: 'FACE-OFF!', tone: 'bad' };
+        if (e.players.includes(me)) return { text: 'COLLISION!', tone: 'bad' }; // the popup then says FACE-OFF (2026-10-14, as in the mockup)
         break;
       case 'ChallengeResolved':
         if (!(me in e.picks)) break;

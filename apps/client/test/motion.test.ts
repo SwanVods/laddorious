@@ -159,15 +159,36 @@ describe('after a face-off (2026-10-14)', () => {
   const [faceOff, result, knockback] = timeline as [PlayingBeat, PlayingBeat, PlayingBeat];
   const spot = (id: string) => restPose(faceOff.after, id, Number(id.slice(1))).position;
 
+  it('opens my face-off with the collision: both stay stacked, then the top one hops down to its spot', () => {
+    expect(faceOff.durationMs).toBe(BEAT_MS.faceOffIntro);
+    const hold = BEAT_MS.faceOffIntro - BEAT_MS.unstack;
+    for (const id of players) expectNear(beatPose(faceOff, from, id, Number(id.slice(1)), hold - 50, SIZE).position, restPose(from, id, Number(id.slice(1))).position);
+    const top = from.arrivals.filter((id) => players.includes(id)).at(-1)!;
+    const seat = Number(top.slice(1));
+    const a = restPose(from, top, seat).position;
+    const b = spot(top);
+    const mid = beatPose(faceOff, from, top, seat, hold + BEAT_MS.unstack / 2, SIZE).position;
+    expect(mid[1]).toBeGreaterThan((a[1] + b[1]) / 2 + 0.3); // a hop, not a slide
+    for (const id of players) expectNear(beatPose(faceOff, from, id, Number(id.slice(1)), faceOff.durationMs, SIZE).position, spot(id));
+  });
+
   it('keeps both pieces at their face-off spots through the result, not back on a stack', () => {
     for (const id of players) expectNear(beatPose(result, faceOff.after, id, Number(id.slice(1)), result.durationMs, SIZE).position, spot(id));
   });
 
-  it('flips the loser away from its face-off spot, backwards, along an arc', () => {
+  it('backflips the loser away from its face-off spot along a high arc, then lands it with a squash', () => {
+    expect(knockback.durationMs).toBe(BEAT_MS.knockback + BEAT_MS.knockbackLand + BEAT_MS.knockbackSettle);
     expectNear(beatPose(knockback, result.after, 'p0', 0, 0, SIZE).position, spot('p0'));
-    const mid = beatPose(knockback, result.after, 'p0', 0, knockback.durationMs / 2, SIZE);
-    expect(mid.position[1]).toBeGreaterThan(1);
-    expect(Math.abs(mid.rotation[0])).toBeGreaterThan(1);
+    const mid = beatPose(knockback, result.after, 'p0', 0, BEAT_MS.knockback / 2, SIZE);
+    expect(mid.position[1]).toBeGreaterThan(1.6);
+    expect(mid.rotation[0]).toBeLessThan(-1); // nose up and over backwards, about its own side
+    expect(mid.rotation[1]).toBeCloseTo(restPose(faceOff.after, 'p0', 0).rotation[1]); // still facing the winner
+    const landing = beatPose(knockback, result.after, 'p0', 0, BEAT_MS.knockback + BEAT_MS.knockbackLand / 2, SIZE);
+    expect(landing.scale[1]).toBeLessThan(0.9);
+  });
+
+  it('keeps the winner at its spot until the loser lands, then settles it', () => {
+    expectNear(beatPose(knockback, result.after, 'p1', 1, BEAT_MS.knockback, SIZE).position, spot('p1'));
   });
 
   it('settles the winner from its face-off spot to the middle of the tile, alone', () => {

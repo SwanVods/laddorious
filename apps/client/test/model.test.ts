@@ -242,7 +242,7 @@ describe('banners (spec #2 §5.1)', () => {
 
   it('calls out my own face-off and how it ends for me', () => {
     const started: GameEvent = { type: 'ChallengeStarted', challengeId: 'c4', tile: 23, players: ['p0', 'p1'], kind: 'rps', theme: null, visibility: 'public' };
-    expect(banner('faceOff', [started])).toEqual({ text: 'FACE-OFF!', tone: 'bad' });
+    expect(banner('faceOff', [started])).toEqual({ text: 'COLLISION!', tone: 'bad' }); // as in the mockup (2026-10-14)
     expect(banner('faceOff', [{ ...started, players: ['p2', 'p3'] }])).toBeNull();
     // The result waits until the popup has shown both picks and closed (2026-10-14).
     const after = { delayMs: FACE_OFF_REVEAL_MS };

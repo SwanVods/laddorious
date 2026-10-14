@@ -112,10 +112,27 @@ export function beatPose(beat: PlayingBeat, from: PresentationState, player: Pla
       case 'launch':
         return flight(start, end, t, 1.6 + reach(start, end) * 0.22, -1);
       case 'knockback':
-        return flight(start, end, t, 1.3, 1);
+        return knockedBack(start, end, elapsed);
       case 'cardMove':
         return flight(start, end, t, 0.9 + reach(start, end) * 0.08, 0);
     }
+  }
+  // A face-off's intro (2026-10-14, as in the mockup): the pieces stay stacked through the collision, then
+  // the top one hops down beside the other as both turn to face each other.
+  const started = beat.kind === 'faceOff' ? beat.events.find((e) => e.type === 'ChallengeStarted' && e.players.includes(player)) : undefined;
+  if (started) {
+    const hold = Math.max(0, beat.durationMs - BEAT_MS.unstack);
+    if (elapsed < hold) return start;
+    const u = clamp01((elapsed - hold) / BEAT_MS.unstack);
+    const k = easeInOut(u);
+    const hop = start.position[1] > end.position[1] + 0.01 ? UNSTACK_HOP * 4 * u * (1 - u) : 0;
+    const [x, y, z] = lerp3(start.position, end.position, k);
+    return { ...end, position: [x, y + hop, z], rotation: [0, lerpAngle(start.rotation[1], end.rotation[1], k), 0] };
+  }
+  // The winner of a face-off keeps its spot until the loser lands, then settles into the middle.
+  if (beat.kind === 'knockback') {
+    const k = easeOut(clamp01((elapsed - BEAT_MS.knockback - BEAT_MS.knockbackLand) / BEAT_MS.knockbackSettle));
+    return { ...end, position: lerp3(start.position, end.position, k), rotation: [0, lerpAngle(start.rotation[1], end.rotation[1], k), 0] };
   }
   if (beat.kind === 'victory' && beat.events.some((e) => e.type === 'MatchWon' && e.winner === player)) {
     return { ...end, position: [end.position[0], end.position[1] + Math.abs(Math.sin(t * Math.PI * 3)) * 0.9, end.position[2]], rotation: [0, t * Math.PI * 4, 0] };
@@ -164,6 +181,37 @@ function hops(move: MovedEvent, start: Pose, end: Pose, elapsed: number, perTile
     scale: [across, stretch, across],
     orb: false,
   };
+}
+
+/** How high the top piece hops as it comes down off the stack into a face-off. */
+const UNSTACK_HOP = 0.5;
+/** How high a face-off's loser flies as it is knocked back. */
+const KNOCKBACK_HEIGHT = 1.8;
+
+/** The way from one heading to another, the short way round. */
+function lerpAngle(a: number, b: number, k: number): number {
+  const d = Math.atan2(Math.sin(b - a), Math.cos(b - a));
+  return a + d * k;
+}
+
+/**
+ * A face-off's loser knocked back (2026-10-14, as in the mockup): still facing the winner, it flies a high
+ * arc backwards, turning over nose up about its own side, lands with a squash, then turns to face its way.
+ */
+function knockedBack(start: Pose, end: Pose, elapsed: number): Pose {
+  const fly = BEAT_MS.knockback;
+  if (elapsed < fly) {
+    const k = easeInOut(elapsed / fly);
+    return { position: arcPoint(start.position, end.position, k, KNOCKBACK_HEIGHT), rotation: [-Math.PI * 2 * k, start.rotation[1], 0], scale: [1, 1, 1], orb: false };
+  }
+  const land = elapsed - fly;
+  if (land < BEAT_MS.knockbackLand) {
+    const s = 1 - 0.2 * Math.sin((land / BEAT_MS.knockbackLand) * Math.PI);
+    const wide = 1 + (1 - s) * 0.7;
+    return { position: end.position, rotation: [0, start.rotation[1], 0], scale: [wide, s, wide], orb: false };
+  }
+  const k = easeOut(clamp01((land - BEAT_MS.knockbackLand) / BEAT_MS.knockbackSettle));
+  return { ...end, rotation: [0, lerpAngle(start.rotation[1], end.rotation[1], k), 0] };
 }
 
 /** The vacuum: sucked into the head, an orb rides the chute, the piece pops out at the tail. */

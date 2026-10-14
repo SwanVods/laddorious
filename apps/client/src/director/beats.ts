@@ -40,12 +40,17 @@ export const BEAT_MS = {
   slide: 2000,
   launch: 1300,
   knockback: 850,
+  /** After a face-off's knock-back flight: the loser's landing squash, then the winner settling into the middle (2026-10-14, as in the mockup). */
+  knockbackLand: 90,
+  knockbackSettle: 300,
   cardMove: 800,
   stepBackPerTile: 300,
   snakeBlocked: 600,
   faceOff: 500,
-  /** My own face-off's intro: long enough for its banner before the popup opens (2026-10-14). */
-  faceOffIntro: 1500,
+  /** My own face-off's intro (2026-10-14, as in the mockup): the collision held for its banner, then the top piece hops down. */
+  faceOffIntro: 1900,
+  /** The top piece's hop down beside the other, at the end of any face-off's intro. */
+  unstack: 460,
   faceOffResult: 1100,
   /** In my own face-off's result, the popup first shows both picks, then closes for the result banner. */
   faceOffReveal: 1000,
@@ -180,7 +185,7 @@ function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
     case 'launch':
       return BEAT_MS.launch;
     case 'knockback':
-      return BEAT_MS.knockback;
+      return BEAT_MS.knockback + BEAT_MS.knockbackLand + BEAT_MS.knockbackSettle;
     case 'cardMove':
       return BEAT_MS.cardMove;
     case 'snakeBlocked':

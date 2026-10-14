@@ -216,11 +216,11 @@ describe('banners (spec #2 §5.1)', () => {
   it('shows a beat’s banner for a while, even after the beat is over', () => {
     vi.useFakeTimers();
     const { rerender } = render(<Harness playing={beat(1000)} />);
-    expect(screen.getByText('FACE-OFF!').className).toBe('banner bad');
+    expect(screen.getByText('COLLISION!').className).toBe('banner bad');
     rerender(<Harness playing={null} />);
     act(() => vi.advanceTimersByTime(BANNER_MS - 1));
-    expect(screen.getByText('FACE-OFF!')).toBeTruthy();
+    expect(screen.getByText('COLLISION!')).toBeTruthy();
     act(() => vi.advanceTimersByTime(1));
-    expect(screen.queryByText('FACE-OFF!')).toBeNull();
+    expect(screen.queryByText('COLLISION!')).toBeNull();
   });
 });
