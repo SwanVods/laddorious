@@ -114,7 +114,7 @@ Open the **Network** address Vite prints (for example `http://192.168.1.20:5173`
 Settings → Graphics quality:
 
 - **High:** live shadows, antialiasing and full resolution.
-- **Low:** no live shadows (soft blob shadows instead), a lower pixel density and fewer clouds.
+- **Low:** no live shadows (soft blob shadows instead), a lower pixel density, fewer clouds, each piece's lighter model, and the rockets, flags, whirlpools and splats drawn as flat icons on their tiles (their models aren't loaded).
 - **Auto:** starts Low on phones (a coarse pointer and a short screen side under 500 px) and High elsewhere. It steps down to Low when the frame rate averages under 45 fps for 5 s.
 
 A match stays within 100 draw calls and 150,000 triangles: `test/scene.test.tsx` checks the scene graph, and the e2e tests check a live match.
@@ -146,10 +146,13 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 
 - **`src/assets/slotFiles.ts`** lists which slots have a model, and its id.
 - **Loading:** a listed slot loads its model with drei's `useGLTF`, and the menu preloads them all. While a model loads, or if it fails, the stand-in shows and a warning is logged once.
-- **Instanced slots** (`MESH_SLOTS`: tiles, pads, targets, vortices, exits) load through `useSlotMesh` (`src/assets/slotMesh.ts`): the model becomes one geometry with a group per material, so every copy draws once per material. It returns the stand-in until the model loads and never suspends, so callers re-place their instances when it changes. The stand-ins lie flat and face +Z, like the models, so pads turn the same way either way (`padHeading`).
-- **Tracks** (`src/scene/tracks.ts`): each pad's arched trail and each slide's raised channel are swept in code along the jump's arc or lane, with v running along them so their chevrons scroll.
+- **Instanced slots** (`MESH_SLOTS`: tiles, pads, targets, vortices, exits) load through `useSlotMesh` (`src/assets/slotMesh.ts`): the model becomes one geometry with a group per material, so every copy draws once per material. It returns the stand-in until the model loads and never suspends, so callers re-place their instances when it changes. The stand-ins lie flat and face +Z, like the models; rockets and flags face the camera and turn only as they react.
+- **Trails** (`src/scene/tracks.ts`): a shown rocket's trail is twelve low-poly smoke puffs along its arc (`puffPoints`), a slide's a line of chevron arrowheads along its lane (`dashPoints`) that drift toward the splat. Both pop in piece by piece, take the pair colour and have a dark ink outline: four instanced meshes in all, however many paths show.
+- **Rockets and flags** (spec #5 A17): pieces on their tiles stand in a row in front (`END_ROW` in `src/scene/motion.ts`) instead of stacking. `endReaction` makes a rocket rock as a piece launches and a flag swing and pop as one lands; flat icons only pop, and reduced motion keeps them still.
+- **Name tags:** your own always shows; another player's shows while the mouse is over their piece or for 3 s after a tap on it (`tagVisible` in `src/scene/tags.ts`). A tap on a piece doesn't also peek the path under it.
+- **The crown** (`src/scene/Crown.tsx`): it spins on tile 100 until the win, then flies onto the winner's head (`crownPose` in `motion.ts`), measured from the piece's model, with a bounce and a burst of gold sparkles, and stays there through the end screen.
 - **Pairs instead of paths** (spec #5 A13): a path shows only while a piece stands on its start, while a piece rides it, or for 3 s after a tap on either end's tile (`src/scene/paths.ts`), growing in along its length. Each jump's two ends share a colour and a symbol (`src/scene/pairs.ts`); the parts take the colour as their instance colour, and the symbols are flat decals (`src/assets/symbols.ts`), one instanced mesh per symbol. `PARTS` in `src/scene/layout.ts` sets the parts' sizes and where the symbols lie; the Blender models are built to it.
-- **Low quality** loads each piece's lighter file, `<id>-low.glb` (spec #5 A14), through `slotFile(name, low)`.
+- **Low quality** loads each piece's lighter file, `<id>-low.glb` (spec #5 A14), through `slotFile(name, low)`, and skips the four end models (`preloadSlotMeshes(modelEnds)`).
 - **`prepareModel`** readies each model's materials:
   - `Seat` takes the player's colour;
   - on Low quality, glossy plastic drops its clearcoat;

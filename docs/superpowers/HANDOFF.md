@@ -28,26 +28,26 @@
 
 After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-On `art/spec-5` after Spec #5 Step 2's review rounds: 89 test files and 702 tests pass, and `pnpm e2e` passes all 17 (about 8 minutes). A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
+On `art/spec-5` after Spec #5 Step 2's fifth round: 89 test files and 726 tests pass, and `pnpm e2e` passes all 17 (about 8 minutes; in round 5 the online away test needed a rerun on a busy machine). A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
 ## Next step: the user reviews Spec #5 Step 2
 
-**Requested at the fifth Step 2 look (2026-10-14), not started yet:**
-1. Low quality shows the jump ends as images on the tiles; the 3D objects (rockets, flags, whirlpools, splats) only on High.
-2. The board's tiles wider.
-3. Pieces that land on a rocket or a flag animate or stand aside so they don't clash with it, one piece or several.
-4. Pieces' name tags hidden, shown on hover or tap.
-5. On the finish tile, the crown animates and sits on top of the piece that finishes.
-6. The rocket and slide trails become low-poly, simple 3D objects that read as a trail.
+**Built for the fifth Step 2 look (2026-10-14, spec #5 A17; plan `docs/superpowers/plans/2026-10-14-art-pass-step2-round5.md`), awaiting the user's review:**
+1. A bigger board: each square 2.0 across (was 1.6). The camera, island, shadow box and clouds scale with it; pieces and parts keep their size.
+2. On Low, the rocket, flag, whirlpool and splat are flat icons on their tiles (their models aren't loaded); pieces stay 3D.
+3. Trails are low-poly: a rocket's is twelve smoke puffs along its arc, a slide's a line of chevron arrowheads drifting down its lane, both in the pair colour with a dark ink outline (the user asked for the outline mid-round).
+4. Pieces on a rocket's or a flag's tile stand in a row in front of it, face-offs too. A rocket rocks as a piece launches; a flag swings and pops as one lands; flat icons only pop.
+5. Your own name tag always shows; another player's on hover or for 3 s after a tap on their piece; every tag once the match is won.
+6. The crown flies from tile 100 onto the winner's head with a bounce and gold sparkles, and stays there through the end screen.
 
-Plan for these: `docs/superpowers/plans/2026-10-14-art-pass-step2-round5.md` (awaiting the user's review).
+After approval: merge `art/spec-5` into `main` locally, then amend plan 3 (the world) for the bigger board and run it.
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
 - **Try it on the Wi-Fi:** `pnpm serve` builds the game for the local server, starts `wrangler dev` on port 8787 on every network interface, and prints the addresses to open on phones (memory `multiplayer-lan-testing`).
 - **Deploy to Cloudflare:** follow `apps/server/README.md` (`wrangler login`, then `pnpm deploy:cloudflare`). Claude never deploys or touches the Cloudflare account (memory `hosting-cloudflare`).
 
-**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) was approved and merged to `main`. Step 2 (the board) went through one review round: the user's notes (hidden paths, pairs by colour and symbol, tap to see a path, rounder taller tiles, a taller pad, a lighter die, lighter pieces on Low) are built, and the board awaits the user's second look in the Step 2 section of the review page <https://claude.ai/artifact/Gk8E6V9hf18euZWULr4Sa4>. After approval, the branch is merged to `main` locally, and plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`, the world) runs. **Room for Step 3:** a busy match leaves about 18,700 triangles on High and 50,700 on Low; plan 3's world needs about 32,000 at its limits, so its models have to come in under those limits (the user asked to trim while making things look better by shape and colour).
+**Spec #5, the Blender art pass,** is under way on branch `art/spec-5`. Step 1 (the pipeline, the seven pieces, the die and the crown) was approved and merged to `main`. Step 2 (the board) has been through five review rounds; the fifth round's requests (above) are built and await the user's look in the Step 2 section of the review page <https://claude.ai/artifact/Gk8E6V9hf18euZWULr4Sa4>. After approval, the branch is merged to `main` locally, and plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`, the world) is amended for the bigger board and runs. **Room for Step 3:** a busy match comes to 73 draw calls and about 135,600 triangles on High, 66,300 on Low, which leaves about 14,400 triangles on High and 33,700 on Low; plan 3's world needs about 32,000 at its limits, so its models have to come in well under those limits (the user asked to trim while making things look better by shape and colour).
 
 The roadmap was renumbered on 2026-10-08 (sound design became #3). Older docs (spec #2, the phase plans) keep the old numbers: server = #3, art = #4.
 
@@ -111,7 +111,7 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 
 - **Blender:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`). On 2026-10-09 a build run inside the user's open Blender (through the MCP link) crashed it; the bug is fixed (`art/lib/export.py` kept the scene graph's copies of materials), and since then every build and preview runs headless (`pnpm art`, `blender --background --factory-startup --python art/preview.py -- out.png ids`), never in the user's Blender.
 - **Deferred Phase 4 minors** (from the self-review; not fixed):
-  - The crown is placed at tile 100 directly (`src/scene/Surroundings.tsx`), not at the board's last tile.
+  - The crown is placed at tile 100 directly (`crownPose` in `src/scene/motion.ts`), not at the board's last tile.
   - `webglAvailable()` (`src/scene/MatchScene.tsx`) never releases its probe context.
   - Textures and geometries built with `useMemo` in the scene (chevrons, swirl, die atlas, sky, piece and die geometries) are not disposed on unmount; only the board overlay and slide ribbons are.
 - **Deferred Phase 5 minors** (from the self-review; not fixed):
@@ -130,6 +130,11 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - Rank badges live inside name tags, so a tag hidden behind the camera hides its badge too (rare; the reveal uses the overview).
   - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
   - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
+- **Deferred Spec #5 Step 2 round 5 minors** (from the self-review; not fixed):
+  - A rocket's flame doesn't flare as it launches: the flame is part of the instanced rocket and its glow can't change per copy. The rocket rocks and squashes instead.
+  - In fast e2e builds (beats × 0.05) the 3 s victory beat ends before the crown's 1.2 s flight, so it appears on the head at once; the flight is covered by unit tests, not seen in a browser.
+  - The rocket and flag reactions were checked by unit tests only; no browser run caught a bot climbing at the moment of a screenshot.
+  - The online "away, then back" e2e test timed out once while other test runs shared the machine (b's away mark stayed past 15 s); it passed when the online tests ran alone. Worth watching for flakiness.
 - **Deferred Spec #3 minors** (from the self-review; not fixed):
   - Dev builds only: React StrictMode runs effects twice, so the card-fan (C1) and MATCH FOUND / countdown (Q2, Q3) sounds play twice in dev; production plays them once.
   - Music changes fade out then in (0.4 s + 0.8 s) rather than overlapping, since Tone has one transport.

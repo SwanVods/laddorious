@@ -23,7 +23,7 @@ Both scripts also run inside an open Blender (see their docstrings), in scenes o
 
 ## The rules
 
-- 1 tile = 1.6 units. Z is up, and models face −Y (Blender's front view). The export turns that into the game's Y up and +Z forward.
+- 1 tile = 2.0 units (spec #5 A17; the tile model is 1.9 across, leaving a gap). Z is up, and models face −Y (Blender's front view). The export turns that into the game's Y up and +Z forward.
 - The origin sits at the base centre, except the die, which keeps its middle at the origin.
 - Pieces are about 1 unit tall; the game scales them.
 - Material names are the game's contract:
