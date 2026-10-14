@@ -38,6 +38,9 @@ On `art/spec-5` after Spec #5 Step 2's review rounds: 89 test files and 702 test
 3. Pieces that land on a rocket or a flag animate or stand aside so they don't clash with it, one piece or several.
 4. Pieces' name tags hidden, shown on hover or tap.
 5. On the finish tile, the crown animates and sits on top of the piece that finishes.
+6. The rocket and slide trails become low-poly, simple 3D objects that read as a trail.
+
+Plan for these: `docs/superpowers/plans/2026-10-14-art-pass-step2-round5.md` (awaiting the user's review).
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
