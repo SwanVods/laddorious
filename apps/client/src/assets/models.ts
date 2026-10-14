@@ -230,8 +230,8 @@ export function puffGeometry(): BufferGeometry {
   return new IcosahedronGeometry(1, 0);
 }
 
-/** A slide trail's arrowhead: a flat chevron, 0.04 thick, lying on its base and pointing +Z. */
-export function arrowheadGeometry(): BufferGeometry {
+/** The arrowhead's chevron, pointing +Y in its own plane. */
+function arrowheadShape(): Shape {
   const outline = [
     [0, 0.22],
     [0.29, -0.06],
@@ -240,7 +240,17 @@ export function arrowheadGeometry(): BufferGeometry {
     [-0.19, -0.19],
     [-0.29, -0.06],
   ] as const;
-  const shape = new Shape(outline.map(([x, y]) => new Vector2(x, y)));
+  return new Shape(outline.map(([x, y]) => new Vector2(x, y)));
+}
+
+/** A slide trail's arrowhead: a flat chevron, 0.04 thick, lying on its base and pointing +Z. */
+export function arrowheadGeometry(): BufferGeometry {
   // Extruded up from the shape's plane, then laid down: the shape's +Y becomes +Z, the depth goes up.
-  return new ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, 0.04, 0);
+  return new ExtrudeGeometry(arrowheadShape(), { depth: 0.04, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, 0.04, 0);
+}
+
+/** The arrowhead's outline: the same chevron grown 0.045 all round by a bevel, lying just under its top so a dark rim shows. */
+export function arrowheadOutlineGeometry(): BufferGeometry {
+  const options = { depth: 0.005, bevelEnabled: true, bevelSize: 0.045, bevelThickness: 0.01, bevelSegments: 1 };
+  return new ExtrudeGeometry(arrowheadShape(), options).rotateX(Math.PI / 2).translate(0, 0.02, 0);
 }

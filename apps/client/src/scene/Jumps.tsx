@@ -1,10 +1,10 @@
 import type { Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import { Color, DoubleSide, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
+import { BackSide, Color, DoubleSide, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, PAIR_COLORS, WORLD_COLORS } from '../app/theme';
-import { arrowheadGeometry, exitGeometry, padGeometry, puffGeometry, targetGeometry, vortexGeometry } from '../assets/models';
+import { arrowheadGeometry, arrowheadOutlineGeometry, exitGeometry, padGeometry, puffGeometry, targetGeometry, vortexGeometry } from '../assets/models';
 import { useSlotMesh } from '../assets/slotMesh';
 import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
@@ -24,6 +24,8 @@ const CREAM = new Color(PAIR_COLORS.cap);
 /** Room for the trails: every puff of every rocket, and a long slide's arrowheads on every slide. */
 const MAX_PUFFS = PUFFS * MAX_JUMPS;
 const MAX_ARROWS = 24 * MAX_JUMPS;
+/** How much bigger a puff's dark outline is than the puff. */
+const PUFF_OUTLINE = 1.22;
 /** How fast a slide's arrowheads drift along it, in gaps a second. */
 const DRIFT = 0.8;
 
@@ -131,8 +133,15 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
   const puff = useMemo(() => puffGeometry(), []);
   const arrowhead = useMemo(() => arrowheadGeometry(), []);
   const trailMaterial = useMemo(() => new MeshStandardMaterial({ flatShading: true, roughness: 0.6 }), []);
+  // Their dark outlines, so a trail stands out on the busy board: a puff's is a bigger ball seen from
+  // inside (an inverted hull), an arrowhead's a wider chevron just under it.
+  const arrowOutline = useMemo(() => arrowheadOutlineGeometry(), []);
+  const puffOutlineMaterial = useMemo(() => new MeshBasicMaterial({ color: WORLD_COLORS.ink, side: BackSide }), []);
+  const arrowOutlineMaterial = useMemo(() => new MeshBasicMaterial({ color: WORLD_COLORS.ink }), []);
   const puffsRef = useRef<InstancedMesh>(null);
   const arrowsRef = useRef<InstancedMesh>(null);
+  const puffOutlinesRef = useRef<InstancedMesh>(null);
+  const arrowOutlinesRef = useRef<InstancedMesh>(null);
   // A path's trail points, built once per path.
   const trailsRef = useRef(new Map<string, { puffs: Puff[] } | { dashes: (phase: number) => Dash[] }>());
   // The pair symbols (spec #5 A13): one instanced mesh per symbol, unlit decals, and the whirlpools' still caps.
@@ -149,8 +158,11 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       puff.dispose();
       arrowhead.dispose();
       trailMaterial.dispose();
+      arrowOutline.dispose();
+      puffOutlineMaterial.dispose();
+      arrowOutlineMaterial.dispose();
     },
-    [symbols, symbolMaterial, cap, capMaterial, puff, arrowhead, trailMaterial],
+    [symbols, symbolMaterial, cap, capMaterial, puff, arrowhead, trailMaterial, arrowOutline, puffOutlineMaterial, arrowOutlineMaterial],
   );
   const symbolsRef = useRef<Partial<Record<SymbolName, InstancedMesh | null>>>({});
   const capsRef = useRef<InstancedMesh>(null);
@@ -308,6 +320,9 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
           place.updateMatrix();
           puffsRef.current?.setMatrixAt(puffs, place.matrix);
           puffsRef.current?.setColorAt(puffs, tint);
+          place.scale.setScalar(size * PUFF_OUTLINE);
+          place.updateMatrix();
+          puffOutlinesRef.current?.setMatrixAt(puffs, place.matrix);
           puffs++;
         });
       } else {
@@ -321,12 +336,19 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
           place.updateMatrix();
           arrowsRef.current?.setMatrixAt(arrows, place.matrix);
           arrowsRef.current?.setColorAt(arrows, tint);
+          arrowOutlinesRef.current?.setMatrixAt(arrows, place.matrix);
           arrows++;
         });
       }
     }
     for (const id of trailsRef.current.keys()) if (!revealsRef.current.has(id)) trailsRef.current.delete(id);
-    for (const [mesh, count] of [[puffsRef.current, puffs], [arrowsRef.current, arrows]] as const) {
+    const trails = [
+      [puffsRef.current, puffs],
+      [puffOutlinesRef.current, puffs],
+      [arrowsRef.current, arrows],
+      [arrowOutlinesRef.current, arrows],
+    ] as const;
+    for (const [mesh, count] of trails) {
       if (!mesh) continue;
       mesh.count = count;
       mesh.visible = count > 0;
@@ -339,6 +361,8 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
     <group>
       <instancedMesh ref={puffsRef} name="trail-puffs" args={[puff, trailMaterial, MAX_PUFFS]} />
       <instancedMesh ref={arrowsRef} name="slide-arrows" args={[arrowhead, trailMaterial, MAX_ARROWS]} />
+      <instancedMesh ref={puffOutlinesRef} name="trail-puff-outlines" args={[puff, puffOutlineMaterial, MAX_PUFFS]} />
+      <instancedMesh ref={arrowOutlinesRef} name="slide-arrow-outlines" args={[arrowOutline, arrowOutlineMaterial, MAX_ARROWS]} />
       {SYMBOLS.map((name) => (
         <instancedMesh
           key={name}

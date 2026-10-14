@@ -104,6 +104,9 @@ describe('the 3D scene (spec #2 §6)', () => {
     expect(puffs).toBeLessThan(PUFFS);
     expect(arrows).toBeGreaterThan(0);
     expect(arrows).toBeLessThan(dashPoints(slide).length);
+    // Each piece has a dark outline behind it, so the trail stands out on the busy board.
+    expect((root.getObjectByName('trail-puff-outlines') as InstancedMesh).count).toBe(puffs);
+    expect((root.getObjectByName('slide-arrow-outlines') as InstancedMesh).count).toBe(arrows);
     const colour = new Color();
     (root.getObjectByName('trail-puffs') as InstancedMesh).getColorAt(0, colour);
     expect(colour.getHex()).toBe(new Color(pairStyles(jumps).get(ladder.id)!.colour).getHex());

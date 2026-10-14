@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { capGeometry, symbolGeometry } from '../../apps/client/src/assets/symbols';
-import { arrowheadGeometry, puffGeometry } from '../../apps/client/src/assets/models';
+import { arrowheadGeometry, arrowheadOutlineGeometry, puffGeometry } from '../../apps/client/src/assets/models';
 import { PARTS } from '../../apps/client/src/scene/layout';
 import { SYMBOLS } from '../../apps/client/src/scene/pairs';
 import { PUFFS, dashPoints } from '../../apps/client/src/scene/tracks';
@@ -12,7 +12,7 @@ import { readGlb, type GlbSummary } from '../glb';
 // The busiest moment is a roll: four dice tumble while every piece and part shows. Today's boards have
 // 8 slides and 10 pads; cards add a few, so this prices 12 and 14. Paths hide unless a piece stands on
 // their start or a player taps an end (spec #5 A13): at most five show, priced as the costliest kind.
-// A trail is low-poly pieces (round 5): two instanced meshes in all, puffs and arrowheads.
+// A trail is low-poly pieces with dark outlines (round 5): four instanced meshes in all, puffs and arrowheads.
 
 const DIR = new URL('../../apps/client/public/models/', import.meta.url);
 const SLIDES = 12;
@@ -76,9 +76,10 @@ function price(level: 'high' | 'low') {
     rows.push(`${name}: ${c} calls, ${t} triangles`);
   };
   // The paths that show, priced as the costlier kind: a long slide's arrowheads or a rocket's puffs.
-  const slide = dashPoints({ id: 's', from: 99, to: 2 }).length * triangles(arrowheadGeometry());
-  const rocket = PUFFS * triangles(puffGeometry());
-  add('shown paths', 2, SHOWN * Math.max(slide, rocket));
+  // Each piece with its dark outline: two instanced meshes for puffs, two for arrowheads.
+  const slide = dashPoints({ id: 's', from: 99, to: 2 }).length * (triangles(arrowheadGeometry()) + triangles(arrowheadOutlineGeometry()));
+  const rocket = PUFFS * 2 * triangles(puffGeometry());
+  add('shown paths', 4, SHOWN * Math.max(slide, rocket));
   // The pair symbols: one instanced mesh per symbol, both ends of every jump; and the whirlpools' caps.
   const heaviestSymbol = Math.max(...SYMBOLS.map((name) => triangles(symbolGeometry(name))));
   add('pair symbols', SYMBOLS.length, 2 * (SLIDES + PADS) * heaviestSymbol);
