@@ -28,22 +28,23 @@
 
 After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
 
-On `fix/known-issues` after the user's known-issues list and the animation round (2026-10-14): 91 test files and 872 tests pass, and `pnpm e2e` passes 16 of 17 (about 10 minutes): the online away test is flaky, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
+On `fix/adjustments` (2026-10-15): 95 test files and 896 tests pass, and `pnpm e2e` passes 16 of 17 (about 10 minutes): the online away test is flaky, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
-## Next step: the user reviews the known-issues fixes, then the board theme
+## Next step: the user reviews the adjustments, then the board theme
 
-**Built for the user's "Known issues" list (2026-10-14; plan `docs/superpowers/plans/2026-10-14-known-issues.md`, branch `fix/known-issues`), awaiting the user's review:**
-1. Cards resolve one at a time, from the last-placed player to the leader (spec #1 D22); the camera visits each card's player in turn, and its effect plays right there.
-2. The face-off in steps: the FACE-OFF! intro alone, then the picks, then the result banner once the popup closes. After a won face-off the loser backflips away and the winner keeps the tile (no restacking).
-3. A piece landing on another wiggles, and the one under it squashes.
-4. "Peek at the board" shows the overview.
-5. HUD: four smaller feed lines; no idle "eye" icon; a tag hides while its piece's die shows; the player column below the round buttons.
-6. Rockets (smaller, no pad) and flags stand in their tile's top-right corner; pieces stack in the middle again. Rocket trails use the slide's outlined arrowheads, along the arc. Epic "?" tiles shine.
-7. Menu: the arrows alone choose the piece; a cleaner gear; the Sound switch is on while sound plays; a slow first load of Tone no longer leaves the sound silent.
-8. Found on the way: the card-pick popup stayed open while cards resolved after a timed-out pick; it now closes.
-9. Then, after the user compared the animations with the match mockup (spec #2 C17): flips and wobbles turn about the piece's own side (the camera sees them side-on); hops ease in and out and land with a squash, slower and higher onto a stack; pieces stand by measured sizes so nothing overlaps; the face-off opens on the collision, the top piece hops down, the loser backflips and lands, then the winner settles; the camera follows each player's slide, launch and knock-back; pauses after the last roll and after each card. A card can still push a player off tile 100 before the round ends (engine test).
+The known-issues list and the animation round were approved and merged to `main` (2026-10-15).
 
-After approval: fast-forward merge `fix/known-issues` into `main`. Then the **board theme** (the user's "Visual Board plan": the island, table and border need a real theme, with the energy of Fall Guys or Stumble Guys in our own palette): a design step first, with 3 or 4 visual directions on a page for the user to pick from; it replaces plan 3 (`docs/superpowers/plans/2026-10-09-art-pass-step3.md`).
+**Built for the user's adjustments (2026-10-15; plan `docs/superpowers/plans/2026-10-15-adjustments.md`, branch `fix/adjustments`), awaiting the user's review:**
+1. Admin settings in `apps/client/public/tuning.json`, read at startup (every key in the client README). The user plans an admin dashboard that writes the same file.
+2. After the last roll the camera reaches my piece sooner; while others face off and I don't, it frames their tile.
+3. The overview starts 15% closer and zooms by mouse wheel or pinch.
+4. On phones, card info is a compact list under the action log instead of bubbles and a bottom queue. Heavy Boots reads "Leader: −3 on next roll".
+5. No tile holds two jump ends, generated or edited by a card (spec #1 D16 amended): no more flag on a whirlpool or splat on a rocket.
+6. A test proves a reconnect during cards always ends on the server's true position. The user's tile-99 report was most likely Heavy Boots, which lowers the next roll and never moves anyone.
+7. A full-screen button in the menu and in matches.
+8. Kept as is at the user's choice: losers of one face-off knocked back together land on the same tile and face off again.
+
+After approval: fast-forward merge `fix/adjustments` into `main`. Then the **board theme** design step (visual directions for the user to pick), which replaces plan 3.
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
@@ -133,6 +134,10 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - Rank badges live inside name tags, so a tag hidden behind the camera hides its badge too (rare; the reveal uses the overview).
   - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
   - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
+- **Deferred adjustments minors** (from the self-review; not fixed):
+  - The dev server once served a stale `MatchScreen` (an edit landed between two writes) until restarted; nothing in the build.
+  - The overview zoom lasts for the match but isn't remembered between matches.
+  - Changing `tuning.json` while a match is open takes effect on the next page load, not mid-match.
 - **Deferred known-issues minors** (from the self-review; not fixed):
   - The online e2e test "a player who drops shows as away, and a reload brings them back" is flaky. Cause: e2e bot matches are fast (40-50 s); while B reloads (shader compile included), the match can be won, and the room closes every socket 10 s after a win (`END_LINGER_MS` in `apps/server/src/room.ts`), so A never hears B come back and the Away badge stays. The rejoin itself works. A reliable test needs a match that can't end mid-test (new scaffolding), so it is deferred per the user's rule on multiplayer tests.
   - No browser run caught my own face-off or a landing on a stack during the screenshots; the face-off steps and the wiggle are covered by unit tests.

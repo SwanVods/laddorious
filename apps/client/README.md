@@ -172,6 +172,9 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 - **Landings on a stack** (`stackLandings`, `landingPose` in `src/scene/motion.ts`): the piece on top wobbles for 0.8 s and the one under it squashes once.
 - **Turning pieces** (`placePiece` in `src/scene/Pieces.tsx`): the body moves, squashes and turns to face its way; flips, wobbles and the idle sway turn the inner model about the piece's own side axis (rotation x), which the camera sees side-on.
 - **Nothing overlaps** (`src/scene/footprint.ts`, `src/assets/pieceSizes.ts`): pieces stand by their measured sizes, stacked head to foot, nose to nose in a face-off. `pnpm test` checks the size table against the built models and every pair of pieces as turned footprints.
+- **Camera zoom** (`src/scene/zoom.ts`, `CameraRig.tsx`): a mouse wheel or two-finger pinch over the board zooms the overview between `camera.overview.zoomMin` and `zoomMax`; follow and swoop shots don't zoom. While other players face off and I don't, the camera frames their tile.
+- **Compact card info on phones** (`src/hud/CardList.tsx`): on short screens the card bubbles and the bottom queue give way to one line per card under the action log (`hud.phoneCompactCards`).
+- **Full screen** (`src/ui/FullscreenButton.tsx`): a round button in the menu and in matches, hidden where the Fullscreen API isn't available.
 - **Pauses** (`withPauses` in `src/director/beats.ts`): beats with no events after the last roll and after each card; `heldBeat` gives the moment they hold, for the camera and the HUD.
 - **Epic "?" tiles** shine: a band of light sweeps across each (`sheenTexture`, one instanced mesh in `Board.tsx`).
 - **Cards and face-offs** (spec #2 C16): cards resolve one at a time and the camera visits each (`cardShot` in `camera.ts`, `BEAT_MS.cardLead`); a face-off shows its intro, the picks, then the result banner, one after another (`faceOffModel`, banners with `delayMs`).
