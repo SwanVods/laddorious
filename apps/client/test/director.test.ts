@@ -204,3 +204,17 @@ describe('Director time scale (e2e builds)', () => {
     expect(done).toEqual([1, 2]);
   });
 });
+
+describe('a reconnect during the cards (the user, 2026-10-15)', () => {
+  it("shows a piece where the server's resync has it, after missing the update that moved it", () => {
+    const { director, state } = startDirector();
+    director.push(update([], { p0: 99 }, 5, { window: 'mystery' }));
+    vi.runAllTimers();
+    expect(state().presentation!.positions.p0).toBe(99);
+    // The update with the card that sent p0 back to 96 never arrived; the rejoin's resync has no events.
+    director.push(update([], { p0: 96 }, 6));
+    vi.runAllTimers();
+    expect(state().presentation!.positions.p0).toBe(96);
+    expect(state().settled!.view.players.find((p) => p.id === 'p0')!.position).toBe(96);
+  });
+});
