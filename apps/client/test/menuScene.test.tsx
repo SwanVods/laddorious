@@ -26,6 +26,15 @@ async function renderMenu(piece: PieceId, level: QualityLevel = 'high', reducedM
 }
 
 describe('the menu scene (spec #2 §7.1)', () => {
+  it('stands the podium on its little platform, with clouds (board theme spec §3)', async () => {
+    const { root } = await renderMenu('pawn');
+    expect((root.getObjectByName('world-podium') as InstancedMesh).count).toBe(1);
+    const platform = root.getObjectByName('world-menu.platform') as InstancedMesh;
+    expect(platform.count).toBe(1);
+    expect(platform.visible).toBe(true); // a plain deck until the model loads
+    expect((root.getObjectByName('world-cloud') as InstancedMesh).count).toBe(8);
+  });
+
   it('stands the chosen piece on the podium', async () => {
     const { root, renderer } = await renderMenu('dragon');
     const piece = root.getObjectByName('menu-piece') as Mesh;

@@ -1,13 +1,15 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Color, Fog, MeshStandardMaterial, Object3D, Vector3, type Group, type InstancedMesh } from 'three';
-import { BOARD_COLORS, PODIUM_COLORS, SEAT_COLORS, WORLD_COLORS } from '../app/theme';
+import { BOARD_COLORS, SEAT_COLORS, WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY, tileGeometry } from '../assets/models';
 import { preloadSlotMeshes, useSlotMesh } from '../assets/slotMesh';
 import { Slot, preloadModels, type SlotName } from '../assets/slots';
 import type { PieceId } from '../service/matchService';
 import { TILE_ACROSS, TILE_THICKNESS, type Vec3 } from './layout';
 import { webglAvailable } from './MatchScene';
+import { menuWorld } from './world';
+import { WorldParts } from './WorldParts';
 import { clamp01, easeOutBack } from './motion';
 import { ContextLossWatch } from './Probes';
 import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
@@ -15,7 +17,7 @@ import type { TagRegistry } from './tags';
 import { skyTexture } from './textures';
 
 // The main menu's 3D backdrop (spec #2 §7.1, per the menu mockup): your piece turning on a
-// podium on a little floating island, board tiles drifting behind it, a few clouds.
+// podium on a little inflatable platform (board theme spec §3), board tiles drifting behind it, a few clouds.
 
 export const MENU_CAMERA = { fov: 35, position: [0, 1.9, 7.8] as Vec3, target: [0, 1.25, 0] as Vec3 };
 const PODIUM_X = -0.6;
@@ -35,14 +37,6 @@ const TILES = Array.from({ length: 18 }, (_, i) => {
 });
 /** The floating tiles are the board's tile, shrunk to 0.6 across and 0.14 thick (spec #5 §4.2). */
 const MENU_TILE = { across: 0.6 / TILE_ACROSS, up: 0.14 / TILE_THICKNESS } as const;
-/** Clouds below and behind the podium: four puffs each. */
-const PUFFS = Array.from({ length: 8 }, (_, i) =>
-  Array.from({ length: 4 }, (_, k) => {
-    const size = 0.9 + ((k * 5 + i) % 4) * 0.25;
-    return { x: -9 + i * 2.6 + (k - 1.5) * 1.3, y: -3.2 + (i % 3) * 0.6 + (k % 2) * 0.3, z: -6 - (i % 2) * 3, sx: size * 1.4, s: size };
-  }),
-);
-
 interface MenuContentProps {
   piece: PieceId;
   level: QualityLevel;
@@ -58,8 +52,8 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
   const geometry = useMemo(() => PIECE_GEOMETRY[piece](), [piece]);
   const tile = useSlotMesh('tile', () => ({ geometry: tileGeometry(), material: new MeshStandardMaterial({ roughness: 0.45 }) }), { clearcoat: profile.clearcoat });
   const turntableRef = useRef<Group>(null);
+  const world = useMemo(() => menuWorld(profile.clouds, PODIUM_X), [profile.clouds]);
   const tilesRef = useRef<InstancedMesh>(null);
-  const puffsRef = useRef<InstancedMesh>(null);
   const swapAtRef = useRef(0);
   const place = useMemo(() => new Object3D(), []);
   const point = useMemo(() => new Vector3(), []);
@@ -87,24 +81,11 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
 
   useLayoutEffect(() => {
     const tiles = tilesRef.current;
-    if (tiles) {
-      const color = new Color();
-      TILES.forEach((_, i) => tiles.setColorAt(i, color.set(TILE_COLORS[i % TILE_COLORS.length]!)));
-      if (tiles.instanceColor) tiles.instanceColor.needsUpdate = true;
-    }
-    const puffs = puffsRef.current;
-    if (!puffs) return;
-    const shown = PUFFS.slice(0, profile.clouds).flat();
-    shown.forEach((p, i) => {
-      place.position.set(p.x, p.y, p.z);
-      place.rotation.set(0, 0, 0);
-      place.scale.set(p.sx, p.s, p.s);
-      place.updateMatrix();
-      puffs.setMatrixAt(i, place.matrix);
-    });
-    puffs.count = shown.length;
-    puffs.instanceMatrix.needsUpdate = true;
-  }, [place, profile.clouds, tile]);
+    if (!tiles) return;
+    const color = new Color();
+    TILES.forEach((_, i) => tiles.setColorAt(i, color.set(TILE_COLORS[i % TILE_COLORS.length]!)));
+    if (tiles.instanceColor) tiles.instanceColor.needsUpdate = true;
+  }, [tile]);
 
   useFrame(({ camera, clock, size }, delta) => {
     const t = reducedMotion ? 0 : clock.elapsedTime;
@@ -156,31 +137,8 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
         shadow-camera-far={20}
         shadow-bias={-0.0005}
       />
+      <WorldParts placements={world} clearcoat={profile.clearcoat} reducedMotion={reducedMotion} />
       <group position-x={PODIUM_X}>
-        <mesh position-y={0.38} receiveShadow castShadow={profile.shadows}>
-          <cylinderGeometry args={[1.35, 1.42, 0.34, 48]} />
-          <meshStandardMaterial color={PODIUM_COLORS.top} roughness={0.5} />
-        </mesh>
-        <mesh position-y={0.2}>
-          <cylinderGeometry args={[1.46, 1.46, 0.12, 48]} />
-          <meshStandardMaterial color={PODIUM_COLORS.band} metalness={0.3} roughness={0.35} />
-        </mesh>
-        <mesh position-y={-0.02} castShadow={profile.shadows}>
-          <cylinderGeometry args={[1.5, 1.15, 0.36, 48]} />
-          <meshStandardMaterial color={PODIUM_COLORS.base} roughness={0.45} />
-        </mesh>
-        <mesh rotation-x={Math.PI / 2} position-y={TOP_Y + 0.005}>
-          <torusGeometry args={[1.18, 0.045, 10, 64]} />
-          <meshStandardMaterial color={PODIUM_COLORS.ring} emissive={PODIUM_COLORS.ring} emissiveIntensity={0.7} />
-        </mesh>
-        <mesh rotation-x={Math.PI} position-y={-1.4}>
-          <coneGeometry args={[1.55, 2.4, 7]} />
-          <meshStandardMaterial color={WORLD_COLORS.cushion} roughness={0.9} flatShading />
-        </mesh>
-        <mesh rotation-x={Math.PI} position={[0.9, -1.05, 0.5]}>
-          <coneGeometry args={[0.7, 1.3, 6]} />
-          <meshStandardMaterial color={WORLD_COLORS.deck} roughness={0.9} flatShading />
-        </mesh>
         {!profile.shadows && (
           <mesh rotation-x={-Math.PI / 2} position-y={TOP_Y + 0.008}>
             <circleGeometry args={[0.62, 32]} />
@@ -203,10 +161,6 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
         </group>
       </group>
       <instancedMesh ref={tilesRef} args={[tile.geometry, tile.material, TILES.length]} />
-      <instancedMesh ref={puffsRef} args={[undefined, undefined, PUFFS.flat().length]}>
-        <sphereGeometry args={[1, 16, 10]} />
-        <meshStandardMaterial color={WORLD_COLORS.cloud} roughness={1} emissive={WORLD_COLORS.cloud} emissiveIntensity={0.22} />
-      </instancedMesh>
     </>
   );
 }

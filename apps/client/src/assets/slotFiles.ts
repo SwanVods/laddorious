@@ -62,6 +62,8 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   'prop.card': 'card',
   'prop.die': 'prop_die',
   'prop.crown': 'prop_crown',
+  podium: 'podium',
+  'menu.platform': 'menu_platform',
 };
 
 /** Slots drawn many times through instancing (spec #5 §6): useSlotMesh loads them as one mesh each. */
