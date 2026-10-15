@@ -1,7 +1,7 @@
 import type { PlayerId } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import { Mesh, type Group, type MeshStandardMaterial, type Object3D } from 'three';
+import { Mesh, ShaderMaterial, type Group, type Object3D } from 'three';
 import { WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
@@ -11,6 +11,7 @@ import { PIECE_SCALE } from './layout';
 import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, shieldLook, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
+import { createShieldMaterial, setShieldLook } from './shieldMaterial';
 import { dieAtlasTexture } from './textures';
 import { tuning } from '../app/tuning';
 import { isTap } from './pan';
@@ -127,7 +128,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
   useEffect(
     () => () =>
       shieldRef.current?.traverse((node) => {
-        if (node instanceof Mesh && node.userData.ownMaterial) (node.material as MeshStandardMaterial).dispose();
+        if (node instanceof Mesh && node.material instanceof ShaderMaterial) node.material.dispose();
       }),
     [],
   );
@@ -181,20 +182,9 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
       shield.scale.setScalar(look.scale);
       shield.traverse((node) => {
         if (!(node instanceof Mesh)) return;
-        // Model copies share materials: this piece's bubble gets its own, so its opacity is its own.
-        if (!node.userData.ownMaterial) {
-          node.material = (node.material as MeshStandardMaterial).clone();
-          node.userData.ownMaterial = true;
-        }
-        const m = node.material as MeshStandardMaterial;
-        if (m.name === 'Rim') {
-          m.emissiveIntensity = 2 * look.rim;
-        } else {
-          m.transparent = true;
-          m.depthWrite = false;
-          m.opacity = look.opacity;
-          m.color.set(WORLD_COLORS.shield);
-        }
+        // The bubble draws with its own edge-glow material (2026-10-15): nearly clear face-on, its outline aglow.
+        if (!(node.material instanceof ShaderMaterial)) node.material = createShieldMaterial(WORLD_COLORS.shield);
+        setShieldLook(node.material as ShaderMaterial, look);
       });
     }
   });
