@@ -1,7 +1,9 @@
 import { PROTOCOL_VERSION, type PieceId, type Seat } from '@laddorious/host';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MatchmakingState, Profile } from '../src/service/matchService';
-import { CONNECT_TIMEOUT_MS, OnlineMatchService, serverUrl } from '../src/service/onlineMatchService';
+import { CONNECT_TIMEOUT_MS, LOST_MESSAGE, OnlineMatchService, START_FAILED_MESSAGE, serverUrl } from '../src/service/onlineMatchService';
+import { SERVER_SILENCE_MS } from '../src/service/onlineSession';
+import { PING_MS } from '../src/service/onlineSocket';
 import { SEAT_KEY, saveSeat } from '../src/service/savedSeat';
 import { fakeSockets, memoryStore } from './support/fakeSocket';
 
@@ -12,7 +14,7 @@ const seat = (playerId: string, nickname: string, piece: PieceId = 'knight', bot
 function search() {
   const sockets = fakeSockets();
   const store = memoryStore();
-  const service = new OnlineMatchService({ url: 'ws://test', open: sockets.open, store });
+  const service = new OnlineMatchService({ url: 'ws://test', open: sockets.open, store, tabs: () => null });
   const matchmaking = service.findMatch(ARI);
   const states: MatchmakingState[] = [];
   matchmaking.onState((s) => states.push(s));
@@ -106,6 +108,28 @@ describe('OnlineMatchService when the server is out of reach (spec #4 §3.3)', (
     expect(last()).toEqual({ kind: 'unreachable', message: "Can't reach the game server." });
   });
 
+  it('pings the lobby, and says it lost the server when the lobby goes quiet (2026-10-15)', () => {
+    const { last, lobby } = search();
+    lobby.open();
+    vi.advanceTimersByTime(PING_MS);
+    expect(lobby.sent.at(-1)).toMatchObject({ type: 'ping' });
+    lobby.reply({ type: 'pong', t: 0, serverTime: 0 });
+    expect(last().kind).toBe('searching');
+    vi.advanceTimersByTime(SERVER_SILENCE_MS + PING_MS);
+    expect(last()).toEqual({ kind: 'unreachable', message: LOST_MESSAGE });
+    expect(lobby.closed).toBe(true);
+  });
+
+  it("shows a plain message when a match fails to start, not the server's own text (2026-10-15)", () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { last, lobby } = search();
+    lobby.open();
+    lobby.reply({ type: 'failed', reason: 'server-error', message: 'TypeError: seats[4] is undefined' });
+    expect(last()).toEqual({ kind: 'unreachable', message: START_FAILED_MESSAGE });
+    expect(warn.mock.calls.flat().join(' ')).toContain('seats[4] is undefined');
+    warn.mockRestore();
+  });
+
   it('asks for a reload when the server runs another version', () => {
     const { last, lobby } = search();
     lobby.open();
@@ -125,7 +149,7 @@ describe('OnlineMatchService.rejoin (spec #4 §3.3)', () => {
   it('rejoins the saved seat after a reload, and returns null without one', () => {
     const sockets = fakeSockets();
     const store = memoryStore();
-    const service = new OnlineMatchService({ url: 'ws://test', open: sockets.open, store });
+    const service = new OnlineMatchService({ url: 'ws://test', open: sockets.open, store, tabs: () => null });
     expect(service.rejoin()).toBeNull();
     saveSeat(store, { matchId: 'm7', token: 'cd'.repeat(16), me: 'p1', seats: [seat('p0', 'Bo'), seat('p1', 'Ari', 'meeple'), seat('p2', 'Mochi', 'pawn', true), seat('p3', 'Pip', 'dragon', true)] });
     const session = service.rejoin();

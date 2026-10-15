@@ -1,4 +1,4 @@
-import type { OpenSocket, SocketLike } from '../../src/service/onlineSocket';
+import type { OpenSocket, SocketLike, TabChannel, TabMessage } from '../../src/service/onlineSocket';
 import type { SeatStore } from '../../src/service/savedSeat';
 
 /** A WebSocket whose server side the test plays: what the game sent, and open, reply and drop. */
@@ -57,5 +57,21 @@ export function memoryStore(): SeatStore & { map: Map<string, string> } {
     getItem: (key) => map.get(key) ?? null,
     setItem: (key, value) => void map.set(key, value),
     removeItem: (key) => void map.delete(key),
+  };
+}
+
+/** BroadcastChannels between tabs, in memory: each tab's channel hears the others', a moment later, never its own. */
+export function memoryTabs() {
+  const open: Array<{ listeners: Array<(m: TabMessage) => void>; closed: boolean }> = [];
+  return (): TabChannel => {
+    const me = { listeners: [] as Array<(m: TabMessage) => void>, closed: false };
+    open.push(me);
+    return {
+      post: (m) => {
+        for (const other of open) if (other !== me && !other.closed) setTimeout(() => other.listeners.forEach((cb) => cb(m)), 0);
+      },
+      onMessage: (cb) => void me.listeners.push(cb),
+      close: () => void (me.closed = true),
+    };
   };
 }

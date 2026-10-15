@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MatchFailure, MatchUpdate } from '../src/service/matchService';
-import { BACKOFF_MS, OnlineMatchSession, REJOIN_MS, SERVER_SILENCE_MS } from '../src/service/onlineSession';
+import { BACKOFF_MS, CLAIM_WAIT_MS, NEVER_REACHED_MESSAGE, OTHER_TAB_MESSAGE, OnlineMatchSession, REJOIN_MS, SERVER_SILENCE_MS } from '../src/service/onlineSession';
 import { PING_MS } from '../src/service/onlineSocket';
 import { SEAT_KEY, saveSeat, type SavedSeat } from '../src/service/savedSeat';
 import { SEATS, openingUpdate } from './support/fixtures';
-import { fakeSockets, memoryStore } from './support/fakeSocket';
+import { fakeSockets, memoryStore, memoryTabs } from './support/fakeSocket';
 
 const TOKEN = 'ab'.repeat(16);
 const SAVED: SavedSeat = { matchId: 'm1', token: TOKEN, me: 'p0', seats: SEATS.map((s) => ({ playerId: s.playerId, nickname: s.nickname, piece: s.piece, bot: s.bot })) };
@@ -131,6 +131,7 @@ describe('OnlineMatchSession (spec #4 §3.3)', () => {
   it('gives up after 60 s: the match carried on without me', () => {
     const { sockets, store, got } = start();
     sockets.last().open();
+    sockets.last().reply(welcome(0));
     sockets.last().drop();
     for (let t = 0; t <= REJOIN_MS + 10_000 && got.failures.length === 0; t += 100) {
       const count = sockets.made.length;
@@ -181,6 +182,51 @@ describe('OnlineMatchSession (spec #4 §3.3)', () => {
     expect(store.map.has(SEAT_KEY)).toBe(false);
     ws.drop(); // the server closes the room 10 s after the win
     vi.advanceTimersByTime(60_000);
+    expect(sockets.made).toHaveLength(1);
+  });
+});
+
+describe('a session that never got through (2026-10-15)', () => {
+  it("says it couldn't reach the match, not that the match carried on without me", () => {
+    const { sockets, got } = start();
+    sockets.last().drop();
+    for (let t = 0; t <= REJOIN_MS + 10_000 && got.failures.length === 0; t += 100) {
+      const count = sockets.made.length;
+      vi.advanceTimersByTime(100);
+      if (sockets.made.length > count) sockets.last().drop();
+    }
+    expect(got.failures).toEqual([{ message: NEVER_REACHED_MESSAGE, reason: 'seat-lost' }]);
+  });
+});
+
+describe('a duplicated tab (2026-10-15)', () => {
+  it('leaves the seat to the tab that had it, and says the match is open there', () => {
+    const tabs = memoryTabs();
+    const sockets = fakeSockets();
+    // The first tab plays the seat.
+    const first = new OnlineMatchSession({ url: 'ws://test', open: sockets.open, store: memoryStore(), tabs }, SAVED);
+    sockets.last().open();
+    sockets.last().reply(welcome(0));
+    // Its copy wakes up with the same saved seat, and asks first.
+    const copyStore = memoryStore();
+    saveSeat(copyStore, SAVED);
+    const copy = new OnlineMatchSession({ url: 'ws://test', open: sockets.open, store: copyStore, tabs }, SAVED, { rejoining: true });
+    const failures: MatchFailure[] = [];
+    copy.onFailed((f) => failures.push(f));
+    vi.advanceTimersByTime(CLAIM_WAIT_MS);
+    expect(failures).toEqual([{ message: OTHER_TAB_MESSAGE, reason: 'seat-lost' }]);
+    expect(sockets.made).toHaveLength(1); // the copy never opened a socket
+    expect(copyStore.map.has(SEAT_KEY)).toBe(false);
+    first.leave();
+  });
+
+  it('takes the seat after a short wait when no other tab has it (a plain reload)', () => {
+    const sockets = fakeSockets();
+    const store = memoryStore();
+    saveSeat(store, SAVED);
+    new OnlineMatchSession({ url: 'ws://test', open: sockets.open, store, tabs: memoryTabs() }, SAVED, { rejoining: true });
+    expect(sockets.made).toHaveLength(0);
+    vi.advanceTimersByTime(CLAIM_WAIT_MS);
     expect(sockets.made).toHaveLength(1);
   });
 });

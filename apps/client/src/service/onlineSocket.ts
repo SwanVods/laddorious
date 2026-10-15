@@ -21,6 +21,29 @@ export const VERSION_MESSAGE = 'Please reload, the game was updated.';
 
 export const browserSocket: OpenSocket = (url) => new WebSocket(url);
 
+/** What tabs say about a seat (2026-10-15): a reloaded or duplicated tab asks before taking it, and the tab playing it answers. */
+export type TabMessage = { type: 'claim' | 'taken'; token: string; from: string };
+
+/** A line to this browser's other tabs (a BroadcastChannel). */
+export interface TabChannel {
+  post(msg: TabMessage): void;
+  onMessage(cb: (msg: TabMessage) => void): void;
+  close(): void;
+}
+
+/** This browser's tabs, or null where BroadcastChannel isn't there (a test, an old browser). */
+export const browserTabs = (): TabChannel | null => {
+  if (typeof BroadcastChannel === 'undefined') return null;
+  const channel = new BroadcastChannel('laddorious.seat');
+  return {
+    post: (msg) => channel.postMessage(msg),
+    onMessage: (cb) => {
+      channel.onmessage = (e: MessageEvent<TabMessage>) => cb(e.data);
+    },
+    close: () => channel.close(),
+  };
+};
+
 /** Sends one message as JSON if the socket is open; otherwise it's dropped. */
 export function sendJson(ws: SocketLike | null, msg: unknown): void {
   if (ws?.readyState === OPEN) ws.send(JSON.stringify(msg));

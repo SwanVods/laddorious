@@ -2,7 +2,7 @@ import type { InputError, PlayerId } from '@laddorious/core';
 import type { MatchIn, MatchOut } from '@laddorious/host';
 import { Channel } from './channel';
 import type { MatchFailure, MatchSession, MatchUpdate, PlayerAction, SeatInfo } from './matchService';
-import { PING_MS, VERSION_MESSAGE, quietClose, readJson, sendJson, type OpenSocket, type SocketLike } from './onlineSocket';
+import { PING_MS, VERSION_MESSAGE, quietClose, readJson, sendJson, type OpenSocket, type SocketLike, type TabChannel } from './onlineSocket';
 import { clearSeat, type SavedSeat, type SeatStore } from './savedSeat';
 import { colorSeats } from './seats';
 
@@ -15,6 +15,12 @@ export const SERVER_SILENCE_MS = 12_000;
 /** The clock offset is the median of this many pings (spec #4 §5.3). */
 const CLOCK_SAMPLES = 5;
 export const SEAT_LOST_MESSAGE = 'The match carried on without you';
+/** A session that never got into its match (2026-10-15). */
+export const NEVER_REACHED_MESSAGE = "Couldn't reach the match.";
+/** A reloaded or duplicated tab whose seat another tab is playing (2026-10-15). */
+export const OTHER_TAB_MESSAGE = 'This match is open in another tab.';
+/** How long a reloaded tab waits for another tab to say the seat is theirs. */
+export const CLAIM_WAIT_MS = 300;
 
 /** What an online session needs from its surroundings; tests pass fakes. */
 export interface OnlineDeps {
@@ -22,6 +28,8 @@ export interface OnlineDeps {
   url: string;
   open: OpenSocket;
   store: SeatStore | null;
+  /** This browser's other tabs, so a duplicated tab doesn't fight the first one for the seat (2026-10-15). */
+  tabs?: () => TabChannel | null;
 }
 
 function median(values: readonly number[]): number {
@@ -55,14 +63,42 @@ export class OnlineMatchSession implements MatchSession {
   private readonly rejections = new Channel<InputError>();
   private readonly failures = new Channel<MatchFailure>();
   private readonly presence = new Channel<PlayerId[]>();
+  /** The server has let me in at least once. */
+  private welcomed = false;
+  private readonly tab: TabChannel | null;
+  private readonly tabId = Math.random().toString(36).slice(2);
+  /** Playing the seat: this tab answers another's claim to it. */
+  private holding = false;
+  private claim: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly deps: OnlineDeps,
     private readonly seat: SavedSeat,
+    { rejoining = false }: { rejoining?: boolean } = {},
   ) {
     this.me = seat.me;
     this.seats = colorSeats(seat.seats);
-    this.connect();
+    this.tab = deps.tabs?.() ?? null;
+    this.tab?.onMessage((msg) => this.heardTab(msg));
+    // After a reload, or in a duplicated tab, ask the other tabs first: the one playing the seat keeps it.
+    if (rejoining && this.tab) {
+      this.tab.post({ type: 'claim', token: seat.token, from: this.tabId });
+      this.claim = setTimeout(() => {
+        this.claim = null;
+        this.connect();
+      }, CLAIM_WAIT_MS);
+    } else this.connect();
+  }
+
+  private heardTab(msg: { type: 'claim' | 'taken'; token: string; from: string }): void {
+    if (msg.token !== this.seat.token || msg.from === this.tabId || this.over) return;
+    if (msg.type === 'claim' && this.holding) this.tab?.post({ type: 'taken', token: this.seat.token, from: this.tabId });
+    if (msg.type === 'taken' && this.claim !== null) {
+      clearTimeout(this.claim);
+      this.claim = null;
+      this.finish();
+      this.failures.emit({ message: OTHER_TAB_MESSAGE, reason: 'seat-lost' });
+    }
   }
 
   onUpdate(cb: (u: MatchUpdate) => void): () => void {
@@ -101,6 +137,7 @@ export class OnlineMatchSession implements MatchSession {
   }
 
   private connect(): void {
+    this.holding = true;
     const ws = this.deps.open(`${this.deps.url}/match/${this.seat.matchId}`);
     this.ws = ws;
     ws.onopen = () => {
@@ -122,6 +159,7 @@ export class OnlineMatchSession implements MatchSession {
     if (!msg || this.over) return;
     switch (msg.type) {
       case 'welcome':
+        this.welcomed = true;
         this.downSince = null;
         this.attempt = 0;
         if (this.samples.length === 0) this.offset = msg.serverTime - Date.now(); // a first guess until the pings answer
@@ -165,7 +203,7 @@ export class OnlineMatchSession implements MatchSession {
     }
     if (now - this.downSince >= REJOIN_MS) {
       this.finish();
-      this.failures.emit({ message: SEAT_LOST_MESSAGE, reason: 'seat-lost' });
+      this.failures.emit({ message: this.welcomed ? SEAT_LOST_MESSAGE : NEVER_REACHED_MESSAGE, reason: 'seat-lost' });
       return;
     }
     const delay = BACKOFF_MS[Math.min(this.attempt, BACKOFF_MS.length - 1)]!;
@@ -197,6 +235,8 @@ export class OnlineMatchSession implements MatchSession {
   /** No more reconnecting, and no rejoin after a reload. */
   private finish(): void {
     this.over = true;
+    this.holding = false;
+    this.tab?.close();
     clearSeat(this.deps.store);
     if (this.retry !== null) clearTimeout(this.retry);
     this.retry = null;
