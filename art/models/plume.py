@@ -5,9 +5,9 @@ has a tangerine base too, so it keeps its colour without an instance tint."""
 from lib import finish, palette, shapes
 
 # (radius, height): a rounded wide end, swelling a little, then drawn out to a point.
-PROFILE = [(0, 0), (0.055, 0.008), (0.08, 0.035), (0.088, 0.075), (0.08, 0.14), (0.062, 0.22), (0.04, 0.3), (0.018, 0.37), (0, 0.42)]
+PROFILE = [(0, 0), (0.07, 0.008), (0.1, 0.035), (0.11, 0.075), (0.1, 0.14), (0.078, 0.22), (0.05, 0.3), (0.022, 0.37), (0, 0.42)]
 
 
 def build():
-    flame = finish.glow('Flame', palette.TANGERINE, 2.5, base=palette.TANGERINE)
+    flame = finish.glow('Flame', palette.TANGERINE, 1.2, base=palette.TANGERINE)
     return [shapes.revolve('plume', PROFILE, flame, segments=16)]
