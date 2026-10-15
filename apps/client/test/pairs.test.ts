@@ -37,3 +37,21 @@ describe('pair styles: a jump and its end share a colour and a symbol (spec #5 A
     expect(pairStyles(crowded).size).toBe(60);
   });
 });
+
+describe('styles that stay put (2026-10-15)', () => {
+  it("keeps every other jump's style when a card removes one, even one that had collided with it", () => {
+    // Enough jumps that some collide in the search, so removing one could shift another.
+    const many = Array.from({ length: 30 }, (_, i) => ({ id: `j${i + 1}`, from: 10 + i * 2, to: i % 2 ? 5 + i : 60 + i }));
+    const full = pairStyles(many);
+    let shifted = 0;
+    for (const gone of many) {
+      const rest = many.filter((j) => j !== gone);
+      const fresh = pairStyles(rest);
+      if (rest.some((j) => fresh.get(j.id)!.colour !== full.get(j.id)!.colour || fresh.get(j.id)!.symbol !== full.get(j.id)!.symbol)) shifted += 1;
+      const kept = pairStyles(rest, full);
+      for (const j of rest) expect(kept.get(j.id), j.id).toEqual(full.get(j.id));
+    }
+    expect(shifted).toBeGreaterThan(0); // the case the old assignment got wrong does happen
+  });
+});
+

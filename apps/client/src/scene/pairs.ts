@@ -32,12 +32,21 @@ function hash(text: string): number {
 /**
  * Each jump's colour and symbol (spec #5 A13): unique on the board while combinations last, portals
  * (slides) only on the light colours. Jumps take their style in creation order, so a card adding a
- * jump never changes the others'; the same jumps always get the same styles.
+ * jump never changes the others'; the same jumps always get the same styles. Jumps in `known` (the styles
+ * already shown) keep theirs, so a card removing a jump never shifts another (2026-10-15).
  */
-export function pairStyles(jumps: readonly Jump[]): Map<string, PairStyle> {
+export function pairStyles(jumps: readonly Jump[], known: ReadonlyMap<string, PairStyle> = new Map()): Map<string, PairStyle> {
   const taken = new Set<string>();
   const styles = new Map<string, PairStyle>();
-  for (const jump of [...jumps].sort(byCreation)) {
+  const ordered = [...jumps].sort(byCreation);
+  for (const jump of ordered) {
+    const style = known.get(jump.id);
+    if (!style || taken.has(`${style.colour} ${style.symbol}`)) continue;
+    taken.add(`${style.colour} ${style.symbol}`);
+    styles.set(jump.id, style);
+  }
+  for (const jump of ordered) {
+    if (styles.has(jump.id)) continue;
     const colours = jump.to < jump.from ? PAIR_COLORS.portal : PAIR_COLORS.ladder;
     const count = colours.length * SYMBOLS.length;
     const start = hash(jump.id) % count;

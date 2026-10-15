@@ -1,6 +1,6 @@
 import type { Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { Color, DoubleSide, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, PAIR_COLORS, WORLD_COLORS } from '../app/theme';
@@ -10,7 +10,7 @@ import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
 import { PARTS, tileToWorld } from './layout';
 import { STILL_END, clamp01, easeOutBack, endReaction, type EndMotion } from './motion';
-import { SYMBOLS, pairStyles, type SymbolName } from './pairs';
+import { SYMBOLS, pairStyles, type PairStyle, type SymbolName } from './pairs';
 import { REVEAL_MS, shownPaths, type Peeks } from './paths';
 import { endIconTexture, swirlTexture, type EndIcon } from './textures';
 import { dashPoints, type Dash } from './tracks';
@@ -124,7 +124,12 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
   const jumps = useMemo(() => [...new Map([...(shown ?? []), ...(editing ?? [])].map((j) => [j.id, j])).values()], [shown, editing]);
   const snakes = useMemo(() => jumps.filter((j) => j.to < j.from).slice(0, MAX_JUMPS), [jumps]);
   const ladders = useMemo(() => jumps.filter((j) => j.to > j.from).slice(0, MAX_JUMPS), [jumps]);
-  const styles = useMemo(() => pairStyles(jumps), [jumps]);
+  // Styles once shown stay put: a card removing a jump never shifts another's (2026-10-15).
+  const shownRef = useRef<ReadonlyMap<string, PairStyle>>(new Map());
+  const styles = useMemo(() => pairStyles(jumps, shownRef.current), [jumps]);
+  useLayoutEffect(() => {
+    shownRef.current = new Map([...shownRef.current, ...styles]);
+  }, [styles]);
   // Shown paths and how far each has grown in or shrunk away.
   const revealsRef = useRef(new Map<string, Reveal>());
   // The trails: chunky flat-shaded arrowheads, each in its pair colour.
