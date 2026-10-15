@@ -56,6 +56,8 @@ export function CardsApp({ api }: { api: CardsApi }) {
     } else setNotice(r.message);
   };
   const general = problems.filter((p) => p.cardId === null);
+  /** Cards with problems other than the one open: Save names them, so a greyed-out Save always says why. */
+  const elsewhere = catalog.cards.filter((c) => c.id !== selectedId && problems.some((p) => p.cardId === c.id));
   const change = (next: CardCatalog) => {
     setCatalog(next);
     setNotice(null);
@@ -140,7 +142,16 @@ export function CardsApp({ api }: { api: CardsApi }) {
           Save
         </button>
         {general.length > 0 && <p role="alert">{general.map((p) => p.message).join(' ')}</p>}
-        {problems.length > 0 && general.length === 0 && !selected && <p>{`${problems.length} problem${problems.length === 1 ? '' : 's'} to fix before saving.`}</p>}
+        {elsewhere.length > 0 && (
+          <p className="cards-blocked">
+            Fix these before saving:
+            {elsewhere.map((c) => (
+              <button key={c.id} type="button" onClick={() => select(c.id)}>
+                {c.name}
+              </button>
+            ))}
+          </p>
+        )}
         {notice && <p role="status">{notice}</p>}
       </div>
     </main>

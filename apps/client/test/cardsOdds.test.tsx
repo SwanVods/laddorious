@@ -42,3 +42,15 @@ describe('the card editor: odds and new cards (2026-10-15)', () => {
     expect(saveCards.mock.calls[0]![0].cards.some((c) => c.id === 'moonwalk')).toBe(false);
   });
 });
+
+describe('the card editor: problems elsewhere (2026-10-15)', () => {
+  it('names the cards that block Save, and opens one when you click it', async () => {
+    setup();
+    await screen.findByText('Lucky Number');
+    fireEvent.click(screen.getByRole('button', { name: 'New card' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Sprint/ }));
+    expect(screen.getByText('Fix these before saving:')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'New card 1' }));
+    expect(screen.getByRole('alert').textContent).toContain('A draft needs a plan');
+  });
+});
