@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STARTER_CARDS, cardById, createMatch, createStream, viewFor, type MatchState } from '@laddorious/core';
+import { STARTER_CARDS, cardById, createMatch, createStream, viewFor, type MatchState, type PlayerView } from '@laddorious/core';
 import { HeuristicBot, RandomBot, makeBots, scoreCard } from '../src/index';
 
 const seats = [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }, { id: 'p4' }];
@@ -25,6 +25,20 @@ describe('bots', () => {
     expect(scoreCard(cardById(STARTER_CARDS, 'sprint'), view)).toBe(3);
     expect(scoreCard(cardById(STARTER_CARDS, 'coin-flip'), view)).toBe(0);
     expect(scoreCard(cardById(STARTER_CARDS, 'jackpot'), view)).toBeCloseTo(1.2, 10);
+  });
+
+  it('picks a card at random, never rerolling, so every kind of card gets played (the user, 2026-10-15)', () => {
+    const base = viewFor(createMatch({ seed: 'b' }, seats), 'p1');
+    // Sprint scores high, Coin Flip low: the old heuristic always took Sprint and rerolled Coin Flip.
+    const offer = { cards: ['sprint', 'coin-flip', 'jackpot'], picked: null, rerollsUsed: 0, rerolled: [false, false, false] };
+    const view = { ...base, phase: { kind: 'mysterySelect' }, myOffer: offer } as unknown as PlayerView;
+    const picks = new Set<number>();
+    for (let i = 0; i < 40; i++) {
+      const input = new HeuristicBot(createStream(`pick-${i}`), STARTER_CARDS).decide(view);
+      expect(input).toMatchObject({ type: 'pickCard', player: 'p1' });
+      if (input !== 'idle' && input.type === 'pickCard') picks.add(input.slot);
+    }
+    expect([...picks].sort()).toEqual([0, 1, 2]);
   });
 
   it('an AFK random bot idles for whole windows', () => {

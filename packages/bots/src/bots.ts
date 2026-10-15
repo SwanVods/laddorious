@@ -1,6 +1,5 @@
 import {
   STARTER_CARDS,
-  cardById,
   createStream,
   nextInt,
   type CardDef,
@@ -108,7 +107,7 @@ export function scoreCard(card: CardDef, view: PlayerView): number {
   return card.effects.reduce((a, op) => a + value(op), 0);
 }
 
-/** Rerolls weak cards and picks the best-scoring card. */
+/** Rolls when asked, plays face-offs by challengeInput, and picks its card at random (2026-10-15). */
 export class HeuristicBot implements Bot {
   constructor(
     private readonly rng: RngStream,
@@ -124,13 +123,8 @@ export class HeuristicBot implements Bot {
     }
     if (phase.kind === 'settle') return challengeInput(view, this.rng);
     if (phase.kind === 'mysterySelect' && view.myOffer && view.myOffer.picked === null) {
-      const offer = view.myOffer;
-      const scores = offer.cards.map((id) => scoreCard(cardById(this.cards, id), view));
-      const worst = scores.indexOf(Math.min(...scores));
-      if (scores[worst]! < this.rerollBelow && offer.rerollsUsed < 2 && !offer.rerolled[worst]) {
-        return { type: 'reroll', player: me, slot: worst, windowId: view.awaiting.windowId };
-      }
-      return { type: 'pickCard', player: me, slot: scores.indexOf(Math.max(...scores)), windowId: view.awaiting.windowId };
+      // A card at random, never rerolling (the user, 2026-10-15): scored picks never took a Risky card.
+      return { type: 'pickCard', player: me, slot: nextInt(this.rng, view.myOffer.cards.length), windowId: view.awaiting.windowId };
     }
     return 'idle';
   }
