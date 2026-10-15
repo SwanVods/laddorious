@@ -23,7 +23,7 @@ Both scripts also run inside an open Blender (see their docstrings), in scenes o
 
 ## The rules
 
-- Squares stand 2.7 apart and are 2.3 across (board theme spec B3), leaving a 0.4 gap. Z is up, and models face −Y (Blender's front view). The export turns that into the game's Y up and +Z forward.
+- Squares stand 2.5 apart and are 2.3 across (board theme spec B3), leaving a 0.2 gap. Z is up, and models face −Y (Blender's front view). The export turns that into the game's Y up and +Z forward.
 - The origin sits at the base centre, except the die, which keeps its middle at the origin.
 - Pieces are about 1 unit tall; the game scales them.
 - Material names are the game's contract:

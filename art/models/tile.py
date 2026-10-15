@@ -5,7 +5,7 @@ import math
 
 from lib import finish, palette, shapes
 
-SIZE = 2.3   # the game's TILE_ACROSS: 0.4 of deck shows between squares on the 2.7 step
+SIZE = 2.3   # the game's TILE_ACROSS: 0.2 of deck shows between squares on the 2.5 step
 THICKNESS = 0.30   # the game's TILE_THICKNESS
 CORNER = 0.17      # the corners' radius, seen from above
 ROLL = 0.07        # the top edge's radius

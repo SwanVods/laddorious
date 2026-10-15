@@ -93,7 +93,7 @@ export const MODELS: Record<string, ModelRule> = {
   target: { slot: 'pad.target', origin: 'base', height: [1.2, 1.35], maxWidth: 1.3, maxTriangles: 1500, maxMaterials: 1, requiredMaterials: ['Tint'] },
   vortex: { slot: 'slide.vortex', origin: 'base', height: [0.08, 0.14], maxWidth: 0.88, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Inside', 'Tint'] },
   // The world (board theme spec §3, §7): instanced, no shadows, light. Round parts are lathed, so their counts are exact.
-  platform: { slot: 'platform', origin: 'base', height: [PLATFORM.rimTop - 0.05, PLATFORM.rimTop + 0.05], maxWidth: 55.5, maxTriangles: 3600, maxMaterials: 3, requiredMaterials: ['Deck', 'Stripe', 'Cushion'] },
+  platform: { slot: 'platform', origin: 'base', height: [PLATFORM.rimTop - 0.05, PLATFORM.rimTop + 0.05], maxWidth: 50.5, maxTriangles: 3600, maxMaterials: 3, requiredMaterials: ['Deck', 'Stripe', 'Cushion'] },
   cloud: { slot: 'cloud', origin: 'base', height: [2.45, 2.75], maxWidth: 5.6, maxTriangles: 220, maxMaterials: 1, requiredMaterials: ['Cloud'] },
   step: { slot: 'step', origin: 'base', height: [0.55, 0.65], maxWidth: 3.7, maxTriangles: 120, maxMaterials: 1, requiredMaterials: ['Tint'] },
   course_pad: { slot: 'course.pad', origin: 'base', height: [2.4, 2.6], maxWidth: 11.3, maxTriangles: 400, maxMaterials: 3, requiredMaterials: ['Pad', 'Rim', 'Cushion'], checks: [materialTop('Pad', COURSE.padTop)] },

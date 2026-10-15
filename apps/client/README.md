@@ -115,8 +115,8 @@ The game reads `tuning.json` (served next to the page) when it starts, so an adm
 
 | Key | Default | What it does |
 |---|---|---|
-| `camera.overview.distance` | 31.6 | How far back the whole-board view sits. |
-| `camera.overview.height` | 32.9 | How high it sits. |
+| `camera.overview.distance` | 29.3 | How far back the whole-board view sits. |
+| `camera.overview.height` | 30.5 | How high it sits. |
 | `camera.overview.zoomMin`, `zoomMax` | 0.45, 1.4 | How far a mouse wheel or pinch can zoom the overview (1 = as set; lower is closer). |
 | `camera.pan.lockAbove`, `tapSlopPx` | 0.95, 6 | Zoomed in closer than lockAbove, a drag pans the overview over the board; at the overview it stays locked. A press moving more than tapSlopPx pixels is a drag, not a tap. |
 | `camera.follow.ease` | 3.2 | How quickly the camera reaches a piece it follows (higher is quicker). |

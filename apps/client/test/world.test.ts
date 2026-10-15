@@ -54,6 +54,13 @@ describe('the match world', () => {
     }
   });
 
+  it('keeps the wings snug: the platform about 10% narrower, the props close to the board (2026-10-15 review)', () => {
+    expect(PLATFORM.halfWidth).toBeLessThanOrEqual(23.5);
+    expect(PLATFORM.halfWidth - BOARD_HALF).toBeLessThanOrEqual(11);
+    const props = world.filter((p) => p.slot.startsWith('prop.') || p.slot === 'pad' || p.slot === 'pad.target');
+    for (const p of props) expect(Math.abs(p.at[0]) - BOARD_HALF, p.slot).toBeLessThan(6.5);
+  });
+
   it('floats the course off the platform, at the sides and back, never in front (spec §4)', () => {
     const course = world.filter((p) => p.slot.startsWith('course.') || p.slot === 'step');
     expect(course.filter((p) => p.slot === 'course.pad')).toHaveLength(5);

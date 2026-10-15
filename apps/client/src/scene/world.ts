@@ -63,7 +63,7 @@ export function worldPose(p: Placement, t: number, reduced: boolean): Pose {
 /** The deck's top, where the tiles stand. */
 const DECK = -TILE_THICKNESS;
 /** The middle of each wing, either side of the board. */
-const WING = 19.5;
+const WING = 17.5;
 /** The obstacles' bob: a slow float, offset by where each is. */
 const floatAt = (x: number) => ({ amp: 0.6, speed: 0.6, phase: x });
 

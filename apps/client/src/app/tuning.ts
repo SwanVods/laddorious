@@ -38,7 +38,7 @@ export interface Tuning {
 
 export const DEFAULT_TUNING: Tuning = {
   camera: {
-    overview: { distance: 31.6, height: 32.9, zoomMin: 0.45, zoomMax: 1.4 },
+    overview: { distance: 29.3, height: 30.5, zoomMin: 0.45, zoomMax: 1.4 },
     pan: { lockAbove: 0.95, tapSlopPx: 6 },
     follow: { ease: 3.2 },
     swoop: { ease: 2.8 },

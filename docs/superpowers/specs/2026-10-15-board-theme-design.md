@@ -32,7 +32,7 @@ Success means:
 |---|---|---|
 | B1 | **Sky Course.** The board on a floating inflatable platform; obstacle platforms float around it; clouds below; no audience. | User's pick of three directions ("I like simple things like sky course"). |
 | B2 | **Every 3D object is a Blender model**, sculpted headless from `art/` scripts (`pnpm art`), as in Spec #5. The browser preview's shapes are never shipped. | User: "remember to use blender for every 3d obj. what's on the artifact is only for preview". |
-| B3 | **Bigger squares, wider gaps.** The step between squares goes from 2.0 to 2.7. The square model goes from 1.9 to 2.3 across, so the gap goes from 0.1 to 0.4 and the deck shows between squares. The board becomes 27 × 27. Pieces, jump ends, symbols, lanes and the shapes of trails keep their size; only positions spread out. | User: "make the tiles bigger, and also with the gaps wider". |
+| B3 | **Bigger squares, thin gaps.** The step between squares goes from 2.0 to 2.5. The square model goes from 1.9 to 2.3 across, so the gap goes from 0.1 to 0.2 and the deck shows between squares. The board becomes 25 × 25. (First built at a 2.7 step with 0.4 gaps; the user's review asked for smaller gaps and a narrower platform.) Pieces, jump ends, symbols, lanes and the shapes of trails keep their size; only positions spread out. | User: "make the tiles bigger, and also with the gaps wider". |
 | B4 | **Props on the wings, TFT-style.** The platform is wider than the board, with a wing on each side. Left wing: a rocket, a big die and a stack of poker chips. Right wing: a fan of "?" cards, the crown, and a flag. Nothing stands in front of the board or between the camera and any square. | User: "add some objects like cards, or rockets, or any random objects on the side of the board. just like TFT". |
 | B5 | **The camera never turns, and pans only when zoomed in.** At the overview zoom, dragging does nothing. Closer than the overview, one finger or the mouse drags the view. The limit grows the closer the zoom, up to the board's edges. Zooming back out pulls it home. | User: "the in game camera must not be able to rotate. only dragging … to have a closer look of the furthest tiles … but limited … the camera must be zoomed in a bit". This was the user's later-fix note 4 (2026-10-15), now built here. |
 | B6 | **Reduced motion slows the world, not stops it.** The world's idle motion (props, obstacles, clouds) runs at a quarter of the speed and amplitude. | User's later-fix note 2 ("reduced motion is different than disable motion"), applied to everything new here. The rest of the game's reduced-motion pass stays in the later-fix batch. |
@@ -49,7 +49,7 @@ Colours come from `theme.ts` (`WORLD_COLORS`, renamed where a token's meaning ch
 
 | Part | Look |
 |---|---|
-| **Platform** (match) | A cream deck with rounded corners, 0.8 thick with soft edges, about 52 × 38 (the board's 27, a wing of about 12 each side, and about 5.5 in front and behind, so the start row's waiting spots at z ≈ 15.9 stand clear of the rim). A thick padded rim (tube radius about 1.2) runs round its edge, striped pink and cream like a bouncy castle. Under it, a soft tangerine cushion narrows to a knot. One sculpted surface per material. |
+| **Platform** (match) | A cream deck with rounded corners, 0.8 thick with soft edges, about 47 × 35 (the board's 25, a wing of about 11 each side, and about 5 in front and behind, so the start row's waiting spots at z ≈ 14.75 stand clear of the rim). A thick padded rim (tube radius about 1.2) runs round its edge, striped pink and cream like a bouncy castle. Under it, a soft tangerine cushion narrows to a knot. One sculpted surface per material. |
 | **Obstacles** | Five floating discs, each a cream pad with a mint rim and a tangerine cushion under it, carrying one obstacle: a **sweeper** (a post and a long pink bar), three bouncy **mushrooms** (pink and violet caps), three **hoops** (gold, cyan, lime), a **fan** (four peach blades on a hub), and a lime **ramp**. |
 | **Stepping pads** | Five small round pads, cyan and lime, rising in a line from behind the board's left corner into the distance. |
 | **Clouds** | Chunky cream cloud puffs below the platform's level and around it, so the board feels high up. |
@@ -69,10 +69,10 @@ New props: the chips, the cards, the die and the crown. Each card has a purple f
 
 All in world units. The board is centred at the origin; +Z is toward the camera.
 
-- **Board half-width:** 13.5 (10 × 2.7 / 2).
+- **Board half-width:** 12.5 (10 × 2.5 / 2).
 - **Start spots:** tile 0's start spots stand on the deck (y = −0.3), so the pieces waiting to start don't float.
-- **Platform deck:** half-width 26, half-depth 19, top at y = 0, so the squares stand on it as they stand on the island today.
-- **Props:** centred on the wings, |x| between 19 and 22:
+- **Platform deck:** half-width 23.5, half-depth 17.5, top at y = 0, so the squares stand on it as they stand on the island today.
+- **Props:** centred on the wings, |x| between 16 and 19 (snug to the board, the user's review):
 
 | | Back (z ≈ −7) | Middle (z ≈ 2) | Front (z ≈ 10) |
 |---|---|---|---|
@@ -80,15 +80,15 @@ All in world units. The board is centred at the origin; +Z is toward the camera.
 | **Right** | cards | crown | flag |
 
   Each prop sits on the deck, turned a little toward the camera. The exact spots are settled at the review.
-- **Obstacles:** outside the platform, at the sides and back, between 30 and 60 from the centre, at y between 1 and 8. None is in front of the board (z > 19), so nothing passes between the camera and the board.
+- **Obstacles:** outside the platform, at the sides and back, between 30 and 60 from the centre, at y between 1 and 8. None is in front of the board (z > 17.5), so nothing passes between the camera and the board.
 - **Clouds:** a ring 45 to 85 from the centre, at y ≈ −16. High draws 8 clouds and Low 4 (`QualityProfile.clouds`).
 - **Shadows:** the sun's shadow box covers the board and the start row, as before; the world casts no shadows (it only receives the pieces'), to keep within the budget.
 
 ## 5. Camera (B5)
 
-**The overview.** Its defaults in `apps/client/public/tuning.json` scale with the board (×1.35):
-- `distance`: 23.4 → 31.6;
-- `height`: 24.4 → 32.9;
+**The overview.** Its defaults in `apps/client/public/tuning.json` scale with the board (×1.25):
+- `distance`: 23.4 → 29.3;
+- `height`: 24.4 → 30.5;
 - `zoomMin`: 0.6 → 0.45, so a full zoom-in can get close to the far squares;
 - `zoomMax`: stays 1.4.
 
@@ -98,8 +98,8 @@ The overview's aim point (toward the start row) scales the same way. The follow,
 - **Settings:** new tuning keys `camera.pan.lockAbove` (default 0.95) and `camera.pan.tapSlopPx` (default 6), checked by `mergeTuning` like the others.
 - **When it works:** only when the zoom is below `lockAbove` and the camera is on the overview. At or above it, a drag does nothing.
 - **The limit:** the look-at point may move within a box over the board, scaled by `f = clamp((lockAbove − zoom) / (lockAbove − zoomMin), 0, 1)`:
-  - x: within ±13.5 · f;
-  - z: from the overview's aim toward the far row by up to (13.5 + aimZ) · f, and toward the near row by up to (13.5 − aimZ) · f.
+  - x: within ±12.5 · f (the board's half-width);
+  - z: from the overview's aim toward the far row by up to (12.5 + aimZ) · f, and toward the near row by up to (12.5 − aimZ) · f.
   
   At f = 0 the box is the overview's own point. At f = 1 it reaches the board's edges.
 - **Dragging:** the world follows the finger or mouse; one screen-height of drag moves about the visible depth.
@@ -168,7 +168,7 @@ Measured with the built models (2026-10-15):
 | Die prop, crown prop | 1 each | 610, 700 | 2, 1 |
 | Rocket and flag (reused) | 1 each | 1,014, 600 | 3, 1 |
 
-The world comes to 13,952 triangles and 23 draw calls. A busy match prices at 94 draw calls and 149,614 triangles on High, and 73 calls and 80,298 triangles on Low. To make that room, the trails' arrowheads are spaced by the board's step (0.3 of a step, as many to a tile as on the 2.0 board): the 27-wide board had made every trail 1.35 times as long. The whole-match limits (§1) are the ones that hold.
+The world comes to 13,952 triangles and 23 draw calls. A busy match prices at 94 draw calls and 149,614 triangles on High, and 73 calls and 80,298 triangles on Low. To make that room, the trails' arrowheads are spaced by the board's step (0.3 of a step, as many to a tile as on the 2.0 board): the bigger board had made every trail longer. The whole-match limits (§1) are the ones that hold.
 
 Menu models: the podium ≤ 1,600 and the menu platform ≤ 1,000 (both lathed).
 

@@ -9,26 +9,26 @@ function expectAt(point: number[], x: number, z: number) {
 }
 
 describe('board layout (spec #2 §6.1)', () => {
-  it('steps 2.7 from square to square, so the board spans 27 units (board theme spec B3)', () => {
-    expect(TILE_SIZE).toBe(2.7);
+  it('steps 2.5 from square to square, so the board spans 25 units (board theme spec B3, 2026-10-15 review)', () => {
+    expect(TILE_SIZE).toBe(2.5);
     const [x1] = tileToWorld(1);
     const [x2] = tileToWorld(2);
-    expect(x2 - x1).toBeCloseTo(2.7, 5);
-    expect(TILE_SIZE * COLUMNS).toBeCloseTo(27);
+    expect(x2 - x1).toBeCloseTo(2.5, 5);
+    expect(TILE_SIZE * COLUMNS).toBeCloseTo(25);
   });
 
-  it('lays the tiles on a serpentine 10×10 grid, 2.7 units apart, tile 1 at the front left', () => {
-    expectAt(tileToWorld(1), -12.15, 12.15);
-    expectAt(tileToWorld(10), 12.15, 12.15);
-    expectAt(tileToWorld(11), 12.15, 9.45);
-    expectAt(tileToWorld(100), -12.15, -12.15);
-    expect(TILE_SIZE * COLUMNS).toBeCloseTo(27);
+  it('lays the tiles on a serpentine 10×10 grid, 2.5 units apart, tile 1 at the front left', () => {
+    expectAt(tileToWorld(1), -11.25, 11.25);
+    expectAt(tileToWorld(10), 11.25, 11.25);
+    expectAt(tileToWorld(11), 11.25, 8.75);
+    expectAt(tileToWorld(100), -11.25, -11.25);
+    expect(TILE_SIZE * COLUMNS).toBeCloseTo(25);
   });
 
-  it('draws 2.3 squares on a 2.7 step, leaving a 0.4 gap (board theme spec B3)', () => {
+  it('draws 2.3 squares on a 2.5 step, leaving a 0.2 gap (board theme spec B3, 2026-10-15 review)', () => {
     expect(TILE_ACROSS).toBe(2.3);
-    expect(TILE_SIZE - TILE_ACROSS).toBeCloseTo(0.4);
-    expect(BOARD_HALF).toBeCloseTo(13.5);
+    expect(TILE_SIZE - TILE_ACROSS).toBeCloseTo(0.2);
+    expect(BOARD_HALF).toBeCloseTo(12.5);
   });
 
   it('stands the start spots on the deck, inside the platform (board theme spec §4)', () => {

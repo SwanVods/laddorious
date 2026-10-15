@@ -88,8 +88,8 @@ describe('the camera reaches my piece sooner after the roll (2026-10-15)', () =>
     expect(DEFAULT_TUNING.timing.rollPauseMs).toBeLessThanOrEqual(400);
   });
 
-  it('scales the overview with the 27-wide board (board theme spec §5)', () => {
-    expect(DEFAULT_TUNING.camera.overview).toEqual({ distance: 31.6, height: 32.9, zoomMin: 0.45, zoomMax: 1.4 });
+  it('scales the overview with the 25-wide board (board theme spec §5, 2026-10-15 review)', () => {
+    expect(DEFAULT_TUNING.camera.overview).toEqual({ distance: 29.3, height: 30.5, zoomMin: 0.45, zoomMax: 1.4 });
   });
 
   it('reads the pan settings, and refuses a lock zoom above 1 or at the closest zoom (board theme spec §5)', () => {

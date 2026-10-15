@@ -8,7 +8,7 @@ import math
 
 from lib import finish, palette, shapes
 
-HALF_W, HALF_D, CORNER = 26.0, 19.0, 5.0   # the deck (PLATFORM.halfWidth, halfDepth)
+HALF_W, HALF_D, CORNER = 23.5, 17.5, 5.0   # the deck (PLATFORM.halfWidth, halfDepth)
 DECK_TOP = 6.0                              # PLATFORM.deckTop, above the knot's bottom
 RIM, RIM_OUT, RIM_Z = 1.2, 0.2, 6.1         # the rim's radius, its centre past the deck's edge, its height: top 7.3
 COLUMNS, STRIPES = 84, 28                   # points round the outline; stripes round the rim (half of them pink)

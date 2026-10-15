@@ -6,9 +6,9 @@ export type Vec3 = [number, number, number];
 /** The scene scales piece models by this. */
 export const PIECE_SCALE = 1.3;
 
-/** World units from one square's centre to the next (board theme spec B3: bigger squares, wider gaps). */
-export const TILE_SIZE = 2.7;
-/** A square's width across (the tile model, art/models/tile.py): 0.4 of deck shows between squares. */
+/** World units from one square's centre to the next (board theme spec B3: bigger squares; the 2026-10-15 review narrowed the gaps). */
+export const TILE_SIZE = 2.5;
+/** A square's width across (the tile model, art/models/tile.py): 0.2 of deck shows between squares. */
 export const TILE_ACROSS = 2.3;
 /** How much bigger the board is than the first one (1.6 a square): the camera's aim and the shadows scale by this. */
 export const BOARD_SCALE = TILE_SIZE / 1.6;
@@ -24,7 +24,7 @@ export const BOARD_HALF = (TILE_SIZE * COLUMNS) / 2;
  * heights from the model's base (its cushion's knot): the deck's top, where the tiles stand; the rim's top;
  * and the deck's half sizes.
  */
-export const PLATFORM = { deckTop: 6.0, rimTop: 7.3, halfWidth: 26, halfDepth: 19 } as const;
+export const PLATFORM = { deckTop: 6.0, rimTop: 7.3, halfWidth: 23.5, halfDepth: 17.5 } as const;
 /** A floating obstacle's pad (art/models/course_pad.py): its top, where its obstacle stands, and its radius. */
 export const COURSE = { padTop: 2.0, padRadius: 5 } as const;
 /** The menu's little platform under the podium (art/models/menu_platform.py): its deck's top and its radius. */
