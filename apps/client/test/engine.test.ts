@@ -188,6 +188,7 @@ describe('AudioEngine (spec #3 §3, §7)', () => {
     phone.engine.unlock();
     await phone.engine.start();
     expect(phone.contexts).toEqual([{ options: { latencyHint: 'playback' } }]);
+    expect(phone.tone.setContext).toHaveBeenCalledWith(phone.contexts[0], true);
     const desktop = setup();
     desktop.engine.unlock();
     await desktop.engine.start();

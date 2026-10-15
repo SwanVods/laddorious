@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { startWhenCompiled } from '../src/scene/compileFirst';
+import { COMPILE_WAIT_MS, startWhenCompiled } from '../src/scene/compileFirst';
 
 // A match's first frame compiled every shader at once: a frozen page for a moment on a phone, and for over a
 // minute in CI's software WebGL (2026-10-15). The scene now compiles first, off the main thread where the
@@ -20,6 +20,17 @@ describe('startWhenCompiled', () => {
     done();
     await Promise.resolve();
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts anyway when compiling never finishes (a lost context), after a while', async () => {
+    vi.useFakeTimers();
+    const run = vi.fn();
+    startWhenCompiled({ compileAsync: () => new Promise(() => {}) }, scene, camera, run);
+    await vi.advanceTimersByTimeAsync(COMPILE_WAIT_MS - 1);
+    expect(run).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(run).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 
   it('starts anyway when compiling fails, and not at all once the scene has gone', async () => {

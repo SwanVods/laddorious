@@ -7,15 +7,23 @@ import type { Camera, Object3D } from 'three';
 // what's in the scene, off the main thread where the browser can (KHR_parallel_shader_compile), then starts it.
 // Models that load later compile when they first show, a few at a time.
 
-/** Compile the scene's shaders, then call `run`; the result cancels a run still waiting. */
+/** Draw anyway after this long (ms): compiling that never finishes (a lost context) mustn't leave the scene blank. */
+export const COMPILE_WAIT_MS = 15_000;
+
+/** Compile the scene's shaders, then call `run` (once, and at the latest after COMPILE_WAIT_MS); the result cancels a run still waiting. */
 export function startWhenCompiled(gl: { compileAsync: (scene: Object3D, camera: Camera) => Promise<unknown> }, scene: Object3D, camera: Camera, run: () => void): () => void {
-  let live = true;
+  let waiting = true;
   const start = () => {
-    if (live) run();
+    if (!waiting) return;
+    waiting = false;
+    clearTimeout(timer);
+    run();
   };
+  const timer = setTimeout(start, COMPILE_WAIT_MS);
   gl.compileAsync(scene, camera).then(start, start);
   return () => {
-    live = false;
+    waiting = false;
+    clearTimeout(timer);
   };
 }
 
