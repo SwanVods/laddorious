@@ -221,7 +221,7 @@ describe('the card-pick popup (spec #2 §7.2)', () => {
   it('offers my three cards with rerolls, warning about a fizzle', () => {
     const model = cardPickModel(offerView([false, false, false], 0))!;
     expect(model.rerollsLeft).toBe(MAX_REROLLS);
-    expect(model.slots.map((s) => [s.info.name, s.canReroll])).toEqual([['Aegis', true], ['Switcheroo', true], ['Jackpot', true]]);
+    expect(model.slots.map((s) => [s.info.name, s.canReroll])).toEqual([['Aegis', true], ['Switcheroo', true], ['Jackpot!', true]]);
     expect(model.slots[1]!.warning).toBe('Nobody is ahead of you right now. If that holds, it fizzles.');
   });
 

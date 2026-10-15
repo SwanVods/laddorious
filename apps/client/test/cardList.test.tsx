@@ -26,7 +26,7 @@ describe('CardList', () => {
       expect.stringContaining('Shield'),
     ]);
     expect(items[0]!.textContent).toContain('Hit');
-    expect(items[0]!.textContent).toContain('Leader: −3 on next roll');
+    expect(items[0]!.textContent).toContain("The leader's next dice total is reduced by 3.");
     expect(items[1]!.getAttribute('aria-current')).toBe('true');
     expect(items[0]!.getAttribute('aria-current')).toBeNull();
     expect(items[1]!.textContent).toContain(SEATS[0]!.nickname);
@@ -37,7 +37,7 @@ describe('CardList', () => {
     const item = screen.getByRole('listitem');
     expect(item.classList.contains('card-bubble')).toBe(true);
     expect(within(item).getByText('Heavy Boots').closest('.card-line-title')).not.toBeNull();
-    expect(within(item).getByText('Leader: −3 on next roll').classList.contains('card-line-gist')).toBe(true);
+    expect(within(item).getByText("The leader's next dice total is reduced by 3.").classList.contains('card-line-gist')).toBe(true);
   });
 
   it('shows nothing when there are no cards', () => {

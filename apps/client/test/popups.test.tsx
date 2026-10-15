@@ -182,9 +182,9 @@ describe('CardPickPopup (spec #2 §7.2)', () => {
     const model = offer({ rerollsLeft: 1, slots: offer().slots.map((s) => ({ ...s, rerolled: s.slot === 0, canReroll: s.slot !== 0 })) });
     render(<CardPickPopup model={model} onPick={() => {}} onReroll={onReroll} />);
     expect(screen.getByRole('button', { name: 'Reroll Aegis' }).hasAttribute('disabled')).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Reroll Jackpot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reroll Jackpot!' }));
     expect(onReroll).toHaveBeenCalledWith(2);
-    expect(screen.getByRole('button', { name: 'Reroll Jackpot' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Reroll Jackpot!' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('dialog').textContent).toContain('1 reroll left');
   });
 

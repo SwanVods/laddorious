@@ -15,7 +15,7 @@ import { CardList } from '../hud/CardList';
 import { EventFeed } from '../hud/EventFeed';
 import { FaceOffPopup } from '../hud/FaceOffPopup';
 import { feedLines } from '../hud/feed';
-import { nextRollMods, rejectionText } from '../hud/labels';
+import { nextRollMods, rejectionText, setMatchCards } from '../hud/labels';
 import { cardPickModel, countdown, dockModel, faceOffModel, phoneCards, playerRows, stageFromLog, stageIndex } from '../hud/model';
 import { NameTags } from '../hud/NameTags';
 import { presenceToast } from '../hud/presence';
@@ -135,6 +135,8 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   useHotkeys({ Escape: backToMine }, watch !== null && !leaving);
 
   const view = settled?.view;
+  // The HUD's card texts show this match's picked values (2026-10-15); it only rebuilds when they change.
+  if (view) setMatchCards(view.cardValues);
   const rows = view && presentation ? playerRows({ view, presentation, record, seats, me, watch, away }) : [];
   const mine = rows.find((r) => r.me);
   const faceOff = view ? faceOffModel({ beat, view, me, nowMs: now }) : null;

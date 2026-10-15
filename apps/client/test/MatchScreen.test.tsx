@@ -104,7 +104,7 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
         awaiting: { windowId: 7, window: 'mystery', players: ['p0'], durationMs: 15_000 },
       }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Reroll Jackpot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reroll Jackpot!' }));
     expect(session.send).toHaveBeenCalledWith({ type: 'reroll', slot: 2 });
     fireEvent.click(screen.getByRole('button', { name: /^Sprint/ }));
     expect(session.send).toHaveBeenCalledWith({ type: 'pickCard', slot: 1 });
@@ -128,7 +128,7 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
   it('keeps the card pick open after a reroll', () => {
     const session = start();
     session.update(cardPickOpening());
-    fireEvent.click(screen.getByRole('button', { name: 'Reroll Jackpot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reroll Jackpot!' }));
     expect(screen.getByRole('dialog', { name: 'Choose One' })).toBeTruthy();
   });
 
@@ -176,7 +176,7 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     expect(screen.getByRole('button', { name: 'ROLL' }).getAttribute('data-sound')).toBe('none');
     session.update(cardPickOpening());
     expect(screen.getByRole('button', { name: /^Sprint/ }).getAttribute('data-sound')).toBe('C3');
-    expect(screen.getByRole('button', { name: 'Reroll Jackpot' }).getAttribute('data-sound')).toBe('C2');
+    expect(screen.getByRole('button', { name: 'Reroll Jackpot!' }).getAttribute('data-sound')).toBe('C2');
   });
 
   it('gives the face-off choices their lock-in sound (spec #3 §5)', () => {

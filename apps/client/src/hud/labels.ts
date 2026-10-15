@@ -1,8 +1,8 @@
-import { STARTER_CARDS, cardById, targetCandidates, type ActiveEffect, type CardDef, type InputErrorCode, type PlayerId, type PlayerView, type TargetRule } from '@laddorious/core';
+import { CARD_CATALOG, STARTER_CARDS, describeCard, fillCard, targetCandidates, type ActiveEffect, type CardDef, type CardValues, type InputErrorCode, type PlayerId, type PlayerView, type TargetRule } from '@laddorious/core';
 import type { PieceId } from '../service/matchService';
 
-// Words and icons for cards and effects (spec #2 §7.2). The engine plays the starter set, so
-// the client reads names, texts and targets from it.
+// Words and icons for cards and effects (spec #2 §7.2). Cards come from the card file (2026-10-15), with the
+// values the match picked, so every name, text and icon matches what the engine plays.
 
 /** How the HUD names each piece. */
 export const PIECE_NAMES: Record<PieceId, string> = { knight: 'Knight', pawn: 'Pawn', meeple: 'Meeple', dragon: 'Dragon head', rook: 'Rook', hat: 'Top hat', duck: 'Rubber duck' };
@@ -14,46 +14,38 @@ export type IconName =
   | 'qmark' | 'swords' | 'gear' | 'close' | 'play' | 'back' | 'next' | 'menu' | 'pencil' | 'trophy'
   | 'rock' | 'paper' | 'scissors' | 'speaker' | 'speaker-off' | 'expand' | 'shrink';
 
-const CARD_ICONS: Record<string, IconName> = {
-  sprint: 'arrow',
-  'loaded-die': 'die',
-  overdrive: 'x2',
-  'ladder-warp': 'pad',
-  'snake-charm': 'charm',
-  shield: 'shield',
-  aegis: 'aegis',
-  shove: 'push',
-  'heavy-boots': 'boot',
-  switcheroo: 'swap',
-  'coin-flip': 'coin',
-  'snake-bait': 'bait',
-  jackpot: 'jackpot',
-  'steady-hand': 'steady',
-  cleanse: 'cleanse',
-  'snake-pit': 'slide',
-  'ladder-drop': 'pad',
-};
+/** A card type's icon, for cards that don't name their own (2026-10-15). */
+const TYPE_ICONS: Record<CardDef['type'], IconName> = { movement: 'arrow', defense: 'shield', attack: 'push', risky: 'coin', misc: 'card' };
+/** The icons a card in the card file may name. */
+const CARD_ICONS = new Set<string>(['arrow', 'die', 'x2', 'pad', 'charm', 'shield', 'aegis', 'push', 'boot', 'swap', 'coin', 'bait', 'jackpot', 'steady', 'cleanse', 'slide', 'card', 'back', 'reroll']);
 
-/** One line per card for its bubble beside the player column (polish pass): the gist, not the rules text. */
-const CARD_SUMMARIES: Record<string, string> = {
-  sprint: 'Move forward 3',
-  'loaded-die': 'Next die shows 6',
-  overdrive: 'Next dice total ×2',
-  'ladder-warp': 'Jump to the next ladder',
-  'steady-hand': 'Next dice total is exactly 4',
-  'snake-charm': 'Ignore the next snake',
-  shield: 'Block the next attack',
-  aegis: 'Block attacks and snakes, 2 rounds',
-  shove: 'Nearest player ahead goes back 3',
-  'heavy-boots': 'Leader: −3 on next roll',
-  switcheroo: 'Swap with the furthest ahead',
-  'coin-flip': '50/50: forward 4 or back 4',
-  jackpot: '40%: forward 15 · 60%: back 8',
-  'snake-bait': 'Land on a snake head? Forward 8 after',
-  cleanse: "Remove others' effects on you",
-  'snake-pit': 'New snake ahead of the leader',
-  'ladder-drop': 'New ladder ahead of you',
-};
+let matchValues: CardValues | null = null;
+let matchCards = new Map<string, CardDef>();
+
+/** The HUD's cards for this match: the card file's, with the values the match picked (2026-10-15). */
+export function setMatchCards(values: CardValues): void {
+  if (values === matchValues) return;
+  matchValues = values;
+  matchCards = new Map(
+    CARD_CATALOG.cards.map((c) => {
+      const picked = Object.fromEntries(Object.entries(c.values ?? {}).map(([k, r]) => [k, values[c.id]?.[k] ?? r.min]));
+      return [c.id, { ...fillCard(c, picked), text: describeCard(c, values[c.id]) }];
+    }),
+  );
+}
+setMatchCards({});
+
+const NO_CARD = { text: '', type: 'misc', rarity: 'common', weight: 1, target: { condition: 'self', pick: 'self', tieBreak: 'lowest-seat' }, effects: [] } as const;
+
+/** A card by id: the match's, else an old starter card, else just its id as a name. Never throws. */
+function cardOf(id: string): CardDef {
+  return matchCards.get(id) ?? STARTER_CARDS.find((c) => c.id === id) ?? { ...NO_CARD, id, name: id, target: { ...NO_CARD.target }, effects: [] };
+}
+
+function iconOf(id: string, card: CardDef): IconName {
+  const own = CARD_CATALOG.cards.find((c) => c.id === id)?.icon;
+  return own && CARD_ICONS.has(own) ? (own as IconName) : TYPE_ICONS[card.type];
+}
 
 export interface CardInfo {
   id: string;
@@ -64,7 +56,7 @@ export interface CardInfo {
   /** Who it aims at, as shown before picking: the exact target stays hidden until it resolves. */
   targetLine: string;
   icon: IconName;
-  /** One line for the card's bubble; falls back to the full text for a card without one. */
+  /** The card's line for its bubble: its text (2026-10-15: written from its steps). */
   summary: string;
 }
 
@@ -87,8 +79,8 @@ export function targetLine(rule: TargetRule): string {
 }
 
 export function cardInfo(id: string): CardInfo {
-  const card = cardById(STARTER_CARDS, id);
-  return { id, name: card.name, text: card.text, type: card.type, rarity: card.rarity, targetLine: targetLine(card.target), icon: CARD_ICONS[id] ?? 'card', summary: CARD_SUMMARIES[id] ?? card.text };
+  const card = cardOf(id);
+  return { id, name: card.name, text: card.text, type: card.type, rarity: card.rarity, targetLine: targetLine(card.target), icon: iconOf(id, card), summary: card.text };
 }
 
 /**
@@ -96,7 +88,7 @@ export function cardInfo(id: string): CardInfo {
  * engine's own targeting rules on the view, so the warning matches what will happen.
  */
 export function fizzleWarning(id: string, view: PlayerView): string | null {
-  const card = cardById(STARTER_CARDS, id);
+  const card = cardOf(id);
   const me = view.players.find((p) => p.id === view.me);
   if (!me) return null;
   if (targetCandidates(view.players, me, card.target).length === 0) {
@@ -136,7 +128,7 @@ function lifeOf(effect: ActiveEffect): string {
 /** The chip for an active effect (spec #2 §7.2): icon, badge and words. */
 export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, string>): EffectChip {
   const from = effect.sourcePlayer !== effect.owner ? `, from ${names.get(effect.sourcePlayer) ?? effect.sourcePlayer}` : '';
-  const name = cardById(STARTER_CARDS, effect.sourceCard).name;
+  const name = cardOf(effect.sourceCard).name;
   const p = effect.params;
   const base = { id: effect.id, name, life: lifeOf(effect) };
   switch (p.hook) {

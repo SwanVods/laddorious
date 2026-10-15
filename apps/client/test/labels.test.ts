@@ -1,6 +1,6 @@
-import { STARTER_CARDS, type ActiveEffect, type EffectParams, type Lifetime, type PlayerView } from '@laddorious/core';
-import { describe, expect, it } from 'vitest';
-import { cardInfo, effectChip, fizzleWarning, nextRollMods, rejectionText, targetLine } from '../src/hud/labels';
+import { catalogCards, type ActiveEffect, type EffectParams, type Lifetime, type PlayerView } from '@laddorious/core';
+import { afterEach, describe, expect, it } from 'vitest';
+import { cardInfo, effectChip, fizzleWarning, nextRollMods, rejectionText, setMatchCards, targetLine } from '../src/hud/labels';
 import { openingUpdate } from './support/fixtures';
 
 const names = new Map([['p0', 'You'], ['p1', 'Mochi']]);
@@ -16,26 +16,25 @@ function viewAt(positions: Record<string, number>): PlayerView {
 }
 
 describe('card labels (spec #2 §7.2)', () => {
-  it('reads name, text, type, rarity and icon from the starter set', () => {
-    expect(cardInfo('heavy-boots')).toEqual({
-      id: 'heavy-boots',
-      name: 'Heavy Boots',
-      text: "The leader's next dice total is reduced by 3.",
-      type: 'attack',
+  it('reads name, text, type, rarity and icon from the card file', () => {
+    expect(cardInfo('shield')).toEqual({
+      id: 'shield',
+      name: 'Shield',
+      text: 'Block the next attack on you (5 rounds).',
+      type: 'defense',
       rarity: 'rare',
-      targetLine: 'The leader',
-      icon: 'boot',
-      summary: 'Leader: −3 on next roll', // it doesn't move anyone now (2026-10-15)
+      targetLine: 'You',
+      icon: 'shield',
+      summary: 'Block the next attack on you (5 rounds).',
     });
   });
 
-  it('gives every starter card a short one-line summary for its bubble (polish pass)', () => {
-    for (const card of STARTER_CARDS) {
-      const { summary } = cardInfo(card.id);
-      expect(summary, card.id).not.toBe(card.text);
-      expect(summary.length, card.id).toBeLessThanOrEqual(40);
+  it('gives every card in the file a text and a summary written from its steps (2026-10-15)', () => {
+    for (const card of catalogCards()) {
+      const info = cardInfo(card.id);
+      expect(info.text.length, card.id).toBeGreaterThan(0);
+      expect(info.summary, card.id).toBe(info.text);
     }
-    expect(cardInfo('shield').summary).toBe('Block the next attack');
   });
 
   it('writes the target line from the targeting rule', () => {
@@ -100,5 +99,30 @@ describe('rejected actions (spec #2 §8)', () => {
     expect(rejectionText('SLOT_ALREADY_REROLLED')).toBe('That card was already rerolled');
     expect(rejectionText('MATCH_FINISHED')).toBe('The match is over');
     expect(rejectionText('INVALID_INPUT')).toBe("That didn't work. Try again.");
+  });
+});
+
+describe('cards from the card file (2026-10-15)', () => {
+  afterEach(() => setMatchCards({}));
+
+  it("shows the match's picked number in a card's text", () => {
+    setMatchCards({ 'lucky-number': { n: 4 } });
+    expect(cardInfo('lucky-number').text).toBe('Your next die shows 4.');
+    expect(cardInfo('lucky-number').summary).toBe('Your next die shows 4.');
+  });
+
+  it("shows a value's range before a match has picked it", () => {
+    expect(cardInfo('lucky-number').text).toBe('Your next die shows 1–6.');
+  });
+
+  it('gives a card without its own icon its type icon', () => {
+    expect(cardInfo('leapfrog').icon).toBe('swap');
+    expect(cardInfo('moonwalk').icon).toBe('back');
+    expect(cardInfo('time-freeze').icon).toBe('push');
+  });
+
+  it("names a card that isn't in the file any more, without throwing", () => {
+    expect(cardInfo('heavy-boots').name).toBe('Heavy Boots');
+    expect(cardInfo('no-such-card').name).toBe('no-such-card');
   });
 });

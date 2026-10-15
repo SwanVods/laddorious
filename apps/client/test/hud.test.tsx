@@ -143,7 +143,7 @@ describe('PlayerColumn (spec #2 §7.2, §9.2)', () => {
     expect(bubbles).toHaveLength(1);
     expect(bubbles[0]!.closest('li')).toBe(rowOf(/^Mochi/).closest('li'));
     expect(bubbles[0]!.querySelector('.pbubble-name')!.textContent).toBe('Shield');
-    expect(bubbles[0]!.querySelector('.pbubble-summary')!.textContent).toBe('Block the next attack');
+    expect(bubbles[0]!.querySelector('.pbubble-summary')!.textContent).toBe('Block the next attack on you (5 rounds).');
   });
 
   it('says what each player is doing', () => {
