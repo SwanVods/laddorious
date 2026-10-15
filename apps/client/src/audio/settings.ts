@@ -6,15 +6,14 @@ export interface SoundSettings {
   music: number;
 }
 
-export const DEFAULT_SOUND: SoundSettings = { muted: false, effects: 0.8, music: 0.6 };
+export const DEFAULT_SOUND: SoundSettings = { muted: false, effects: 0.8, music: 0.8 };
 
-/** The bus levels at full volume: the sound board's tuned defaults. */
-const EFFECTS_BASE_DB = -2;
-const MUSIC_BASE_DB = -4;
+/** Both buses at full volume. Sounds and songs are levelled to one loudness by their trims (2026-10-15). */
+const BASE_DB = -2;
 
 const levelDb = (v: number) => (v <= 0 ? -60 : Math.max(-60, 20 * Math.log10(v)));
 
 /** Bus levels in dB for these settings (mute is applied separately, at the output). */
 export function soundLevels(s: SoundSettings): { effectsDb: number; musicDb: number } {
-  return { effectsDb: EFFECTS_BASE_DB + levelDb(s.effects), musicDb: MUSIC_BASE_DB + levelDb(s.music) };
+  return { effectsDb: BASE_DB + levelDb(s.effects), musicDb: BASE_DB + levelDb(s.music) };
 }

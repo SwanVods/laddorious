@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SONGS, songEvents } from '../src/audio/music';
+import { SONGS, SONG_TRIM, songEvents } from '../src/audio/music';
 
 describe('the music loops (spec #3 §6)', () => {
   it('builds the menu loop: 8 bars of arpeggio, bass, shaker and kick, plus the bell tune', () => {
@@ -24,5 +24,9 @@ describe('the music loops (spec #3 §6)', () => {
   it('places half-beat tune notes on the right sixteenth', () => {
     const tune = songEvents(SONGS.menu).filter((e) => e.kind === 'bell');
     expect(tune.find((e) => e.note === 'G5')?.time).toBe('1:0:2');
+  });
+
+  it("lifts each song to the sound effects' level: measured 2026-10-15 (momentary loudness, 400 ms windows)", () => {
+    expect(SONG_TRIM).toEqual({ menu: 9, match: 11 });
   });
 });

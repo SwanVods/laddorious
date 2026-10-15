@@ -20,6 +20,9 @@ export interface Song {
   kick: boolean;
 }
 
+/** Lifts each song to the sound effects' loudness (dB), measured 2026-10-15 like the effects' trims (TRIM in sounds.ts). */
+export const SONG_TRIM: Record<SongId, number> = { menu: 9, match: 11 };
+
 export const SONGS: Record<SongId, Song> = {
   menu: {
     bpm: 104,
@@ -86,6 +89,7 @@ interface Instruments {
 export class MusicPlayer {
   private part: Tone.Part<SongEvent> | null = null;
   private inst: Instruments | null = null;
+  private trim: Tone.Volume | null = null;
 
   constructor(
     private readonly tone: ToneLib,
@@ -101,6 +105,7 @@ export class MusicPlayer {
     if (!id) return;
     const song = SONGS[id];
     const inst = this.instruments();
+    this.trim!.volume.value = SONG_TRIM[id];
     transport.bpm.value = song.bpm;
     const part = new this.tone.Part<SongEvent>((time, e) => {
       if (e.kind === 'mallet') inst.mallet.triggerAttackRelease(e.note!, '8n', time, e.vel);
@@ -120,20 +125,21 @@ export class MusicPlayer {
   private instruments(): Instruments {
     if (this.inst) return this.inst;
     const t = this.tone;
-    const shakerFilter = new t.Filter(6500, 'highpass').connect(this.out);
+    const out = (this.trim = new t.Volume(0).connect(this.out));
+    const shakerFilter = new t.Filter(6500, 'highpass').connect(out);
     this.inst = {
       mallet: new t.PolySynth(t.FMSynth, {
         harmonicity: 3.99, modulationIndex: 2.6, oscillator: { type: 'sine' }, modulation: { type: 'sine' },
         envelope: { attack: 0.003, decay: 0.6, sustain: 0, release: 0.4 }, modulationEnvelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 }, volume: -10,
-      }).connect(this.out),
+      }).connect(out),
       bell: new t.PolySynth(t.FMSynth, {
         harmonicity: 3.5, modulationIndex: 5, oscillator: { type: 'sine' }, modulation: { type: 'sine' },
         envelope: { attack: 0.002, decay: 1, sustain: 0, release: 0.8 }, modulationEnvelope: { attack: 0.001, decay: 0.4, sustain: 0, release: 0.3 }, volume: -16,
-      }).connect(this.out),
-      bass: new t.MonoSynth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.3, sustain: 0.2, release: 0.2 }, filterEnvelope: { attack: 0.005, decay: 0.15, sustain: 0.2, baseFrequency: 180, octaves: 2.5 }, volume: -8 }).connect(this.out),
-      kick: new t.MembraneSynth({ pitchDecay: 0.05, octaves: 5, envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.05 }, volume: -12 }).connect(this.out),
+      }).connect(out),
+      bass: new t.MonoSynth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.3, sustain: 0.2, release: 0.2 }, filterEnvelope: { attack: 0.005, decay: 0.15, sustain: 0.2, baseFrequency: 180, octaves: 2.5 }, volume: -8 }).connect(out),
+      kick: new t.MembraneSynth({ pitchDecay: 0.05, octaves: 5, envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.05 }, volume: -12 }).connect(out),
       shaker: new t.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.002, decay: 0.04, sustain: 0, release: 0.02 }, volume: -30 }).connect(shakerFilter),
-      pad: new t.PolySynth(t.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.6, decay: 1.5, sustain: 0.5, release: 1.5 }, volume: -24 }).connect(this.out),
+      pad: new t.PolySynth(t.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.6, decay: 1.5, sustain: 0.5, release: 1.5 }, volume: -24 }).connect(out),
     };
     return this.inst;
   }

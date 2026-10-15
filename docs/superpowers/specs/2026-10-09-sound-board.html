@@ -478,12 +478,12 @@ const SOUND = (code) => SOUNDS.find((s) => s.code === code);
 // Level trims (dB) from offline measurements, so sounds sit in tiers by their loudest 300 ms:
 // big moments about -20 dBFS, core feedback -24, prompts -26, buttons and others' small sounds -28 to -30.
 const TRIM = {
-  U1: 8, U2: 5, U3: 6, U4: 9.5, Q1: 4, Q2: 9.5, Q3: 3.5,
-  D1: 20, D2: 4, D3: 5, D4: 11, D5: 18, D6: 3.5, D7: 3,
-  H1: 4, H2: 4, H3: 0.5, S1: 4, L1: 2, K1: 4, B1: 10, B2: 13, B3: 15,
-  F1: 4, F2: 6, F3: 9, F4: 10, F5: 7,
-  C1: 12, C2: 12, C3: 10.5, C4: 14, C5: 5, C6: 6, C7: 4.5, C8: 1.5, C9: 1.5, C10: 18.5,
-  W1: 9, W2: 12.5, W3: 9, W4: 4,
+  U1: 11, U2: 8.5, U3: 8.5, U4: 13, Q1: 7.5, Q2: 8.5, Q3: 7,
+  D1: 20, D2: 4, D3: 10.5, D4: 15, D5: 17.5, D6: 3, D7: 2.5,
+  H1: 9.5, H2: 3.5, H3: 0, S1: -2, L1: -3, K1: -1, B1: 14.5, B2: 9, B3: 15.5,
+  F1: -0.5, F2: 8.5, F3: 8.5, F4: 9, F5: 11,
+  C1: 13, C2: 12.5, C3: 11, C4: 15, C5: 2, C6: 5, C7: -0.5, C8: 2.5, C9: 2.5, C10: 17,
+  W1: 2.5, W2: 12.5, W3: 9, W4: 3.5,
 };
 
 // ===================================================================== music
