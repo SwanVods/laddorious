@@ -181,6 +181,14 @@ function swoop(at: Vec3, input: ShotInput): Shot {
   return { mode: 'swoop', position: offset(at, close()), target: at, cut: false, focus: { player: input.me } };
 }
 
+/**
+ * Whether the game waits on my Mystery pick (2026-10-15): my offer is open and I haven't picked in this window.
+ * The settled view only says so once the reveal arrives, so the screen tells which window I picked in.
+ */
+export function myPickPending(offer: { picked: unknown } | null | undefined, windowId: number | null, pickedWindow: number | null): boolean {
+  return !!offer && offer.picked === null && windowId !== pickedWindow;
+}
+
 /** Swoops are only for your own moments: your collision, your slide or launch, your Mystery pick (cards get their own shot). */
 function isMyMoment({ beat, me, myPick, window }: ShotInput): boolean {
   if (myPick && window === 'mystery') return true;
