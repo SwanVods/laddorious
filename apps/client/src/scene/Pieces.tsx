@@ -8,7 +8,7 @@ import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { PIECE_SCALE } from './layout';
-import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, stackLandings, withIdle, type Landing, type Pose } from './motion';
+import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
@@ -164,8 +164,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
     }
     // The shield bubble shows while a shield effect is up and flares when it blocks.
     const shielded = state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false;
-    const blocking =
-      state.beat?.events.some((e) => (e.type === 'SnakeBlocked' && e.player === seat.playerId) || (e.type === 'CardResolved' && e.target === seat.playerId && e.result === 'blocked')) ?? false;
+    const blocking = shieldBlocking(state.beat, seat.playerId, now);
     shieldRef.current.visible = shielded || blocking;
     shieldRef.current.position.set(pose.position[0], pose.position[1] + 0.7, pose.position[2]);
     (shieldRef.current.material as MeshBasicMaterial).opacity = blocking ? 0.45 + 0.3 * Math.sin(now / 60) : 0.22;

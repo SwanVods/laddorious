@@ -258,6 +258,18 @@ export function projectileAt(beat: PlayingBeat, from: PresentationState, seatOf:
   return arcPoint([a[0], a[1] + 1, a[2]], [b[0], b[1] + 1, b[2]], easeInOut(t), 1.5);
 }
 
+/**
+ * Whether a piece's shield bubble flares right now: as it stops a slide, or once a blocked card's projectile
+ * reaches it, after the camera's lead-in and the flight (2026-10-15), not as the card's beat starts.
+ */
+export function shieldBlocking(beat: PlayingBeat | null, player: PlayerId, nowMs: number): boolean {
+  if (!beat) return false;
+  if (beat.events.some((e) => e.type === 'SnakeBlocked' && e.player === player)) return true;
+  if (!beat.events.some((e) => e.type === 'CardResolved' && e.target === player && e.result === 'blocked')) return false;
+  const lands = beat.startedAt + BEAT_MS.cardLead + (beat.durationMs - BEAT_MS.cardLead) / 2;
+  return nowMs >= lands;
+}
+
 /** A piece's pose right now, from the director's state. */
 export function poseAt(state: DirectorState, player: PlayerId, seat: number, nowMs: number, boardSize: number): Pose | null {
   if (!state.presentation) return null;

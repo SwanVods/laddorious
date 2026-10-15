@@ -5,7 +5,7 @@ import type { DirectorState, PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
 import { sizeOf } from '../src/scene/footprint';
 import { PARTS, tileToWorld } from '../src/scene/layout';
-import { CROWN_FLY_MS, END_TILE_FORWARD, crownPose, crownWinner, landingPose, stackLandings, STILL_END, beatPose, endReaction, projectileAt, restPose, GENTLE } from '../src/scene/motion';
+import { CROWN_FLY_MS, END_TILE_FORWARD, crownPose, crownWinner, landingPose, stackLandings, STILL_END, beatPose, endReaction, projectileAt, restPose, GENTLE, shieldBlocking } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
@@ -351,3 +351,23 @@ describe('the crown (round 5)', () => {
     expect(crownPose(during(victory), head, CROWN_FLY_MS + 100, true).sparkle).toBeGreaterThan(0);
   });
 });
+
+describe('the shield bubble flaring (2026-10-15)', () => {
+  const blocked: GameEvent = { type: 'CardResolved', caster: 'p1', cardId: 'shove', target: 'p0', result: 'blocked', visibility: 'public' };
+  const card: PlayingBeat = { kind: 'cardResolved', durationMs: BEAT_MS.cardLead + 1200, events: [blocked], after: at({}), startedAt: 1000 };
+  const lands = 1000 + BEAT_MS.cardLead + 600;
+
+  it("flares only once the card's projectile reaches the shield, not during the camera's lead-in", () => {
+    expect(shieldBlocking(card, 'p0', 1000 + 100)).toBe(false);
+    expect(shieldBlocking(card, 'p0', lands - 10)).toBe(false);
+    expect(shieldBlocking(card, 'p0', lands + 10)).toBe(true);
+    expect(shieldBlocking(card, 'p1', lands + 10)).toBe(false);
+  });
+
+  it('flares at once for a slide it stops, and not without a beat', () => {
+    const stopped: PlayingBeat = { kind: 'snakeBlocked', durationMs: 800, events: [{ type: 'SnakeBlocked', player: 'p0', tile: 9, visibility: 'public' } as GameEvent], after: at({}), startedAt: 0 };
+    expect(shieldBlocking(stopped, 'p0', 0)).toBe(true);
+    expect(shieldBlocking(null, 'p0', 0)).toBe(false);
+  });
+});
+
