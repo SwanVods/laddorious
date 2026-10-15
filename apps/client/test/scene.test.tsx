@@ -179,6 +179,23 @@ describe('the 3D scene (spec #2 §6)', () => {
     }
   });
 
+  it('on Low, lays each rocket and flag image in the middle of its tile, as big as a "?" (2026-10-15)', async () => {
+    const root = await renderScene('low');
+    const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
+    const at = new Matrix4();
+    const p = new Vector3();
+    for (const [name, tile] of [['flat-rockets', ladder.from], ['flat-flags', ladder.to]] as const) {
+      (root.getObjectByName(name) as InstancedMesh).getMatrixAt(0, at);
+      p.setFromMatrixPosition(at);
+      const [x, , z] = tileToWorld(tile);
+      expect(p.x, name).toBeCloseTo(x, 5);
+      expect(p.z, name).toBeCloseTo(z, 5);
+    }
+    // The "?" is drawn 0.62 of a square's step high: the images match it.
+    expect(PARTS.flat.rocket.size).toBeGreaterThanOrEqual(1.1);
+    expect(PARTS.flat.flag.size).toBeGreaterThanOrEqual(1.1);
+  });
+
   it('gives Epic "?" tiles a shine, one sheen per Epic tile in one draw call (2026-10-14)', async () => {
     const root = await renderScene('high');
     const { mystery } = openingUpdate().view.board;

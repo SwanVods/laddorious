@@ -64,12 +64,13 @@ export const PARTS = {
   splat: { radius: 0.43, top: 0.04 },
   /**
    * On Low the ends are flat images (round 5): each image's size across, and where its symbol lies on it
-   * (x right, z toward the camera, from the tile's centre).
+   * (x right, z toward the camera, from the tile's centre). The rocket and the flag lie in the middle of
+   * their tile, about as big as a "?" (2026-10-15).
    */
   flat: {
     y: 0.012,
-    rocket: { size: 0.7, symbol: { x: 0, z: -0.077, size: 0.14 } },
-    flag: { size: 0.75, symbol: { x: 0.045, z: -0.143, size: 0.2 } },
+    rocket: { size: 1.15, symbol: { x: 0, z: -0.126, size: 0.23 } },
+    flag: { size: 1.2, symbol: { x: 0.072, z: -0.229, size: 0.32 } },
     swirl: { size: 0.86 },
     splat: { size: 0.86, symbol: { x: 0, z: 0, size: 0.34 } },
   },

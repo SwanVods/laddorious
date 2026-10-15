@@ -197,7 +197,8 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       const m = modelEnds ? motion : { ...STILL_END, pop: motion.pop };
       const [tx, , tz] = tileToWorld(tile);
       const at = corner === 'flag' ? PARTS.flagCorner : PARTS.corner;
-      const [x, z] = corner ? [tx + at.x, tz + at.z] : [tx, tz];
+      // On Low the flat images lie in the middle of the tile, like the "?" (2026-10-15); the 3D ends stand in the corner.
+      const [x, z] = corner && modelEnds ? [tx + at.x, tz + at.z] : [tx, tz];
       const swing = pole ? m.sway : 0;
       place.position.set(x + pole - pole * Math.cos(swing), 0, z + pole * Math.sin(swing));
       place.rotation.set(0, turn + swing, pole ? 0 : m.sway);
