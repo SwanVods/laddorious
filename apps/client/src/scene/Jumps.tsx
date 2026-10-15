@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'rea
 import { Color, DoubleSide, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
 import { useStore } from 'zustand';
 import { BOARD_COLORS, PAIR_COLORS, WORLD_COLORS } from '../app/theme';
-import { arrowheadGeometry, arrowheadOutlineGeometry, exitGeometry, padGeometry, targetGeometry, vortexGeometry } from '../assets/models';
+import { arrowheadGeometry, arrowheadOutlineGeometry, exitGeometry, padGeometry, plumeGeometry, targetGeometry, vortexGeometry } from '../assets/models';
 import { useSlotMesh } from '../assets/slotMesh';
 import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
@@ -31,6 +31,8 @@ interface EndRefs {
   exits: RefObject<InstancedMesh | null>;
   pads: RefObject<InstancedMesh | null>;
   targets: RefObject<InstancedMesh | null>;
+  /** A launching rocket's flame plume; 3D ends only. */
+  plumes?: RefObject<InstancedMesh | null>;
 }
 
 /** The ends as 3D models (High): rockets, flags, whirlpools and splats, loaded only when shown. */
@@ -45,12 +47,14 @@ function ModelEnds({ clearcoat, refs }: { clearcoat: boolean; refs: EndRefs }) {
   const exit = useSlotMesh('slide.exit', () => ({ geometry: exitGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
   const pad = useSlotMesh('pad', () => ({ geometry: padGeometry(), material: new MeshStandardMaterial({ roughness: 0.5 }) }), { clearcoat });
   const target = useSlotMesh('pad.target', () => ({ geometry: targetGeometry(), material: new MeshBasicMaterial() }), { clearcoat });
+  const plume = useSlotMesh('pad.plume', () => ({ geometry: plumeGeometry(), material: new MeshBasicMaterial({ color: WORLD_COLORS.crown }) }), { clearcoat });
   return (
     <>
       <instancedMesh ref={refs.vortices} name="vortices" args={[vortex.geometry, vortex.material, MAX_JUMPS]} />
       <instancedMesh ref={refs.exits} name="exits" args={[exit.geometry, exit.material, MAX_JUMPS]} />
       <instancedMesh ref={refs.pads} name="pads" args={[pad.geometry, pad.material, MAX_JUMPS]} />
       <instancedMesh ref={refs.targets} name="targets" args={[target.geometry, target.material, MAX_JUMPS]} />
+      <instancedMesh ref={refs.plumes} name="plumes" args={[plume.geometry, plume.material, MAX_JUMPS]} visible={false} />
     </>
   );
 }
@@ -167,6 +171,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
   const exitsRef = useRef<InstancedMesh>(null);
   const padsRef = useRef<InstancedMesh>(null);
   const targetsRef = useRef<InstancedMesh>(null);
+  const plumesRef = useRef<InstancedMesh>(null);
   const place = useMemo(() => new Object3D(), []);
   const base = useMemo(() => new Matrix4(), []);
 
@@ -206,7 +211,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       // On Low the flat images lie in the middle of the tile, like the "?" (2026-10-15); the 3D ends stand in the corner.
       const [x, z] = corner && modelEnds ? [tx + at.x, tz + at.z] : [tx, tz];
       const swing = pole ? m.sway : 0;
-      place.position.set(x + pole - pole * Math.cos(swing), 0, z + pole * Math.sin(swing));
+      place.position.set(x + pole - pole * Math.cos(swing), m.lift, z + pole * Math.sin(swing));
       place.rotation.set(0, turn + swing, pole ? 0 : m.sway);
       const s = pop(j.id) * m.pop;
       place.scale.set(s, s * m.squash, s);
@@ -231,6 +236,24 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
     stamp(exitsRef.current, snakes, (j) => endMatrix(j, j.to, 0));
     stamp(padsRef.current, ladders, rocketAt);
     stamp(targetsRef.current, ladders, flagAt);
+    // A launching rocket's flame plume (2026-10-15): turned over under its nozzle, as long as its flare, flickering.
+    const plumes = plumesRef.current;
+    if (plumes) {
+      let n = 0;
+      for (const j of ladders) {
+        const { flare } = react(j).rocket;
+        if (flare < 0.01) continue;
+        const flicker = 1 + 0.15 * Math.sin(clock.elapsedTime * 45 + n * 2.1);
+        place.position.set(0, PARTS.rocket.nozzle, 0);
+        place.rotation.set(Math.PI, 0, 0);
+        place.scale.set(0.6 + 0.4 * flare, flare * flicker, 0.6 + 0.4 * flare);
+        place.updateMatrix();
+        plumes.setMatrixAt(n++, place.matrix.premultiply(base.copy(rocketAt(j))));
+      }
+      plumes.count = n;
+      plumes.visible = n > 0;
+      plumes.instanceMatrix.needsUpdate = true;
+    }
     // The symbols lie flat and upright to the camera; a landing's glowing gold breathes.
     const marks = new Map<SymbolName, number>();
     const breathe = 0.78 + 0.22 * Math.sin(clock.elapsedTime * 3);
@@ -354,7 +377,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       ))}
       <instancedMesh ref={capsRef} name="caps" args={[cap, capMaterial, MAX_JUMPS]} />
       {modelEnds ? (
-        <ModelEnds clearcoat={clearcoat} refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef }} />
+        <ModelEnds clearcoat={clearcoat} refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef, plumes: plumesRef }} />
       ) : (
         <FlatEnds refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef }} />
       )}

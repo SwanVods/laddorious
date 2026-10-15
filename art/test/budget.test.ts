@@ -32,6 +32,8 @@ const USES: Record<string, { copies: number; separate?: boolean; shadows?: boole
   tile: { copies: 100 },
   pad: { copies: PADS },
   target: { copies: PADS },
+  // A launching rocket's flame plume (2026-10-15): one for every piece launching at once.
+  plume: { copies: SEATS },
   vortex: { copies: SLIDES },
   exit: { copies: SLIDES },
   // The world (board theme spec §7): every model instanced, none casting a shadow.
@@ -110,7 +112,7 @@ function price(level: 'high' | 'low') {
   const cost = shadows ? shadowed : flat;
   add('pieces', heaviest((m) => cost(m).calls), heaviest((m) => cost(m).triangles));
   // On Low the ladder and portal ends are flat images (round 5): four instanced quads, two triangles a copy.
-  const ENDS = ['pad', 'target', 'vortex', 'exit'];
+  const ENDS = ['pad', 'target', 'vortex', 'exit', 'plume'];
   if (low) add('flat ends', 4, 2 * 2 * (SLIDES + PADS));
   for (const [id, use] of Object.entries(USES)) {
     if (low && ENDS.includes(id)) continue;

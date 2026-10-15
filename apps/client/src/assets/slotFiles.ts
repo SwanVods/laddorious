@@ -30,6 +30,7 @@ export type SlotName =
   | 'menu.platform'
   | 'tile'
   | 'pad.target'
+  | 'pad.plume'
   | 'slide.exit';
 
 /** The model id (file name without .glb) for each slot that has a Blender model. A slot not listed keeps its code-built model. */
@@ -46,6 +47,7 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   tile: 'tile',
   pad: 'pad',
   'pad.target': 'target',
+  'pad.plume': 'plume',
   'slide.vortex': 'vortex',
   'slide.exit': 'exit',
   platform: 'platform',
@@ -73,6 +75,7 @@ export const MESH_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>([
   'tile',
   'pad',
   'pad.target',
+  'pad.plume',
   'slide.vortex',
   'slide.exit',
   'platform',

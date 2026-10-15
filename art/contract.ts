@@ -89,6 +89,8 @@ export const MODELS: Record<string, ModelRule> = {
   tile: { slot: 'tile', origin: 'base', height: [0.29, 0.31], maxWidth: 2.31, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },
   // A ladder's start is a launch rocket: Tint, a glowing cream porthole facing the camera, a glowing flame (A16).
   pad: { slot: 'pad', origin: 'base', height: [0.65, 0.8], maxWidth: 0.62, maxTriangles: 1500, maxMaterials: 3, requiredMaterials: ['Tint', 'Window'], checks: [facesCamera('Window', PARTS.rocket)] },
+  // A rocket's flame plume (2026-10-15): one glowing material, shown only while a rocket lifts off.
+  plume: { slot: 'pad.plume', origin: 'base', height: [0.4, 0.46], maxWidth: 0.2, maxTriangles: 400, maxMaterials: 1, requiredMaterials: ['Flame'] },
   // A ladder's end is a flag, all Tint; a portal's end is a flat splat.
   target: { slot: 'pad.target', origin: 'base', height: [1.2, 1.35], maxWidth: 1.3, maxTriangles: 1500, maxMaterials: 1, requiredMaterials: ['Tint'] },
   vortex: { slot: 'slide.vortex', origin: 'base', height: [0.08, 0.14], maxWidth: 0.88, maxTriangles: 1500, maxMaterials: 2, requiredMaterials: ['Inside', 'Tint'] },

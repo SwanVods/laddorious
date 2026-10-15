@@ -110,6 +110,26 @@ describe('the ends react (round 5)', () => {
     expect(endReaction(null, ladder, 200)).toEqual({ rocket: STILL_END, flag: STILL_END });
   });
 
+  it('crouches the rocket, then lifts it off with the piece on a flaring flame, and sets it back down (2026-10-15)', () => {
+    const crouch = endReaction(launch, ladder, 150).rocket;
+    expect(crouch.lift).toBe(0);
+    expect(crouch.squash).toBeLessThan(1);
+    const up = endReaction(launch, ladder, 560).rocket;
+    expect(up.lift).toBeGreaterThan(0.3);
+    expect(up.flare).toBeGreaterThan(0.8);
+    const landing = endReaction(launch, ladder, 960).rocket;
+    expect(landing.lift).toBe(0);
+    expect(landing.flare).toBeLessThan(0.3);
+    expect(STILL_END).toMatchObject({ lift: 0, flare: 0 });
+  });
+
+  it('lifts the rocket a quarter as high with reduced motion, its flame flaring as usual', () => {
+    const full = endReaction(launch, ladder, 560).rocket;
+    const calm = endReaction(launch, ladder, 560, true).rocket;
+    expect(calm.lift).toBeCloseTo(full.lift * GENTLE, 6);
+    expect(calm.flare).toBeCloseTo(full.flare, 6);
+  });
+
   it('rocks the rocket gently with reduced motion: a quarter as far (2026-10-15)', () => {
     const full = endReaction(launch, ladder, 200).rocket;
     const calm = endReaction(launch, ladder, 200, true).rocket;
