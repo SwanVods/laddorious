@@ -54,7 +54,8 @@ function ModelEnds({ clearcoat, refs }: { clearcoat: boolean; refs: EndRefs }) {
       <instancedMesh ref={refs.exits} name="exits" args={[exit.geometry, exit.material, MAX_JUMPS]} />
       <instancedMesh ref={refs.pads} name="pads" args={[pad.geometry, pad.material, MAX_JUMPS]} />
       <instancedMesh ref={refs.targets} name="targets" args={[target.geometry, target.material, MAX_JUMPS]} />
-      <instancedMesh ref={refs.plumes} name="plumes" args={[plume.geometry, plume.material, MAX_JUMPS]} visible={false} />
+      {/* A plume moves from rocket to rocket: bounds fixed at its first launch would hide it at the next. */}
+      <instancedMesh ref={refs.plumes} name="plumes" args={[plume.geometry, plume.material, MAX_JUMPS]} visible={false} frustumCulled={false} />
     </>
   );
 }
@@ -244,11 +245,13 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
         const { flare } = react(j).rocket;
         if (flare < 0.01) continue;
         const flicker = 1 + 0.15 * Math.sin(clock.elapsedTime * 45 + n * 2.1);
+        // The rocket's matrix first: rocketAt reuses `place`.
+        base.copy(rocketAt(j));
         place.position.set(0, PARTS.rocket.nozzle, 0);
         place.rotation.set(Math.PI, 0, 0);
         place.scale.set(0.6 + 0.4 * flare, flare * flicker, 0.6 + 0.4 * flare);
         place.updateMatrix();
-        plumes.setMatrixAt(n++, place.matrix.premultiply(base.copy(rocketAt(j))));
+        plumes.setMatrixAt(n++, place.matrix.premultiply(base));
       }
       plumes.count = n;
       plumes.visible = n > 0;

@@ -179,6 +179,34 @@ describe('the 3D scene (spec #2 §6)', () => {
     }
   });
 
+  it('lifts a launching rocket off its tile on a flaring flame plume, drawn only then (2026-10-15)', async () => {
+    const { renderer, root, director } = await renderSceneWith('high');
+    const plumes = root.getObjectByName('plumes') as InstancedMesh;
+    expect(plumes.visible).toBe(false);
+    // Its bounds would be fixed at the first launch it showed, and hide the plume at every rocket after (2026-10-15).
+    expect(plumes.frustumCulled).toBe(false);
+    const { view } = openingUpdate();
+    const ladder = view.board.jumps.find((j) => j.to > j.from)!;
+    const moved = { ...view, players: view.players.map((p) => (p.id === 'p0' ? { ...p, position: ladder.to } : p)) };
+    director.push({ view: moved, events: [{ type: 'Moved', player: 'p0', from: ladder.from, to: ladder.to, cause: 'ladder', bounced: false, visibility: 'public' }], timer: null });
+    expect(director.store.getState().beat?.kind).toBe('launch');
+    await new Promise((r) => setTimeout(r, 550));
+    await frames(renderer, 1);
+    expect(plumes.visible).toBe(true);
+    expect(plumes.count).toBe(1);
+    const at = new Matrix4();
+    (root.getObjectByName('pads') as InstancedMesh).getMatrixAt(0, at);
+    const rocket = new Vector3().setFromMatrixPosition(at);
+    expect(rocket.y).toBeGreaterThan(0.25);
+    // The plume hangs from the rocket's nozzle, pointing down.
+    plumes.getMatrixAt(0, at);
+    const plume = new Vector3().setFromMatrixPosition(at);
+    expect(plume.x).toBeCloseTo(rocket.x, 5);
+    expect(plume.z).toBeCloseTo(rocket.z, 5);
+    expect(plume.y).toBeCloseTo(rocket.y + PARTS.rocket.nozzle, 2);
+    expect(new Vector3(0, 1, 0).transformDirection(at).y).toBeLessThan(-0.9);
+  });
+
   it('on Low, lays each rocket and flag image in the middle of its tile, as big as a "?" (2026-10-15)', async () => {
     const root = await renderScene('low');
     const ladder = openingUpdate().view.board.jumps.find((j) => j.to > j.from)!;
