@@ -5,7 +5,7 @@ import type { DirectorState, PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
 import { sizeOf } from '../src/scene/footprint';
 import { PARTS, tileToWorld } from '../src/scene/layout';
-import { CROWN_FLY_MS, END_TILE_FORWARD, crownPose, crownWinner, landingPose, stackLandings, STILL_END, beatPose, endReaction, projectileAt, restPose } from '../src/scene/motion';
+import { CROWN_FLY_MS, END_TILE_FORWARD, crownPose, crownWinner, landingPose, stackLandings, STILL_END, beatPose, endReaction, projectileAt, restPose, GENTLE } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
@@ -105,10 +105,17 @@ describe('the ends react (round 5)', () => {
     expect(late.rocket).toEqual(STILL_END);
   });
 
-  it("leaves other jumps' ends still, and every end still with reduced motion or no beat", () => {
+  it("leaves other jumps' ends still, and every end still with no beat", () => {
     expect(endReaction(launch, other, 200)).toEqual({ rocket: STILL_END, flag: STILL_END });
-    expect(endReaction(launch, ladder, 200, true)).toEqual({ rocket: STILL_END, flag: STILL_END });
     expect(endReaction(null, ladder, 200)).toEqual({ rocket: STILL_END, flag: STILL_END });
+  });
+
+  it('rocks the rocket gently with reduced motion: a quarter as far (2026-10-15)', () => {
+    const full = endReaction(launch, ladder, 200).rocket;
+    const calm = endReaction(launch, ladder, 200, true).rocket;
+    expect(calm.sway).toBeCloseTo(full.sway * GENTLE, 6);
+    expect(calm.pop - 1).toBeCloseTo((full.pop - 1) * GENTLE, 6);
+    expect(calm).not.toEqual(STILL_END);
   });
 });
 
@@ -143,9 +150,12 @@ describe('landing on a stack (2026-10-14)', () => {
     expect(landingPose(bottom, 'p1', landings, landed + 130, false)).toEqual(bottom);
   });
 
-  it('keeps everything still with reduced motion', () => {
+  it('wiggles gently with reduced motion: a quarter as far (2026-10-15)', () => {
     const landings = stackLandings(hop, SIZE);
-    expect(landingPose(still, 'p0', landings, landed + 200, true)).toEqual(still);
+    const full = landingPose(still, 'p0', landings, landed + 200, false).rotation[0] - still.rotation[0];
+    const calm = landingPose(still, 'p0', landings, landed + 200, true).rotation[0] - still.rotation[0];
+    expect(calm).toBeCloseTo(full * GENTLE, 6);
+    expect(calm).not.toBe(0);
   });
 });
 
@@ -328,9 +338,10 @@ describe('the crown (round 5)', () => {
     expectNear(crownPose(after, head, 99_000).position, head);
   });
 
-  it('cuts straight to the head with reduced motion, with no sparkles', () => {
-    const pose = crownPose(during(victory), head, 0, true);
-    expectNear(pose.position, head);
-    expect(pose.sparkle).toBeNull();
+  it('still flies with reduced motion, bouncing only a quarter as high (2026-10-15)', () => {
+    expectNear(crownPose(during(victory), head, 0, true).position, [goal[0], 0.01, goal[2]]);
+    const bounce = (reduced: boolean) => crownPose(during(victory), head, CROWN_FLY_MS + 100, reduced).position[1] - head[1];
+    expect(bounce(true)).toBeCloseTo(bounce(false) * GENTLE, 6);
+    expect(crownPose(during(victory), head, CROWN_FLY_MS + 100, true).sparkle).toBeGreaterThan(0);
   });
 });

@@ -73,7 +73,8 @@ export function CenterDie({ director, me, reducedMotion, timeScale = 1 }: { dire
   const note = move !== null && now < moveEnds ? move : null;
   if (!shown && !note) return null;
 
-  const tumbling = shown !== null && !reducedMotion && now < shown.startedAt + shown.rollMs;
+  // Reduced motion tumbles for a shorter while (2026-10-15: reduce, not remove).
+  const tumbling = shown !== null && now < shown.startedAt + shown.rollMs * (reducedMotion ? 0.4 : 1);
   const leaving = shown !== null && note === null && now >= shown.startedAt + CENTER_DIE.holdMs * timeScale;
   const step = shown ? Math.max(0, Math.floor((now - shown.startedAt) / CENTER_DIE.tumbleStepMs)) : 0;
   const face = shown ? (tumbling ? ((shown.face + step) % 6) + 1 : shown.face) : 0;

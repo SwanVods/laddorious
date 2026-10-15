@@ -8,7 +8,7 @@ import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { PIECE_SCALE } from './layout';
-import { clamp01, easeOut, landingPose, poseAt, projectileAt, stackLandings, withIdle, type Landing, type Pose } from './motion';
+import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
@@ -142,7 +142,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
     const pose = poseAt(state, seat.playerId, index, now, boardSize);
     if (!pose || !bodyRef.current || !modelRef.current || !orbRef.current || !dieRef.current || !shieldRef.current) return;
     const acting = state.beat?.events.some((e) => (e.type === 'Moved' && e.player === seat.playerId) || (e.type === 'MatchWon' && e.winner === seat.playerId)) ?? false;
-    placePiece(bodyRef.current, modelRef.current, landingPose(reducedMotion || acting ? pose : withIdle(pose, now, index * 1.7), seat.playerId, landingsRef.current, now, reducedMotion));
+    placePiece(bodyRef.current, modelRef.current, landingPose(acting ? pose : withIdle(pose, now, index * 1.7, reducedMotion ? GENTLE : 1), seat.playerId, landingsRef.current, now, reducedMotion));
     modelRef.current.visible = !pose.orb;
     orbRef.current.visible = pose.orb;
     if (blobRef.current) {

@@ -183,13 +183,14 @@ input:focus-visible,
   }
 }
 
+/* Reduced motion keeps the movements, shorter and played once (2026-10-15: reduce, not remove). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 1ms !important;
+    animation-duration: 0.18s !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+    transition-duration: 0.12s !important;
   }
 }
 
@@ -197,7 +198,7 @@ input:focus-visible,
 .app.reduced-motion *,
 .app.reduced-motion *::before,
 .app.reduced-motion *::after {
-  animation-duration: 1ms !important;
+  animation-duration: 0.18s !important;
   animation-iteration-count: 1 !important;
-  transition-duration: 1ms !important;
+  transition-duration: 0.12s !important;
 }

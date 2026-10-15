@@ -43,15 +43,17 @@ describe('the menu scene (spec #2 §7.1)', () => {
     expect(triangles((root.getObjectByName('menu-piece') as Mesh).geometry)).toBe(triangles(PIECE_GEOMETRY.pawn()));
   });
 
-  it('turns the piece on a turntable, and holds it still with reduced motion', async () => {
+  it('turns the piece on a turntable, and more slowly with reduced motion (2026-10-15)', async () => {
     const turning = await renderMenu('knight');
     const before = turning.root.getObjectByName('menu-turntable')!.rotation.y;
     await turning.renderer.advanceFrames(5, 1 / 30);
-    expect(turning.root.getObjectByName('menu-turntable')!.rotation.y).not.toBeCloseTo(before);
-    const still = await renderMenu('knight', 'high', true);
-    const held = still.root.getObjectByName('menu-turntable')!.rotation.y;
-    await still.renderer.advanceFrames(5, 1 / 30);
-    expect(still.root.getObjectByName('menu-turntable')!.rotation.y).toBe(held);
+    const full = turning.root.getObjectByName('menu-turntable')!.rotation.y - before;
+    const calm = await renderMenu('knight', 'high', true);
+    const from = calm.root.getObjectByName('menu-turntable')!.rotation.y;
+    await calm.renderer.advanceFrames(5, 1 / 30);
+    const slow = calm.root.getObjectByName('menu-turntable')!.rotation.y - from;
+    expect(slow).toBeGreaterThan(0);
+    expect(slow).toBeLessThan(full / 2);
   });
 
   it('places the name plate on the podium and the arrows beside it', async () => {

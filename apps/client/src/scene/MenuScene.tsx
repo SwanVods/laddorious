@@ -10,7 +10,7 @@ import { TILE_ACROSS, TILE_THICKNESS, type Vec3 } from './layout';
 import { webglAvailable } from './MatchScene';
 import { menuWorld } from './world';
 import { WorldParts } from './WorldParts';
-import { clamp01, easeOutBack } from './motion';
+import { GENTLE, clamp01, easeOut, easeOutBack } from './motion';
 import { ContextLossWatch } from './Probes';
 import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
 import type { TagRegistry } from './tags';
@@ -88,19 +88,21 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
   }, [tile]);
 
   useFrame(({ camera, clock, size }, delta) => {
-    const t = reducedMotion ? 0 : clock.elapsedTime;
+    // Reduced motion keeps it all moving, slower and smaller (2026-10-15: reduce, not remove).
+    const k = reducedMotion ? GENTLE : 1;
+    const t = clock.elapsedTime * k;
     const turntable = turntableRef.current;
     if (turntable) {
-      if (reducedMotion) turntable.rotation.y = -0.45;
-      else turntable.rotation.y += delta * 0.55;
-      turntable.position.y = TOP_Y + (reducedMotion ? 0 : Math.abs(Math.sin(t * 1.8)) * 0.06);
-      const pop = reducedMotion ? 1 : easeOutBack(clamp01((performance.now() - swapAtRef.current) / SWAP_MS));
+      turntable.rotation.y += delta * 0.55 * k;
+      turntable.position.y = TOP_Y + k * Math.abs(Math.sin(t * 1.8)) * 0.06;
+      const grow = clamp01((performance.now() - swapAtRef.current) / SWAP_MS);
+      const pop = reducedMotion ? easeOut(grow) : easeOutBack(grow);
       turntable.scale.setScalar(PIECE_SCALE * Math.max(0.001, pop));
     }
     const tiles = tilesRef.current;
     if (tiles) {
       TILES.forEach((d, i) => {
-        place.position.set(d.x, d.y + Math.sin(t * 0.8 + d.phase) * (reducedMotion ? 0 : 0.25), d.z);
+        place.position.set(d.x, d.y + Math.sin(t * 0.8 + d.phase) * 0.25 * k, d.z);
         place.rotation.set(d.phase + t * d.spin, d.phase * 0.7 + t * d.spin * 0.8, 0);
         place.scale.set(MENU_TILE.across, MENU_TILE.up, MENU_TILE.across);
         place.translateY((-TILE_THICKNESS / 2) * MENU_TILE.up); // turn about the tile's middle, not its base
@@ -109,7 +111,7 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
       });
       tiles.instanceMatrix.needsUpdate = true;
     }
-    camera.position.set(Math.sin(t * 0.3) * 0.25, MENU_CAMERA.position[1], MENU_CAMERA.position[2]);
+    camera.position.set(Math.sin(t * 0.3) * 0.25 * k, MENU_CAMERA.position[1], MENU_CAMERA.position[2]);
     camera.lookAt(...MENU_CAMERA.target);
     camera.updateMatrixWorld();
     if (!anchors) return;

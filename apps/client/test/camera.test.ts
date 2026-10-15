@@ -188,9 +188,8 @@ describe('camera rules (spec #2 §5.3)', () => {
       expect(shot({ beat: beatOf('cardMove', [moved('p2', 'card')]) }).target).toEqual(SPOTS.p2);
     });
 
-    it('cuts instead of gliding with reduced motion', () => {
-      expect(shot({ beat: beatOf('cardResolved', [card('p2', 'p2')]), reducedMotion: true }).cut).toBe(true);
-      expect(shot({ beat: beatOf('cardResolved', [card('p2', 'p2')]) }).cut).toBe(false);
+    it('glides with reduced motion too, never cutting (2026-10-15: reduce, not remove)', () => {
+      expect(shot({ beat: beatOf('cardResolved', [card('p2', 'p2')]), reducedMotion: true }).cut).toBe(false);
     });
   });
 
@@ -206,8 +205,8 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ watch: 'p2', beat: beatOf('slide', [moved('p0', 'snake')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p2 });
   });
 
-  it('cuts instead of swooping with reduced motion', () => {
-    expect(shot({ window: 'mystery', myPick: true, reducedMotion: true })).toMatchObject({ mode: 'swoop', cut: true });
+  it('still swoops with reduced motion, gliding (2026-10-15)', () => {
+    expect(shot({ window: 'mystery', myPick: true, reducedMotion: true })).toMatchObject({ mode: 'swoop', cut: false });
   });
 
   it('swoops onto my win, and follows anyone else who wins', () => {

@@ -118,14 +118,14 @@ export function PlayerColumn({ rows, bubbles = {}, onWatch, reducedMotion }: Pla
     if (pressRef.current.timer !== null) clearTimeout(pressRef.current.timer);
   }, []);
 
-  // Rows that change place slide there from where they were (FLIP), unless motion is reduced.
+  // Rows that change place slide there from where they were (FLIP); with reduced motion, shorter and without the overshoot.
   useLayoutEffect(() => {
     for (const [id, el] of itemsRef.current) {
       const top = el.offsetTop;
       const before = topsRef.current.get(id);
       topsRef.current.set(id, top);
-      if (reducedMotion || before === undefined || before === top || typeof el.animate !== 'function') continue;
-      el.animate([{ transform: `translateY(${before - top}px)` }, { transform: 'none' }], { duration: RESORT_MS, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1.1)' });
+      if (before === undefined || before === top || typeof el.animate !== 'function') continue;
+      el.animate([{ transform: `translateY(${before - top}px)` }, { transform: 'none' }], reducedMotion ? { duration: RESORT_MS / 2, easing: 'ease-out' } : { duration: RESORT_MS, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1.1)' });
     }
   }, [order, reducedMotion]);
 

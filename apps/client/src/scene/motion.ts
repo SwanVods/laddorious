@@ -13,6 +13,9 @@ export interface Pose {
   orb: boolean;
 }
 
+/** Reduced motion keeps every movement, at this share of its size (the user, 2026-10-15: reduce, not remove). */
+export const GENTLE = 0.25;
+
 /** About how far a stacked piece rises: name tags beside a stack use it (stacks themselves use each piece's height). */
 export const STACK_HEIGHT = 1.05;
 const HOP_HEIGHT = 0.55;
@@ -79,15 +82,16 @@ const FLAG_WAVE_MS = 600;
  */
 export function endReaction(beat: PlayingBeat | null, jump: Jump, nowMs: number, reducedMotion = false): { rocket: EndMotion; flag: EndMotion } {
   const still = { rocket: STILL_END, flag: STILL_END };
-  if (reducedMotion || beat?.kind !== 'launch') return still;
+  if (beat?.kind !== 'launch') return still;
+  const k = reducedMotion ? GENTLE : 1;
   if (!beat.events.some((e) => e.type === 'Moved' && e.from === jump.from && e.to === jump.to)) return still;
   const elapsed = nowMs - beat.startedAt;
   const shake = elapsed / ROCKET_SHAKE_MS;
   const wave = (elapsed - (beat.durationMs - FLAG_WAVE_MS)) / FLAG_WAVE_MS;
   const bump = (k: number) => Math.sin(Math.PI * k);
   return {
-    rocket: shake > 0 && shake < 1 ? { sway: 0.1 * Math.sin(6 * Math.PI * shake) * (1 - shake), squash: 1 - 0.12 * bump(shake), pop: 1 + 0.12 * bump(shake) } : STILL_END,
-    flag: wave > 0 && wave < 1 ? { sway: 0.35 * Math.sin(3 * Math.PI * wave) * bump(wave), squash: 1, pop: 1 + 0.12 * bump(wave) } : STILL_END,
+    rocket: shake > 0 && shake < 1 ? { sway: k * 0.1 * Math.sin(6 * Math.PI * shake) * (1 - shake), squash: 1 - k * 0.12 * bump(shake), pop: 1 + k * 0.12 * bump(shake) } : STILL_END,
+    flag: wave > 0 && wave < 1 ? { sway: k * 0.35 * Math.sin(3 * Math.PI * wave) * bump(wave), squash: 1, pop: 1 + k * 0.12 * bump(wave) } : STILL_END,
   };
 }
 
@@ -289,15 +293,15 @@ export function stackLandings(beat: PlayingBeat, boardSize: number): Landing[] {
 
 /** A pose with its landing on top: the lander wobbles side to side (about its own side, which the camera sees), dying away; the piece under it squashes once. */
 export function landingPose(pose: Pose, player: PlayerId, landings: readonly Landing[], nowMs: number, reducedMotion: boolean): Pose {
-  if (reducedMotion) return pose;
+  const k = reducedMotion ? GENTLE : 1;
   for (const l of landings) {
     const since = nowMs - l.atMs;
     if (l.player === player && since >= 0 && since < WIGGLE_MS) {
       const t = since / WIGGLE_MS;
-      return { ...pose, rotation: [pose.rotation[0] + Math.sin(t * Math.PI * 6) * 0.25 * (1 - t), pose.rotation[1], pose.rotation[2]] };
+      return { ...pose, rotation: [pose.rotation[0] + k * Math.sin(t * Math.PI * 6) * 0.25 * (1 - t), pose.rotation[1], pose.rotation[2]] };
     }
     if (l.under === player && since >= 0 && since < SQUASH_MS) {
-      const s = 1 - 0.22 * Math.sin((since / SQUASH_MS) * Math.PI);
+      const s = 1 - k * 0.22 * Math.sin((since / SQUASH_MS) * Math.PI);
       return { ...pose, scale: [pose.scale[0] * (1 + (1 - s) * 0.7), pose.scale[1] * s, pose.scale[2] * (1 + (1 - s) * 0.7)] };
     }
   }
@@ -305,11 +309,11 @@ export function landingPose(pose: Pose, player: PlayerId, landings: readonly Lan
 }
 
 /** Idle bob and sway (spec #2 §6.2); the scene leaves it off with reduced motion. */
-export function withIdle(pose: Pose, nowMs: number, phase: number): Pose {
+export function withIdle(pose: Pose, nowMs: number, phase: number, share = 1): Pose {
   return {
     ...pose,
-    position: [pose.position[0], pose.position[1] + 0.035 * (1 + Math.sin(nowMs / 520 + phase)), pose.position[2]],
-    rotation: [pose.rotation[0] + 0.045 * Math.sin(nowMs / 830 + phase), pose.rotation[1], pose.rotation[2]],
+    position: [pose.position[0], pose.position[1] + share * 0.035 * (1 + Math.sin(nowMs / 520 + phase)), pose.position[2]],
+    rotation: [pose.rotation[0] + share * 0.045 * Math.sin(nowMs / 830 + phase), pose.rotation[1], pose.rotation[2]],
   };
 }
 
@@ -338,11 +342,11 @@ export function crownPose(state: DirectorState, head: Vec3 | null, nowMs: number
   if (!head || !crownWinner(state)) return { position: home, turn: (nowMs / 1000) * 0.9, sparkle: null };
   const turn = (nowMs / 1000) * 0.4;
   const beat = state.beat;
-  if (reducedMotion || beat?.kind !== 'victory') return { position: head, turn, sparkle: null };
+  if (beat?.kind !== 'victory') return { position: head, turn, sparkle: null };
   const elapsed = nowMs - beat.startedAt;
   if (elapsed < CROWN_FLY_MS) return { position: arcPoint(home, head, easeInOut(clamp01(elapsed / CROWN_FLY_MS)), 2.5), turn, sparkle: null };
   const landed = elapsed - CROWN_FLY_MS;
   const k = clamp01(landed / CROWN_BOUNCE_MS);
-  const bounce = 0.35 * Math.abs(Math.sin(2 * Math.PI * k)) * (1 - k);
+  const bounce = (reducedMotion ? GENTLE : 1) * 0.35 * Math.abs(Math.sin(2 * Math.PI * k)) * (1 - k);
   return { position: [head[0], head[1] + bounce, head[2]], turn, sparkle: landed < CROWN_SPARKLE_MS ? landed / CROWN_SPARKLE_MS : null };
 }

@@ -116,7 +116,9 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
     heldRef.current = heldNext({ beat: state.beat, window: state.settled?.view.awaiting.window ?? null, focus: shot.focus, held: heldRef.current });
     panRef.current = panAfterShot(panRef.current, shot.mode);
     const { follow, swoop } = tuning().camera;
-    const k = shot.cut ? 1 : 1 - Math.exp(-delta * (shot.mode === 'swoop' ? swoop.ease : follow.ease));
+    // Reduced motion glides more slowly, never cuts (2026-10-15: reduce, not remove).
+    const ease = (shot.mode === 'swoop' ? swoop.ease : follow.ease) * (reducedMotion ? 0.6 : 1);
+    const k = shot.cut ? 1 : 1 - Math.exp(-delta * ease);
     camera.position.lerp(aim.position.set(...shot.position), k);
     lookRef.current.lerp(aim.target.set(...shot.target), k);
     camera.lookAt(lookRef.current);

@@ -92,9 +92,11 @@ describe('CenterDie (polish spec §4.2)', () => {
     expect(die()).toBeNull();
   });
 
-  it('skips the tumble with reduced motion', () => {
+  it('tumbles for a shorter while with reduced motion (2026-10-15)', () => {
     const push = start(true);
     push([rolled('p0', 1)]);
+    expect(die()?.querySelector('.die-face.tumbling')).not.toBeNull();
+    advance(BEAT_MS.roll * 0.45);
     expect(die()?.querySelector('.die-face.tumbling')).toBeNull();
     expect(screen.getByRole('img', { name: '1' })).toBeTruthy();
   });

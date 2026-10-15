@@ -122,7 +122,7 @@ function cardShot(input: ShotInput): Shot | null {
   const { beat } = input;
   if (beat?.kind === 'cardMove') {
     const move = beat.events.find((e) => e.type === 'Moved');
-    return move?.type === 'Moved' ? { ...onPlayer(input, move.player), cut: input.reducedMotion } : null;
+    return move?.type === 'Moved' ? onPlayer(input, move.player) : null;
   }
   const card = beat?.kind === 'cardResolved' ? beat.events.find((e) => e.type === 'CardResolved') : undefined;
   if (card?.type !== 'CardResolved') return null;
@@ -131,7 +131,7 @@ function cardShot(input: ShotInput): Shot | null {
   const at: Vec3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
   const back = 1 + Math.hypot(b[0] - a[0], b[2] - a[2]) / 10;
   const [x, y, z] = close();
-  return { mode: 'follow', position: offset(at, [x * back, y * back, z * back]), target: at, cut: input.reducedMotion, focus: { player: card.target ?? card.caster } };
+  return { mode: 'follow', position: offset(at, [x * back, y * back, z * back]), target: at, cut: false, focus: { player: card.target ?? card.caster } };
 }
 
 /**
@@ -175,7 +175,7 @@ function overview(input: ShotInput): Shot {
 }
 
 function swoop(at: Vec3, input: ShotInput): Shot {
-  return { mode: 'swoop', position: offset(at, close()), target: at, cut: input.reducedMotion, focus: { player: input.me } };
+  return { mode: 'swoop', position: offset(at, close()), target: at, cut: false, focus: { player: input.me } };
 }
 
 /** Swoops are only for your own moments: your collision, your slide or launch, your Mystery pick (cards get their own shot). */
