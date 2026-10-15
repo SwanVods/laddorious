@@ -304,6 +304,22 @@ export function poseAt(state: DirectorState, player: PlayerId, seat: number, now
   return state.beat ? beatPose(state.beat, state.presentation, player, seat, nowMs, boardSize) : restPose(state.presentation, player, seat);
 }
 
+/**
+ * Where the camera looks for a piece (2026-10-15): the piece itself, except while it hops. Following each hop
+ * up and down, and each hop's start and stop, wobbled the camera (the user felt sick): through hops it
+ * glides in one eased line from the start to the landing, at board height.
+ */
+export function cameraPoint(state: DirectorState, player: PlayerId, seat: number, nowMs: number, boardSize: number): Vec3 | null {
+  const { beat, presentation } = state;
+  const move = beat && presentation && (beat.kind === 'move' || beat.kind === 'stepBack') ? beat.events.find((e): e is MovedEvent => e.type === 'Moved' && e.player === player) : undefined;
+  if (!beat || !presentation || !move) return poseAt(state, player, seat, nowMs, boardSize)?.position ?? null;
+  const legs = tilePath(move.from, move.to, move.bounced, boardSize).length - 1;
+  const stepBack = beat.kind === 'stepBack';
+  const plan = hopSchedule(legs, !stepBack && landsOnStack(beat.after, move), stepBack ? BEAT_MS.stepBackPerTile : BEAT_MS.hopPerTile);
+  const k = easeInOut(clamp01((nowMs - beat.startedAt) / Math.max(1, plan.total)));
+  return lerp3(restPose(presentation, player, seat).position, restPose(beat.after, player, seat).position, k);
+}
+
 /** A piece that landed on top of another: who, the piece directly under it, and when (epoch ms). */
 export interface Landing {
   player: PlayerId;

@@ -61,6 +61,7 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - The vortex has 13 bowl rings (9° of turn a ring), 1,026 triangles; the whirlpool's eye symbol is 0.40 on a 0.25 cap.
 - Rank badges stay in view: after the win a tag whose piece is off screen waits at the screen edge.
 - The camera leaves my Mystery pick as soon as I pick (the screen's `pickedWindow`).
+- Through hops the camera glides in one eased line at board height instead of bobbing with each hop (`cameraPoint` in `motion.ts`; the user felt sick from the wobble). Simulated on a 6-square hop: vertical travel 0.29 -> 0, speed changes 18.1 -> 1.5.
 - Music: the player schedules each song 1.2 s ahead in the audio clock (no Tone transport), songs crossfade over 1.5 s, late notes after a stall are skipped; touch screens ask for `latencyHint: 'playback'` (the user heard stutter on Android Chrome: music and effects, menu too).
 - CI (`.github/workflows/ci.yml`): the first run passed `check`; e2e failed on the desktop freeze, the `shots` project (review screenshots needing a GPU, now left out of CI) and the online flake (now skipped on CI).
 - Not committed: `apps/client/public/tuning.json` has `zoomMin` 0.7 in the working tree, changed outside these commits (the user's, probably).
