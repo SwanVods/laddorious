@@ -17,6 +17,7 @@
     "deploy:cloudflare": "node apps/server/scripts/online.mjs deploy",
     "art": "node art/build.mjs",
     "build": "pnpm --filter @laddorious/client build",
+    "cards": "pnpm --filter @laddorious/client exec vite --open /cards.html",
     "e2e": "pnpm --filter @laddorious/client e2e",
     "shots": "pnpm --filter @laddorious/client exec playwright test --project shots"
   },
