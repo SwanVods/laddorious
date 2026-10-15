@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CardsApi } from './api';
 import { CardForm } from './CardForm';
 import { OddsPanel } from './OddsPanel';
+import { SimulatePanel } from './SimulatePanel';
 
 // The card editor (2026-10-15): every card in the card file, to switch on or off, buff, nerf, or draft.
 
@@ -106,6 +107,7 @@ export function CardsApp({ api }: { api: CardsApi }) {
         <input type="search" aria-label="Search cards" placeholder="Search names and notes" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
       <OddsPanel odds={catalog.odds} onChange={(odds) => change({ ...catalog, odds })} />
+      <SimulatePanel catalog={catalog} />
       <ul className="cards-list">
         {shown.map((c) => (
           <CardRow key={c.id} card={c} selected={c.id === selectedId} onSelect={() => select(c.id)} />

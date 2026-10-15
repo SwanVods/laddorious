@@ -50,3 +50,11 @@
   .card-row-meta { grid-column: 1; }
   .card-row-text { grid-column: 2; grid-row: 1 / span 2; }
 }
+
+/* Simulate (2026-10-15). */
+.simulate { display: grid; gap: 10px; }
+.simulate > button { justify-self: start; font: inherit; padding: 6px 16px; border-radius: 999px; border: 2px solid var(--ink); background: var(--panel-header); color: var(--white); font-weight: 600; cursor: pointer; }
+.simulate > button:disabled { opacity: 0.5; cursor: progress; }
+.simulate-table { overflow-x: auto; }
+.simulate-table table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.simulate-table th, .simulate-table td { padding: 4px 10px; text-align: left; border-bottom: 1px solid rgba(15, 46, 54, 0.15); }
