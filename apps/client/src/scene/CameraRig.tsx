@@ -6,7 +6,7 @@ import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { tuning } from '../app/tuning';
 import { OVERVIEW_TARGET_Z, cameraShot, heldNext, type Focus, type ShotMode } from './camera';
-import { pinchZoom, wheelZoom } from './zoom';
+import { pinchZoom, rememberZoom, savedZoom, wheelZoom } from './zoom';
 import { BOARD_HALF, type Vec3 } from './layout';
 import { NO_PAN, PanDrag, clampPan, dragPan, panAfterShot, panBox, panReach, unitsPerPixel, type Pan } from './pan';
 import { poseAt } from './motion';
@@ -26,7 +26,8 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
   const camera = useThree((s) => s.camera);
   const canvas = useThree((s) => s.gl.domElement);
   // The overview's zoom (2026-10-15): a mouse wheel or a two-finger pinch over the board.
-  const zoomRef = useRef(1);
+  // It starts where the last match left it (2026-10-15).
+  const zoomRef = useRef(savedZoom({ min: tuning().camera.overview.zoomMin, max: tuning().camera.overview.zoomMax }));
   // The zoomed-in overview's pan (board theme spec B5), and the last shot's kind: only the overview pans.
   const panRef = useRef<Pan>(NO_PAN);
   const modeRef = useRef<ShotMode>('overview');
@@ -44,6 +45,7 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       zoomRef.current = wheelZoom(zoomRef.current, e.deltaY, limits());
+      rememberZoom(zoomRef.current);
     };
     const onDown = (e: PointerEvent) => {
       drag.down(e.pointerId, e.clientX, e.clientY);
@@ -65,6 +67,7 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pinch && fingers.size === 2) {
         zoomRef.current = pinchZoom(pinch.zoom, pinch.gap, gap(), limits());
+        rememberZoom(zoomRef.current);
         return;
       }
       const { overview, pan } = tuning().camera;
