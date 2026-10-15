@@ -18,6 +18,14 @@ describe('instanced slots (spec #5 §6)', () => {
     expect(mesh.geometry.boundingBox!.max.y).toBeCloseTo(2.1);
   });
 
+  it("leaves out a model's shadow stand-in: drawn instanced, it would show as a second, rough copy (2026-10-15)", () => {
+    const root = new Group();
+    root.add(new Mesh(new BoxGeometry(1, 1, 1), new MeshStandardMaterial({ name: 'Gold' })));
+    root.add(new Mesh(new BoxGeometry(1, 1, 1), new MeshStandardMaterial({ name: 'Shadow' })));
+    const mesh = slotMeshFromScene(root);
+    expect(Array.isArray(mesh.material) ? mesh.material.map((m) => m.name) : [mesh.material.name]).toEqual(['Gold']);
+  });
+
   it('keeps a one-material model to one material', () => {
     const mesh = slotMeshFromScene(new Mesh(new BoxGeometry(), new MeshStandardMaterial({ name: 'Tint' })));
     expect(Array.isArray(mesh.material)).toBe(false);

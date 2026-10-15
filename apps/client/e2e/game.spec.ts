@@ -29,7 +29,7 @@ test('plays a whole match against the bots, then Play again goes back to matchma
   expect(slotWarnings).toEqual([]); // every Blender model loaded (spec #5 §6)
 });
 
-test('keeps a match within 100 draw calls and 150,000 triangles, models included (spec #2 §6.4)', async ({ page }) => {
+test('keeps a match within 100 draw calls and 156,000 triangles, models included (spec #2 §6.4; 156,000 since 2026-10-15)', async ({ page }) => {
   await startMatch(page);
   const calls: number[] = [];
   const triangles: number[] = [];
@@ -41,7 +41,7 @@ test('keeps a match within 100 draw calls and 150,000 triangles, models included
   expect(Math.max(...calls)).toBeGreaterThan(0);
   expect(Math.max(...calls)).toBeLessThanOrEqual(100);
   expect(Math.max(...triangles)).toBeGreaterThan(0);
-  expect(Math.max(...triangles)).toBeLessThanOrEqual(150_000);
+  expect(Math.max(...triangles)).toBeLessThanOrEqual(156_000);
 });
 
 test('keeps the piece arrows on screen beside the podium on a landscape phone (2026-10-14)', async ({ page }) => {

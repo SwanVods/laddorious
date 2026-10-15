@@ -21,6 +21,8 @@ export function slotMeshFromScene(root: Object3D): SlotMesh {
   root.traverse((node) => {
     if (!(node instanceof Mesh)) return;
     if (Array.isArray(node.material)) throw new Error('a model mesh has several materials');
+    // A shadow stand-in only fills the shadow map of a model drawn on its own; instanced, it would show (2026-10-15).
+    if ((node.material as Material).name === 'Shadow') return;
     geometries.push((node.geometry as BufferGeometry).clone().applyMatrix4(node.matrixWorld));
     materials.push(node.material as Material);
   });
@@ -64,7 +66,8 @@ const END_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>(['slide.vortex', 'sli
 
 /** Every instanced model the game will draw at this quality: the portal ends only on High. */
 export function slotsToPreload(modelEnds: boolean): SlotName[] {
-  return [...MESH_SLOTS].filter((name) => modelEnds || !END_SLOTS.has(name));
+  // The crown is also drawn instanced, as the prop on the platform's right wing (2026-10-15).
+  return [...[...MESH_SLOTS].filter((name) => modelEnds || !END_SLOTS.has(name)), 'crown'];
 }
 
 /** Start loading every instanced model the game will draw (the menu calls this with preloadModels). */

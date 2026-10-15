@@ -105,7 +105,6 @@ export const MODELS: Record<string, ModelRule> = {
   chip: { slot: 'prop.chip', origin: 'base', height: [0.34, 0.38], maxWidth: 2.45, maxTriangles: 150, maxMaterials: 1, requiredMaterials: ['Tint'] },
   card: { slot: 'prop.card', origin: 'base', height: [4.25, 4.4], maxWidth: 3.1, maxTriangles: 600, maxMaterials: 2, requiredMaterials: ['Card', 'Mark'] },
   prop_die: { slot: 'prop.die', origin: 'base', height: [3.15, 3.35], maxWidth: 3.4, maxTriangles: 900, maxMaterials: 2, requiredMaterials: ['Body', 'Pip'] },
-  prop_crown: { slot: 'prop.crown', origin: 'base', height: [2.3, 2.8], maxWidth: 3.8, maxTriangles: 900, maxMaterials: 1, requiredMaterials: ['Gold'] },
   // The menu (board theme spec §3).
   podium: { slot: 'podium', origin: 'base', height: [0.78, 0.82], maxWidth: 3.05, maxTriangles: 1600, maxMaterials: 4, requiredMaterials: ['Top', 'Band', 'Base', 'Ring'] },
   menu_platform: { slot: 'menu.platform', origin: 'base', height: [1.45, 1.55], maxWidth: 5.3, maxTriangles: 1200, maxMaterials: 3, requiredMaterials: ['Deck', 'Stripe', 'Cushion'] },

@@ -45,7 +45,7 @@ describe('the match world', () => {
   });
 
   it('puts the props on the wings, never over the board or in front of it (spec B4)', () => {
-    const props = world.filter((p) => p.slot.startsWith('prop.') || p.slot === 'pad' || p.slot === 'pad.target');
+    const props = world.filter((p) => p.slot.startsWith('prop.') || p.slot === 'pad' || p.slot === 'pad.target' || p.slot === 'crown');
     expect(props.length).toBeGreaterThanOrEqual(6);
     for (const p of props) {
       expect(Math.abs(p.at[0]), p.slot).toBeGreaterThan(BOARD_HALF + 2);
@@ -57,8 +57,17 @@ describe('the match world', () => {
   it('keeps the wings snug: the platform about 10% narrower, the props close to the board (2026-10-15 review)', () => {
     expect(PLATFORM.halfWidth).toBeLessThanOrEqual(23.5);
     expect(PLATFORM.halfWidth - BOARD_HALF).toBeLessThanOrEqual(11);
-    const props = world.filter((p) => p.slot.startsWith('prop.') || p.slot === 'pad' || p.slot === 'pad.target');
+    const props = world.filter((p) => p.slot.startsWith('prop.') || p.slot === 'pad' || p.slot === 'pad.target' || p.slot === 'crown');
     for (const p of props) expect(Math.abs(p.at[0]) - BOARD_HALF, p.slot).toBeLessThan(6.5);
+  });
+
+  it("stands the finish tile's own crown on the right wing, bigger and still (2026-10-15)", () => {
+    const crowns = world.filter((p) => p.slot === 'crown');
+    expect(crowns).toHaveLength(1);
+    expect(crowns[0]!.at[0]).toBeGreaterThan(0);
+    expect(crowns[0]!.scale).toBeGreaterThan(2);
+    expect(crowns[0]!.motion).toBeUndefined();
+    expect(world.some((p) => p.slot === 'prop.crown')).toBe(false);
   });
 
   it('floats the course off the platform, at the sides and back, never in front (spec §4)', () => {
@@ -101,7 +110,8 @@ describe('the menu world', () => {
 describe('loading the world', () => {
   it('preloads every world model with the menu, so a match never starts with the world popping in (spec #5 §6)', () => {
     const slots = new Set([...matchWorld(8), ...menuWorld(8, 0)].map((p) => p.slot));
-    for (const slot of slots) expect(MESH_SLOTS.has(slot), slot).toBe(true);
+    for (const slot of slots) expect(slotsToPreload(true), slot).toContain(slot);
+    expect(slotsToPreload(false)).toContain('crown'); // the wing's crown, drawn instanced on Low too
   });
 
   it("preloads the rocket and flag on Low too, for the wings' props, but not the whirlpool and splat (board theme spec B4)", () => {
@@ -110,6 +120,6 @@ describe('loading the world', () => {
     expect(low).toContain('pad.target');
     expect(low).not.toContain('slide.vortex');
     expect(low).not.toContain('slide.exit');
-    expect(slotsToPreload(true)).toEqual([...MESH_SLOTS]);
+    expect(slotsToPreload(true)).toEqual([...MESH_SLOTS, 'crown']);
   });
 });

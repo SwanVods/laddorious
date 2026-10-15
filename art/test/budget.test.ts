@@ -8,7 +8,8 @@ import { dashPoints } from '../../apps/client/src/scene/tracks';
 import { MODELS } from '../contract';
 import { readGlb, type GlbSummary } from '../glb';
 
-// A busy match, priced with the built models (spec #5 §1: at most 100 draw calls and 150,000 triangles).
+// A busy match, priced with the built models (spec #5 §1: at most 100 draw calls; 156,000 triangles on High since the
+// wing's crown became the finish crown's own model, the user's call on 2026-10-15; Low stays under 100,000).
 // The busiest moment is a roll: four dice tumble while every piece and part shows. Today's boards have
 // 8 slides and 10 pads; cards add a few, so this prices 12 and 14. Paths hide unless a piece stands on
 // their start or a player taps an end (spec #5 A13): at most five show, priced as the costliest kind.
@@ -46,7 +47,8 @@ const USES: Record<string, { copies: number; separate?: boolean; shadows?: boole
   chip: { copies: 6 },
   card: { copies: 3 },
   prop_die: { copies: 1 },
-  prop_crown: { copies: 1 },
+  // The finish crown again, bigger, on the right wing (2026-10-15).
+  prop_crown: { copies: 1, model: 'crown' },
   // The rocket and the flag on the wings are the jump models, drawn again (spec B4).
   prop_rocket: { copies: 1, model: 'pad' },
   prop_flag: { copies: 1, model: 'target' },
@@ -121,10 +123,10 @@ function price(level: 'high' | 'low') {
 }
 
 describe('a busy match with the built models (spec #5 §1)', () => {
-  it.each(['high', 'low'] as const)('stays within 100 draw calls and 150,000 triangles on %s', (level) => {
+  it.each(['high', 'low'] as const)('stays within 100 draw calls and 156,000 triangles on %s', (level) => {
     const { calls, total, rows } = price(level);
     expect(calls, rows).toBeLessThanOrEqual(100);
-    expect(total, rows).toBeLessThanOrEqual(150_000);
+    expect(total, rows).toBeLessThanOrEqual(156_000);
   });
 
   // At the plan's piece sizes a busy match on Low came to about 106,000 triangles; the sculpted pieces

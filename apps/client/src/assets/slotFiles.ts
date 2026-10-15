@@ -26,7 +26,6 @@ export type SlotName =
   | 'prop.chip'
   | 'prop.card'
   | 'prop.die'
-  | 'prop.crown'
   | 'podium'
   | 'menu.platform'
   | 'tile'
@@ -61,7 +60,6 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   'prop.chip': 'chip',
   'prop.card': 'card',
   'prop.die': 'prop_die',
-  'prop.crown': 'prop_crown',
   podium: 'podium',
   'menu.platform': 'menu_platform',
 };
@@ -89,7 +87,6 @@ export const MESH_SLOTS: ReadonlySet<SlotName> = new Set<SlotName>([
   'prop.chip',
   'prop.card',
   'prop.die',
-  'prop.crown',
   'podium',
   'menu.platform',
 ]);
