@@ -54,6 +54,7 @@ pnpm deploy:cloudflare  # build and deploy to Cloudflare (needs `wrangler login`
 pnpm e2e         # Playwright end-to-end tests (see apps/client/README.md)
 pnpm art         # rebuild the Blender models (needs Blender 5.2; see art/README.md)
 pnpm shots       # screenshots of the menu and a match, for reviewing models
+pnpm cards       # the card editor, local only (see Cards below)
 
 pnpm sim board --seed daily-2026-10-03                   # print a generated board and its analysis
 pnpm sim run --matches 1000 --players 4 --policy heuristic --out report.json --log match0.json
@@ -71,6 +72,18 @@ pnpm sim replay match0.json                               # check a recorded mat
 - **The client** runs the host in a Web Worker for offline play, or talks to **the server** (a Cloudflare Worker running the same host) for online play, through the `MatchService` interface.
 
 **The visibility rule:** the client only ever receives what a remote player would, which is `viewFor(state, me)` and `eventsFor(events, me)`. Other players' hands, picks and card targets, and the secret RNG seed, never reach the main thread. That is why the Spec #4 server could replace the local worker without changing the screens.
+
+## Cards
+
+Every card lives in `packages/core/src/cards/cards.json`. Edit it with the card editor:
+
+1. `pnpm cards` opens the editor in your browser (local only; it is never deployed).
+2. Pick a card to change its numbers, rarity, type, who it hits, its steps, or switch it on or off. The card's text writes itself from its steps; the preview shows it. Problems show in red and block Save.
+3. Save writes the card file. Check the change with `git diff`, try it with `pnpm dev` (reload the game's tab) or `pnpm serve`, commit, then deploy (`pnpm deploy:cloudflare`).
+
+Values like "1–6" are picked when a match starts, the same for everyone that match. A card that needs something the engine can't do yet is a **draft**: write its plan in plain words, leave it as a draft, and ask for the building block. Drafts are never dealt.
+
+**Simulate** runs bot matches with the cards on screen (saved or not) and shows how each card does: how often it is dealt and picked, the tiles it gains or costs, and the win rate of players who played it.
 
 ## Changing the rules safely
 

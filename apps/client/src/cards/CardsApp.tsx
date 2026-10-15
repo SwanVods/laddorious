@@ -2,6 +2,7 @@ import { catalogProblems, describeCard, statusOf, type CardCatalog, type CardSta
 import { useEffect, useMemo, useState } from 'react';
 import type { CardsApi } from './api';
 import { CardForm } from './CardForm';
+import { OddsPanel } from './OddsPanel';
 
 // The card editor (2026-10-15): every card in the card file, to switch on or off, buff, nerf, or draft.
 
@@ -16,6 +17,7 @@ export function CardsApp({ api }: { api: CardsApi }) {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const problems = useMemo(() => (catalog ? catalogProblems(catalog) : []), [catalog]);
 
   useEffect(() => {
@@ -53,6 +55,36 @@ export function CardsApp({ api }: { api: CardsApi }) {
     } else setNotice(r.message);
   };
   const general = problems.filter((p) => p.cardId === null);
+  const change = (next: CardCatalog) => {
+    setCatalog(next);
+    setNotice(null);
+  };
+  const select = (id: string | null) => {
+    setSelectedId(id);
+    setDeleting(false);
+  };
+  const freeId = (base: string) => {
+    const taken = new Set(catalog.cards.map((c) => c.id));
+    let n = 1;
+    while (taken.has(`${base}-${n}`)) n++;
+    return `${base}-${n}`;
+  };
+  const newCard = () => {
+    const id = freeId('new-card');
+    const card: CatalogCard = { id, name: `New card ${id.slice('new-card-'.length)}`, rarity: 'common', type: 'movement', status: 'draft', weight: 1, plan: '', target: { condition: 'self', pick: 'self', tieBreak: 'lowest-seat' }, effects: [] };
+    change({ ...catalog, cards: [...catalog.cards, card] });
+    setFilter('all');
+    select(id);
+  };
+  const duplicate = (card: CatalogCard) => {
+    const id = freeId(`${card.id}-copy`);
+    change({ ...catalog, cards: [...catalog.cards, { ...structuredClone(card), id, name: `${card.name} (copy)`, status: 'off' }] });
+    select(id);
+  };
+  const remove = (card: CatalogCard) => {
+    change({ ...catalog, cards: catalog.cards.filter((c) => c.id !== card.id) });
+    select(null);
+  };
 
   return (
     <main className="cards-app">
@@ -68,14 +100,39 @@ export function CardsApp({ api }: { api: CardsApi }) {
             </button>
           ))}
         </div>
+        <button type="button" onClick={newCard}>
+          New card
+        </button>
         <input type="search" aria-label="Search cards" placeholder="Search names and notes" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
+      <OddsPanel odds={catalog.odds} onChange={(odds) => change({ ...catalog, odds })} />
       <ul className="cards-list">
         {shown.map((c) => (
-          <CardRow key={c.id} card={c} selected={c.id === selectedId} onSelect={() => setSelectedId(c.id)} />
+          <CardRow key={c.id} card={c} selected={c.id === selectedId} onSelect={() => select(c.id)} />
         ))}
       </ul>
-      {selected && <CardForm card={selected} problems={problems.filter((p) => p.cardId === selected.id)} onChange={update} />}
+      {selected && (
+        <section className="card-edit" aria-label={`Edit ${selected.name}`}>
+          <CardForm card={selected} problems={problems.filter((p) => p.cardId === selected.id)} onChange={update} />
+          <div className="card-edit-actions">
+            <button type="button" onClick={() => duplicate(selected)}>
+              Duplicate
+            </button>
+            {deleting ? (
+              <>
+                <button type="button" className="danger" onClick={() => remove(selected)}>{`Delete ${selected.name} for good`}</button>
+                <button type="button" onClick={() => setDeleting(false)}>
+                  Keep it
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={() => setDeleting(true)}>
+                Delete
+              </button>
+            )}
+          </div>
+        </section>
+      )}
       <div className="cards-save">
         <button type="button" onClick={() => void save()} disabled={problems.length > 0}>
           Save

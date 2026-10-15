@@ -15,3 +15,38 @@
 .card-row-meta { color: var(--muted-on-paper); font-size: 0.9em; }
 .card-row.movement { --type: var(--type-movement); } .card-row.defense { --type: var(--type-defense); } .card-row.attack { --type: var(--type-attack); } .card-row.risky { --type: var(--type-risky); } .card-row.misc { --type: var(--type-misc); }
 @media (max-width: 720px) { .card-row button { grid-template-columns: 1fr; } }
+
+/* The card form, the odds and the save bar (2026-10-15). */
+.card-edit { display: grid; gap: 12px; padding: 16px; border: 3px solid var(--ink); border-radius: 16px; background: var(--white); }
+.card-form { display: grid; gap: 10px; }
+.card-form label, .odds label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.card-form input, .card-form select, .card-form textarea, .odds input { font: inherit; padding: 4px 8px; border: 2px solid var(--ink); border-radius: 8px; background: var(--white); color: var(--ink); min-width: 0; }
+.card-form input[type='number'], .odds input[type='number'] { width: 5.5em; }
+.card-form textarea { flex: 1 1 320px; min-height: 3.5em; }
+.card-form fieldset, .odds fieldset { display: flex; flex-wrap: wrap; gap: 8px 16px; border: 2px solid var(--line, rgba(15, 46, 54, 0.15)); border-radius: 12px; padding: 10px 12px; }
+.card-form legend, .odds legend { font-weight: 600; padding: 0 4px; }
+.steps, .outcomes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; width: 100%; }
+.step { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px; border-radius: 10px; background: var(--paper); }
+.outcomes > li { display: grid; gap: 6px; padding: 8px; border-left: 4px solid var(--type-risky); width: 100%; }
+.amount { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.card-preview { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--paper-alt); font-weight: 600; }
+.card-problems { margin: 0; padding: 10px 14px 10px 30px; border-radius: 12px; background: #ffe3e6; color: #8a1024; }
+.card-edit-actions, .cards-save { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.card-edit button, .cards-save button, .card-form button { font: inherit; padding: 4px 12px; border-radius: 999px; border: 2px solid var(--ink); background: var(--white); color: var(--ink); cursor: pointer; }
+.cards-save { position: sticky; bottom: 0; padding: 10px 0; background: var(--paper); }
+.cards-save button { background: var(--primary); color: var(--white); font-weight: 600; }
+.cards-save button:disabled { opacity: 0.5; cursor: not-allowed; }
+.card-edit button.danger { background: #c4203a; color: var(--white); }
+.odds { display: grid; gap: 10px; }
+.odds h2, .simulate h2 { font-family: var(--display); font-weight: 400; margin: 0; }
+
+/* Wide screens: the list on the left, the card being edited beside it, staying in view (2026-10-15). */
+@media (min-width: 1000px) {
+  .cards-app { max-width: 1400px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  .cards-app > * { grid-column: 1 / -1; }
+  .cards-app > .cards-list { grid-column: 1; }
+  .cards-app > .card-edit { grid-column: 2; position: sticky; top: 12px; align-self: start; max-height: calc(100vh - 90px); overflow: auto; }
+  .card-row button { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+  .card-row-meta { grid-column: 1; }
+  .card-row-text { grid-column: 2; grid-row: 1 / span 2; }
+}
