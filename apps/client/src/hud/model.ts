@@ -184,6 +184,7 @@ export interface QueueCard {
   caster: PlayerId;
   cardId: string;
   result: CardRecord['result'];
+  roll?: number;
   /** The card resolving right now. */
   current: boolean;
 }
@@ -218,6 +219,7 @@ export function resolutionQueue(record: RoundRecord, beat: Beat | null): QueueCa
     caster,
     cardId: card.cardId,
     result: card.result,
+    ...(card.roll !== undefined ? { roll: card.roll } : {}),
     current: resolving?.type === 'CardResolved' && resolving.caster === caster,
   }));
 }
@@ -428,6 +430,12 @@ export function bannerFor(beat: Beat, me: PlayerId, seats: readonly SeatInfo[]):
         if (e.losers.includes(me)) return { text: 'YOU LOSE', tone: 'bad', delayMs: FACE_OFF_REVEAL_MS };
         return { text: 'DRAW!', tone: 'info', delayMs: FACE_OFF_REVEAL_MS };
       case 'CardResolved':
+        // A card for several players (2026-10-15): my own shield, or my own hit.
+        if (e.blocked?.includes(me)) return { text: 'BLOCKED!', tone: 'cool' };
+        if (e.targets && e.caster !== me) {
+          if (e.targets.includes(me)) return { text: 'HIT!', tone: 'bad' };
+          break;
+        }
         if (e.caster !== me && e.target !== me) break;
         if (e.result === 'blocked') return { text: 'BLOCKED!', tone: 'cool' };
         if (e.result === 'fizzled') return { text: 'FIZZLED', tone: 'info' };

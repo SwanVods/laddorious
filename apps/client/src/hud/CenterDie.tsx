@@ -1,10 +1,14 @@
 import type { PlayerId } from '@laddorious/core';
 import { useEffect, useRef, useState } from 'react';
+import { cardRollAt } from '../director/beats';
 import type { Director } from '../director/director';
 import { DieFace } from '../ui/DieFace';
 
 /** How long my roll stays in the centre, and how fast it tumbles (polish spec §4.2). Times scale with the director. */
-export const CENTER_DIE = { holdMs: 1600, fadeMs: 250, moveMs: 1200, tumbleStepMs: 80 } as const;
+export const CENTER_DIE = { holdMs: 1600, landedMs: 700, fadeMs: 250, moveMs: 1200, tumbleStepMs: 80 } as const;
+
+/** How long a roll stays up before it fades: at least holdMs, and always landedMs on its face after a long tumble (2026-10-16). */
+const holdOf = (roll: { rollMs: number }) => Math.max(CENTER_DIE.holdMs, roll.rollMs + CENTER_DIE.landedMs);
 
 interface Roll {
   face: number;
@@ -38,6 +42,14 @@ export function CenterDie({ director, me, reducedMotion, timeScale = 1 }: { dire
             setMove(null);
             setNow(Date.now());
           }
+          // My own card's die (2026-10-16), once the camera's lead-in is over.
+          const card = cardRollAt(beat);
+          if (card?.player === me) {
+            faceRef.current = null;
+            setRoll({ face: card.face, forced: false, startedAt: card.startedAt, rollMs: card.durationMs });
+            setMove(null);
+            setNow(Date.now());
+          }
         }
         if (state.log === prev.log) return;
         const after = prev.log.at(-1)?.seq ?? 0;
@@ -51,7 +63,7 @@ export function CenterDie({ director, me, reducedMotion, timeScale = 1 }: { dire
     [director, me],
   );
 
-  const dieEnds = roll ? roll.startedAt + (CENTER_DIE.holdMs + CENTER_DIE.fadeMs) * timeScale : 0;
+  const dieEnds = roll ? roll.startedAt + (holdOf(roll) + CENTER_DIE.fadeMs) * timeScale : 0;
   const moveEnds = move ? move.at + CENTER_DIE.moveMs * timeScale : 0;
   const ends = Math.max(dieEnds, moveEnds);
 
@@ -69,13 +81,13 @@ export function CenterDie({ director, me, reducedMotion, timeScale = 1 }: { dire
     return () => clearInterval(id);
   }, [ends]);
 
-  const shown = roll !== null && now < dieEnds ? roll : null;
+  const shown = roll !== null && now >= roll.startedAt && now < dieEnds ? roll : null;
   const note = move !== null && now < moveEnds ? move : null;
   if (!shown && !note) return null;
 
   // Reduced motion tumbles for a shorter while (2026-10-15: reduce, not remove).
   const tumbling = shown !== null && now < shown.startedAt + shown.rollMs * (reducedMotion ? 0.4 : 1);
-  const leaving = shown !== null && note === null && now >= shown.startedAt + CENTER_DIE.holdMs * timeScale;
+  const leaving = shown !== null && note === null && now >= shown.startedAt + holdOf(shown) * timeScale;
   const step = shown ? Math.max(0, Math.floor((now - shown.startedAt) / CENTER_DIE.tumbleStepMs)) : 0;
   const face = shown ? (tumbling ? ((shown.face + step) % 6) + 1 : shown.face) : 0;
 

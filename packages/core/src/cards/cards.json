@@ -21,64 +21,114 @@
       "name": "Long Shot",
       "rarity": "common",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "push",
       "note": "Lempar dadu, player paling jauh di depan mundur sebanyak angka tersebut",
-      "plan": "Roll a die: the leader moves back that many.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "other",
+        "pick": "leader",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": {
+            "die": true,
+            "negate": true
+          }
+        }
+      ]
     },
     {
       "id": "tumble",
       "name": "Tumble",
       "rarity": "common",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "push",
       "note": "Lempar dadu, player di depanmu mundur sebanyak angka tersebut",
-      "plan": "Roll a die: the player just ahead of you moves back that many.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "ahead-of-caster",
+        "pick": "nearest",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": {
+            "die": true,
+            "negate": true
+          }
+        }
+      ]
     },
     {
       "id": "lead-weight",
       "name": "Lead Weight",
       "rarity": "common",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "boot",
       "note": "Lempar dadu, angka dadu player paling jauh di depan berkurang sebanyak angka tersebut selama 1 ronde",
-      "plan": "Roll a die: the leader's next roll is lower by that much.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "other",
+        "pick": "leader",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "add",
+              "value": {
+                "die": true,
+                "negate": true
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "sand-in-the-shoe",
       "name": "Sand in the Shoe",
       "rarity": "common",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "boot",
       "note": "Lempar dadu, angka dadu player di depanmu berkurang sebanyak angka tersebut selama 1 ronde",
-      "plan": "Roll a die: the next roll of the player ahead of you is lower by that much.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "ahead-of-caster",
+        "pick": "nearest",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "add",
+              "value": {
+                "die": true,
+                "negate": true
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "red-light",
@@ -117,16 +167,24 @@
       "name": "Earthquake",
       "rarity": "common",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "push",
       "note": "Lempar dadu, Semua player di selain kamu mundur sebanyak angka tersebut",
-      "plan": "Roll a die: everyone else moves back that many.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "other",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": {
+            "die": true,
+            "negate": true
+          }
+        }
+      ]
     },
     {
       "id": "buckler",
@@ -207,32 +265,59 @@
       "name": "Retreat!",
       "rarity": "common",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "back",
       "note": "SEMUA player bergerak mundur x (x = 1-3)",
-      "plan": "Everyone moves back 1–3.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "everyone",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "values": {
+        "n": {
+          "min": 1,
+          "max": 3
+        }
+      },
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": {
+            "value": "n",
+            "negate": true
+          }
+        }
+      ]
     },
     {
       "id": "forward",
       "name": "Forward!",
       "rarity": "common",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "arrow",
       "note": "SEMUA player bergerak maju x (x = 1-3)",
-      "plan": "Everyone moves forward 1–3.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "everyone",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "values": {
+        "n": {
+          "min": 1,
+          "max": 3
+        }
+      },
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": {
+            "value": "n"
+          }
+        }
+      ]
     },
     {
       "id": "second-thoughts",
@@ -437,16 +522,32 @@
       "name": "Wind Up",
       "rarity": "common",
       "type": "movement",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "die",
       "note": "lempar dadu, mendapatkan tambahan nilai tersebut untuk dadu berikutnya",
-      "plan": "Roll a die: add it to your next roll.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "add",
+              "value": {
+                "die": true
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "coin-flip",
@@ -572,16 +673,33 @@
       "name": "Mud Season",
       "rarity": "rare",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "boot",
       "note": "Lempar dadu, angka dadu semua player di selain kamu berkurang sebanyak angka tersebut selama 1 ronde",
-      "plan": "Roll a die: everyone else's next roll is lower by that much.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "other",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "add",
+              "value": {
+                "die": true,
+                "negate": true
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "pitfall",
@@ -1116,16 +1234,33 @@
       "name": "Blizzard",
       "rarity": "epic",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "boot",
       "note": "Lempar dadu, angka dadu semua player di selain kamu berkurang sebanyak angka tersebut selama 3 ronde",
-      "plan": "Roll a die: everyone else's rolls are lower by that much for 3 rounds.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "other",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "add",
+              "value": {
+                "die": true,
+                "negate": true
+              }
+            },
+            "lifetime": {
+              "rounds": 3
+            }
+          }
+        }
+      ]
     },
     {
       "id": "switcheroo",

@@ -70,6 +70,7 @@ export function ordinal(rank: number): string {
 
 export function targetLine(rule: TargetRule): string {
   if (rule.condition === 'self') return 'You';
+  if (rule.pick === 'all') return rule.condition === 'everyone' ? 'Everyone' : 'Everyone else';
   if (rule.condition === 'section') return `A player on tiles ${rule.section?.[0]}–${rule.section?.[1]}`;
   if (rule.condition === 'ahead-of-caster') return rule.pick === 'furthest' ? 'Furthest player ahead' : 'Nearest player ahead';
   if (rule.condition === 'behind-of-caster') return rule.pick === 'furthest' ? 'Furthest player behind' : 'Nearest player behind';

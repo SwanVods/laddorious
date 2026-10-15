@@ -15,6 +15,8 @@ export interface CardRecord {
   cardId: string;
   /** Hit, Blocked or Fizzled once the card has resolved. */
   result: CardResult | null;
+  /** The card's own die, once it has rolled (2026-10-15). */
+  roll?: number;
 }
 
 export interface RoundRecord {
@@ -53,7 +55,10 @@ export function roundRecord(log: readonly LoggedEvent[]): RoundRecord {
         break;
       case 'CardResolved': {
         const card = record.cards[e.caster];
-        if (card && card.cardId === e.cardId) card.result = e.result;
+        if (card && card.cardId === e.cardId) {
+          card.result = e.result;
+          if (e.roll !== undefined) card.roll = e.roll;
+        }
         break;
       }
     }

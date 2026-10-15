@@ -80,10 +80,19 @@ function lineFor(e: GameEvent, themes: ReadonlyMap<string, [string, string] | nu
       return [{ player: e.player }, ' picked ', cardInfo(e.cardId).name];
     case 'CardResolved': {
       const name = cardInfo(e.cardId).name;
+      const rolled = e.roll !== undefined ? `: rolled ${e.roll}` : '';
       if (e.result === 'fizzled') return [{ player: e.caster }, `'s ${name} fizzled`];
+      if (e.targets) {
+        // A card for several players (2026-10-15): one line, who it hit and who blocked it.
+        const parts: FeedPart[] = [{ player: e.caster }, ` used ${name}${rolled}`];
+        const hit = e.targets.filter((t) => t !== e.caster);
+        if (hit.length > 0) parts.push(', hit ', ...listParts(hit));
+        if (e.blocked && e.blocked.length > 0) parts.push(', ', ...listParts(e.blocked), ' blocked it');
+        return parts;
+      }
       if (e.result === 'blocked' && e.target) return [{ player: e.target }, ` blocked ${name}`];
-      if (e.target && e.target !== e.caster) return [name, ' hit ', { player: e.target }];
-      return [{ player: e.caster }, ` used ${name}`];
+      if (e.target && e.target !== e.caster) return [name, e.roll !== undefined ? ` rolled ${e.roll} and hit ` : ' hit ', { player: e.target }];
+      return [{ player: e.caster }, ` used ${name}${rolled}`];
     }
     case 'Clash':
       return ['Clash! ', e.cardIds.map((id) => cardInfo(id).name).join(' and '), ' cancel out'];

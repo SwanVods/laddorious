@@ -1,5 +1,5 @@
 import type { Amount, CatalogCard, Templated } from './catalogFile';
-import type { EffectOp, Lifetime, TargetRule } from './types';
+import { isDie, usesDie, type DieAmount, type EffectOp, type Lifetime, type TargetRule } from './types';
 
 // A card's effect text, written from its steps (2026-10-15), so a buff or nerf keeps the text true.
 
@@ -8,6 +8,7 @@ type Op = Templated<EffectOp>;
 /** Who a card hits, as the subject of a sentence; null for the caster. */
 function subject(t: TargetRule): string | null {
   if (t.condition === 'self') return null;
+  if (t.pick === 'all') return t.condition === 'everyone' ? 'Everyone' : 'Everyone else';
   if (t.condition === 'section') return `A player on tiles ${t.section?.[0]}–${t.section?.[1]}`;
   if (t.pick === 'leader') return 'The leader';
   if (t.pick === 'last') return 'The player in last place';
@@ -23,16 +24,21 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
   if (card.text) return card.text;
   const who = subject(card.target);
   /** A number as shown: fixed, picked, or the value's range. `sign` -1 shows it as a positive distance back. */
-  const num = (a: Amount, sign = 1): string => {
+  const num = (a: Amount | DieAmount, sign = 1): string => {
     if (typeof a === 'number') return String(a * sign);
+    if (isDie(a)) return 'that many';
     const picked = values?.[a.value];
     const neg = (a.negate ? -1 : 1) * sign;
     if (picked !== undefined) return String(picked * neg);
     const r = card.values?.[a.value];
     return r ? `${r.min}–${r.max}` : a.value;
   };
-  const isBack = (a: Amount) => (typeof a === 'number' ? a < 0 : !!a.negate);
-  const poss = who ? `${who}'s` : 'Your';
+  const isBack = (a: Amount | DieAmount) => (typeof a === 'number' ? a < 0 : !!a.negate);
+  /** "Your next roll", "The leader's next roll", "The next roll of the player just ahead of you". */
+  const nextRoll = (what = 'next roll'): string => {
+    if (!who) return `Your ${what}`;
+    return who.includes(' of ') ? `The ${what} of ${lower(who)}` : `${who}'s ${what}`;
+  };
   const life = (l: Templated<Lifetime>, shield: boolean): string => {
     if (l === 'permanent') return ' for the rest of the match';
     if (l.rounds !== undefined) return ` (${num(l.rounds)} round${l.rounds === 1 ? '' : 's'})`;
@@ -55,14 +61,20 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
         const charges = l !== 'permanent' && typeof l.charges === 'number' ? l.charges : 1;
         switch (p.hook) {
           case 'diceFace':
-            return `${poss} next die shows ${num(p.set)}${life(l, false)}.`;
+            return `${nextRoll('next die')} shows ${num(p.set)}${life(l, false)}.`;
           case 'diceTotal':
             if (p.op === 'multiply') {
               const x = num(p.value);
-              return `${poss} next roll is ${x === '2' ? 'doubled' : x === '3' ? 'tripled' : `×${x}`}${life(l, false)}.`;
+              return `${nextRoll()} is ${x === '2' ? 'doubled' : x === '3' ? 'tripled' : `×${x}`}${life(l, false)}.`;
             }
-            if (p.op === 'replace') return `${poss} next roll is exactly ${num(p.value)}${life(l, false)}.`;
-            return `${poss} next roll gets ${isBack(p.value) ? '−' + num(p.value, -1) : '+' + num(p.value)}${life(l, false)}.`;
+            if (p.op === 'replace') return `${nextRoll()} is exactly ${num(p.value)}${life(l, false)}.`;
+            if (isDie(p.value)) {
+              // The card's die (2026-10-15): "that much"; a rounds-only effect lowers every roll till it ends.
+              const rounds = l !== 'permanent' && l.charges === undefined && l.rounds !== undefined;
+              if (!p.value.negate) return who ? `${nextRoll()} gets that much more${life(l, false)}.` : `Add it to your next roll${life(l, false)}.`;
+              return rounds ? `${nextRoll('rolls')} are lower by that much${life(l, false)}.` : `${nextRoll()} is lower by that much${life(l, false)}.`;
+            }
+            return `${nextRoll()} gets ${isBack(p.value) ? '−' + num(p.value, -1) : '+' + num(p.value)}${life(l, false)}.`;
           case 'beforeAttack':
             return `Block the next ${charges > 1 ? `${charges} attacks` : 'attack'} on ${who ? lower(who) : 'you'}${life(l, true)}.`;
           case 'beforeSnake':
@@ -92,5 +104,6 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
         return `Next time you land on a snake head, move forward ${num(op.amount)} after sliding.`;
     }
   };
-  return upper(card.effects.map(sentence).join(' '));
+  const text = card.effects.map(sentence).join(' ');
+  return usesDie(card) ? `Roll a die: ${lower(text)}` : upper(text);
 }

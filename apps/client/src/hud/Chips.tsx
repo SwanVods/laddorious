@@ -38,7 +38,7 @@ export function CardChip({ card }: { card: 'facedown' | CardRecord }) {
     );
   }
   const info = cardInfo(card.cardId);
-  const label = card.result ? `${info.name}: ${RESULT_NAMES[card.result]}` : info.name;
+  const label = card.result ? `${info.name}: ${RESULT_NAMES[card.result]}${card.roll !== undefined ? `, rolled ${card.roll}` : ''}` : info.name;
   return (
     <span className={`chip chip-card ${info.type} ${info.rarity}`} role="img" aria-label={label}>
       <Icon name={info.icon} />

@@ -33,7 +33,7 @@ export function CardList({ cards, seats }: { cards: readonly QueueCard[]; seats:
               </span>
               <small className="card-line-gist">{info.summary}</small>
             </span>
-            {card.result && <em className={`card-line-result ${card.result}`}>{RESULT_NAMES[card.result]}</em>}
+            {card.result && <em className={`card-line-result ${card.result}`}>{RESULT_NAMES[card.result]}{card.roll !== undefined && ` · rolled ${card.roll}`}</em>}
           </li>
         );
       })}

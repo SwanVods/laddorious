@@ -2,10 +2,12 @@ import type { BoardConfig } from '../board/config';
 import { RARITIES } from '../board/types';
 import {
   CARD_TYPES,
+  isDie,
+  usesDie,
   type BoardEditLifetime,
   type CardDef,
+  type CardEffectParams,
   type EffectOp,
-  type EffectParams,
   type Lifetime,
   type MoveCause,
 } from '../cards/types';
@@ -43,7 +45,7 @@ function checkAfterMove(cause: MoveCause, lifetime: Lifetime, where: string): vo
   }
 }
 
-function checkParams(params: EffectParams, lifetime: Lifetime, where: string): void {
+function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string): void {
   switch (params.hook) {
     case 'diceFace':
       check(params.die === 'first' || params.die === 'each', where, 'diceFace.die must be first or each');
@@ -51,8 +53,8 @@ function checkParams(params: EffectParams, lifetime: Lifetime, where: string): v
       return;
     case 'diceTotal':
       check(['replace', 'multiply', 'add'].includes(params.op), where, 'diceTotal.op must be replace, multiply or add');
-      check(isInt(params.value), where, 'diceTotal.value must be an integer');
-      check(params.op === 'add' || params.value >= 0, where, 'diceTotal replace/multiply value must be >= 0');
+      check(isInt(params.value) || (params.op === 'add' && isDie(params.value)), where, DIE_PLACES);
+      check(params.op === 'add' || (params.value as number) >= 0, where, 'diceTotal replace/multiply value must be >= 0');
       return;
     case 'beforeSnake':
     case 'beforeAttack':
@@ -67,13 +69,25 @@ function checkParams(params: EffectParams, lifetime: Lifetime, where: string): v
   }
 }
 
+const DIE_PLACES = "the card's die can only be used to move or to add to a roll";
+
+/** A card's steps with the card's die taken out of the places it may go, so any die left is misplaced. */
+function withoutAllowedDie(op: EffectOp): EffectOp {
+  if (op.op === 'moveRelative' && isDie(op.amount)) return { ...op, amount: 0 };
+  if (op.op === 'addEffect' && op.template.params.hook === 'diceTotal' && op.template.params.op === 'add' && isDie(op.template.params.value)) {
+    return { ...op, template: { ...op.template, params: { ...op.template.params, value: 0 } } };
+  }
+  if (op.op === 'gamble') return { ...op, outcomes: op.outcomes.map((o) => ({ ...o, ops: o.ops.map(withoutAllowedDie) })) };
+  return op;
+}
+
 function checkOps(ops: EffectOp[], where: string): void {
   check(Array.isArray(ops), where, 'effects must be an array');
   ops.forEach((op, i) => {
     const at = `${where}[${i}]`;
     switch (op.op) {
       case 'moveRelative':
-        check(isInt(op.amount), at, 'moveRelative.amount must be an integer');
+        check(isInt(op.amount) || isDie(op.amount), at, "moveRelative.amount must be an integer or the card's die");
         return;
       case 'moveTo':
         check(op.rule === 'nearest-ladder-foot-ahead', at, 'unknown moveTo rule');
@@ -124,12 +138,15 @@ export function validateCardDef(c: CardDef): void {
   check(RARITIES.includes(c.rarity), where, `unknown rarity ${String(c.rarity)}`);
   check(isPositiveInt(c.weight), where, 'weight must be a positive integer');
   const t = c.target;
-  check(['self', 'other', 'ahead-of-caster', 'behind-of-caster', 'section'].includes(t?.condition), where, 'unknown target condition');
-  check(['self', 'nearest', 'furthest', 'leader', 'last'].includes(t.pick), where, 'unknown target pick');
+  check(['self', 'other', 'everyone', 'ahead-of-caster', 'behind-of-caster', 'section'].includes(t?.condition), where, 'unknown target condition');
+  check(['self', 'nearest', 'furthest', 'leader', 'last', 'all'].includes(t.pick), where, 'unknown target pick');
+  check(t.condition !== 'everyone' || t.pick === 'all', where, "a card for everyone must hit them all (pick 'all')");
+  check(t.pick !== 'all' || !Array.isArray(c.effects) || !c.effects.some((op) => op?.op === 'boardEdit'), where, "A card that hits several players can't change the board yet.");
   check(t.tieBreak === 'random' || t.tieBreak === 'lowest-seat', where, 'unknown target tieBreak');
   if (t.condition === 'section') {
     check(Array.isArray(t.section) && isInt(t.section[0]) && isInt(t.section[1]) && t.section[0] <= t.section[1], where, 'section must be [from, to]');
   }
+  check(!Array.isArray(c.effects) || !usesDie({ effects: c.effects.map(withoutAllowedDie) }), where, DIE_PLACES);
   checkOps(c.effects, `${where}.effects`);
 }
 

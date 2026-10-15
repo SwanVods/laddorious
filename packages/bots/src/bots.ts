@@ -3,6 +3,7 @@ import {
   createStream,
   nextInt,
   type CardDef,
+  type CardNumber,
   type ChallengeChoice,
   type EffectOp,
   type Input,
@@ -72,10 +73,12 @@ export class RandomBot implements Bot {
 export function scoreCard(card: CardDef, view: PlayerView): number {
   const me = view.players.find((p) => p.id === view.me)!;
   const selfTarget = card.target.condition === 'self';
+  // The card's own die counts as its average, 3.5 (2026-10-15).
+  const n = (a: CardNumber): number => (typeof a === 'number' ? a : a.negate ? -3.5 : 3.5);
   const value = (op: EffectOp): number => {
     switch (op.op) {
       case 'moveRelative':
-        return selfTarget ? op.amount : -op.amount * 0.8;
+        return selfTarget ? n(op.amount) : -n(op.amount) * 0.8;
       case 'moveTo':
         return 6;
       case 'swap': {
@@ -86,9 +89,9 @@ export function scoreCard(card: CardDef, view: PlayerView): number {
         const p = op.template.params;
         if (p.hook === 'diceFace') return 3;
         if (p.hook === 'diceTotal') {
-          if (p.op === 'multiply') return 4 * (p.value - 1);
-          if (p.op === 'replace') return p.value - 4;
-          return selfTarget ? p.value : -p.value;
+          if (p.op === 'multiply') return 4 * (n(p.value) - 1);
+          if (p.op === 'replace') return n(p.value) - 4;
+          return selfTarget ? n(p.value) : -n(p.value);
         }
         return 2;
       }
