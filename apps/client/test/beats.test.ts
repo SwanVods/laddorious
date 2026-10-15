@@ -55,9 +55,9 @@ describe('buildTimeline', () => {
     expect(beats[3]!.durationMs).toBeGreaterThanOrEqual(BEAT_MS.faceOffReveal + BANNER_MS);
     const watching = buildTimeline(chain, start({ p0: 10, p1: 6 }), 'p2', SIZE);
     expect(watching.map((b) => b.durationMs).slice(2, 4)).toEqual([BEAT_MS.faceOff, BEAT_MS.faceOffResult]);
-    expect(beats[2]!.after.faceOffs).toEqual([{ challengeId: 'c1', tile: 6, players: ['p0', 'p1'] }]);
+    expect(beats[2]!.after.faceOffs).toEqual([{ challengeId: 'c1', tile: 6, players: ['p0', 'p1'], decided: false }]);
     // The face-off holds through the result and ends with the knock-back (2026-10-14).
-    expect(beats[3]!.after.faceOffs).toEqual([{ challengeId: 'c1', tile: 6, players: ['p0', 'p1'] }]);
+    expect(beats[3]!.after.faceOffs).toEqual([{ challengeId: 'c1', tile: 6, players: ['p0', 'p1'], decided: true }]);
     expect(beats[4]!.after.faceOffs).toEqual([]);
     expect(beats[5]!.after.positions.p0).toBe(1);
   });
