@@ -1,25 +1,30 @@
-import { STEP_KINDS, stepKindOf, type Amount, type CatalogCard, type EffectOp, type StepField, type Templated } from '@laddorious/core';
+import { STEP_KINDS, isDie, stepKindOf, type Amount, type CatalogCard, type DieAmount, type EffectOp, type StepField, type Templated } from '@laddorious/core';
 
 type Op = Templated<EffectOp>;
 
-/** A number field: a fixed number, or one of the card's named values. */
-function AmountInput({ label, value, names, onChange, field }: { label: string; value: Amount; names: string[]; onChange: (v: Amount) => void; field: StepField }) {
-  const isValue = typeof value !== 'number';
+/** A number, a named value, or (where the field allows it) the card's own die (2026-10-15). */
+type AmountValue = Amount | DieAmount;
+
+/** A number field: a fixed number, one of the card's named values, or the card's die. */
+function AmountInput({ label, value, names, onChange, field }: { label: string; value: AmountValue; names: string[]; onChange: (v: AmountValue) => void; field: StepField }) {
+  const asNumber = typeof value === 'number' ? value : null;
+  const named = typeof value === 'object' && 'value' in value ? value : null;
+  const die = isDie(value) ? value : null;
+  const negate = (on: boolean) => (on ? { negate: true as const } : {});
   return (
     <span className="amount">
-      {isValue ? (
-        <select aria-label={label} value={value.value} onChange={(e) => onChange({ ...value, value: e.target.value })}>
+      {named && (
+        <select aria-label={label} value={named.value} onChange={(e) => onChange({ ...named, value: e.target.value })}>
           {names.map((n) => <option key={n} value={n}>{`value ${n}`}</option>)}
         </select>
-      ) : (
-        <input aria-label={label} type="number" min={field.min} max={field.max} value={value} onChange={(e) => onChange(Number(e.target.value))} />
       )}
-      {names.length > 0 && (
-        <button type="button" onClick={() => onChange(isValue ? (field.min ?? 1) : { value: names[0]! })}>{isValue ? 'Use a number' : 'Use a value'}</button>
-      )}
-      {isValue && (
-        <label><input type="checkbox" checked={!!value.negate} onChange={(e) => onChange({ value: value.value, ...(e.target.checked ? { negate: true } : {}) })} /> negative</label>
-      )}
+      {asNumber !== null && <input aria-label={label} type="number" min={field.min} max={field.max} value={asNumber} onChange={(e) => onChange(Number(e.target.value))} />}
+      {die && <span aria-label={label}>the card's die</span>}
+      {asNumber === null && <button type="button" onClick={() => onChange(field.min ?? 1)}>Use a number</button>}
+      {names.length > 0 && !named && <button type="button" onClick={() => onChange({ value: names[0]! })}>Use a value</button>}
+      {field.die && !die && <button type="button" onClick={() => onChange({ die: true })}>Use the card's die</button>}
+      {named && <label><input type="checkbox" checked={!!named.negate} onChange={(e) => onChange({ value: named.value, ...negate(e.target.checked) })} /> negative</label>}
+      {die && <label><input type="checkbox" checked={!!die.negate} onChange={(e) => onChange({ die: true, ...negate(e.target.checked) })} /> negative</label>}
     </span>
   );
 }
@@ -52,7 +57,7 @@ export function StepsEditor({ ops, card, onChange }: { ops: Op[]; card: CatalogC
             ) : (
               kind.fields.map((f) =>
                 f.kind === 'amount' ? (
-                  <AmountInput key={f.key} field={f} label={`${kind.label}: ${f.label}`} value={values[f.key] as Amount} names={names} onChange={(v) => set(i, kind.write({ ...values, [f.key]: v }))} />
+                  <AmountInput key={f.key} field={f} label={`${kind.label}: ${f.label}`} value={values[f.key] as AmountValue} names={names} onChange={(v) => set(i, kind.write({ ...values, [f.key]: v }))} />
                 ) : (
                   <label key={f.key}>{f.label} <input aria-label={`${kind.label}: ${f.label}`} type="number" min={f.min} value={values[f.key] as number} onChange={(e) => set(i, kind.write({ ...values, [f.key]: Number(e.target.value) }))} /></label>
                 ),

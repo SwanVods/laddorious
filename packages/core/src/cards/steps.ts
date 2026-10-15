@@ -13,6 +13,8 @@ export interface StepField {
   min?: number;
   max?: number;
   choices?: Array<[string, string]>;
+  /** The field may be the card's own die (2026-10-15). */
+  die?: boolean;
 }
 export interface StepKind {
   id: string;
@@ -76,7 +78,7 @@ function boardKind(id: string, label: string, kind: 'snake' | 'ladder', length: 
 
 export const STEP_KINDS: StepKind[] = [
   {
-    id: 'move', label: 'Move', fields: [{ key: 'amount', label: 'amount', kind: 'amount' }],
+    id: 'move', label: 'Move', fields: [{ key: 'amount', label: 'amount', kind: 'amount', die: true }],
     make: () => ({ op: 'moveRelative', amount: 3 }),
     read: (op) => (op.op === 'moveRelative' ? { amount: op.amount } : null),
     write: (v) => ({ op: 'moveRelative', amount: v.amount as Amount }),
@@ -89,7 +91,7 @@ export const STEP_KINDS: StepKind[] = [
   },
   { id: 'swap', label: 'Swap places', fields: [], make: () => ({ op: 'swap' }), read: (op) => (op.op === 'swap' ? {} : null), write: () => ({ op: 'swap' }) },
   effectKind('dieShows', 'Next die shows', 'diceFace', { die: 'first' }, { key: 'set', label: 'face', kind: 'amount', min: 1, max: 6 }, { set: 6, charges: 1, rounds: 0 }),
-  effectKind('rollPlus', 'Next roll + / −', 'diceTotal', { op: 'add' }, { key: 'value', label: 'plus (negative = minus)', kind: 'amount' }, { value: 2, charges: 1, rounds: 0 }),
+  effectKind('rollPlus', 'Next roll + / −', 'diceTotal', { op: 'add' }, { key: 'value', label: 'plus (negative = minus)', kind: 'amount', die: true }, { value: 2, charges: 1, rounds: 0 }),
   effectKind('rollTimes', 'Next roll ×', 'diceTotal', { op: 'multiply' }, { key: 'value', label: 'times', kind: 'amount', min: 0 }, { value: 2, charges: 1, rounds: 0 }),
   effectKind('rollExactly', 'Next roll is exactly', 'diceTotal', { op: 'replace' }, { key: 'value', label: 'total', kind: 'amount', min: 0 }, { value: 4, charges: 1, rounds: 0 }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
@@ -130,4 +132,6 @@ export const TARGETS: Array<[string, string, TargetRule]> = [
   ['furthest', 'The furthest player ahead', { condition: 'ahead-of-caster', pick: 'furthest', tieBreak: 'random' }],
   ['behind', 'The player just behind', { condition: 'behind-of-caster', pick: 'nearest', tieBreak: 'random' }],
   ['last', 'The player in last place', { condition: 'other', pick: 'last', tieBreak: 'random' }],
+  ['others', 'Everyone else', { condition: 'other', pick: 'all', tieBreak: 'lowest-seat' }],
+  ['everyone', 'Everyone', { condition: 'everyone', pick: 'all', tieBreak: 'lowest-seat' }],
 ];
