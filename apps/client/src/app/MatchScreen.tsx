@@ -33,6 +33,7 @@ import { FullscreenButton } from '../ui/FullscreenButton';
 import { Icon } from '../ui/Icon';
 import { ToastHost, showToast } from '../ui/toasts';
 import { useHotkeys } from '../ui/useHotkeys';
+import { useDisposeOnUnmount, useOncePer } from './once';
 
 /** How often the window countdown redraws. */
 const TICK_MS = 250;
@@ -98,9 +99,10 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
     ];
     return () => {
       for (const off of offs) off();
-      director.dispose();
     };
   }, [session, director, sound]);
+  // The director stops only when the screen really goes: StrictMode's pretend unmount (dev) would drop updates held for it (2026-10-15).
+  useDisposeOnUnmount(() => director.dispose());
 
   const settled = useStore(director.store, (s) => s.settled);
   // The match's sounds, in time with the beats (spec #3 §5).
@@ -139,9 +141,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const cardPick = view && view.awaiting.windowId !== pickedWindow ? cardPickModel(view, beat) : null;
   // The card pick fans out (spec #3 §5).
   const pickWindow = cardPick ? (view?.awaiting.windowId ?? null) : null;
-  useEffect(() => {
-    if (pickWindow !== null) sound.playNow('C1');
-  }, [pickWindow, sound]);
+  useOncePer(pickWindow, () => sound.playNow('C1'));
   const watched = seats.find((s) => s.playerId === watch);
 
   const leave = () => {

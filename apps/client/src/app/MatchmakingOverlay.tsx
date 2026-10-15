@@ -3,6 +3,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { Matchmaking, MatchmakingState, MatchSession, SeatInfo } from '../service/matchService';
 import { Portrait } from '../ui/PieceIcon';
 import { useHotkeys } from '../ui/useHotkeys';
+import { useOncePer } from './once';
 
 /** "Play with bots" appears once a search has run this long (spec #2 C7). */
 export const PLAY_WITH_BOTS_AFTER_MS = 15_000;
@@ -56,10 +57,13 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry,
   }, [state]);
 
   const found = state?.kind === 'found' ? state.session : null;
-  useEffect(() => {
-    if (!found) return;
+  // MATCH FOUND and the countdown's start, once per match found (StrictMode runs effects twice in dev, 2026-10-15).
+  useOncePer(found, () => {
     sound.playNow('Q2');
     sound.playNow('Q3');
+  });
+  useEffect(() => {
+    if (!found) return;
     let left = 3;
     const id = setInterval(() => {
       left -= 1;
@@ -71,7 +75,7 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry,
       handlersRef.current.onReady(found);
     }, COUNT_MS);
     return () => clearInterval(id);
-  }, [found, sound]);
+  }, [found]);
 
   useHotkeys({ Escape: () => matchmaking.cancel() }, state?.kind === 'searching' || state?.kind === 'unreachable');
 
