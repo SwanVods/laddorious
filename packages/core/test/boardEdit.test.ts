@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { applyPlannedEdit, planBoardEdit, revertEdit } from '../src/cards/boardEdit';
 import type { BoardEditOp } from '../src/index';
+import { boardViolations } from '../src/board/invariants';
+import { laneCenterline, lanesTouch } from '../src/board/layout';
 import { makeBoard } from './support/fixtures';
 
 const create = (kind: 'snake' | 'ladder', length: number): BoardEditOp => ({
@@ -24,6 +26,14 @@ describe('planBoardEdit', () => {
     // +2 (tile 12) is where the ladder 5→12 lands; a slide from 13 would end on 5, that ladder's start; tile 14 works.
     const board = makeBoard(100, [[5, 12]]);
     expect(planBoardEdit(board, create('snake', 8), 10, 'x1')).toEqual({ added: [{ id: 'x1', from: 14, to: 6 }], removed: [] });
+  });
+
+  it("create never lays a slide across another slide's lane (2026-10-15)", () => {
+    const board = makeBoard(100, [[15, 8]]);
+    const plan = planBoardEdit(board, create('snake', 8), 10, 'x1');
+    for (const j of plan?.added ?? []) expect(lanesTouch(laneCenterline(j.from, j.to), laneCenterline(15, 8)), `${j.from}→${j.to}`).toBe(false);
+    // The engine's own board check agrees.
+    if (plan) expect(boardViolations({ ...board, jumps: [...board.jumps, ...plan.added] })).toEqual([]);
   });
 
   it('create fizzles when every tile it could use holds a jump end', () => {
