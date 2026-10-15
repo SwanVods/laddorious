@@ -52,8 +52,11 @@ export const PARTS = {
   corner: { x: 0.6, z: -0.65 },
   /** The flag stands a little further in: its pennant reaches right of its pole. */
   flagCorner: { x: 0.5, z: -0.7 },
-  /** A ladder's start is a small launch rocket, standing on its fins (2026-10-14): the symbol stands here, just in front of its porthole, facing the camera (+Z). */
-  rocket: { y: 0.413, z: 0.193, height: 0.71 },
+  /**
+   * A ladder's start is a small launch rocket, standing on its fins (2026-10-14): the symbol stands here, just in front of its porthole,
+   * facing the camera (+Z). Its flame plume hangs from its nozzle (2026-10-15).
+   */
+  rocket: { y: 0.413, z: 0.193, height: 0.71, nozzle: 0.06 },
   /** At most 0.44: lanes a clearance apart never overlap, vortices and exits included (polish spec 4.1). */
   vortexRadius: 0.43,
   /** The still cap in a whirlpool's eye: its radius, and its top, where the symbol lies. Wider since 2026-10-15, for a bigger symbol. */

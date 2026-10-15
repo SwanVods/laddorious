@@ -206,6 +206,11 @@ export function padGeometry(): BufferGeometry {
   return mergeGeometries([body.toNonIndexed(), nose.toNonIndexed()])!;
 }
 
+/** A rocket's flame plume (2026-10-15): a tangerine cone standing on its wide end, which the game turns over under the nozzle. */
+export function plumeGeometry(): BufferGeometry {
+  return new ConeGeometry(0.085, 0.42, 12).translate(0, 0.21, 0);
+}
+
 /** A ladder's end: a flag, its pole left of centre and its pennant where the game stands the gold symbol (PARTS.flag). */
 export function targetGeometry(): BufferGeometry {
   const pole = new CylinderGeometry(0.03, 0.03, PARTS.flag.height, 8).translate(-0.17, PARTS.flag.height / 2, 0);

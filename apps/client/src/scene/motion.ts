@@ -64,21 +64,32 @@ export function restPose(state: PresentationState, player: PlayerId, seat: numbe
   return still([at[0], at[1] + lift, at[2] + forward], facing);
 }
 
-/** How a rocket or a flag is moving: a sway (radians), a squash (height scale) and a pop (overall scale). */
+/**
+ * How a rocket or a flag is moving: a sway (radians), a squash (height scale), a pop (overall scale), a lift
+ * off the ground (a rocket taking off with its piece) and a flare (0 to 1, the rocket's flame plume).
+ */
 export interface EndMotion {
   sway: number;
   squash: number;
   pop: number;
+  lift: number;
+  flare: number;
 }
 
-export const STILL_END: EndMotion = { sway: 0, squash: 1, pop: 1 };
-/** A rocket shakes for this long as a piece launches; a flag waves for this long up to the landing. */
-const ROCKET_SHAKE_MS = 500;
+export const STILL_END: EndMotion = { sway: 0, squash: 1, pop: 1, lift: 0, flare: 0 };
+/**
+ * A rocket's launch (2026-10-15): it crouches and shakes, lifts off with the piece (LIFT high) and falls back,
+ * landing with a squash; its flame flares while it flies. Times in ms from the launch beat's start.
+ */
+const ROCKET = { crouch: 250, land: 900, settle: 1050, flareUp: 200, flareFull: 320, flareFade: 650 } as const;
+const LIFT = 0.45;
+/** A flag waves for this long up to the landing. */
 const FLAG_WAVE_MS = 600;
 
 /**
- * How a ladder's rocket and flag react `nowMs` into a beat (round 5): the rocket shakes and squashes as a
- * piece launches from it, and the flag waves and pops as the piece comes down onto it. Still otherwise.
+ * How a ladder's rocket and flag react `nowMs` into a beat (round 5): the rocket crouches, lifts off with
+ * the piece on a flaring flame and lands again (2026-10-15), and the flag waves and pops as the piece comes
+ * down onto it. Still otherwise.
  */
 export function endReaction(beat: PlayingBeat | null, jump: Jump, nowMs: number, reducedMotion = false): { rocket: EndMotion; flag: EndMotion } {
   const still = { rocket: STILL_END, flag: STILL_END };
@@ -86,13 +97,30 @@ export function endReaction(beat: PlayingBeat | null, jump: Jump, nowMs: number,
   const k = reducedMotion ? GENTLE : 1;
   if (!beat.events.some((e) => e.type === 'Moved' && e.from === jump.from && e.to === jump.to)) return still;
   const elapsed = nowMs - beat.startedAt;
-  const shake = elapsed / ROCKET_SHAKE_MS;
   const wave = (elapsed - (beat.durationMs - FLAG_WAVE_MS)) / FLAG_WAVE_MS;
   const bump = (k: number) => Math.sin(Math.PI * k);
   return {
-    rocket: shake > 0 && shake < 1 ? { sway: k * 0.1 * Math.sin(6 * Math.PI * shake) * (1 - shake), squash: 1 - k * 0.12 * bump(shake), pop: 1 + k * 0.12 * bump(shake) } : STILL_END,
-    flag: wave > 0 && wave < 1 ? { sway: k * 0.35 * Math.sin(3 * Math.PI * wave) * bump(wave), squash: 1, pop: 1 + k * 0.12 * bump(wave) } : STILL_END,
+    rocket: rocketLaunch(elapsed, k),
+    flag: wave > 0 && wave < 1 ? { sway: k * 0.35 * Math.sin(3 * Math.PI * wave) * bump(wave), squash: 1, pop: 1 + k * 0.12 * bump(wave), lift: 0, flare: 0 } : STILL_END,
   };
+}
+
+/** The rocket `elapsed` ms into its launch; `k` scales its movement (reduced motion), not its flame. */
+function rocketLaunch(elapsed: number, k: number): EndMotion {
+  if (elapsed <= 0 || elapsed >= ROCKET.settle) return STILL_END;
+  const bump = (u: number) => Math.sin(Math.PI * u);
+  const flare =
+    elapsed < ROCKET.flareUp ? 0 : elapsed < ROCKET.flareFull ? (elapsed - ROCKET.flareUp) / (ROCKET.flareFull - ROCKET.flareUp) : elapsed < ROCKET.flareFade ? 1 : clamp01(1 - (elapsed - ROCKET.flareFade) / (ROCKET.land - ROCKET.flareFade));
+  if (elapsed < ROCKET.crouch) {
+    const u = elapsed / ROCKET.crouch;
+    return { sway: k * 0.08 * Math.sin(6 * Math.PI * u) * (1 - u), squash: 1 - k * 0.12 * bump(u), pop: 1 + k * 0.06 * bump(u), lift: 0, flare };
+  }
+  if (elapsed < ROCKET.land) {
+    const u = (elapsed - ROCKET.crouch) / (ROCKET.land - ROCKET.crouch);
+    return { sway: 0, squash: 1 + k * 0.06 * (1 - u), pop: 1, lift: k * LIFT * 4 * u * (1 - u), flare };
+  }
+  const u = (elapsed - ROCKET.land) / (ROCKET.settle - ROCKET.land);
+  return { sway: 0, squash: 1 - k * 0.1 * bump(u), pop: 1 + k * 0.05 * bump(u), lift: 0, flare: 0 };
 }
 
 /**
