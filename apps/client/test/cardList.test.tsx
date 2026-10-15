@@ -32,6 +32,14 @@ describe('CardList', () => {
     expect(items[1]!.textContent).toContain(SEATS[0]!.nickname);
   });
 
+  it('draws each card as a little card: its caster and name on top, what it does on a line of its own (2026-10-15)', () => {
+    render(<CardList seats={SEATS} cards={[{ caster: 'p2', cardId: 'heavy-boots', result: 'hit', current: false }]} />);
+    const item = screen.getByRole('listitem');
+    expect(item.classList.contains('card-bubble')).toBe(true);
+    expect(within(item).getByText('Heavy Boots').closest('.card-line-title')).not.toBeNull();
+    expect(within(item).getByText('Leader: −3 on next roll').classList.contains('card-line-gist')).toBe(true);
+  });
+
   it('shows nothing when there are no cards', () => {
     const { container } = render(<CardList seats={SEATS} cards={[]} />);
     expect(container.innerHTML).toBe('');
