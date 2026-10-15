@@ -70,7 +70,16 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - Every card lives in `packages/core/src/cards/cards.json`: the user's 66 Excel cards (English names and text, the Indonesian as each card's note) plus Steady Hand and Cleanse kept off; 23 on, 43 drafts, 2 off. Values like 1–6 are picked when a match starts (`${rngSeed}|cardValues`), shown in the view (`cardValues`) and on the cards. Card text is generated from the steps (`describeCard`). Every rarity needs one card on; a type may have none.
 - `pnpm cards`: the local card editor (dev server only, never built): list, filters, search, edit fields, values and steps with live checks and a preview, odds, new drafts, duplicate, delete, Save (refuses stale or broken saves; doesn't reload the editor, so a game tab needs a manual reload). Simulate: 1,000 bot matches in a worker (~5 s), per-card stats and flags. First run: Switcheroo strong (47% win rate), Snake Pit fizzles often.
 - The shield is a Blender bubble (`art/models/shield.py`, 832 triangles) drawn with an edge-glow shader (`scene/shieldMaterial.ts`): nearly clear face-on, its outline glowing, breathing while up and flashing when it blocks. The user's pick after the first version (a solid bubble with a band) looked like a hamster ball. A busy match on High: about 155,900 of 156,000 triangles — no room left without a trim.
-- Next: phase 4, the new building blocks in batches 4a–4d (one short plan each), switching the 43 drafts on. Aegis is a draft until 4b (its "snake or attack" shield).
+- Merged to local `main` with the shield (`4bef737`); the user pushes.
+
+**Card building blocks 4a (2026-10-15), branch `feat/card-blocks-4a`, awaiting review** (plan `docs/superpowers/plans/2026-10-15-card-blocks-4a.md`, uncommitted like every plan; no spec, the user's choice):
+- A card can roll its own die: `{ die: true, negate? }`, allowed in a Move and in "Next roll + / −" only. The engine rolls it once per card (misc stream), after a target is found, and reports it as `CardResolved.roll`; texts start "Roll a die: … that many / that much".
+- A card can hit everyone else (`condition 'other', pick 'all'`) or everyone (`condition 'everyone', pick 'all'`), in seat order, each attack shield blocking it for its owner alone. `CardResolved` then has `target: null`, `targets` (hit) and `blocked`. Such a card can't edit the board yet.
+- The game shows it: one feed line ("Pip used Earthquake: rolled 4, hit Ana and Bo, Juno blocked it"), "Hit · rolled 4" in the card list, a hop for every hit piece, a shield flash for every blocker, the HIT!/BLOCKED! banner and the full-volume sound for anyone involved.
+- The editor offers "Use the card's die" on those two fields and the targets "Everyone else" and "Everyone".
+- On now: Long Shot, Tumble, Lead Weight, Sand in the Shoe, Earthquake, Retreat!, Forward!, Mud Season, Blizzard, Wind Up — 33 on, 33 drafts, 2 off. Simulate (1,000 four-player bot matches): none of the 10 flagged; Retreat! and Forward! are dealt about twice as often as the others because Misc has fewer cards on and every type is equally likely.
+- Gate: 120 test files, 1,087 tests; typecheck, lint, build clean; `pnpm e2e` 16 of 17, the online away test flaking as in Open items (passed on its own rerun).
+- Next: batch 4b (its own short plan). Aegis is a draft until 4b (its "snake or attack" shield).
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
@@ -145,6 +154,10 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - After a Save in the card editor, an open game tab keeps the old cards until it is reloaded (the dev server skips the hot update so the editor keeps its place).
   - A hand-edited `cards.json` with a mistake stops matches from starting (ConfigError at match creation); the editor never saves one, and `pnpm test` catches it.
   - Simulate always plays four-player matches.
+- **Deferred 4a minors** (2026-10-15; not fixed):
+  - A hits-everyone card with a Swap step clashes with itself and always fizzles, while its event still lists targets (they'd see HIT!); validation could refuse Swap with "everyone".
+  - Bots score a several-player card as if it hit one player (Retreat! looks good to a bot though it moves the bot back too).
+  - Simulate's tiles for an Everyone card count the caster's steps up and everyone else's down, so Forward! reads −4.8.
 - **Dropped, the user's call (2026-10-15):** the course pads' faceted mint rim and a lighter Low crown stay as they are.
 - **Deferred Phase 5 minors** (from the self-review; not fixed):
   - The rotate screen covers the match but doesn't pause it (kept as is: the user's call, 2026-10-15).
