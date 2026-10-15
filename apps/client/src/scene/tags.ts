@@ -40,6 +40,25 @@ export function tagVisible(player: PlayerId, me: PlayerId, peeks: TagPeeks, nowM
   return won || player === me || peeks.hovered === player || (tapped !== undefined && nowMs - tapped < TAG_PEEK_MS);
 }
 
+/** How far out a kept tag may sit, in screen units (-1 to 1): clear of the screen's edge. */
+export const TAG_EDGE = 0.88;
+
+/**
+ * Where a tag goes on screen (-1 to 1 each way) for its piece's projected point, or null to hide it. A piece
+ * behind the camera hides its tag, unless `keep`: while the ranks show (2026-10-15), a tag whose piece is off
+ * screen or behind the camera stays at the screen's edge toward it, so its rank badge stays in view.
+ */
+export function tagScreenPoint(ndc: { x: number; y: number; z: number }, keep: boolean): { x: number; y: number } | null {
+  if (!keep) return ndc.z > 1 ? null : { x: ndc.x, y: ndc.y };
+  if (ndc.z > 1) {
+    // Behind the camera the projection is mirrored: the piece lies toward the opposite side.
+    const far = Math.max(Math.abs(ndc.x), Math.abs(ndc.y)) || 1;
+    return { x: (-ndc.x / far) * TAG_EDGE, y: (-ndc.y / far) * TAG_EDGE };
+  }
+  const clamp = (v: number) => Math.max(-TAG_EDGE, Math.min(TAG_EDGE, v));
+  return { x: clamp(ndc.x), y: clamp(ndc.y) };
+}
+
 /** The tags' DOM elements by player: the HUD registers them, the scene moves them. */
 export interface TagRegistry {
   elements: Map<PlayerId, HTMLElement>;

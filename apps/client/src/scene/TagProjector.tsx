@@ -5,7 +5,7 @@ import { Vector3 } from 'three';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { crownWinner } from './motion';
-import { tagAnchor, tagVisible, type TagPeeks, type TagRegistry } from './tags';
+import { tagAnchor, tagScreenPoint, tagVisible, type TagPeeks, type TagRegistry } from './tags';
 
 interface TagProjectorProps {
   director: Director;
@@ -33,13 +33,15 @@ export function TagProjector({ director, seats, me, boardSize, tags, peeks, roll
       if (!el) return;
       const at = tagAnchor(state, seat.playerId, index, now, boardSize);
       if (at) point.set(...at).project(camera);
-      if (!at || point.z > 1) {
+      // Once the match is won the ranks show: a tag then stays on screen, at the edge if need be (2026-10-15).
+      const spot = at ? tagScreenPoint(point, won) : null;
+      if (!spot) {
         el.style.visibility = 'hidden';
         return;
       }
       // A hidden tag still follows its piece, so a tap shows it in the right place at once.
       el.style.visibility = tagVisible(seat.playerId, me, peeks, now, won, rolling?.has(seat.playerId) ?? false) ? 'visible' : 'hidden';
-      el.style.transform = `translate(${(((point.x + 1) / 2) * size.width).toFixed(1)}px, ${(((1 - point.y) / 2) * size.height).toFixed(1)}px)`;
+      el.style.transform = `translate(${(((spot.x + 1) / 2) * size.width).toFixed(1)}px, ${(((1 - spot.y) / 2) * size.height).toFixed(1)}px)`;
     });
   });
   return null;
