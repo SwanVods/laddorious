@@ -13,6 +13,7 @@ import type {
   Ranking,
 } from '../engine/types';
 import type { Board } from '../board/types';
+import type { CardValues } from '../cards/catalogFile';
 import type { ActiveEffect } from '../cards/types';
 
 export interface PublicChallenge {
@@ -48,6 +49,8 @@ export interface PlayerView {
   /** My own locked pick in each open challenge. */
   myPicks: Record<string, string>;
   awaiting: Awaiting;
+  /** The values this match picked for its cards (2026-10-15), so a card shows "Your next die shows 4". */
+  cardValues: CardValues;
 }
 
 /** Allowlist, so a field added to Board later is not exposed by default. */
@@ -107,6 +110,7 @@ export function viewFor(s: MatchState, me: PlayerId): PlayerView {
     myOffer,
     myPicks,
     awaiting: awaiting(s),
+    cardValues: clonePlain(s.config.cardValues),
   };
 }
 

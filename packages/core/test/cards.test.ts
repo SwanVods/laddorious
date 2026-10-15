@@ -31,8 +31,9 @@ describe('starter set', () => {
 });
 
 describe('validateCards', () => {
-  it('rejects an empty bucket', () => {
-    expect(() => validateCards(STARTER_CARDS.filter((c) => c.id !== 'shield'))).toThrow(ConfigError);
+  it('rejects a rarity with no card to deal, but allows a type with none (2026-10-15)', () => {
+    expect(() => validateCards(STARTER_CARDS.filter((c) => c.rarity !== 'epic'))).toThrow(/no epic card to deal/);
+    expect(() => validateCards(STARTER_CARDS.filter((c) => c.id !== 'shield'))).not.toThrow();
   });
   it('rejects duplicate ids and non-positive weights', () => {
     expect(() => validateCards([...STARTER_CARDS, STARTER_CARDS[0]!])).toThrow(/duplicate/);
@@ -61,7 +62,8 @@ describe('resolveConfig', () => {
     expect(cfg.board.generatorVersion).toBe(3);
     expect(cfg.board.analysis).toEqual({ median4pRounds: [15, 30], maxRounds2p: 70, maxTailProbability: 0.01 });
     expect(cfg.board.mysteryRarityWeights).toEqual({ common: 70, rare: 25, epic: 5 });
-    expect(cfg.cards).toBe(STARTER_CARDS);
+    expect(cfg.cards).toEqual(STARTER_CARDS);
+    expect(cfg.cardValues).toEqual({});
     expect(cfg.checkInvariants).toBe(true);
   });
 

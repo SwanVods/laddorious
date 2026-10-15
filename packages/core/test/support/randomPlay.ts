@@ -1,4 +1,4 @@
-import { awaiting, createMatch, step, type GameEvent, type Input, type MatchState } from '../../src/index';
+import { STARTER_CARDS, awaiting, createMatch, step, type GameEvent, type Input, type MatchState } from '../../src/index';
 
 /** A legal input chosen by `choice` (any non-negative integer), or a timeout. */
 export function chooseInput(s: MatchState, choice: number): Input {
@@ -38,7 +38,7 @@ export interface RandomRun {
 /** Play a whole match with choices drawn cyclically from `choices`. Throws on any rejected input. */
 export function playRandom(seed: string, players: number, choices: number[], maxSteps = 20_000): RandomRun {
   const seats = Array.from({ length: players }, (_, i) => ({ id: `p${i + 1}` }));
-  let s = createMatch({ seed }, seats);
+  let s = createMatch({ seed, cards: STARTER_CARDS }, seats);
   const inputs: Input[] = [];
   const events: GameEvent[] = [];
   for (let i = 0; s.phase.kind !== 'finished'; i++) {

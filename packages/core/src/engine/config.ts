@@ -1,7 +1,10 @@
 import { DEFAULT_BOARD_CONFIG, type BoardConfig } from '../board/config';
 import { RARITIES } from '../board/types';
 import { STARTER_CARDS } from '../cards/starter';
+import { cardProblems, fillCard, pickCardValues, statusOf, type CardValues, type CatalogCard } from '../cards/catalogFile';
+import { describeCard } from '../cards/describe';
 import { CARD_TYPES, type CardDef, type CardType } from '../cards/types';
+import { createStream } from '../rng/stream';
 import { ConfigError } from './errors';
 import { validateBoardConfig, validateCardDef } from './validation';
 
@@ -19,7 +22,10 @@ export interface MatchConfig {
   mystery: { typeWeights: Record<CardType, number>; maxRerolls: number };
   /** maxReplays: replays/continuations after the initial pick round (spec §4.7: 3 → at most 4 pick rounds). */
   collision: { knockback: number; maxReplays: number; maxWaves: number };
+  /** The match's playable cards (2026-10-15): the catalogue's cards that are on, their values filled in, their text written. */
   cards: CardDef[];
+  /** The values picked for this match, by card id then value name; public, so cards show their numbers. */
+  cardValues: CardValues;
   checkInvariants: boolean;
 }
 
@@ -35,7 +41,7 @@ export interface MatchConfigInput {
   windows?: Partial<MatchConfig['windows']>;
   mystery?: Partial<MatchConfig['mystery']>;
   collision?: Partial<MatchConfig['collision']>;
-  cards?: CardDef[];
+  cards?: CatalogCard[];
   checkInvariants?: boolean;
 }
 
@@ -50,9 +56,20 @@ export function resolveConfig(input: MatchConfigInput): MatchConfig {
   if (input.rngSeed !== undefined && (typeof input.rngSeed !== 'string' || input.rngSeed.length === 0)) {
     throw new ConfigError('rngSeed must be a non-empty string');
   }
+  const catalogCards = input.cards ?? STARTER_CARDS;
+  const problems = cardProblems(catalogCards);
+  if (problems.length > 0) {
+    const p = problems[0]!;
+    throw new ConfigError(p.cardId ? `card ${p.cardId}: ${p.message}` : p.message);
+  }
+  const rngSeed = input.rngSeed ?? input.seed;
+  const cardValues = pickCardValues(catalogCards, createStream(`${rngSeed}|cardValues`));
+  const cards = catalogCards
+    .filter((c) => statusOf(c) === 'on')
+    .map((c) => ({ ...fillCard(c, cardValues[c.id]), text: describeCard(c, cardValues[c.id]) }));
   const cfg: MatchConfig = {
     seed: input.seed,
-    rngSeed: input.rngSeed ?? input.seed,
+    rngSeed,
     board: mergeBoardConfig(input.board),
     windows: { ...DEFAULT_WINDOWS, ...input.windows },
     mystery: {
@@ -61,7 +78,8 @@ export function resolveConfig(input: MatchConfigInput): MatchConfig {
       ...input.mystery,
     },
     collision: { knockback: 3, maxReplays: 3, maxWaves: 3, ...input.collision },
-    cards: input.cards ?? STARTER_CARDS,
+    cards,
+    cardValues,
     checkInvariants: input.checkInvariants ?? true,
   };
   validateConfig(cfg);
@@ -104,7 +122,7 @@ export function validateConfig(cfg: MatchConfig): void {
   validateCards(cfg.cards);
 }
 
-/** Each card is well-formed, ids are unique, and every (type, rarity) bucket holds at least one card. */
+/** Each card is well-formed, ids are unique, and every rarity has a card to deal (2026-10-15: types may be empty). */
 export function validateCards(cards: CardDef[]): void {
   const ids = new Set<string>();
   for (const c of cards) {
@@ -112,11 +130,7 @@ export function validateCards(cards: CardDef[]): void {
     ids.add(c.id);
     validateCardDef(c);
   }
-  for (const type of CARD_TYPES) {
-    for (const rarity of RARITIES) {
-      if (!cards.some((c) => c.type === type && c.rarity === rarity)) {
-        throw new ConfigError(`no card for bucket (${type}, ${rarity})`);
-      }
-    }
+  for (const rarity of RARITIES) {
+    if (!cards.some((c) => c.rarity === rarity)) throw new ConfigError(`no ${rarity} card to deal`);
   }
 }
