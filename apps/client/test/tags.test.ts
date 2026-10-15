@@ -4,7 +4,7 @@ import type { DirectorState } from '../src/director/director';
 import { presentationFromView, type FaceOff } from '../src/director/presentation';
 import { sizeOf } from '../src/scene/footprint';
 import { restPose } from '../src/scene/motion';
-import { TAG_HEIGHT, TAG_PEEK_MS, createTagPeeks, tagAnchor, tagVisible } from '../src/scene/tags';
+import { TAG_EDGE, TAG_HEIGHT, TAG_PEEK_MS, createTagPeeks, tagAnchor, tagScreenPoint, tagVisible } from '../src/scene/tags';
 import { openingUpdate } from './support/fixtures';
 
 function state(positions: Record<PlayerId, number>, arrivals: PlayerId[] = ['p0', 'p1', 'p2', 'p3'], faceOffs: FaceOff[] = []): DirectorState {
@@ -88,5 +88,21 @@ describe('which name tags show (round 5)', () => {
     expect(tagVisible('p1', 'p0', peeks, 1000 + TAG_PEEK_MS)).toBe(false);
     peeks.tap('p1', 2000);
     expect(tagVisible('p1', 'p0', peeks, 1000 + TAG_PEEK_MS)).toBe(true);
+  });
+});
+
+describe('where a tag goes on screen (2026-10-15)', () => {
+  it('places a tag at its piece, and hides it when the piece is behind the camera', () => {
+    expect(tagScreenPoint({ x: 0.2, y: -0.3, z: 0.9 }, false)).toEqual({ x: 0.2, y: -0.3 });
+    expect(tagScreenPoint({ x: 0.2, y: -0.3, z: 1.2 }, false)).toBeNull();
+  });
+
+  it('keeps a tag at the screen edge toward its piece while ranks show, so its badge stays in view', () => {
+    expect(tagScreenPoint({ x: 3, y: 0.5, z: 0.9 }, true)).toEqual({ x: TAG_EDGE, y: 0.5 });
+    expect(tagScreenPoint({ x: 0.1, y: -4, z: 0.9 }, true)).toEqual({ x: 0.1, y: -TAG_EDGE });
+    // Behind the camera the projection flips: the piece is toward the other side.
+    const behind = tagScreenPoint({ x: 0.5, y: 0.2, z: 1.3 }, true)!;
+    expect(behind.x).toBeLessThan(0);
+    expect(Math.max(Math.abs(behind.x), Math.abs(behind.y))).toBeCloseTo(TAG_EDGE, 6);
   });
 });
