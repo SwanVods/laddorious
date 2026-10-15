@@ -31,6 +31,28 @@ export interface EffectTemplate {
   lifetime: Lifetime;
 }
 
+/** The card's own die (2026-10-15): rolled once when the card resolves, 1–6. */
+export interface DieAmount {
+  die: true;
+  /** Use it as a step back, or a minus. */
+  negate?: boolean;
+}
+
+/** A number on a card that may be the card's own die. */
+export type CardNumber = number | DieAmount;
+
+export const isDie = (x: unknown): x is DieAmount => typeof x === 'object' && x !== null && (x as { die?: unknown }).die === true;
+
+/** An effect as a card writes it: a next-roll add may use the card's die. */
+export type CardEffectParams =
+  | Exclude<EffectParams, { hook: 'diceTotal' }>
+  | { hook: 'diceTotal'; op: 'replace' | 'multiply' | 'add'; value: CardNumber };
+
+export interface CardEffectTemplate {
+  params: CardEffectParams;
+  lifetime: Lifetime;
+}
+
 export interface ActiveEffect {
   id: string;
   /** The player the effect is attached to. */
@@ -54,10 +76,10 @@ export type BoardEditOp =
   | { op: 'boardEdit'; action: 'modify'; kind: JumpKind; lengthDelta: number; lifetime: BoardEditLifetime };
 
 export type EffectOp =
-  | { op: 'moveRelative'; amount: number }
+  | { op: 'moveRelative'; amount: CardNumber }
   | { op: 'moveTo'; rule: 'nearest-ladder-foot-ahead' }
   | { op: 'swap' }
-  | { op: 'addEffect'; template: EffectTemplate }
+  | { op: 'addEffect'; template: CardEffectTemplate }
   | { op: 'removeEffects'; filter: { createdByOthers?: boolean; hook?: EffectHook }; count: number | 'all' }
   | BoardEditOp
   | { op: 'gamble'; outcomes: Array<{ weight: number; ops: EffectOp[] }> }
@@ -72,4 +94,10 @@ export interface CardDef {
   weight: number;
   target: TargetRule;
   effects: EffectOp[];
+}
+
+/** Whether any step of the card uses its own die. */
+export function usesDie(card: { effects: unknown }): boolean {
+  const walk = (x: unknown): boolean => isDie(x) || (typeof x === 'object' && x !== null && Object.values(x).some(walk));
+  return walk(card.effects);
 }

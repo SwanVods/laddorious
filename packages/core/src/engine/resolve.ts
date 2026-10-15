@@ -2,8 +2,8 @@ import { jumpKind } from '../board/types';
 import { applyPlannedEdit, planBoardEdit } from '../cards/boardEdit';
 import { cardById } from '../cards/catalog';
 import { isValidTarget, selectTarget } from '../cards/targeting';
-import type { CardDef, EffectOp, EffectTemplate } from '../cards/types';
-import { pickWeighted } from '../rng/stream';
+import { isDie, usesDie, type CardDef, type EffectOp, type EffectTemplate } from '../cards/types';
+import { nextInt, pickWeighted } from '../rng/stream';
 import { addEffect, removeEffect, useAttackShield } from './effects';
 import type { BoardEdit, CardResult, GameEvent, MatchState, Mover, PendingCard, PlayerId } from './types';
 import { bounce, clonePlain, getPlayer, movePlayer, nextId, pub, seatOrder } from './util';
@@ -33,17 +33,27 @@ interface CardOutcome {
   target: PlayerId | null;
   result: CardResult;
   reason?: 'no-target' | 'no-placement' | 'clash';
+  /** The card's own die, when it has one. */
+  roll?: number;
   intents: CardIntents | null;
 }
 
+/** A card's steps with its die roll put in (2026-10-15). */
+function withRoll<T>(x: T, roll: number | undefined): T {
+  if (isDie(x)) return ((x.negate ? -1 : 1) * roll!) as T;
+  if (Array.isArray(x)) return x.map((y: unknown) => withRoll(y, roll)) as T;
+  if (typeof x === 'object' && x !== null) return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, withRoll(v, roll)])) as T;
+  return x;
+}
+
 /** Expand a card's ops against the current (snapshot) state. Returns null if an op has no valid placement. */
-function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: PlayerId): CardIntents | null {
+function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: PlayerId, roll?: number): CardIntents | null {
   const intents: CardIntents = { deltas: [], placements: [], adds: [], removals: [], edits: [] };
   const targetPos = getPlayer(s, target).position;
   const visit = (op: EffectOp): boolean => {
     switch (op.op) {
       case 'moveRelative':
-        intents.deltas.push({ player: target, amount: op.amount });
+        intents.deltas.push({ player: target, amount: op.amount as number });
         return true;
       case 'moveTo': {
         const foot = s.board.jumps
@@ -63,7 +73,7 @@ function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: 
         return true;
       }
       case 'addEffect':
-        intents.adds.push({ owner: target, template: op.template });
+        intents.adds.push({ owner: target, template: op.template as EffectTemplate });
         return true;
       case 'conditional':
         intents.adds.push({
@@ -93,7 +103,8 @@ function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: 
       }
     }
   };
-  return card.effects.every(visit) ? intents : null;
+  const effects = roll === undefined ? card.effects : withRoll(card.effects, roll);
+  return effects.every(visit) ? intents : null;
 }
 
 /**
@@ -115,13 +126,15 @@ export function resolveGroup(s: MatchState, ev: GameEvent[], group: PendingCard[
       outcomes.push({ pc, card, target: null, result: 'fizzled', reason: 'no-target', intents: null });
       continue;
     }
+    // The card's own die (2026-10-15): rolled once, after a target is found.
+    const roll = usesDie(card) ? 1 + nextInt(s.rng.misc, 6) : undefined;
     if (card.type === 'attack' && target !== pc.caster && useAttackShield(s, ev, target)) {
-      outcomes.push({ pc, card, target, result: 'blocked', intents: null });
+      outcomes.push({ pc, card, target, roll, result: 'blocked', intents: null });
       continue;
     }
-    const intents = collectIntents(s, card, pc.caster, target);
+    const intents = collectIntents(s, card, pc.caster, target, roll);
     if (!intents) {
-      outcomes.push({ pc, card, target, result: 'fizzled', reason: 'no-placement', intents: null });
+      outcomes.push({ pc, card, target, roll, result: 'fizzled', reason: 'no-placement', intents: null });
       continue;
     }
     // Board edits apply immediately in caster seat order; they only fire on landing (D9).
@@ -147,10 +160,10 @@ export function resolveGroup(s: MatchState, ev: GameEvent[], group: PendingCard[
       ev.push(pub({ type: 'BoardEdited', edit: clonePlain(edit) }));
     }
     if (editFailed && intents.edits.length === card.effects.length) {
-      outcomes.push({ pc, card, target, result: 'fizzled', reason: 'no-placement', intents: null });
+      outcomes.push({ pc, card, target, roll, result: 'fizzled', reason: 'no-placement', intents: null });
       continue;
     }
-    outcomes.push({ pc, card, target, result: 'hit', intents });
+    outcomes.push({ pc, card, target, roll, result: 'hit', intents });
   }
 
   // Clash: absolute placements touching the same player all fizzle (D11).
@@ -176,6 +189,7 @@ export function resolveGroup(s: MatchState, ev: GameEvent[], group: PendingCard[
         target: o.target,
         result: o.result,
         ...(o.reason ? { reason: o.reason } : {}),
+        ...(o.roll !== undefined ? { roll: o.roll } : {}),
       }),
     );
   }
