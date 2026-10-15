@@ -17,8 +17,10 @@ import './app/match.css';
 import './app/menu.css';
 import './app/screens.css';
 
-// Sound (spec #3): Tone loads as its own chunk after the first tap (A3).
-const sound = new AudioEngine(() => import('tone'));
+// Sound (spec #3): Tone loads as its own chunk after the first tap (A3). On a touch screen it asks for bigger
+// audio buffers, so a busy frame doesn't make it stutter (2026-10-15).
+const phone = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+const sound = new AudioEngine(() => import('tone'), phone ? { latencyHint: 'playback' } : {});
 
 // e2e builds only (vite build --mode e2e): fast matches and window.__laddoriousTest (spec #2 §9.3).
 const test = import.meta.env.MODE === 'e2e' ? testHooks(undefined, () => sound.stats()) : null;

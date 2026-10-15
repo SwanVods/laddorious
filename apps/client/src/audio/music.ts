@@ -85,49 +85,136 @@ interface Instruments {
   pad: Tone.PolySynth<Tone.Synth>;
 }
 
-/** Loops one song on Tone's transport; the engine fades and ducks the bus it plays into. */
+/** Notes are scheduled this far ahead (s), so a busy main thread can't starve the music; a stall longer than this skips notes rather than firing them late. */
+export const MUSIC_AHEAD_S = 1.2;
+/** How often the player schedules more notes (ms). */
+const TICK_MS = 250;
+/** Songs overlap this long (s) as one fades out and the next fades in. */
+export const CROSSFADE_S = 1.5;
+/** How long a faded-out song keeps its nodes for its last notes' tails (s). */
+const TAIL_S = 3;
+
+/** Seconds from the loop's start to a `bars:quarters:sixteenths` time, in 4/4 at `bpm`. */
+export function eventSeconds(time: string, bpm: number): number {
+  const [bars = 0, quarters = 0, sixteenths = 0] = time.split(':').map(Number);
+  return (bars * 4 + quarters + sixteenths / 4) * (60 / bpm);
+}
+
+/** A song's notes at seconds into its loop. */
+export interface TimedNote {
+  at: number;
+  e: SongEvent;
+}
+
+/** The notes of a loop `loopS` long, begun at `start`, that fall in [from, to), in time order (audio-clock seconds). */
+export function dueNotes(notes: readonly TimedNote[], loopS: number, start: number, from: number, to: number): TimedNote[] {
+  const due: TimedNote[] = [];
+  if (to <= from) return due;
+  for (let k = Math.max(0, Math.floor((from - start) / loopS)); start + k * loopS < to; k++) {
+    for (const n of notes) {
+      const at = start + k * loopS + n.at;
+      if (at >= from && at < to) due.push({ at, e: n.e });
+    }
+  }
+  return due.sort((a, b) => a.at - b.at);
+}
+
+interface Voice {
+  song: Song;
+  notes: TimedNote[];
+  loopS: number;
+  start: number;
+  /** Scheduled up to here. */
+  until: number;
+  /** Fading out: no notes from here on. */
+  stopAt: number | null;
+  fader: Tone.Volume;
+  inst: Instruments;
+  nodes: Tone.ToneAudioNode[];
+}
+
+/**
+ * Plays the songs (2026-10-15): each song has its own instruments and fader and schedules its notes a little
+ * ahead in the audio clock, so songs crossfade and a hitch on the main thread doesn't make the music stutter.
+ * The engine ducks and fades the bus it plays into.
+ */
 export class MusicPlayer {
-  private part: Tone.Part<SongEvent> | null = null;
-  private inst: Instruments | null = null;
-  private trim: Tone.Volume | null = null;
+  private current: Voice | null = null;
+  private readonly voices = new Set<Voice>();
+  private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly tone: ToneLib,
     private readonly out: Tone.ToneAudioNode,
   ) {}
 
+  /** Crossfade to this song, or fade out to silence with null. */
   play(id: SongId | null): void {
-    const transport = this.tone.getTransport();
-    transport.stop();
-    transport.cancel();
-    this.part?.dispose();
-    this.part = null;
-    if (!id) return;
-    const song = SONGS[id];
-    const inst = this.instruments();
-    this.trim!.volume.value = SONG_TRIM[id];
-    transport.bpm.value = song.bpm;
-    const part = new this.tone.Part<SongEvent>((time, e) => {
-      if (e.kind === 'mallet') inst.mallet.triggerAttackRelease(e.note!, '8n', time, e.vel);
-      else if (e.kind === 'bass') inst.bass.triggerAttackRelease(e.note!, '8n', time, 0.8);
-      else if (e.kind === 'shaker') inst.shaker.triggerAttackRelease('32n', time, e.vel);
-      else if (e.kind === 'kick') inst.kick.triggerAttackRelease('C1', '8n', time, 0.7);
-      else if (e.kind === 'bell') inst.bell.triggerAttackRelease(e.note!, '4n', time, 0.5);
-      else inst.pad.triggerAttackRelease(e.notes!, '1m', time, 0.5);
-    }, songEvents(song));
-    part.loop = true;
-    part.loopEnd = `${song.bars.length}m`;
-    part.start(0);
-    this.part = part;
-    transport.start('+0.05');
+    const now = this.tone.now();
+    if (this.current) this.release(this.current, now);
+    this.current = null;
+    if (id) {
+      const song = SONGS[id];
+      const fader = new this.tone.Volume(-60).connect(this.out);
+      fader.volume.cancelScheduledValues(now);
+      fader.volume.setValueAtTime(-60, now);
+      fader.volume.linearRampToValueAtTime(SONG_TRIM[id], now + CROSSFADE_S);
+      const inst = this.instruments(fader);
+      const notes = songEvents(song).map((e) => ({ at: eventSeconds(e.time, song.bpm), e }));
+      const start = now + 0.05;
+      const voice: Voice = { song, notes, loopS: song.bars.length * 4 * (60 / song.bpm), start, until: start, stopAt: null, fader, inst, nodes: [fader, ...Object.values(inst)] };
+      this.voices.add(voice);
+      this.current = voice;
+      this.schedule(voice, now);
+    }
+    if (this.voices.size > 0 && this.timer === null) this.timer = setInterval(() => this.tick(), TICK_MS);
   }
 
-  private instruments(): Instruments {
-    if (this.inst) return this.inst;
+  private tick(): void {
+    const now = this.tone.now();
+    for (const voice of this.voices) {
+      if (voice.stopAt !== null && now > voice.stopAt + TAIL_S) {
+        this.voices.delete(voice);
+        for (const node of voice.nodes) node.dispose();
+      } else this.schedule(voice, now);
+    }
+    if (this.voices.size === 0 && this.timer !== null) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+
+  /** Schedule the notes due before `now + MUSIC_AHEAD_S`, never any in the past. */
+  private schedule(voice: Voice, now: number): void {
+    const from = Math.max(voice.until, now + 0.02);
+    const to = Math.min(now + MUSIC_AHEAD_S, voice.stopAt ?? Infinity);
+    for (const { at, e } of dueNotes(voice.notes, voice.loopS, voice.start, from, to)) this.trigger(voice, e, at);
+    voice.until = Math.max(voice.until, to);
+  }
+
+  private trigger({ inst, song }: Voice, e: SongEvent, time: number): void {
+    const beat = 60 / song.bpm;
+    if (e.kind === 'mallet') inst.mallet.triggerAttackRelease(e.note!, beat / 2, time, e.vel);
+    else if (e.kind === 'bass') inst.bass.triggerAttackRelease(e.note!, beat / 2, time, 0.8);
+    else if (e.kind === 'shaker') inst.shaker.triggerAttackRelease(beat / 8, time, e.vel);
+    else if (e.kind === 'kick') inst.kick.triggerAttackRelease('C1', beat / 2, time, 0.7);
+    else if (e.kind === 'bell') inst.bell.triggerAttackRelease(e.note!, beat, time, 0.5);
+    else inst.pad.triggerAttackRelease(e.notes!, beat * 4, time, 0.5);
+  }
+
+  /** Fade a song out over the crossfade; it stops scheduling then, and lets go of its nodes after its tails. */
+  private release(voice: Voice, now: number): void {
+    voice.stopAt = now + CROSSFADE_S;
+    voice.fader.volume.cancelScheduledValues(now);
+    voice.fader.volume.setValueAtTime(voice.fader.volume.value, now);
+    voice.fader.volume.linearRampToValueAtTime(-60, now + CROSSFADE_S);
+  }
+
+  /** A song's own instruments, into its own fader. */
+  private instruments(out: Tone.ToneAudioNode): Instruments {
     const t = this.tone;
-    const out = (this.trim = new t.Volume(0).connect(this.out));
     const shakerFilter = new t.Filter(6500, 'highpass').connect(out);
-    this.inst = {
+    return {
       mallet: new t.PolySynth(t.FMSynth, {
         harmonicity: 3.99, modulationIndex: 2.6, oscillator: { type: 'sine' }, modulation: { type: 'sine' },
         envelope: { attack: 0.003, decay: 0.6, sustain: 0, release: 0.4 }, modulationEnvelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 }, volume: -10,
@@ -141,6 +228,5 @@ export class MusicPlayer {
       shaker: new t.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.002, decay: 0.04, sustain: 0, release: 0.02 }, volume: -30 }).connect(shakerFilter),
       pad: new t.PolySynth(t.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.6, decay: 1.5, sustain: 0.5, release: 1.5 }, volume: -24 }).connect(out),
     };
-    return this.inst;
   }
 }

@@ -32,12 +32,17 @@ export interface EngineOptions {
   recipes?: Record<SoundId, Recipe>;
   music?: (tone: ToneLib, out: Tone.ToneAudioNode) => MusicLike;
   warn?: (message: string) => void;
+  /**
+   * The audio output's buffer size (2026-10-15): phones ask for "playback", bigger buffers, so a busy frame
+   * can't starve the audio thread (the user heard it stutter on Android). Unset keeps the browser's default.
+   */
+  latencyHint?: AudioContextLatencyCategory;
 }
 
 const OTHERS_DB = -7;
 const DUCK_DB = 12;
-const SWITCH_S = 0.4;
-const FADE_IN_S = 0.8;
+/** The bus comes back up this fast after the win's fade-out; the songs themselves crossfade in the player. */
+const BUS_BACK_S = 0.3;
 const FADE_OUT_S = 1;
 
 export class AudioEngine {
@@ -82,6 +87,7 @@ export class AudioEngine {
 
   private async boot(): Promise<void> {
     const tone = await this.load();
+    if (this.opts.latencyHint) tone.setContext(new tone.Context({ latencyHint: this.opts.latencyHint }));
     await tone.start();
     const limiter = new tone.Limiter(-1).toDestination();
     const verb = new tone.Reverb({ decay: 1.4, wet: 0.16 }).connect(limiter);
@@ -149,29 +155,19 @@ export class AudioEngine {
     return { started: this.tone !== null, played: this.played, errors: this.errors };
   }
 
-  /** Fade out what's playing (if anything), then start the new song fading in. */
+  /** Crossfade to the new song (the player overlaps them, 2026-10-15), the bus back at its level if the win faded it. */
   private switchSong(song: SongId | null): void {
     const { tone, buses, player } = this;
     if (!tone || !buses || !player) return;
-    const bus = buses.music.volume;
-    const level = soundLevels(this.settings).musicDb;
-    const now = tone.now();
-    const start = () => {
-      this.playing = song;
-      player.play(song);
-      if (!song) return;
-      const t = tone.now();
-      bus.cancelScheduledValues(t);
-      bus.setValueAtTime(-60, t);
-      bus.linearRampToValueAtTime(level, t + FADE_IN_S);
-    };
-    if (this.playing) {
+    this.playing = song;
+    if (song) {
+      const bus = buses.music.volume;
+      const now = tone.now();
       bus.cancelScheduledValues(now);
-      bus.linearRampToValueAtTime(-60, now + SWITCH_S);
-      setTimeout(start, SWITCH_S * 1000);
-    } else {
-      start();
+      bus.setValueAtTime(bus.value, now);
+      bus.linearRampToValueAtTime(soundLevels(this.settings).musicDb, now + BUS_BACK_S);
     }
+    player.play(song);
   }
 
   private duck(at: number, seconds: number): void {

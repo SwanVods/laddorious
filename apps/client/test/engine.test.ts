@@ -39,7 +39,12 @@ function fakeTone() {
   }
   const destination = { mute: false };
   const raw = { suspend: vi.fn(), resume: vi.fn() };
+  const contexts: unknown[] = [];
   const tone = {
+    Context: vi.fn(function (this: { options: unknown }, options: unknown) {
+      this.options = options;
+    }),
+    setContext: vi.fn((c: unknown) => void contexts.push(c)),
     start: vi.fn(async () => {}),
     now: () => 10,
     Volume: FakeVolume,
@@ -48,10 +53,10 @@ function fakeTone() {
     getDestination: () => destination,
     getContext: () => ({ rawContext: raw }),
   };
-  return { tone: tone as unknown as ToneLib, volumes, destination, raw };
+  return { tone: tone as unknown as ToneLib, volumes, destination, raw, contexts };
 }
 
-function setup(opts: { fail?: boolean; throwing?: SoundId } = {}) {
+function setup(opts: { fail?: boolean; throwing?: SoundId; latencyHint?: AudioContextLatencyCategory } = {}) {
   const fake = fakeTone();
   const load = vi.fn(async () => {
     if (opts.fail) throw new Error('chunk failed');
@@ -68,7 +73,7 @@ function setup(opts: { fail?: boolean; throwing?: SoundId } = {}) {
   ) as Record<SoundId, Recipe & ReturnType<typeof vi.fn>>;
   const player = { play: vi.fn() };
   const warn = vi.fn();
-  const engine = new AudioEngine(load, { recipes, music: () => player, warn });
+  const engine = new AudioEngine(load, { recipes, music: () => player, warn, latencyHint: opts.latencyHint });
   return { engine, load, recipes, player, warn, ...fake };
 }
 
@@ -165,17 +170,27 @@ describe('AudioEngine (spec #3 §3, §7)', () => {
     expect(raw.resume).toHaveBeenCalledTimes(1);
   });
 
-  it("plays the screen's song once loaded, switches songs, and fades out at the win", async () => {
+  it("plays the screen's song once loaded, crossfades to the next at once (2026-10-15), and fades out at the win", async () => {
     const { engine, player } = setup();
     engine.music('menu');
     engine.unlock();
     await engine.start();
     expect(player.play).toHaveBeenLastCalledWith('menu');
     engine.music('match');
-    vi.advanceTimersByTime(400);
     expect(player.play).toHaveBeenLastCalledWith('match');
     engine.play({ id: 'W1', atMs: 0, soft: false, musicOut: true });
     vi.advanceTimersByTime(1100);
     expect(player.play).toHaveBeenLastCalledWith(null);
+  });
+
+  it("asks for bigger audio buffers on phones, so a busy frame doesn't make the sound stutter (2026-10-15)", async () => {
+    const phone = setup({ latencyHint: 'playback' });
+    phone.engine.unlock();
+    await phone.engine.start();
+    expect(phone.contexts).toEqual([{ options: { latencyHint: 'playback' } }]);
+    const desktop = setup();
+    desktop.engine.unlock();
+    await desktop.engine.start();
+    expect(desktop.contexts).toEqual([]);
   });
 });
