@@ -7,6 +7,7 @@ import { ErrorScreen } from '../src/app/ErrorScreen';
 import { COUNT_MS, MatchmakingOverlay, PLAY_WITH_BOTS_AFTER_MS } from '../src/app/MatchmakingOverlay';
 import { createPrefsStore } from '../src/app/prefs';
 import { SettingsDialog } from '../src/app/SettingsDialog';
+import { autoStepDown } from '../src/scene/quality';
 import { AudioEngine } from '../src/audio/engine';
 import { SoundProvider } from '../src/audio/SoundProvider';
 import { SEATS } from './support/fixtures';
@@ -174,6 +175,15 @@ describe('ErrorScreen (spec #2 §7.1, §8)', () => {
 });
 
 describe('SettingsDialog (spec #2 §7.1, §9.2)', () => {
+  it("shows Low right now once Auto has lowered the quality in this match (2026-10-15)", () => {
+    const prefs = createPrefsStore(null, { prefersReducedMotion: false });
+    autoStepDown.setState({ stepped: true });
+    render(<SettingsDialog prefs={prefs} device={{ coarsePointer: false, shortSide: 900 }} onClose={() => {}} />);
+    expect(screen.getByRole('dialog').textContent).toContain('Right now: Low (Auto lowered it for this match)');
+    act(() => autoStepDown.setState({ stepped: false }));
+    expect(screen.getByRole('dialog').textContent).toContain('Right now: High (Auto on this device)');
+  });
+
   it('saves the graphics quality and shows its description and the level in use', () => {
     const prefs = createPrefsStore(null, { prefersReducedMotion: false });
     render(<SettingsDialog prefs={prefs} device={{ coarsePointer: false, shortSide: 900 }} onClose={() => {}} />);

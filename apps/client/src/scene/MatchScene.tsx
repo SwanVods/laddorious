@@ -1,6 +1,6 @@
 import type { PlayerId, PlayerView } from '@laddorious/core';
 import { Canvas } from '@react-three/fiber';
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
@@ -10,7 +10,7 @@ import { Jumps } from './Jumps';
 import { createPeeks, type Peeks } from './paths';
 import { Pieces, type Roll } from './Pieces';
 import { ContextLossWatch, QualityWatch, StatsProbe } from './Probes';
-import { QUALITY, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
+import { QUALITY, autoStepDown, deviceEnv, startLevel, type QualityLevel, type QualitySetting } from './quality';
 import { Surroundings } from './Surroundings';
 import { Crown, type PieceRegistry } from './Crown';
 import { setSeatPieces } from './footprint';
@@ -94,7 +94,12 @@ export function MatchScene({ director, seats, me, setting, watch = null, reduced
   const [lost, setLost] = useState(false);
   const [level, setLevel] = useState<QualityLevel>(() => startLevel(setting, deviceEnv()));
   const board = useStore(director.store, (s) => s.settled?.view.board);
-  const stepDown = useCallback(() => setLevel('low'), []);
+  const stepDown = useCallback(() => {
+    setLevel('low');
+    autoStepDown.setState({ stepped: true });
+  }, []);
+  // A new match starts at the setting's level again.
+  useEffect(() => () => autoStepDown.setState({ stepped: false }), []);
   const loseContext = useCallback(() => setLost(true), []);
   if (!supported || lost) return <p className="webgl-message">{WEBGL_MESSAGE}</p>;
   if (!board) return null;

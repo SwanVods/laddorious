@@ -1,3 +1,5 @@
+import { createStore } from 'zustand/vanilla';
+
 export type QualitySetting = 'auto' | 'low' | 'high';
 export type QualityLevel = 'low' | 'high';
 
@@ -20,6 +22,9 @@ export const QUALITY: Record<QualityLevel, QualityProfile> = {
   high: { shadows: true, dpr: 2, antialias: true, clouds: 8, clearcoat: true, lowModels: false, modelEnds: true },
   low: { shadows: false, dpr: 1.5, antialias: false, clouds: 4, clearcoat: false, lowModels: true, modelEnds: false },
 };
+
+/** Whether Auto has lowered this match to Low (2026-10-15): the match sets it, and Settings reads it. */
+export const autoStepDown = createStore<{ stepped: boolean }>()(() => ({ stepped: false }));
 
 /** Auto starts Low on phones (a coarse pointer and a short screen side under 500 px) and High elsewhere. */
 export function autoStartLevel(env: { coarsePointer: boolean; shortSide: number }): QualityLevel {

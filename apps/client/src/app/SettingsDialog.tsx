@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { useStore } from 'zustand';
 import type { StoreApi } from 'zustand/vanilla';
-import { deviceEnv, startLevel, type QualitySetting } from '../scene/quality';
+import { autoStepDown, deviceEnv, startLevel, type QualitySetting } from '../scene/quality';
 import { Dialog } from '../ui/Dialog';
 import type { PrefsState } from './prefs';
 
@@ -29,7 +29,9 @@ export function SettingsDialog({ prefs, onClose, device = deviceEnv() }: Setting
   const motionId = useId();
   const soundId = useId();
   const chosen = QUALITY_OPTIONS.find((o) => o.value === settings.quality)!;
-  const level = startLevel(settings.quality, device);
+  // Auto may have lowered this match's quality to keep it smooth (2026-10-15).
+  const stepped = useStore(autoStepDown, (s) => s.stepped) && settings.quality === 'auto';
+  const level = stepped ? 'low' : startLevel(settings.quality, device);
   return (
     <Dialog title="Settings" onClose={onClose}>
       <div className="setting-row">
@@ -93,7 +95,7 @@ export function SettingsDialog({ prefs, onClose, device = deviceEnv() }: Setting
           <input type="range" min={0} max={100} step={5} aria-label="Music volume" value={Math.round(settings.sound.music * 100)} onChange={(e) => prefs.getState().setMusicVolume(Number(e.target.value) / 100)} />
         </label>
       </div>
-      <p className="setting-note">{`Right now: ${level === 'high' ? 'High' : 'Low'}${settings.quality === 'auto' ? ' (Auto on this device)' : ''}.`}</p>
+      <p className="setting-note">{`Right now: ${level === 'high' ? 'High' : 'Low'}${stepped ? ' (Auto lowered it for this match)' : settings.quality === 'auto' ? ' (Auto on this device)' : ''}.`}</p>
     </Dialog>
   );
 }
