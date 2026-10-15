@@ -86,7 +86,8 @@ export function cuesForBeat(beat: Beat, { me, boardSize }: CueContext): Cue[] {
       const e = beat.events[0];
       if (e?.type !== 'CardResolved') return [];
       const id = e.result === 'hit' ? 'C5' : e.result === 'blocked' ? 'B2' : 'C6';
-      return [cue(id, 0, e.caster !== me && e.target !== me)];
+      const involved = e.caster === me || e.target === me || (e.targets?.includes(me) ?? false) || (e.blocked?.includes(me) ?? false);
+      return [cue(id, 0, !involved)];
     }
     case 'clash': {
       const e = beat.events.find((x) => x.type === 'Clash');

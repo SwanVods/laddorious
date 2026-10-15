@@ -197,7 +197,7 @@ function isMyMoment({ beat, me, myPick, window }: ShotInput): boolean {
       (e) =>
         (e.type === 'ChallengeStarted' && e.players.includes(me)) ||
         (e.type === 'Moved' && e.player === me && (e.cause === 'snake' || e.cause === 'ladder')) ||
-        (e.type === 'CardResolved' && e.target === me),
+        (e.type === 'CardResolved' && (e.target === me || (e.targets?.includes(me) ?? false) || (e.blocked?.includes(me) ?? false))),
     ) ?? false
   );
 }

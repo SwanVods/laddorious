@@ -31,7 +31,7 @@ export function cardStats(runs: readonly MatchRun[], players: number): CardStat[
   };
   for (const run of runs) {
     const players = new Map<string, Set<string>>();
-    let open: { stat: CardStat & { tiles: number }; target: string; sign: number } | null = null;
+    let open: { stat: CardStat & { tiles: number }; caster: string; targets: Set<string> } | null = null;
     let winner: string | null = null;
     for (const e of run.events as GameEvent[]) {
       switch (e.type) {
@@ -52,11 +52,12 @@ export function cardStats(runs: readonly MatchRun[], players: number): CardStat[
           const s = of(e.cardId);
           s.resolved++;
           s[e.result]++;
-          open = e.target ? { stat: s, target: e.target, sign: e.target === e.caster ? 1 : -1 } : null;
+          // Every player the card hit (2026-10-15: a card can hit several): the caster's own steps count up, others' down.
+          open = { stat: s, caster: e.caster, targets: new Set(e.targets ?? (e.target ? [e.target] : [])) };
           break;
         }
         case 'Moved':
-          if (open && e.player === open.target) open.stat.tiles += (e.to - e.from) * open.sign;
+          if (open?.targets.has(e.player)) open.stat.tiles += (e.to - e.from) * (e.player === open.caster ? 1 : -1);
           break;
         case 'RoundStarted':
           open = null;

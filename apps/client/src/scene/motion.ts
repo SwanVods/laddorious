@@ -169,7 +169,7 @@ export function beatPose(beat: PlayingBeat, from: PresentationState, player: Pla
   if (beat.kind === 'victory' && beat.events.some((e) => e.type === 'MatchWon' && e.winner === player)) {
     return { ...end, position: [end.position[0], end.position[1] + Math.abs(Math.sin(t * Math.PI * 3)) * 0.9, end.position[2]], rotation: [0, t * Math.PI * 4, 0] };
   }
-  if (beat.kind === 'cardResolved' && beat.events.some((e) => e.type === 'CardResolved' && e.target === player && e.result === 'hit')) {
+  if (beat.kind === 'cardResolved' && beat.events.some((e) => e.type === 'CardResolved' && e.result === 'hit' && (e.target === player || (e.targets?.includes(player) ?? false)))) {
     const k = clamp01((elapsed - BEAT_MS.cardLead) / (beat.durationMs - BEAT_MS.cardLead));
     return { ...start, position: [start.position[0], start.position[1] + Math.sin(k * Math.PI) * 0.35, start.position[2]] };
   }
@@ -293,7 +293,8 @@ export function projectileAt(beat: PlayingBeat, from: PresentationState, seatOf:
 export function shieldBlocking(beat: PlayingBeat | null, player: PlayerId, nowMs: number): boolean {
   if (!beat) return false;
   if (beat.events.some((e) => e.type === 'SnakeBlocked' && e.player === player)) return true;
-  if (!beat.events.some((e) => e.type === 'CardResolved' && e.target === player && e.result === 'blocked')) return false;
+  const blocked = (e: GameEvent) => e.type === 'CardResolved' && ((e.target === player && e.result === 'blocked') || (e.blocked?.includes(player) ?? false));
+  if (!beat.events.some(blocked)) return false;
   const lands = beat.startedAt + BEAT_MS.cardLead + (beat.durationMs - BEAT_MS.cardLead) / 2;
   return nowMs >= lands;
 }
