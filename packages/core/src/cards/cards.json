@@ -1,0 +1,1428 @@
+{
+  "version": 1,
+  "odds": {
+    "rarityWeights": {
+      "common": 70,
+      "rare": 25,
+      "epic": 5
+    },
+    "typeWeights": {
+      "movement": 1,
+      "defense": 1,
+      "attack": 1,
+      "risky": 1,
+      "misc": 1
+    },
+    "maxRerolls": 2
+  },
+  "cards": [
+    {
+      "id": "long-shot",
+      "name": "Long Shot",
+      "rarity": "common",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Lempar dadu, player paling jauh di depan mundur sebanyak angka tersebut",
+      "plan": "Roll a die: the leader moves back that many.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "tumble",
+      "name": "Tumble",
+      "rarity": "common",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Lempar dadu, player di depanmu mundur sebanyak angka tersebut",
+      "plan": "Roll a die: the player just ahead of you moves back that many.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "lead-weight",
+      "name": "Lead Weight",
+      "rarity": "common",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Lempar dadu, angka dadu player paling jauh di depan berkurang sebanyak angka tersebut selama 1 ronde",
+      "plan": "Roll a die: the leader's next roll is lower by that much.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "sand-in-the-shoe",
+      "name": "Sand in the Shoe",
+      "rarity": "common",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Lempar dadu, angka dadu player di depanmu berkurang sebanyak angka tersebut selama 1 ronde",
+      "plan": "Roll a die: the next roll of the player ahead of you is lower by that much.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "red-light",
+      "name": "Red Light",
+      "rarity": "common",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Player yang paling unggul tidak dapat lempar dadu untuk 1 ronde berikutnya",
+      "plan": "The leader skips their next roll.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "tripwire",
+      "name": "Tripwire",
+      "rarity": "common",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Player di depanmu tidak dapat lempar dadu untuk 1 ronde berikutnya",
+      "plan": "The player just ahead of you skips their next roll.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "earthquake",
+      "name": "Earthquake",
+      "rarity": "common",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Lempar dadu, Semua player di selain kamu mundur sebanyak angka tersebut",
+      "plan": "Roll a die: everyone else moves back that many.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "buckler",
+      "name": "Buckler",
+      "rarity": "common",
+      "type": "defense",
+      "status": "on",
+      "weight": 1,
+      "icon": "shield",
+      "note": "mendapatkan shield dari 1 serangan selama 3 ronde",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "beforeAttack"
+            },
+            "lifetime": {
+              "rounds": 3,
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "snake-charm",
+      "name": "Snake Charm",
+      "rarity": "common",
+      "type": "defense",
+      "status": "on",
+      "weight": 1,
+      "icon": "charm",
+      "note": "mendapatkan shield dari 1 ular selama 3 ronde",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "beforeSnake"
+            },
+            "lifetime": {
+              "rounds": 3,
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "lucky-charm",
+      "name": "Lucky Charm",
+      "rarity": "common",
+      "type": "defense",
+      "status": "draft",
+      "weight": 1,
+      "note": "mendapatkan shield 1 shield untuk ular atau serangan, untuk 2 ronde",
+      "plan": "Block the next snake or attack, whichever comes first (2 rounds).",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "retreat",
+      "name": "Retreat!",
+      "rarity": "common",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "SEMUA player bergerak mundur x (x = 1-3)",
+      "plan": "Everyone moves back 1–3.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "forward",
+      "name": "Forward!",
+      "rarity": "common",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "SEMUA player bergerak maju x (x = 1-3)",
+      "plan": "Everyone moves forward 1–3.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "second-thoughts",
+      "name": "Second Thoughts",
+      "rarity": "common",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "mendapatkan +1 reroll",
+      "plan": "Get one more reroll on each card slot.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "calm-waters",
+      "name": "Calm Waters",
+      "rarity": "common",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "ular dan tangga tidak aktif selama 1 ronde",
+      "plan": "Snakes and ladders do nothing for 1 round.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "misery-loves-company",
+      "name": "Misery Loves Company",
+      "rarity": "common",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika kamu terkena ular, player lain mundur 2 langkah",
+      "plan": "For 3 rounds: if you hit a snake, everyone else moves back 2.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "rising-tide",
+      "name": "Rising Tide",
+      "rarity": "common",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika kamu terkena tangga, player lain maju 2 langkah",
+      "plan": "For 3 rounds: if you climb a ladder, everyone else moves forward 2.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "encore",
+      "name": "Encore",
+      "rarity": "common",
+      "type": "movement",
+      "status": "draft",
+      "weight": 1,
+      "note": "lempar dadu lagi",
+      "plan": "Roll again this round.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "sprint",
+      "name": "Sprint",
+      "rarity": "common",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "arrow",
+      "note": "maju 3 langkah",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": 3
+        }
+      ]
+    },
+    {
+      "id": "moonwalk",
+      "name": "Moonwalk",
+      "rarity": "common",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "back",
+      "note": "mundur 1 langkah",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": -1
+        }
+      ]
+    },
+    {
+      "id": "lucky-number",
+      "name": "Lucky Number",
+      "rarity": "common",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "die",
+      "note": "dadu berikutnya akan menunjukkan angka n (n = 1-6, bisa random tiap game)",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "values": {
+        "n": {
+          "min": 1,
+          "max": 6
+        }
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceFace",
+              "die": "first",
+              "set": {
+                "value": "n"
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tailwind",
+      "name": "Tailwind",
+      "rarity": "common",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "arrow",
+      "note": "mendapatkan modifier +[1-3] untuk dadu berikutnya",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "values": {
+        "n": {
+          "min": 1,
+          "max": 3
+        }
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "add",
+              "value": {
+                "value": "n"
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "wind-up",
+      "name": "Wind Up",
+      "rarity": "common",
+      "type": "movement",
+      "status": "draft",
+      "weight": 1,
+      "note": "lempar dadu, mendapatkan tambahan nilai tersebut untuk dadu berikutnya",
+      "plan": "Roll a die: add it to your next roll.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "coin-flip",
+      "name": "Coin Flip",
+      "rarity": "common",
+      "type": "risky",
+      "status": "on",
+      "weight": 1,
+      "icon": "coin",
+      "note": "50/50 bergerak maju sebanyak n atau mundur sebanyak n (n = 1-6, bisa random tiap game)",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "values": {
+        "n": {
+          "min": 1,
+          "max": 6
+        }
+      },
+      "effects": [
+        {
+          "op": "gamble",
+          "outcomes": [
+            {
+              "weight": 50,
+              "ops": [
+                {
+                  "op": "moveRelative",
+                  "amount": {
+                    "value": "n"
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 50,
+              "ops": [
+                {
+                  "op": "moveRelative",
+                  "amount": {
+                    "value": "n",
+                    "negate": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snake-bait",
+      "name": "Snake Bait",
+      "rarity": "common",
+      "type": "risky",
+      "status": "on",
+      "weight": 1,
+      "icon": "bait",
+      "note": "maju sebanyak x setelah terkena ular (x = 3-8)",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "values": {
+        "n": {
+          "min": 3,
+          "max": 8
+        }
+      },
+      "effects": [
+        {
+          "op": "conditional",
+          "trigger": {
+            "cause": "dice",
+            "condition": "landedOnSnakeHead"
+          },
+          "amount": {
+            "value": "n"
+          },
+          "lifetime": {
+            "charges": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "afterburner",
+      "name": "Afterburner",
+      "rarity": "common",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "maju sebanyak x setelah terkena tangga (x = 3-8)",
+      "plan": "Next time you climb a ladder, move forward 3–8 more.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "even-keel",
+      "name": "Even Keel",
+      "rarity": "common",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika dadu berikutnya adalah angka genap, mendapatkan 1 shield ular dan serangan 2 ronde",
+      "plan": "If your next roll is even, block the next snake or attack (2 rounds).",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "mud-season",
+      "name": "Mud Season",
+      "rarity": "rare",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Lempar dadu, angka dadu semua player di selain kamu berkurang sebanyak angka tersebut selama 1 ronde",
+      "plan": "Roll a die: everyone else's next roll is lower by that much.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "pitfall",
+      "name": "Pitfall",
+      "rarity": "rare",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Player yang paling unggul, pindah ke ular terdekat",
+      "plan": "The leader drops onto the nearest snake.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "time-freeze",
+      "name": "Time Freeze",
+      "rarity": "rare",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Semua player selain kamu tidak dapat lempar dadu untuk 1 ronde berikutnya",
+      "plan": "Everyone else skips their next roll.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "leapfrog",
+      "name": "Leapfrog",
+      "rarity": "rare",
+      "type": "attack",
+      "status": "on",
+      "weight": 1,
+      "icon": "swap",
+      "note": "Bertukar tempat dengan pemain di depanmu",
+      "target": {
+        "condition": "ahead-of-caster",
+        "pick": "nearest",
+        "tieBreak": "random"
+      },
+      "effects": [
+        {
+          "op": "swap"
+        }
+      ]
+    },
+    {
+      "id": "reverse-gear",
+      "name": "Reverse Gear",
+      "rarity": "rare",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Dadu milik pemain yang paling unggul akan bergerak mundur untuk 1 ronde berikutnya",
+      "plan": "The leader's next roll moves them back.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "wrong-way",
+      "name": "Wrong Way",
+      "rarity": "rare",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Dadu milik pemain yang di depanmu akan bergerak mundur untuk 1 ronde berikutnya",
+      "plan": "The next roll of the player ahead of you moves them back.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "shield",
+      "name": "Shield",
+      "rarity": "rare",
+      "type": "defense",
+      "status": "on",
+      "weight": 1,
+      "icon": "shield",
+      "note": "mendapatkan shield dari 1 serangan selama 5 ronde",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "beforeAttack"
+            },
+            "lifetime": {
+              "rounds": 5,
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mongoose",
+      "name": "Mongoose",
+      "rarity": "rare",
+      "type": "defense",
+      "status": "on",
+      "weight": 1,
+      "icon": "charm",
+      "note": "mendapatkan shield dari 1 ular hingga akhir permainan",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "beforeSnake"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-trespassing",
+      "name": "No Trespassing",
+      "rarity": "rare",
+      "type": "defense",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika pemain lain menduduki tilemu, pemain tersebut langsung mundur. berlangsung 5 ronde",
+      "plan": "For 5 rounds: anyone who lands on your tile is knocked back, as if they lost a face-off.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "snake-pit",
+      "name": "Snake Pit",
+      "rarity": "rare",
+      "type": "misc",
+      "status": "on",
+      "weight": 1,
+      "icon": "slide",
+      "note": "lempar dadu, tempatkan ular sejauh n tile didepan pemain paling depan (n = angka dadu)",
+      "target": {
+        "condition": "other",
+        "pick": "leader",
+        "tieBreak": "random"
+      },
+      "effects": [
+        {
+          "op": "boardEdit",
+          "action": "create",
+          "kind": "snake",
+          "minAhead": 1,
+          "maxAhead": 6,
+          "length": 8,
+          "lifetime": {
+            "rounds": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "booby-trap",
+      "name": "Booby Trap",
+      "rarity": "rare",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "lempar dadu, tempatkan ular sejauh n tile dibelakangmu (n = angka dadu)",
+      "plan": "A new snake appears 1–6 tiles behind you.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "ladder-drop",
+      "name": "Ladder Drop",
+      "rarity": "rare",
+      "type": "misc",
+      "status": "on",
+      "weight": 1,
+      "icon": "pad",
+      "note": "lempar dadu, tempatkan tangga sejauh n tile didepanmu (n = angka dadu)",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "boardEdit",
+          "action": "create",
+          "kind": "ladder",
+          "minAhead": 1,
+          "maxAhead": 6,
+          "length": 15,
+          "lifetime": {
+            "rounds": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "still-waters",
+      "name": "Still Waters",
+      "rarity": "rare",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "ular dan tangga tidak aktif selama 2 ronde",
+      "plan": "Snakes and ladders do nothing for 2 rounds.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "sore-loser",
+      "name": "Sore Loser",
+      "rarity": "rare",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika kamu kalah dalam tahap faceoff, bergerak maju alih2 mundur",
+      "plan": "If you lose a face-off, move forward instead of back.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "ladder-warp",
+      "name": "Ladder Warp",
+      "rarity": "rare",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "pad",
+      "note": "maju ke tangga terdekat",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "moveTo",
+          "rule": "nearest-ladder-foot-ahead"
+        }
+      ]
+    },
+    {
+      "id": "dash",
+      "name": "Dash",
+      "rarity": "rare",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "arrow",
+      "note": "maju 7 langkah",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": 7
+        }
+      ]
+    },
+    {
+      "id": "backpedal",
+      "name": "Backpedal",
+      "rarity": "rare",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "back",
+      "note": "mundur 2 langkah",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": -2
+        }
+      ]
+    },
+    {
+      "id": "double-time",
+      "name": "Double Time",
+      "rarity": "rare",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "x2",
+      "note": "mendapatkan 2x multiplier untuk dadu berikutnya",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "multiply",
+              "value": 2
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "turbo",
+      "name": "Turbo",
+      "rarity": "rare",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "arrow",
+      "note": "mendapatkan modifier +[4-6] untuk dadu berikutnya",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "values": {
+        "n": {
+          "min": 4,
+          "max": 6
+        }
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "add",
+              "value": {
+                "value": "n"
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "catch-up",
+      "name": "Catch Up",
+      "rarity": "rare",
+      "type": "movement",
+      "status": "draft",
+      "weight": 1,
+      "note": "bergerak ke tempat player berikutnya",
+      "plan": "Move to the tile of the player just ahead of you.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "jackpot",
+      "name": "Jackpot!",
+      "rarity": "rare",
+      "type": "risky",
+      "status": "on",
+      "weight": 1,
+      "icon": "jackpot",
+      "note": "40%: maju 15 · 60%: mundur 8",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "gamble",
+          "outcomes": [
+            {
+              "weight": 40,
+              "ops": [
+                {
+                  "op": "moveRelative",
+                  "amount": 15
+                }
+              ]
+            },
+            {
+              "weight": 60,
+              "ops": [
+                {
+                  "op": "moveRelative",
+                  "amount": -8
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "double-or-nothing",
+      "name": "Double or Nothing",
+      "rarity": "rare",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "50/50 dadu berikutnya akan mendapatkan multiplier 2x, atau bergerak mundur",
+      "plan": "50%: your next roll is doubled. 50%: it moves you back.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "high-roller",
+      "name": "High Roller",
+      "rarity": "rare",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika dadu berikutnya lebih dari 3, bergerak ke tangga terdekat. otherwise, diam",
+      "plan": "If your next roll is over 3, go to the nearest ladder. If not, stay put.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "odd-luck",
+      "name": "Odd Luck",
+      "rarity": "rare",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika dadu berikutnya adalah angka ganjil, dapatkan multiplier 2x",
+      "plan": "If your next roll is odd, it is doubled.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "even-stevens",
+      "name": "Even Stevens",
+      "rarity": "rare",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika dadu berikutnya adalah angka genap, mendapatkan 2 shield ular dan serangan",
+      "plan": "If your next roll is even, block the next 2 snakes or attacks (3 rounds).",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "crossroads",
+      "name": "Crossroads",
+      "rarity": "rare",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "50/50 bergerak ke tangga sebelumnya atau ular berikutnya",
+      "plan": "50%: back to the ladder behind you. 50%: on to the next snake.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "rarity": "epic",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Lempar dadu, angka dadu semua player di selain kamu berkurang sebanyak angka tersebut selama 3 ronde",
+      "plan": "Roll a die: everyone else's rolls are lower by that much for 3 rounds.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "switcheroo",
+      "name": "Switcheroo",
+      "rarity": "epic",
+      "type": "attack",
+      "status": "on",
+      "weight": 1,
+      "icon": "swap",
+      "note": "Bertukar tempat dengan pemain yang paling unggul",
+      "target": {
+        "condition": "ahead-of-caster",
+        "pick": "furthest",
+        "tieBreak": "random"
+      },
+      "effects": [
+        {
+          "op": "swap"
+        }
+      ]
+    },
+    {
+      "id": "topsy-turvy",
+      "name": "Topsy-Turvy",
+      "rarity": "epic",
+      "type": "attack",
+      "status": "draft",
+      "weight": 1,
+      "note": "Dadu milik semua pemain selain kamu akan bergerak mundur untuk 1 ronde berikutnya",
+      "plan": "Everyone else's next roll moves them back.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "rarity": "epic",
+      "type": "defense",
+      "status": "on",
+      "weight": 1,
+      "icon": "shield",
+      "note": "mendapatkan shield dari 1 serangan hingga akhir permainan",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "beforeAttack"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "aegis",
+      "name": "Aegis",
+      "rarity": "epic",
+      "type": "defense",
+      "status": "draft",
+      "weight": 1,
+      "note": "mendapatkan shield dari ular dan serangan 2x hingga akhir permainan",
+      "plan": "Block the next 2 snakes or attacks, any time this match.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "fresh-start",
+      "name": "Fresh Start",
+      "rarity": "epic",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "SEMUA player bergerak ke tile 30",
+      "plan": "Everyone moves to tile 30.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "final-battle",
+      "name": "Final Battle!",
+      "rarity": "epic",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "SEMUA player bergerak ke tile 90",
+      "plan": "Everyone moves to tile 90.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "upside-down",
+      "name": "Upside Down",
+      "rarity": "epic",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "swap seluruh posisi tangga dan ular",
+      "plan": "Every snake becomes a ladder, and every ladder a snake.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "fair-and-square",
+      "name": "Fair and Square",
+      "rarity": "epic",
+      "type": "misc",
+      "status": "draft",
+      "weight": 1,
+      "note": "SEMUA player bergerak ke tile 50",
+      "plan": "Everyone moves to tile 50.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "rocket-boots",
+      "name": "Rocket Boots",
+      "rarity": "epic",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "arrow",
+      "note": "maju 15 langkah",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "moveRelative",
+          "amount": 15
+        }
+      ]
+    },
+    {
+      "id": "overtake",
+      "name": "Overtake",
+      "rarity": "epic",
+      "type": "movement",
+      "status": "draft",
+      "weight": 1,
+      "note": "bergerak ke 1 tile di depan player di depanmu",
+      "plan": "Move to 1 tile ahead of the player just ahead of you.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "triple-time",
+      "name": "Triple Time",
+      "rarity": "epic",
+      "type": "movement",
+      "status": "on",
+      "weight": 1,
+      "icon": "x2",
+      "note": "mendapatkan 3x multiplier untuk dadu berikutnya",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "multiply",
+              "value": 3
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "odd-fortune",
+      "name": "Odd Fortune",
+      "rarity": "epic",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika dadu berikutnya adalah angka ganjil, dapatkan multiplier 3x",
+      "plan": "If your next roll is odd, it is tripled.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "even-fortress",
+      "name": "Even Fortress",
+      "rarity": "epic",
+      "type": "risky",
+      "status": "draft",
+      "weight": 1,
+      "note": "jika dadu berikutnya adalah angka genap, dapatan 3 shield ular dan serangan 5 ronde",
+      "plan": "If your next roll is even, block the next 3 snakes or attacks (5 rounds).",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": []
+    },
+    {
+      "id": "steady-hand",
+      "name": "Steady Hand",
+      "rarity": "common",
+      "type": "misc",
+      "status": "off",
+      "weight": 1,
+      "icon": "steady",
+      "note": "In the game before the Excel list; kept switched off.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "diceTotal",
+              "op": "replace",
+              "value": 4
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "cleanse",
+      "name": "Cleanse",
+      "rarity": "common",
+      "type": "misc",
+      "status": "off",
+      "weight": 1,
+      "icon": "cleanse",
+      "note": "In the game before the Excel list; kept switched off.",
+      "target": {
+        "condition": "self",
+        "pick": "self",
+        "tieBreak": "lowest-seat"
+      },
+      "effects": [
+        {
+          "op": "removeEffects",
+          "filter": {
+            "createdByOthers": true
+          },
+          "count": "all"
+        }
+      ]
+    }
+  ]
+}

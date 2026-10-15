@@ -1,5 +1,5 @@
 import {
-  STARTER_CARDS,
+  catalogCards,
   createStream,
   nextInt,
   type CardDef,
@@ -137,7 +137,7 @@ export function makeBots(seats: PlayerSeat[], policy: PolicyName, seed: string, 
   const bots: Record<string, Bot> = {};
   for (const seat of seats) {
     const rng = createStream(`${seed}|bot|${seat.id}`);
-    bots[seat.id] = policy === 'random' ? new RandomBot(rng, afkPercent) : new HeuristicBot(rng, STARTER_CARDS);
+    bots[seat.id] = policy === 'random' ? new RandomBot(rng, afkPercent) : new HeuristicBot(rng, catalogCards());
   }
   return bots;
 }

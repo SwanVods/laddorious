@@ -1,4 +1,4 @@
-import { generateBoard, resolveConfig, type GenerationReport, type MatchConfigInput, type PlayerSeat } from '@laddorious/core';
+import { catalogConfig, generateBoard, resolveConfig, type GenerationReport, type MatchConfigInput, type PlayerSeat } from '@laddorious/core';
 import { makeBots, type PolicyName } from '@laddorious/bots';
 import { aggregate, matchMetrics, type BatchReport, type MatchMetrics } from './metrics';
 import { runMatch, type MatchLog } from './runner';
@@ -28,7 +28,7 @@ export function runBatch(opts: BatchOptions): BatchResult {
   let firstLog: MatchLog | null = null;
   for (let i = 0; i < opts.matches; i++) {
     const seed = `${opts.baseSeed}-${i}`;
-    const config: MatchConfigInput = { checkInvariants: false, ...opts.config, seed };
+    const config: MatchConfigInput = { checkInvariants: false, ...catalogConfig(), ...opts.config, seed };
     // Generate the board here (the same board createMatch would build) so its report is kept.
     const { board, report } = generateBoard(seed, resolveConfig(config).board);
     generation.push(report);

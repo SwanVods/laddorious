@@ -1,5 +1,5 @@
 import { makeBots, type Bot } from '@laddorious/bots';
-import { awaiting, createMatch, eventsFor, step, viewFor, type GameEvent, type Input, type MatchState, type PlayerId } from '@laddorious/core';
+import { awaiting, catalogConfig, createMatch, eventsFor, step, viewFor, type GameEvent, type Input, type MatchState, type PlayerId } from '@laddorious/core';
 import { PausableTimers } from './timers';
 import type { FromHost, MatchUpdate, PlayerAction, Seat } from './types';
 
@@ -51,7 +51,7 @@ export class MatchHost {
       // In fast mode a bot plays the human seats too.
       const played = this.fast ? seats : seats.filter((s) => s.bot);
       this.bots = makeBots(played.map((s) => ({ id: s.playerId })), 'heuristic', rngSeed, 0);
-      this.match = createMatch(this.fast ? { seed, rngSeed, windows: FAST.windows } : { seed, rngSeed }, seats.map((s) => ({ id: s.playerId })));
+      this.match = createMatch(this.fast ? { seed, rngSeed, ...catalogConfig(), windows: FAST.windows } : { seed, rngSeed, ...catalogConfig() }, seats.map((s) => ({ id: s.playerId })));
       this.afterStep([]);
     });
   }
