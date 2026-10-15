@@ -237,6 +237,8 @@ export class OnlineMatchSession implements MatchSession {
     this.over = true;
     this.holding = false;
     this.tab?.close();
+    if (this.claim !== null) clearTimeout(this.claim);
+    this.claim = null;
     clearSeat(this.deps.store);
     if (this.retry !== null) clearTimeout(this.retry);
     this.retry = null;

@@ -220,6 +220,14 @@ describe('a duplicated tab (2026-10-15)', () => {
     first.leave();
   });
 
+  it('never opens the match after I leave during the wait', () => {
+    const sockets = fakeSockets();
+    const session = new OnlineMatchSession({ url: 'ws://test', open: sockets.open, store: memoryStore(), tabs: memoryTabs() }, SAVED, { rejoining: true });
+    session.leave();
+    vi.advanceTimersByTime(CLAIM_WAIT_MS * 2);
+    expect(sockets.made).toHaveLength(0);
+  });
+
   it('takes the seat after a short wait when no other tab has it (a plain reload)', () => {
     const sockets = fakeSockets();
     const store = memoryStore();
