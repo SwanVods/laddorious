@@ -11,7 +11,7 @@ from lib import finish, palette, shapes
 ARMS = 3
 RIDGE = [0.5, 1.0, 1.0, 0.5, 0, 0, 0, 0, 0]  # each arm's columns: a ridge across four, then the bowl
 COLUMNS = ARMS * len(RIDGE)
-EYE, EDGE, RINGS = 0.16, 0.36, 8  # the bowl runs from under the cap (radius 0.18) to the rim
+EYE, EDGE, RINGS = 0.16, 0.36, 13  # the bowl runs from under the cap (radius 0.18) to the rim; 13 rings keep each ridge's turn under 10° a ring, so it curls without kinks (2026-10-15)
 BOWL = [EYE * (EDGE / EYE) ** (i / (RINGS - 1)) for i in range(RINGS)]  # its rings, closer near the eye
 RIM = [(0.372, 0.1), (0.394, 0.108), (0.418, 0.1), (0.43, 0.072), (0.426, 0.03), (0.41, 0.0)]  # (radius, height)
 CURL = 2.4  # a log spiral's tightness: each ridge crosses the rings at the same slant, like water
