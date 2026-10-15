@@ -87,4 +87,10 @@ describe('board layout (spec #2 §6.1)', () => {
     expect(PARTS.vortexRadius + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
     expect(PARTS.splat.radius + halfLane).toBeLessThan(LANE_CLEARANCE * TILE_SIZE);
   });
+
+  it("gives the whirlpool's eye a symbol bigger than the exit's, on a cap that leaves the ridges in view (2026-10-15)", () => {
+    expect(PARTS.symbol.eye).toBeGreaterThan(PARTS.symbol.exit);
+    expect(PARTS.symbol.eye).toBeLessThanOrEqual(PARTS.cap.radius * 2 * 0.82);
+    expect(PARTS.cap.radius).toBeLessThan(PARTS.vortexRadius * 0.62);
+  });
 });
