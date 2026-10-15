@@ -25,6 +25,7 @@
     "hopMs": 350,
     "rollPauseMs": 500,
     "cardLeadMs": 450,
+    "cardRollMs": 700,
     "cardPauseMs": 600,
     "faceOffIntroMs": 1900,
     "knockbackMs": 850,

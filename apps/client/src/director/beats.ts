@@ -118,6 +118,10 @@ export const BEAT_MS = {
   get cardLead() {
     return tuning().timing.cardLeadMs;
   },
+  /** A card's own die tumbling after the lead-in, before the card plays (2026-10-16). */
+  get cardRoll() {
+    return tuning().timing.cardRollMs;
+  },
   /** The pause after each card and its moves, and after the last die roll (2026-10-14). */
   get cardPause() {
     return tuning().timing.cardPauseMs;
@@ -253,6 +257,22 @@ export function tilesTravelled(event: GameEvent, boardSize: number): number {
   return event.bounced ? boardSize - event.from + (boardSize - event.to) : Math.abs(event.to - event.from);
 }
 
+const rollOf = (beat: Pick<Beat, 'kind' | 'events'>) => {
+  const e = beat.kind === 'cardResolved' ? beat.events.find((x) => x.type === 'CardResolved') : undefined;
+  return e?.type === 'CardResolved' && e.roll !== undefined ? e : null;
+};
+
+/** How long a card's beat waits before the card plays: the camera's lead-in, then its die's tumble if it rolls one (2026-10-16). */
+export function cardLeadOf(beat: Pick<Beat, 'kind' | 'events'>): number {
+  return BEAT_MS.cardLead + (rollOf(beat) ? BEAT_MS.cardRoll : 0);
+}
+
+/** A card's own die, tumbling above its caster after the lead-in and landing on the roll; null when the card rolls none. */
+export function cardRollAt(beat: Pick<Beat, 'kind' | 'events'> & { startedAt: number }): { player: PlayerId; face: number; startedAt: number; durationMs: number } | null {
+  const e = rollOf(beat);
+  return e ? { player: e.caster, face: e.roll!, startedAt: beat.startedAt + BEAT_MS.cardLead, durationMs: BEAT_MS.cardRoll } : null;
+}
+
 function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
   const longest = () => Math.max(...beat.events.map((e) => tilesTravelled(e, boardSize)));
   switch (beat.kind) {
@@ -280,7 +300,7 @@ function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
       return BEAT_MS.cardReveal;
     case 'cardResolved': {
       const resolved = beat.events[0];
-      return resolved?.type === 'CardResolved' ? BEAT_MS.cardLead + BEAT_MS.card[resolved.result] : 0;
+      return resolved?.type === 'CardResolved' ? cardLeadOf(beat) + BEAT_MS.card[resolved.result] : 0;
     }
     case 'clash':
       return BEAT_MS.clash;

@@ -2,6 +2,7 @@
 import type { GameEvent, PlayerId } from '@laddorious/core';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_TUNING, tuningStore } from '../src/app/tuning';
 import { BEAT_MS } from '../src/director/beats';
 import { Director } from '../src/director/director';
 import { CENTER_DIE, CenterDie } from '../src/hud/CenterDie';
@@ -99,5 +100,37 @@ describe('CenterDie (polish spec §4.2)', () => {
     advance(BEAT_MS.roll * 0.45);
     expect(die()?.querySelector('.die-face.tumbling')).toBeNull();
     expect(screen.getByRole('img', { name: '1' })).toBeTruthy();
+  });
+
+  it("shows my own card's die after the camera's lead-in, landing on the roll (2026-10-16)", () => {
+    const push = start();
+    const card = (caster: PlayerId): GameEvent => ({ type: 'CardResolved', caster, cardId: 'wind-up', target: caster, result: 'hit', roll: 5, visibility: 'public' });
+    push([card('p0')]);
+    expect(die()).toBeNull();
+    advance(BEAT_MS.cardLead + CENTER_DIE.tumbleStepMs);
+    expect(die()?.querySelector('.die-face.tumbling')).toBeTruthy();
+    advance(BEAT_MS.cardRoll);
+    expect(die()?.getAttribute('aria-label')).toBe('You rolled 5');
+    expect(screen.getByRole('img', { name: '5' })).toBeTruthy();
+  });
+
+  it("leaves another player's card die above their piece", () => {
+    const push = start();
+    push([{ type: 'CardResolved', caster: 'p1', cardId: 'long-shot', target: 'p0', result: 'hit', roll: 2, visibility: 'public' }]);
+    advance(BEAT_MS.cardLead + BEAT_MS.cardRoll);
+    expect(die()).toBeNull();
+  });
+
+  it('holds a long card roll on its face after it lands, however long the tumble (2026-10-16)', () => {
+    tuningStore.setState({ ...DEFAULT_TUNING, timing: { ...DEFAULT_TUNING.timing, cardRollMs: 4000 } }, true);
+    try {
+      const push = start();
+      push([{ type: 'CardResolved', caster: 'p0', cardId: 'wind-up', target: 'p0', result: 'hit', roll: 3, visibility: 'public' }]);
+      advance(BEAT_MS.cardLead + 4000 + CENTER_DIE.landedMs - 100);
+      expect(die()?.querySelector('.die-face.landed')).toBeTruthy();
+      expect(die()?.classList.contains('leaving')).toBe(false);
+    } finally {
+      tuningStore.setState(DEFAULT_TUNING, true);
+    }
   });
 });

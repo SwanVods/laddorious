@@ -1,5 +1,5 @@
 import type { GameEvent, Jump, PlayerId } from '@laddorious/core';
-import { BEAT_MS, hopSchedule, landsOnStack } from '../director/beats';
+import { BEAT_MS, cardLeadOf, hopSchedule, landsOnStack } from '../director/beats';
 import type { DirectorState, PlayingBeat } from '../director/director';
 import { stackOn, type PresentationState } from '../director/presentation';
 import { faceOffSpots, pieceOf, sizeOf } from './footprint';
@@ -170,7 +170,7 @@ export function beatPose(beat: PlayingBeat, from: PresentationState, player: Pla
     return { ...end, position: [end.position[0], end.position[1] + Math.abs(Math.sin(t * Math.PI * 3)) * 0.9, end.position[2]], rotation: [0, t * Math.PI * 4, 0] };
   }
   if (beat.kind === 'cardResolved' && beat.events.some((e) => e.type === 'CardResolved' && e.result === 'hit' && (e.target === player || (e.targets?.includes(player) ?? false)))) {
-    const k = clamp01((elapsed - BEAT_MS.cardLead) / (beat.durationMs - BEAT_MS.cardLead));
+    const k = clamp01((elapsed - cardLeadOf(beat)) / (beat.durationMs - cardLeadOf(beat)));
     return { ...start, position: [start.position[0], start.position[1] + Math.sin(k * Math.PI) * 0.35, start.position[2]] };
   }
   const k = easeInOut(t);
@@ -277,9 +277,11 @@ export function projectileAt(beat: PlayingBeat, from: PresentationState, seatOf:
   const card = beat.events.find((e) => e.type === 'CardResolved');
   if (card?.type !== 'CardResolved' || card.target === null || card.target === card.caster) return null;
   // It waits for the camera's lead-in (2026-10-14), then flies over the first half of what's left.
-  const since = nowMs - beat.startedAt - BEAT_MS.cardLead;
+  // A card that rolls its own die waits for it to land too (2026-10-16).
+  const lead = cardLeadOf(beat);
+  const since = nowMs - beat.startedAt - lead;
   if (since < 0) return null;
-  const t = clamp01(since / ((beat.durationMs - BEAT_MS.cardLead) / 2));
+  const t = clamp01(since / ((beat.durationMs - lead) / 2));
   if (t >= 1) return null;
   const a = restPose(from, card.caster, seatOf(card.caster)).position;
   const b = restPose(from, card.target, seatOf(card.target)).position;
@@ -295,7 +297,8 @@ export function shieldBlocking(beat: PlayingBeat | null, player: PlayerId, nowMs
   if (beat.events.some((e) => e.type === 'SnakeBlocked' && e.player === player)) return true;
   const blocked = (e: GameEvent) => e.type === 'CardResolved' && ((e.target === player && e.result === 'blocked') || (e.blocked?.includes(player) ?? false));
   if (!beat.events.some(blocked)) return false;
-  const lands = beat.startedAt + BEAT_MS.cardLead + (beat.durationMs - BEAT_MS.cardLead) / 2;
+  const lead = cardLeadOf(beat);
+  const lands = beat.startedAt + lead + (beat.durationMs - lead) / 2;
   return nowMs >= lands;
 }
 

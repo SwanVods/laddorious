@@ -87,7 +87,9 @@ export function cuesForBeat(beat: Beat, { me, boardSize }: CueContext): Cue[] {
       if (e?.type !== 'CardResolved') return [];
       const id = e.result === 'hit' ? 'C5' : e.result === 'blocked' ? 'B2' : 'C6';
       const involved = e.caster === me || e.target === me || (e.targets?.includes(me) ?? false) || (e.blocked?.includes(me) ?? false);
-      return [cue(id, 0, !involved)];
+      if (e.roll === undefined) return [cue(id, 0, !involved)];
+      // A card's own die (2026-10-16): it rattles as it tumbles, and the card sounds as it lands.
+      return [cue(e.caster === me ? 'D2' : 'D3', BEAT_MS.cardLead, e.caster !== me), cue(id, BEAT_MS.cardLead + BEAT_MS.cardRoll, !involved)];
     }
     case 'clash': {
       const e = beat.events.find((x) => x.type === 'Clash');

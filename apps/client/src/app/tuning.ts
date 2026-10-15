@@ -23,6 +23,8 @@ export interface Tuning {
     rollPauseMs: number;
     /** Before each card plays, while the camera reaches its player (ms). */
     cardLeadMs: number;
+    /** A card's own die tumbling above its player, after the lead-in and before the card plays (ms). */
+    cardRollMs: number;
     /** The pause after each card and its moves (ms). */
     cardPauseMs: number;
     /** My own face-off's opening: the collision held, then the hop down (ms). */
@@ -48,7 +50,7 @@ export const DEFAULT_TUNING: Tuning = {
     swoop: { ease: 2.8 },
     close: { height: 5.8, back: 7.2 },
   },
-  timing: { hopMs: 230, rollPauseMs: 400, cardLeadMs: 450, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850, endHoldMs: 1000 },
+  timing: { hopMs: 230, rollPauseMs: 400, cardLeadMs: 450, cardRollMs: 700, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850, endHoldMs: 1000 },
   hud: { feedLines: 4, phoneCompactCards: true },
 };
 

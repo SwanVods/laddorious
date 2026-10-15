@@ -5,6 +5,7 @@ import { Mesh, ShaderMaterial, type Group, type Object3D } from 'three';
 import { WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
+import { cardRollAt } from '../director/beats';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { PIECE_SCALE } from './layout';
@@ -63,6 +64,9 @@ export function Pieces({ director, seats, shadows, clearcoat, low = false, reduc
         // A pause after the last roll keeps the dice up (2026-10-14).
         if (s.beat.kind !== 'roll' && s.beat.kind !== 'pause') {
           rollsRef.current.clear();
+          // A card's own die tumbles above its caster once the camera is there (2026-10-16).
+          const card = cardRollAt(s.beat);
+          if (card) rollsRef.current.set(card.player, { face: card.face, forced: false, startedAt: card.startedAt, durationMs: card.durationMs });
           return;
         }
         for (const e of s.beat.events) {
@@ -162,7 +166,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
     }
     // The die tumbles above the piece and settles on the rolled face; forced faces flash (spec #2 §5.1).
     const roll = rollsRef.current.get(seat.playerId);
-    dieRef.current.visible = roll !== undefined;
+    dieRef.current.visible = roll !== undefined && now >= roll.startedAt;
     if (roll) {
       const spin = 1 - easeOut(clamp01((now - roll.startedAt) / roll.durationMs));
       const [rx, ry, rz] = dieRotationFor(roll.face);
