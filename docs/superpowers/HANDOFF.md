@@ -66,6 +66,12 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - CI (`.github/workflows/ci.yml`): the first run passed `check`; e2e failed on the desktop freeze, the `shots` project (review screenshots needing a GPU, now left out of CI) and the online flake (now skipped on CI).
 - Not committed: `apps/client/public/tuning.json` has `zoomMin` 0.7 in the working tree, changed outside these commits (the user's, probably).
 
+**The card catalogue (2026-10-15), branch `feat/card-catalog`, awaiting review** (plan `docs/superpowers/plans/2026-10-15-card-catalog.md`; no spec, the user's choice; catalogue review page <https://claude.ai/artifact/Dq7Bv38pjgthyxvPmu6EzH>):
+- Every card lives in `packages/core/src/cards/cards.json`: the user's 66 Excel cards (English names and text, the Indonesian as each card's note) plus Steady Hand and Cleanse kept off; 23 on, 43 drafts, 2 off. Values like 1–6 are picked when a match starts (`${rngSeed}|cardValues`), shown in the view (`cardValues`) and on the cards. Card text is generated from the steps (`describeCard`). Every rarity needs one card on; a type may have none.
+- `pnpm cards`: the local card editor (dev server only, never built): list, filters, search, edit fields, values and steps with live checks and a preview, odds, new drafts, duplicate, delete, Save (refuses stale or broken saves; doesn't reload the editor, so a game tab needs a manual reload). Simulate: 1,000 bot matches in a worker (~5 s), per-card stats and flags. First run: Switcheroo strong (47% win rate), Snake Pit fizzles often.
+- The shield is a Blender bubble with a glowing mint rim (`art/models/shield.py`, 840 triangles) that breathes while up and flashes when it blocks. A busy match on High: about 155,900 of 156,000 triangles — no room left without a trim.
+- Next: phase 4, the new building blocks in batches 4a–4d (one short plan each), switching the 43 drafts on. Aegis is a draft until 4b (its "snake or attack" shield).
+
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
 - **Try it on the Wi-Fi:** `pnpm serve` builds the game for the local server, starts `wrangler dev` on port 8787 on every network interface, and prints the addresses to open on phones (memory `multiplayer-lan-testing`).
@@ -134,6 +140,11 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 ## Open items
 
 - **Blender:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`). On 2026-10-09 a build run inside the user's open Blender (through the MCP link) crashed it; the bug is fixed (`art/lib/export.py` kept the scene graph's copies of materials), and since then every build and preview runs headless (`pnpm art`, `blender --background --factory-startup --python art/preview.py -- out.png ids`), never in the user's Blender.
+- **Deferred card-catalogue minors** (2026-10-15; not fixed):
+  - Card bubbles beside the player rows now show the generated text, which can be longer than the old hand-written one-liners and gets cut off; a short-summary field could come back if it bothers.
+  - After a Save in the card editor, an open game tab keeps the old cards until it is reloaded (the dev server skips the hot update so the editor keeps its place).
+  - A hand-edited `cards.json` with a mistake stops matches from starting (ConfigError at match creation); the editor never saves one, and `pnpm test` catches it.
+  - Simulate always plays four-player matches.
 - **Dropped, the user's call (2026-10-15):** the course pads' faceted mint rim and a lighter Low crown stay as they are.
 - **Deferred Phase 5 minors** (from the self-review; not fixed):
   - The rotate screen covers the match but doesn't pause it (kept as is: the user's call, 2026-10-15).
