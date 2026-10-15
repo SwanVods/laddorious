@@ -5,6 +5,8 @@ export interface FaceOff {
   challengeId: string;
   tile: number;
   players: PlayerId[];
+  /** It has a winner, and its pieces wait apart for the knock-backs, which come once every face-off is decided. */
+  decided?: boolean;
 }
 
 /**
@@ -33,11 +35,10 @@ export function presentationFromView(view: PlayerView, arrivals: PlayerId[] = []
     effects: view.effects,
     boardEdits: view.boardEdits,
     jumps: view.board.jumps,
+    // Decided face-offs too: the engine knocks every loser back only once all of them are decided (2026-10-15).
     faceOffs:
       view.phase.kind === 'settle'
-        ? view.phase.challenges
-            .filter((c) => c.winner === null)
-            .map((c) => ({ challengeId: c.id, tile: c.tile, players: [...c.participants] }))
+        ? view.phase.challenges.map((c) => ({ challengeId: c.id, tile: c.tile, players: [...c.participants], decided: c.winner !== null }))
         : [],
   };
 }
@@ -56,10 +57,11 @@ export function applyEvent(state: PresentationState, event: GameEvent): Presenta
         faceOffs: event.cause === 'knockback' ? state.faceOffs.filter((f) => !f.players.includes(event.player)) : state.faceOffs,
       };
     case 'ChallengeStarted':
-      return { ...state, faceOffs: [...state.faceOffs, { challengeId: event.challengeId, tile: event.tile, players: [...event.players] }] };
+      return { ...state, faceOffs: [...state.faceOffs, { challengeId: event.challengeId, tile: event.tile, players: [...event.players], decided: false }] };
     case 'ChallengeResolved':
       // Won or drawn, the pieces keep their face-off spots: the knock-back that follows a win ends it.
-      return state;
+      if (event.winner === null) return state;
+      return { ...state, faceOffs: state.faceOffs.map((f) => (f.challengeId === event.challengeId ? { ...f, decided: true } : f)) };
     case 'EffectAdded':
       return { ...state, effects: [...state.effects, event.effect] };
     case 'EffectRemoved':

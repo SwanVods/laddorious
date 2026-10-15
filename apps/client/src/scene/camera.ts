@@ -36,7 +36,7 @@ export interface ShotInput {
   /** I'm peeking at the board from my card pick: show all of it (2026-10-14). */
   peeking?: boolean;
   /** The face-offs on the board (the presentation's), so the camera can watch other players' (2026-10-15). */
-  faceOffs?: ReadonlyArray<{ tile: number; players: readonly PlayerId[] }>;
+  faceOffs?: ReadonlyArray<{ challengeId?: string; tile: number; players: readonly PlayerId[]; decided?: boolean }>;
   /** The overview's zoom from the wheel or a pinch: 1 as set, lower is closer (2026-10-15). */
   zoom?: number;
   /** The overview's pan when zoomed in (board theme spec B5): the look-at point's offset, already kept over the board. */
@@ -157,12 +157,15 @@ function resolvingPiece({ beat, me, piece }: ShotInput): PlayerId | null {
 
 /**
  * When I'm not in a face-off but others are (2026-10-15), the camera watches theirs: from the collision,
- * through the picks, to the result. The first, if there are two.
+ * through the picks, to the result. A result beat shows its own face-off; otherwise the first still undecided.
  */
 function othersFaceOff({ beat, me, faceOffs = [] }: ShotInput): number | null {
   if (faceOffs.some((f) => f.players.includes(me))) return null;
   const quiet = beat === null || beat.kind === 'info' || beat.kind === 'faceOff' || beat.kind === 'faceOffResult';
-  return quiet && faceOffs.length > 0 ? faceOffs[0]!.tile : null;
+  if (!quiet || faceOffs.length === 0) return null;
+  const result = beat?.kind === 'faceOffResult' ? beat.events.find((e) => e.type === 'ChallengeResolved') : undefined;
+  const shown = result && faceOffs.find((f) => f.challengeId === result.challengeId);
+  return (shown ?? faceOffs.find((f) => !f.decided) ?? faceOffs[0]!).tile;
 }
 
 function overview(input: ShotInput): Shot {

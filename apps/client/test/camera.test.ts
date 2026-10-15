@@ -132,6 +132,12 @@ describe('camera rules (spec #2 §5.3)', () => {
     // Two at once: the first. Mine: the swoop on me, as before.
     expect(shot({ window: 'challenge', faceOffs: [...theirs, { challengeId: 'c2', tile: 40, players: ['p3', 'p0'] }] }).target).toEqual(SPOTS.p0);
     expect(shot({ window: 'challenge', faceOffs: [...theirs, { challengeId: 'c2', tile: 40, players: ['p3', 'p1'] }] }).target).toEqual(tile);
+    // The first decided, waiting for the second: on to the second (2026-10-15).
+    const firstDone = [{ ...theirs[0]!, decided: true }, { challengeId: 'c2', tile: 40, players: ['p3', 'p1'] }];
+    expect(shot({ window: 'challenge', faceOffs: firstDone }).target).toEqual(tileToWorld(40));
+    // ...but only after its own result beat, which stays on it.
+    const won: GameEvent = { type: 'ChallengeResolved', challengeId: 'c1', pickRound: 1, picks: { p1: 'rock', p2: 'paper' }, winner: 'p2', losers: ['p1'], outcome: 'win', visibility: 'public' };
+    expect(shot({ beat: beatOf('faceOffResult', [won]), faceOffs: firstDone }).target).toEqual(tile);
   });
 
   it('shows the overview in a face-off window when no face-off is shown (2026-10-15)', () => {
