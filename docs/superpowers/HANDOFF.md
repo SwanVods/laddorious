@@ -30,7 +30,7 @@ After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm
 
 On `art/board-theme` (2026-10-15): 97 test files and 939 tests pass; `pnpm e2e` passes 16 of 17, the online away test flaking as below. Before that, on `fix/adjustments`: 95 test files and 896 tests pass, and `pnpm e2e` passes all 17 (about 10 minutes); the online away test can still flake, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
-## Next step: the board theme (plan 3, as a design step)
+## Next step: after the board theme
 
 The adjustments were approved and merged to `main` (2026-10-15). The board theme's design step came next.
 - The user picked the **Sky Course** from three 3D directions (<https://claude.ai/artifact/W5hpRymv44SgtJGrjAqj78>), adding:
@@ -38,7 +38,8 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
   - TFT-style props on the platform's wings;
   - a fixed camera that pans only when zoomed in.
 - The spec is `docs/superpowers/specs/2026-10-15-board-theme-design.md`. It replaces Spec #5 §4.3 and plan 3.
-- **Built** on branch `art/board-theme` (plan `docs/superpowers/plans/2026-10-15-board-theme.md`, 2026-10-15): 2.3 squares on a 2.5 step (0.2 gaps; narrowed from 2.7 at the user's first review, the platform 10% narrower and the props closer); the overview ×1.25 and never turning; drag to pan when zoomed in (`camera.pan` in tuning.json); the world as placements of Blender models (`scene/world.ts`, `WorldParts.tsx`): the striped inflatable platform, the wings' props, five floating obstacles, stepping pads and clouds; the menu's podium on a little platform. Every model is a headless Blender script (lathed or sculpted). **Awaiting the user's review** (the review page's "Board theme" section), then a local merge to `main`.
+- **Built** on branch `art/board-theme` (plan `docs/superpowers/plans/2026-10-15-board-theme.md`, 2026-10-15): 2.3 squares on a 2.5 step (0.2 gaps; narrowed from 2.7 at the user's first review, the platform 10% narrower and the props closer); the overview ×1.25 and never turning; drag to pan when zoomed in (`camera.pan` in tuning.json); the world as placements of Blender models (`scene/world.ts`, `WorldParts.tsx`): the striped inflatable platform, the wings' props, five floating obstacles, stepping pads and clouds; the menu's podium on a little platform. Every model is a headless Blender script (lathed or sculpted). **Approved by the user and merged to `main`** (2026-10-15, `c2ff51b`).
+- **Next:** the user's later-fix batch (the notes below and the deferred minors in Open items), or whatever the user brings next.
 - **Room left:** a busy match prices at 94 draw calls and 149,614 triangles on High (386 to spare), 73 calls and 80,298 on Low. The trails' arrowheads are spaced by the board's step to make that room. Anything new in the match must come with a trim.
 - Every 3D object is a Blender model; the artifact is a preview only (the user, 2026-10-15).
 
