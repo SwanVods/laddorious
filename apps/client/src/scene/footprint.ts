@@ -1,7 +1,7 @@
 import type { PlayerId } from '@laddorious/core';
 import { PIECE_SIZES } from '../assets/pieceSizes';
 import type { PieceId } from '../service/matchService';
-import { PIECE_SCALE } from './layout';
+import { PIECE_SCALE, TILE_ACROSS } from './layout';
 
 // Where pieces stand so that nothing overlaps (the user, 2026-10-14): each piece's measured size, its
 // footprint on the ground as a turned rectangle, and the spots for a face-off.
@@ -58,9 +58,9 @@ const TOWARD_CAMERA = Math.atan2(0.5, 1);
 /**
  * Where each player in a face-off stands, from the tile's centre, and which way they face. Two stand nose
  * to nose with a small gap, each turned three-quarters toward the camera. Three or four stand in a ring,
- * facing its middle, far enough apart for the widest of them.
+ * facing its middle, far enough apart for the widest of them, drawn smaller where the ring would leave its square.
  */
-export function faceOffSpots(players: readonly PlayerId[]): Array<{ dx: number; dz: number; heading: number }> {
+export function faceOffSpots(players: readonly PlayerId[]): Array<{ dx: number; dz: number; heading: number; scale: number }> {
   if (players.length === 2) {
     const [a, b] = players.map(pieceOf) as [PieceId, PieceId];
     const headingA = Math.PI / 2 - TOWARD_CAMERA;
@@ -68,18 +68,22 @@ export function faceOffSpots(players: readonly PlayerId[]): Array<{ dx: number; 
     const reachA = Math.max(...footprint(a, 0, 0, headingA).corners.map(([x]) => x));
     const reachB = Math.min(...footprint(b, 0, 0, headingB).corners.map(([x]) => x));
     return [
-      { dx: -(reachA + GAP / 2), dz: 0, heading: headingA },
-      { dx: -reachB + GAP / 2, dz: 0, heading: headingB },
+      { dx: -(reachA + GAP / 2), dz: 0, heading: headingA, scale: 1 },
+      { dx: -reachB + GAP / 2, dz: 0, heading: headingB, scale: 1 },
     ];
   }
   const n = players.length;
   const sizes = players.map((p) => sizeOf(pieceOf(p)));
   const widest = Math.max(...sizes.map((s) => Math.hypot(s.side, Math.max(s.front, s.back))));
   const radius = Math.max(widest + GAP, (widest + GAP / 2) / Math.sin(Math.PI / n));
-  return players.map((_, i) => {
+  const ring = players.map((p, i) => {
     const angle = Math.PI / n + (2 * Math.PI * i) / n;
     const dx = radius * Math.sin(angle);
     const dz = radius * Math.cos(angle);
-    return { dx, dz, heading: Math.atan2(-dx, -dz) };
+    return { dx, dz, heading: Math.atan2(-dx, -dz), piece: pieceOf(p) };
   });
+  // The ring stays on its own square (2026-10-15): if it would reach a neighbour, it is drawn smaller.
+  const reach = Math.max(...ring.flatMap((r) => footprint(r.piece, r.dx, r.dz, r.heading).corners.map(([x, z]) => Math.max(Math.abs(x), Math.abs(z)))));
+  const scale = Math.min(1, TILE_ACROSS / 2 / reach);
+  return ring.map((r) => ({ dx: r.dx * scale, dz: r.dz * scale, heading: r.heading, scale }));
 }

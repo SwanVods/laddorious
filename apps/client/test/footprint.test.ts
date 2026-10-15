@@ -2,8 +2,8 @@ import type { PlayerId } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
 import { PIECE_SIZES } from '../src/assets/pieceSizes';
-import { footprint, overlaps, setSeatPieces, type Rect } from '../src/scene/footprint';
-import { PARTS, tileToWorld } from '../src/scene/layout';
+import { faceOffSpots, footprint, overlaps, setSeatPieces, type Rect } from '../src/scene/footprint';
+import { PARTS, TILE_ACROSS, tileToWorld } from '../src/scene/layout';
 import { restPose } from '../src/scene/motion';
 import { PIECE_SCALE } from '../src/scene/Pieces';
 import { PIECES, type PieceId } from '../src/service/matchService';
@@ -29,8 +29,10 @@ function state(tile: number, players: PlayerId[], faceOff: boolean): Presentatio
 /** Where each player's piece stands, as a turned rectangle on the ground. */
 function rects(s: PresentationState, players: PlayerId[], pieces: PieceId[]): Rect[] {
   return players.map((id, i) => {
-    const { position, rotation } = restPose(s, id, i);
-    return footprint(pieces[i]!, position[0], position[2], rotation[1]);
+    const { position, rotation, scale } = restPose(s, id, i);
+    // At the size the piece is drawn (a crowded face-off ring is drawn smaller, 2026-10-15).
+    const at = footprint(pieces[i]!, 0, 0, rotation[1]);
+    return { corners: at.corners.map(([x, z]) => [position[0] + x * scale[0], position[2] + z * scale[2]] as [number, number]) };
   });
 }
 
@@ -92,3 +94,27 @@ describe('nothing overlaps when pieces stack or face off (2026-10-14)', () => {
     expect(Math.cos(right.rotation[1])).toBeGreaterThan(0.2);
   });
 });
+
+describe('a face-off of three or four (2026-10-15)', () => {
+  it('stays on its own square, the pieces drawn a little smaller when they would reach a neighbour', () => {
+    const big: PieceId[] = ['dragon', 'duck', 'rook', 'hat'];
+    for (const n of [3, 4]) {
+      const players = big.slice(0, n).map((_, i) => `q${i}`);
+      setSeatPieces(Object.fromEntries(players.map((id, i) => [id, big[i]!])));
+      const spots = faceOffSpots(players);
+      spots.forEach((spot, i) => {
+        expect(spot.scale).toBeGreaterThan(0.5);
+        expect(spot.scale).toBeLessThanOrEqual(1);
+        // The footprint, at the spot's size, from the square's centre.
+        for (const [x, z] of footprint(big[i]!, 0, 0, spot.heading).corners) {
+          expect(Math.abs(spot.dx + x * spot.scale), `${n}: ${big[i]}`).toBeLessThanOrEqual(TILE_ACROSS / 2 + 1e-6);
+          expect(Math.abs(spot.dz + z * spot.scale), `${n}: ${big[i]}`).toBeLessThanOrEqual(TILE_ACROSS / 2 + 1e-6);
+        }
+      });
+    }
+    // A pair keeps its size.
+    setSeatPieces({ q0: 'dragon', q1: 'duck' });
+    expect(faceOffSpots(['q0', 'q1']).map((s) => s.scale)).toEqual([1, 1]);
+  });
+});
+

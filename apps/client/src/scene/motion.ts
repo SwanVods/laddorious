@@ -57,7 +57,7 @@ export function restPose(state: PresentationState, player: PlayerId, seat: numbe
   const faceOff = state.faceOffs.find((f) => f.tile === tile && f.players.includes(player));
   if (faceOff) {
     const spot = faceOffSpots(faceOff.players)[faceOff.players.indexOf(player)]!;
-    return still([at[0] + spot.dx, at[1], at[2] + spot.dz + forward], [0, spot.heading, 0]);
+    return { ...still([at[0] + spot.dx, at[1], at[2] + spot.dz + forward], [0, spot.heading, 0]), scale: [spot.scale, spot.scale, spot.scale] };
   }
   const stack = stackOn(state, tile);
   const lift = stack.slice(0, Math.max(0, stack.indexOf(player))).reduce((sum, id) => sum + sizeOf(pieceOf(id)).height, 0);
@@ -131,12 +131,12 @@ export function beatPose(beat: PlayingBeat, from: PresentationState, player: Pla
     const k = easeInOut(u);
     const hop = start.position[1] > end.position[1] + 0.01 ? UNSTACK_HOP * 4 * u * (1 - u) : 0;
     const [x, y, z] = lerp3(start.position, end.position, k);
-    return { ...end, position: [x, y + hop, z], rotation: [0, lerpAngle(start.rotation[1], end.rotation[1], k), 0] };
+    return { ...end, position: [x, y + hop, z], rotation: [0, lerpAngle(start.rotation[1], end.rotation[1], k), 0], scale: lerp3(start.scale, end.scale, k) };
   }
   // The winner of a face-off keeps its spot until the loser lands, then settles into the middle.
   if (beat.kind === 'knockback') {
     const k = easeOut(clamp01((elapsed - BEAT_MS.knockback - BEAT_MS.knockbackLand) / BEAT_MS.knockbackSettle));
-    return { ...end, position: lerp3(start.position, end.position, k), rotation: [0, lerpAngle(start.rotation[1], end.rotation[1], k), 0] };
+    return { ...end, position: lerp3(start.position, end.position, k), rotation: [0, lerpAngle(start.rotation[1], end.rotation[1], k), 0], scale: lerp3(start.scale, end.scale, k) };
   }
   if (beat.kind === 'victory' && beat.events.some((e) => e.type === 'MatchWon' && e.winner === player)) {
     return { ...end, position: [end.position[0], end.position[1] + Math.abs(Math.sin(t * Math.PI * 3)) * 0.9, end.position[2]], rotation: [0, t * Math.PI * 4, 0] };
