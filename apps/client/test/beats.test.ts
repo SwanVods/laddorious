@@ -28,8 +28,7 @@ describe('buildTimeline', () => {
 
   it('lets every dice move hop together, timed by the longest', () => {
     const beats = buildTimeline([moved('p0', 0, 3), moved('p1', 0, 5)], start(), 'p0', SIZE);
-    expect(beats).toHaveLength(1);
-    expect(beats[0]!.kind).toBe('move');
+    expect(beats.map((b) => b.kind)).toEqual(['move', 'pause']); // and the end hold (2026-10-15)
     expect(beats[0]!.durationMs).toBe(hops(5));
     expect(beats[0]!.after.positions).toMatchObject({ p0: 3, p1: 5 });
   });
@@ -49,9 +48,9 @@ describe('buildTimeline', () => {
       moved('p0', 3, 1, 'snake'),
     ];
     const beats = buildTimeline(chain, start({ p0: 10, p1: 6 }), 'p0', SIZE);
-    expect(beats.map((b) => b.kind)).toEqual(['move', 'slide', 'faceOff', 'faceOffResult', 'knockback', 'slide']);
+    expect(beats.map((b) => b.kind)).toEqual(['move', 'slide', 'faceOff', 'faceOffResult', 'knockback', 'slide', 'pause']);
     // My own face-off: the intro holds for its banner, and the result first shows the picks (2026-10-14).
-    expect(beats.map((b) => b.durationMs)).toEqual([hops(6), BEAT_MS.slide, BEAT_MS.faceOffIntro, BEAT_MS.faceOffReveal + BEAT_MS.faceOffBanner, BEAT_MS.knockback + BEAT_MS.knockbackLand + BEAT_MS.knockbackSettle, BEAT_MS.slide]);
+    expect(beats.map((b) => b.durationMs)).toEqual([hops(6), BEAT_MS.slide, BEAT_MS.faceOffIntro, BEAT_MS.faceOffReveal + BEAT_MS.faceOffBanner, BEAT_MS.knockback + BEAT_MS.knockbackLand + BEAT_MS.knockbackSettle, BEAT_MS.slide, BEAT_MS.endHold]);
     // My result lasts until its banner is gone, so a draw's re-pick popup never opens under DRAW!
     expect(beats[3]!.durationMs).toBeGreaterThanOrEqual(BEAT_MS.faceOffReveal + BANNER_MS);
     const watching = buildTimeline(chain, start({ p0: 10, p1: 6 }), 'p2', SIZE);
@@ -74,6 +73,7 @@ describe('buildTimeline', () => {
       ['launch', 1],
       ['launch', 1],
       ['slide', 2],
+      ['pause', 0],
     ]);
   });
 
@@ -123,7 +123,7 @@ describe('buildTimeline', () => {
       ['pause', BEAT_MS.cardPause],
       ['cardResolved', BEAT_MS.cardLead + BEAT_MS.card.blocked],
       ['cardMove', BEAT_MS.cardMove],
-      ['pause', BEAT_MS.cardPause],
+      ['pause', BEAT_MS.endHold], // the last card's pause is the end hold, at least a second (2026-10-15)
     ]);
     expect(beats[1]!.events[0]).toMatchObject({ caster: 'p0' });
     expect(beats[3]!.events[0]).toMatchObject({ caster: 'p1' });
@@ -152,6 +152,7 @@ describe('buildTimeline', () => {
       ['roll', beats[0]!.durationMs],
       ['pause', BEAT_MS.rollPause],
       ['move', hops(3)],
+      ['pause', BEAT_MS.endHold],
     ]);
     expect(heldBeat(beats[1]!)).toBe(beats[0]);
     expect(beats[1]!.after).toBe(beats[0]!.after);
@@ -212,5 +213,23 @@ describe('buildTimeline', () => {
     expect(beats).toHaveLength(1);
     expect(beats[0]).toMatchObject({ kind: 'info', durationMs: 0 });
     expect(beats[0]!.after.round).toBe(2);
+  });
+
+  it('stacks pieces that reach one tile in the same beat in the order they land, the first at the bottom (2026-10-15)', () => {
+    // p1's move comes first in the engine's order, but p2 lands first: it has fewer tiles to hop.
+    const beats = buildTimeline([moved('p1', 96, 99), moved('p2', 97, 99)], start({ p1: 96, p2: 97 }), 'p0', SIZE);
+    expect(stackOn(beats[0]!.after, 99)).toEqual(['p2', 'p1']);
+  });
+
+  it('holds the last moment for a second before the camera goes back to the overview (2026-10-15)', () => {
+    const beats = buildTimeline([moved('p0', 0, 3), moved('p1', 3, 30, 'ladder')], start({ p1: 0 }), 'p0', SIZE);
+    const last = beats.at(-1)!;
+    expect(last.kind).toBe('pause');
+    expect(last.durationMs).toBe(BEAT_MS.endHold);
+    expect(heldBeat(last).kind).toBe('launch');
+    expect(BEAT_MS.endHold).toBe(1000);
+    // A timeline of only rolls has nothing to hold.
+    const roll: GameEvent = { type: 'DieRolled', player: 'p0', natural: 3, face: 3, forced: false, auto: true, visibility: 'public' };
+    expect(buildTimeline([roll], start(), 'p0', SIZE).at(-1)!.kind).toBe('roll');
   });
 });

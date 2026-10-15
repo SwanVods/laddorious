@@ -13,6 +13,8 @@ export interface Tuning {
     /** How quickly the camera reaches a new shot, following a piece or swooping in for my own moments (higher is quicker). */
     follow: { ease: number };
     swoop: { ease: number };
+    /** Every close shot (following a piece, my swoops, a card, the winner): how high and how far back, at one distance (2026-10-15). */
+    close: { height: number; back: number };
   };
   timing: {
     /** Each tile hop, in the air and landing (ms). */
@@ -27,6 +29,8 @@ export interface Tuning {
     faceOffIntroMs: number;
     /** A face-off loser's flight backwards (ms). */
     knockbackMs: number;
+    /** At the end of the moves, the camera holds the last moment this long before going back to the overview (ms). */
+    endHoldMs: number;
   };
   hud: {
     /** Lines in the action log, top left. */
@@ -42,14 +46,15 @@ export const DEFAULT_TUNING: Tuning = {
     pan: { lockAbove: 0.95, tapSlopPx: 6 },
     follow: { ease: 3.2 },
     swoop: { ease: 2.8 },
+    close: { height: 5.8, back: 7.2 },
   },
-  timing: { hopMs: 230, rollPauseMs: 400, cardLeadMs: 450, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850 },
+  timing: { hopMs: 230, rollPauseMs: 400, cardLeadMs: 450, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850, endHoldMs: 1000 },
   hud: { feedLines: 4, phoneCompactCards: true },
 };
 
 /** Settings that must be whole numbers, and ones that must be above zero (not just zero or more). */
 const WHOLE = new Set(['hud.feedLines']);
-const POSITIVE = new Set(['camera.overview.distance', 'camera.overview.height', 'camera.overview.zoomMin', 'camera.overview.zoomMax', 'camera.pan.lockAbove', 'camera.follow.ease', 'camera.swoop.ease', 'timing.hopMs', 'hud.feedLines']);
+const POSITIVE = new Set(['camera.overview.distance', 'camera.overview.height', 'camera.overview.zoomMin', 'camera.overview.zoomMax', 'camera.pan.lockAbove', 'camera.follow.ease', 'camera.swoop.ease', 'camera.close.height', 'camera.close.back', 'timing.hopMs', 'hud.feedLines']);
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 

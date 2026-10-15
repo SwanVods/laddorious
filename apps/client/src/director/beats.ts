@@ -45,7 +45,8 @@ const CARD_FOLLOW: ReadonlySet<BeatKind> = new Set(['cardMove', 'slide', 'launch
 
 /**
  * Pauses to see what happened (the user, 2026-10-14): after the last die roll, with the dice still up,
- * before the pieces move; and after each card, its moves included, before the next card or what follows.
+ * before the pieces move; after each card, its moves included, before the next card or what follows; and
+ * at the end, on the last moment, before the camera goes back to the overview (2026-10-15).
  */
 function withPauses(beats: Beat[]): Beat[] {
   const out: Beat[] = [];
@@ -66,8 +67,15 @@ function withPauses(beats: Beat[]): Beat[] {
     if (beat.kind === 'cardResolved') card = beat;
   }
   if (card) out.push(pause(card, BEAT_MS.cardPause));
+  // Hold the last moment before the camera goes back to the overview (2026-10-15).
+  const last = out.at(-1);
+  if (last?.kind === 'pause') last.durationMs = Math.max(last.durationMs, BEAT_MS.endHold);
+  else if (last && HELD_AT_END.has(last.kind)) out.push(pause(last, BEAT_MS.endHold));
   return out;
 }
+
+/** Moments the camera goes to: a timeline that ends on one holds it a moment (2026-10-15). */
+const HELD_AT_END: ReadonlySet<BeatKind> = new Set(['move', 'slide', 'launch', 'knockback', 'cardMove', 'stepBack', 'snakeBlocked', 'faceOff', 'faceOffResult', 'cardResolved', 'clash']);
 
 /** Starting durations from spec #2 §5.1, to be tuned against the 3D scene. */
 export const BEAT_MS = {
@@ -123,6 +131,10 @@ export const BEAT_MS = {
   /** The ranks reveal: one step per place behind the winner, then a hold (polish spec §4.5). */
   rankStep: 500,
   rankHold: 1200,
+  /** The last moment held before the camera goes back to the overview (2026-10-15). */
+  get endHold() {
+    return tuning().timing.endHoldMs;
+  },
 } as const;
 
 /** 'effect' moves come from after-move card effects; they play like card moves. */
@@ -190,6 +202,7 @@ export function buildTimeline(events: GameEvent[], start: PresentationState, me:
     state = applyEvent(state, event);
     if (last && joins(last, kind, event)) {
       last.events.push(event);
+      if (event.type === 'Moved') state = byLanding(state, last.events, boardSize);
       last.after = state;
     } else {
       beats.push({ kind, durationMs: 0, events: [event], after: state });
@@ -203,6 +216,18 @@ export function buildTimeline(events: GameEvent[], start: PresentationState, me:
   }
   for (const beat of beats) beat.durationMs = durationOf(beat, boardSize, me);
   return withPauses(beats);
+}
+
+/**
+ * Pieces that move in one beat stack on a shared tile in the order they land (2026-10-15): the one with the
+ * fewest tiles to hop lands first, at the bottom; the engine's order breaks ties. Their moves are the latest,
+ * so they are the tail of `arrivals`.
+ */
+function byLanding(state: PresentationState, events: readonly GameEvent[], boardSize: number): PresentationState {
+  const moves = events.filter((e) => e.type === 'Moved');
+  const movers = new Set(moves.map((e) => e.player));
+  const landed = [...moves].sort((a, b) => tilesTravelled(a, boardSize) - tilesTravelled(b, boardSize)).map((e) => e.player);
+  return { ...state, arrivals: [...state.arrivals.filter((id) => !movers.has(id)), ...landed] };
 }
 
 /** Whether a move ends on top of other pieces (not in a face-off, where they stand apart). */

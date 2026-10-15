@@ -9,7 +9,7 @@ import { openingUpdate } from './support/fixtures';
 
 function state(positions: Record<PlayerId, number>, arrivals: PlayerId[] = ['p0', 'p1', 'p2', 'p3'], faceOffs: FaceOff[] = []): DirectorState {
   const shown = presentationFromView(openingUpdate().view);
-  return { presentation: { ...shown, positions: { ...shown.positions, ...positions }, arrivals, faceOffs }, beat: null, settled: null, log: [] };
+  return { presentation: { ...shown, positions: { ...shown.positions, ...positions }, arrivals, faceOffs }, beat: null, settled: null, log: [], timeline: null };
 }
 
 /** A tile no rocket or flag stands on, where pieces stack. */
@@ -55,7 +55,7 @@ describe('name tags (spec #2 §7.2)', () => {
   });
 
   it('has nothing to show before the first update', () => {
-    expect(tagAnchor({ presentation: null, beat: null, settled: null, log: [] }, 'p0', 0, 0, 100)).toBeNull();
+    expect(tagAnchor({ presentation: null, beat: null, settled: null, log: [], timeline: null }, 'p0', 0, 0, 100)).toBeNull();
   });
 });
 

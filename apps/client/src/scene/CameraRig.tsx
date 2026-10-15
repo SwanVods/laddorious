@@ -5,7 +5,7 @@ import { Vector3 } from 'three';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { tuning } from '../app/tuning';
-import { OVERVIEW_TARGET_Z, cameraShot, type ShotMode } from './camera';
+import { OVERVIEW_TARGET_Z, cameraShot, type Focus, type ShotMode } from './camera';
 import { pinchZoom, wheelZoom } from './zoom';
 import { BOARD_HALF, type Vec3 } from './layout';
 import { NO_PAN, PanDrag, clampPan, dragPan, panAfterShot, panBox, panReach, unitsPerPixel, type Pan } from './pan';
@@ -30,6 +30,8 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
   // The zoomed-in overview's pan (board theme spec B5), and the last shot's kind: only the overview pans.
   const panRef = useRef<Pan>(NO_PAN);
   const modeRef = useRef<ShotMode>('overview');
+  // What the camera was last on: it stays there through beats with nothing to show, while the timeline plays (2026-10-15).
+  const heldRef = useRef<Focus | null>(null);
   useEffect(() => {
     const limits = () => ({ min: tuning().camera.overview.zoomMin, max: tuning().camera.overview.zoomMax });
     const fingers = new Map<number, { x: number; y: number }>();
@@ -106,9 +108,12 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       faceOffs: state.presentation?.faceOffs ?? [],
       zoom: zoomRef.current,
       pan: panRef.current,
+      timeline: state.timeline,
+      held: heldRef.current,
       piece: (id): Vec3 => poseAt(state, id, seatOf.get(id) ?? 0, now, boardSize)?.position ?? [0, 0, 0],
     });
     modeRef.current = shot.mode;
+    heldRef.current = state.beat ? (shot.focus ?? heldRef.current) : null;
     panRef.current = panAfterShot(panRef.current, shot.mode);
     const { follow, swoop } = tuning().camera;
     const k = shot.cut ? 1 : 1 - Math.exp(-delta * (shot.mode === 'swoop' ? swoop.ease : follow.ease));

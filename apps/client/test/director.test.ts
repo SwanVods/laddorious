@@ -74,6 +74,9 @@ describe('Director', () => {
     expect(done).toEqual([1]);
     vi.advanceTimersByTime(BEAT_MS.launch);
     expect(state().presentation?.positions.p1).toBe(14);
+    // The last moment is held a second before the overview (2026-10-15).
+    expect(state().beat).toMatchObject({ kind: 'pause', durationMs: BEAT_MS.endHold });
+    vi.advanceTimersByTime(BEAT_MS.endHold);
     expect(state().beat).toBeNull();
     expect(state().settled?.view.awaiting.windowId).toBe(2);
     expect(done).toEqual([1, 2]);
@@ -90,10 +93,10 @@ describe('Director', () => {
     const { director, done, state } = startDirector();
     director.push(update([moved('p1', 0, 3)], { p1: 3 }, 2));
     director.push(update([moved('p2', 0, 2)], { p1: 3, p2: 2 }, 3));
-    vi.advanceTimersByTime(hops(3));
+    vi.advanceTimersByTime(hops(3) + BEAT_MS.endHold);
     expect(done).toEqual([1, 2]);
     expect(state().beat).toMatchObject({ kind: 'move', events: [moved('p2', 0, 2)] });
-    vi.advanceTimersByTime(hops(2));
+    vi.advanceTimersByTime(hops(2) + BEAT_MS.endHold);
     expect(done).toEqual([1, 2, 3]);
     expect(state().presentation?.positions).toMatchObject({ p1: 3, p2: 2 });
   });
@@ -114,7 +117,7 @@ describe('Director', () => {
   it('resets the board to the view after a timeline, warning when they differ', () => {
     const { director, state, warn } = startDirector();
     director.push(update([moved('p1', 0, 3)], { p1: 5 }, 2));
-    vi.advanceTimersByTime(hops(3));
+    vi.advanceTimersByTime(hops(3) + BEAT_MS.endHold);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]![0]).toContain('drifted');
     expect(state().presentation?.positions.p1).toBe(5);
@@ -199,7 +202,7 @@ describe('Director time scale (e2e builds)', () => {
     director.push(update([moved('p1', 0, 3)], { p1: 3 }, 2));
     const short = Math.round(hops(3) * 0.1);
     expect(director.store.getState().beat?.durationMs).toBe(short);
-    vi.advanceTimersByTime(short);
+    vi.advanceTimersByTime(short + Math.round(BEAT_MS.endHold * 0.1));
     expect(director.store.getState().beat).toBeNull();
     expect(done).toEqual([1, 2]);
   });
@@ -216,5 +219,18 @@ describe('a reconnect during the cards (the user, 2026-10-15)', () => {
     vi.runAllTimers();
     expect(state().presentation!.positions.p0).toBe(96);
     expect(state().settled!.view.players.find((p) => p.id === 'p0')!.position).toBe(96);
+  });
+});
+
+describe('the timeline the camera reads (2026-10-15)', () => {
+  it('shows the beats of the timeline playing and which one is on stage, and none between timelines', () => {
+    const { director, state } = startDirector();
+    expect(state().timeline).toBeNull();
+    director.push(update([moved('p0', 0, 3), moved('p1', 0, 40, 'ladder')], { p0: 3, p1: 40 }, 2));
+    const timeline = state().timeline!;
+    expect(timeline.beats.map((b) => b.kind)).toContain('launch');
+    expect(timeline.beats[timeline.index]!.kind).toBe(state().beat!.kind);
+    vi.runAllTimers();
+    expect(state().timeline).toBeNull();
   });
 });

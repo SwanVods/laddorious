@@ -44,7 +44,7 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(back(near)).toBeLessThan(before * 0.9);
     expect(back(shot({ reducedMotion: true, zoom: 0.5 }))).toBeCloseTo(back(near) * 0.5, 5);
     // Only the overview zooms.
-    expect(shot({ beat: beatOf('move', [moved('p1')]), zoom: 0.5 })).toEqual(shot({ beat: beatOf('move', [moved('p1')]) }));
+    expect(shot({ beat: beatOf('move', [moved('p0')]), zoom: 0.5 })).toEqual(shot({ beat: beatOf('move', [moved('p0')]) }));
   });
 
   it('never turns: the overview stays square to the board, whatever the time (board theme spec B5)', () => {
@@ -59,11 +59,55 @@ describe('camera rules (spec #2 §5.3)', () => {
     const panned = shot({ zoom: 0.5, pan: [3, -4] });
     expect(panned.target).toEqual([still.target[0] + 3, 0, still.target[2] - 4]);
     expect(panned.position).toEqual([still.position[0] + 3, still.position[1], still.position[2] - 4]);
-    expect(shot({ beat: beatOf('move', [moved('p1')]), pan: [3, -4] })).toEqual(shot({ beat: beatOf('move', [moved('p1')]) }));
+    expect(shot({ beat: beatOf('move', [moved('p0')]), pan: [3, -4] })).toEqual(shot({ beat: beatOf('move', [moved('p0')]) }));
   });
 
-  it('follows my piece while another piece moves', () => {
-    expect(shot({ beat: beatOf('move', [moved('p1')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p0 });
+  it('follows my piece while I move with everyone, and shows the overview while only others move (2026-10-15)', () => {
+    expect(shot({ beat: beatOf('move', [moved('p0'), moved('p1')]) })).toMatchObject({ mode: 'follow', target: SPOTS.p0 });
+    expect(shot({ beat: beatOf('move', [moved('p1')]) }).mode).toBe('overview');
+  });
+
+  it('stays on the last event through a beat with nothing to show, instead of snapping back to me (2026-10-15)', () => {
+    const clash = beatOf('clash', []);
+    expect(shot({ beat: clash, held: { player: 'p2' } })).toMatchObject({ mode: 'follow', target: SPOTS.p2, focus: { player: 'p2' } });
+    expect(shot({ beat: clash, held: { tile: 23 } }).target).toEqual(tileToWorld(23));
+    expect(shot({ beat: clash }).mode).toBe('overview');
+  });
+
+  it('goes back to the overview when the timeline is over, not to me (2026-10-15)', () => {
+    expect(shot({ beat: null, held: { player: 'p2' } }).mode).toBe('overview');
+    expect(shot({ beat: null, window: 'none' }).mode).toBe('overview');
+  });
+
+  it("stays on me through other players' jumps when I jump in the same round (2026-10-15)", () => {
+    const mine = beatOf('launch', [moved('p0', 'ladder')]);
+    const theirs = beatOf('slide', [moved('p2', 'snake')]);
+    // Their slide after my launch, and before it.
+    expect(shot({ beat: theirs, timeline: { beats: [mine, theirs], index: 1 } }).target).toEqual(SPOTS.p0);
+    expect(shot({ beat: theirs, timeline: { beats: [theirs, mine], index: 0 } }).target).toEqual(SPOTS.p0);
+    // Without a jump of mine in the round, the camera follows theirs.
+    expect(shot({ beat: theirs, timeline: { beats: [theirs], index: 0 } }).target).toEqual(SPOTS.p2);
+    // A card's moves are another moment: my jump before a card doesn't hold the camera through it.
+    const reveal = beatOf('cardResolved', [{ type: 'CardResolved', caster: 'p2', cardId: 'shove', target: 'p2', result: 'hit', visibility: 'public' }]);
+    expect(shot({ beat: theirs, timeline: { beats: [mine, reveal, theirs], index: 2 } }).target).toEqual(SPOTS.p2);
+  });
+
+  it('keeps every close shot at one distance, the winner cam included (2026-10-15)', () => {
+    const { close } = DEFAULT_TUNING.camera;
+    const distance = Math.hypot(close.height, close.back);
+    const back = (s: { position: Vec3; target: Vec3 }) => Math.hypot(s.position[0] - s.target[0], s.position[1] - s.target[1], s.position[2] - s.target[2]);
+    const won = (winner: PlayerId): GameEvent => ({ type: 'MatchWon', winner, rankings: [], visibility: 'public' });
+    const card: GameEvent = { type: 'CardResolved', caster: 'p2', cardId: 'shove', target: 'p2', result: 'hit', visibility: 'public' };
+    for (const s of [
+      shot({ beat: beatOf('slide', [moved('p0', 'snake')]) }),
+      shot({ beat: beatOf('slide', [moved('p2', 'snake')]) }),
+      shot({ beat: beatOf('victory', [won('p0')]) }),
+      shot({ beat: beatOf('victory', [won('p3')]) }),
+      shot({ beat: beatOf('cardResolved', [card]) }),
+    ])
+      expect(back(s)).toBeCloseTo(distance, 5);
+    // Further than the old swoop (3.4 up, 4.6 back), which put the winner too close.
+    expect(distance).toBeGreaterThan(Math.hypot(3.4, 4.6) * 1.4);
   });
 
   it("watches other players' face-off when I'm not in one, from the collision to the knock-back (2026-10-15)", () => {
@@ -78,8 +122,8 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ window: 'challenge', faceOffs: [...theirs, { challengeId: 'c2', tile: 40, players: ['p3', 'p1'] }] }).target).toEqual(tile);
   });
 
-  it('follows my piece through a face-off window when no face-off is shown', () => {
-    expect(shot({ window: 'challenge' })).toMatchObject({ mode: 'follow', target: SPOTS.p0 });
+  it('shows the overview in a face-off window when no face-off is shown (2026-10-15)', () => {
+    expect(shot({ window: 'challenge' }).mode).toBe('overview');
   });
 
   it("swoops in for my own slide or launch, and follows anyone else's (2026-10-14)", () => {

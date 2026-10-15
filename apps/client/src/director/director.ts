@@ -32,6 +32,8 @@ export interface DirectorState {
    * take no time join at once), and a fast-forward adds the events it skips. The HUD reads it.
    */
   log: LoggedEvent[];
+  /** The timeline playing and the beat on stage in it, so the camera can see what's still to come; null between timelines (2026-10-15). */
+  timeline: { beats: readonly Beat[]; index: number } | null;
 }
 
 /**
@@ -40,7 +42,7 @@ export interface DirectorState {
  * Plain TypeScript; React reads `store` with zustand's useStore.
  */
 export class Director {
-  readonly store: StoreApi<DirectorState> = createStore<DirectorState>()(() => ({ presentation: null, beat: null, settled: null, log: [] }));
+  readonly store: StoreApi<DirectorState> = createStore<DirectorState>()(() => ({ presentation: null, beat: null, settled: null, log: [], timeline: null }));
   private readonly queue: MatchUpdate[] = [];
   private current: { update: MatchUpdate; beats: Beat[]; next: number } | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -95,7 +97,7 @@ export class Director {
     }
     const durationMs = Math.round(beat.durationMs * this.timeScale);
     // The ranks reveal replays the win, which is already in the log.
-    this.store.setState({ beat: { ...beat, durationMs, startedAt: Date.now() }, log: this.logged(beat.kind === 'ranks' ? [] : beat.events) });
+    this.store.setState({ beat: { ...beat, durationMs, startedAt: Date.now() }, log: this.logged(beat.kind === 'ranks' ? [] : beat.events), timeline: { beats: current.beats, index: current.next } });
     this.timer = setTimeout(() => {
       this.timer = null;
       this.store.setState({ presentation: beat.after });
@@ -111,7 +113,7 @@ export class Director {
     if (checkDrift && shown && !samePresentation(shown, truth)) {
       this.warn(`presentation drifted from the view in round ${update.view.round}; the view wins`);
     }
-    this.store.setState({ presentation: truth, beat: null, settled: update });
+    this.store.setState({ presentation: truth, beat: null, settled: update, timeline: null });
     this.current = null;
     const aw = update.view.awaiting;
     if (update.timer === null && aw.window !== 'none') this.playbackDone(aw.windowId);

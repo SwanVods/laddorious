@@ -294,9 +294,9 @@ describe('the crown (round 5)', () => {
   const rankings = [{ player: 'p2', rank: 1, position: 100 }];
   const from = at({ p2: 100 });
   const victory = beat([{ type: 'MatchWon', winner: 'p2', rankings, visibility: 'public' }], from);
-  const during = (b: PlayingBeat | null): DirectorState => ({ presentation: from, beat: b, settled: null, log: [] });
+  const during = (b: PlayingBeat | null): DirectorState => ({ presentation: from, beat: b, settled: null, log: [], timeline: null });
   const { view } = openingUpdate();
-  const after: DirectorState = { presentation: from, beat: null, settled: { view: { ...view, phase: { kind: 'finished', winner: 'p2', rankings } }, events: [], timer: null }, log: [] };
+  const after: DirectorState = { presentation: from, beat: null, settled: { view: { ...view, phase: { kind: 'finished', winner: 'p2', rankings } }, events: [], timer: null }, log: [], timeline: null };
 
   it('knows the winner from the victory beat, and after it from the settled view', () => {
     expect(crownWinner(during(null))).toBeNull();

@@ -121,12 +121,14 @@ The game reads `tuning.json` (served next to the page) when it starts, so an adm
 | `camera.pan.lockAbove`, `tapSlopPx` | 0.95, 6 | Zoomed in closer than lockAbove, a drag pans the overview over the board; at the overview it stays locked. A press moving more than tapSlopPx pixels is a drag, not a tap. |
 | `camera.follow.ease` | 3.2 | How quickly the camera reaches a piece it follows (higher is quicker). |
 | `camera.swoop.ease` | 2.8 | The same for the close swoop on my own moments. |
+| `camera.close.height`, `back` | 5.8, 7.2 | Every close shot (following a piece, my swoops, a card, the winner) sits this high and this far back: one distance for all. |
 | `timing.hopMs` | 230 | Each tile hop, in the air and landing (ms). Hop sounds follow it. |
 | `timing.rollPauseMs` | 400 | The pause after the last die roll, before the pieces move (ms). |
 | `timing.cardLeadMs` | 450 | Before each card plays, while the camera reaches its player (ms). |
 | `timing.cardPauseMs` | 600 | The pause after each card and its moves (ms). |
 | `timing.faceOffIntroMs` | 1900 | My own face-off's opening: the collision, then the hop down (ms). |
 | `timing.knockbackMs` | 850 | A face-off loser's flight backwards (ms). |
+| `timing.endHoldMs` | 1000 | At the end of the moves, the camera holds the last moment this long before going back to the overview (ms). |
 | `hud.feedLines` | 4 | Lines in the action log (a whole number). |
 | `hud.phoneCompactCards` | true | On landscape phones, card info as a compact list under the action log. |
 
@@ -174,7 +176,7 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 - **Turning pieces** (`placePiece` in `src/scene/Pieces.tsx`): the body moves, squashes and turns to face its way; flips, wobbles and the idle sway turn the inner model about the piece's own side axis (rotation x), which the camera sees side-on.
 - **Nothing overlaps** (`src/scene/footprint.ts`, `src/assets/pieceSizes.ts`): pieces stand by their measured sizes, stacked head to foot, nose to nose in a face-off. `pnpm test` checks the size table against the built models and every pair of pieces as turned footprints.
 - **The world** (`src/scene/world.ts`, `WorldParts.tsx`): the board stands on an inflatable platform with props on its wings, an obstacle course floats round it and clouds drift below, all Blender models placed as data and drawn instanced (the menu preloads them). They idle at a quarter of the speed and size with reduced motion.
-- **Camera zoom** (`src/scene/zoom.ts`, `CameraRig.tsx`): a mouse wheel or two-finger pinch over the board zooms the overview between `camera.overview.zoomMin` and `zoomMax`; follow and swoop shots don't zoom. Zoomed in closer than `camera.pan.lockAbove`, one finger or the mouse drags the view over the board (`src/scene/pan.ts`); the camera never turns, and the pan resets when the game takes the camera. While other players face off and I don't, the camera frames their tile.
+- **Camera zoom** (`src/scene/zoom.ts`, `CameraRig.tsx`): a mouse wheel or two-finger pinch over the board zooms the overview between `camera.overview.zoomMin` and `zoomMax`; follow and swoop shots don't zoom. Zoomed in closer than `camera.pan.lockAbove`, one finger or the mouse drags the view over the board (`src/scene/pan.ts`); the camera never turns, and the pan resets when the game takes the camera. While other players face off and I don't, the camera frames their tile. The camera is lazy (2026-10-15): once on an event it stays there until the next one, my own jumps in a round come before other players', and when the moves are over it holds the last moment for `timing.endHoldMs`, then goes back to the overview. Pieces landing on one tile in the same beat stack in the order they land.
 - **Compact card info on phones** (`src/hud/CardList.tsx`): on short screens the card bubbles and the bottom queue give way to one line per card under the action log (`hud.phoneCompactCards`).
 - **Full screen** (`src/ui/FullscreenButton.tsx`): a round button in the menu and in matches, hidden where the Fullscreen API isn't available.
 - **Pauses** (`withPauses` in `src/director/beats.ts`): beats with no events after the last roll and after each card; `heldBeat` gives the moment they hold, for the camera and the HUD.

@@ -101,4 +101,9 @@ describe('the camera reaches my piece sooner after the roll (2026-10-15)', () =>
       expect(problems.join()).toContain('camera.pan.lockAbove');
     }
   });
+
+  it('holds a second at the end of the moves, and keeps every close shot at one distance (2026-10-15)', () => {
+    expect(DEFAULT_TUNING.timing.endHoldMs).toBe(1000);
+    expect(DEFAULT_TUNING.camera.close).toEqual({ height: 5.8, back: 7.2 });
+  });
 });
