@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
 import type { PlayingBeat } from '../src/director/director';
 import { presentationFromView } from '../src/director/presentation';
-import { FACE_OFF_REVEAL_MS, KNOCKBACK, MAX_REROLLS, STAGES, bannerFor, cardPickModel, countdown, dockModel, faceOffModel, playerRows, resolutionQueue, stageFromLog, stageIndex } from '../src/hud/model';
+import { FACE_OFF_REVEAL_MS, KNOCKBACK, MAX_REROLLS, STAGES, bannerFor, cardPickModel, countdown, dockModel, faceOffModel, phoneCards, playerRows, resolutionQueue, stageFromLog, stageIndex } from '../src/hud/model';
 import type { RoundRecord } from '../src/hud/record';
 import { SEATS, openingUpdate } from './support/fixtures';
 
@@ -135,6 +135,15 @@ describe('the dock (spec #2 §7.2)', () => {
       { caster: 'p3', cardId: 'sprint', result: 'hit', current: false },
       { caster: 'p0', cardId: 'aegis', result: null, current: true },
     ]);
+  });
+
+  it("keeps the phone's card list through the moves a card makes, like a launch after Sprint (2026-10-15)", () => {
+    const record: RoundRecord = { round: 7, dice: {}, cards: { p3: { cardId: 'sprint', result: 'hit' } } };
+    const launch = beat('launch', [{ type: 'Moved', player: 'p3', from: 12, to: 31, cause: 'ladder', bounced: false, visibility: 'public' }]);
+    expect(dockModel({ beat: launch, view: view(), record, me: 'p0' }).kind).toBe('caption');
+    expect(phoneCards(record, launch)).toEqual([{ caster: 'p3', cardId: 'sprint', result: 'hit', current: false }]);
+    expect(phoneCards(record, null)).toHaveLength(1);
+    expect(phoneCards(EMPTY, launch)).toEqual([]);
   });
 
   it('shows the card queue without a caption about the order while cards resolve (2026-10-14)', () => {

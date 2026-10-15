@@ -16,7 +16,7 @@ import { EventFeed } from '../hud/EventFeed';
 import { FaceOffPopup } from '../hud/FaceOffPopup';
 import { feedLines } from '../hud/feed';
 import { nextRollMods, rejectionText } from '../hud/labels';
-import { cardPickModel, countdown, dockModel, faceOffModel, playerRows, stageFromLog, stageIndex } from '../hud/model';
+import { cardPickModel, countdown, dockModel, faceOffModel, phoneCards, playerRows, stageFromLog, stageIndex } from '../hud/model';
 import { NameTags } from '../hud/NameTags';
 import { presenceToast } from '../hud/presence';
 import { PlayerColumn } from '../hud/PlayerColumn';
@@ -163,7 +163,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
             {/* The action log, and on phones this round's cards as a compact list under it (2026-10-15). */}
             <div className="left-stack">
               <EventFeed lines={lines} seats={seats} />
-              <CardList cards={dock?.kind === 'queue' ? dock.cards : []} seats={seats} />
+              <CardList cards={phoneCards(record, beat)} seats={seats} />
             </div>
             <PlayerColumn rows={rows} bubbles={bubbles} onWatch={setWatch} reducedMotion={reducedMotion} />
             {mine && <YourPiece row={mine} mods={nextRollMods(presentation.effects, me)} players={rows.length} boardSize={view.board.size} />}

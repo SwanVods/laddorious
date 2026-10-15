@@ -222,6 +222,14 @@ export function resolutionQueue(record: RoundRecord, beat: Beat | null): QueueCa
   }));
 }
 
+/**
+ * The phone's card list under the action log (2026-10-15): this round's cards from their reveal until the next
+ * round starts, through the moves a card makes (a launch after Sprint), unlike the dock, which captions those moves.
+ */
+export function phoneCards(record: RoundRecord, shown: Beat | null): QueueCard[] {
+  return resolutionQueue(record, shown && heldBeat(shown));
+}
+
 const moversOf = (events: GameEvent[]) => [...new Set(events.flatMap((e) => (e.type === 'Moved' || e.type === 'SnakeBlocked' ? [e.player] : [])))];
 
 /** Bottom centre (spec #2 §7.2): ROLL, a waiting pill, a move caption, or the card queue. */
