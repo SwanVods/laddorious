@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/app/App';
-import { wantsFullscreen } from '../src/app/fullscreen';
+import { isIOS, wantsFullscreen } from '../src/app/fullscreen';
 import { COUNT_MS } from '../src/app/MatchmakingOverlay';
 import { createPrefsStore } from '../src/app/prefs';
 import { AudioEngine } from '../src/audio/engine';
@@ -214,7 +214,7 @@ describe('App (spec #2 §4.1, §7.1)', () => {
 });
 
 describe('fullscreen on the first tap (spec #2 §7.3)', () => {
-  const android = { pointerType: 'touch', userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7)', platform: 'Linux armv8l', maxTouchPoints: 5, fullscreenEnabled: true, inFullscreen: false };
+  const android = { pointerType: 'touch', userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7)', maxTouchPoints: 5, fullscreenEnabled: true, inFullscreen: false };
 
   it('asks on a touch tap where the browser supports it', () => {
     expect(wantsFullscreen(android)).toBe(true);
@@ -224,7 +224,9 @@ describe('fullscreen on the first tap (spec #2 §7.3)', () => {
 
   it('never asks on iPhones and iPads, or for mouse clicks', () => {
     expect(wantsFullscreen({ ...android, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)' })).toBe(false);
-    expect(wantsFullscreen({ ...android, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', platform: 'MacIntel' })).toBe(false);
+    // An iPad says it's a Mac, with touch points (2026-10-15: read without the deprecated navigator.platform).
+    expect(wantsFullscreen({ ...android, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', maxTouchPoints: 5 })).toBe(false);
+    expect(isIOS({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', maxTouchPoints: 0 })).toBe(false);
     expect(wantsFullscreen({ ...android, pointerType: 'mouse' })).toBe(false);
   });
 });

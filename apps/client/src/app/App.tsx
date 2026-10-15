@@ -150,7 +150,6 @@ export function App({ service, offline, resume = null, prefs, dev, test = null }
     const env = {
       pointerType: e.pointerType,
       userAgent: navigator.userAgent,
-      platform: navigator.platform,
       maxTouchPoints: navigator.maxTouchPoints,
       fullscreenEnabled: document.fullscreenEnabled,
       inFullscreen: document.fullscreenElement !== null,
