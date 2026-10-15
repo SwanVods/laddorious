@@ -49,6 +49,7 @@ export function MenuContent({ piece, level, reducedMotion, anchors }: MenuConten
   const profile = QUALITY[level];
   const scene = useThree((s) => s.scene);
   const sky = useMemo(() => skyTexture(WORLD_COLORS.sky), []);
+  useEffect(() => () => sky?.dispose(), [sky]);
   const geometry = useMemo(() => PIECE_GEOMETRY[piece](), [piece]);
   const tile = useSlotMesh('tile', () => ({ geometry: tileGeometry(), material: new MeshStandardMaterial({ roughness: 0.45 }) }), { clearcoat: profile.clearcoat });
   const turntableRef = useRef<Group>(null);

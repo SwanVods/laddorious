@@ -127,6 +127,8 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
   const geometry = useMemo(() => PIECE_GEOMETRY[seat.piece](), [seat.piece]);
   const dieShape = useMemo(() => dieGeometry(), []);
   const atlas = useMemo(() => dieAtlasTexture(WORLD_COLORS.die, WORLD_COLORS.pip), []);
+  // R3F frees a mesh's geometry and material, not a material's map (2026-10-15).
+  useEffect(() => () => atlas?.dispose(), [atlas]);
   const slot = `piece.${seat.piece}` as SlotName;
   useEffect(() => {
     const body = bodyRef.current;

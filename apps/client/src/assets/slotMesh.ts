@@ -38,6 +38,12 @@ export function prepareSlotMesh(mesh: SlotMesh, { clearcoat }: { clearcoat: bool
   return { geometry: mesh.geometry, material };
 }
 
+/** Free the material copies `prepared` made of `model`'s (a quality change replaced them); the model's own stay, shared. */
+export function disposeCopies(prepared: SlotMesh, model: SlotMesh): void {
+  const own = new Set(Array.isArray(model.material) ? model.material : [model.material]);
+  for (const material of Array.isArray(prepared.material) ? prepared.material : [prepared.material]) if (!own.has(material)) material.dispose();
+}
+
 const ready = new Map<string, SlotMesh>();
 const loading = new Map<string, Promise<SlotMesh>>();
 const warned = new Set<SlotName>();
@@ -113,5 +119,10 @@ export function useSlotMesh(name: SlotName, fallback: () => SlotMesh, { clearcoa
     },
     [stand],
   );
-  return useMemo(() => (model ? prepareSlotMesh(model, { clearcoat }) : stand), [model, stand, clearcoat]);
+  const prepared = useMemo(() => (model ? prepareSlotMesh(model, { clearcoat }) : stand), [model, stand, clearcoat]);
+  // The copies a quality setting made go when it changes (2026-10-15).
+  useEffect(() => () => {
+    if (model) disposeCopies(prepared, model);
+  }, [prepared, model]);
+  return prepared;
 }

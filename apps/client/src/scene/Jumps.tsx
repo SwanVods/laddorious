@@ -36,6 +36,7 @@ interface EndRefs {
 /** The ends as 3D models (High): rockets, flags, whirlpools and splats, loaded only when shown. */
 function ModelEnds({ clearcoat, refs }: { clearcoat: boolean; refs: EndRefs }) {
   const swirl = useMemo(() => swirlTexture(BOARD_COLORS.slide, WORLD_COLORS.chevron), []);
+  useEffect(() => () => swirl?.dispose(), [swirl]);
   const vortex = useSlotMesh(
     'slide.vortex',
     () => ({ geometry: vortexGeometry(), material: new MeshBasicMaterial(swirl ? { map: swirl, transparent: true } : { color: BOARD_COLORS.slide }) }),

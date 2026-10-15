@@ -1,5 +1,5 @@
 import { useThree } from '@react-three/fiber';
-import { useLayoutEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { Color, Fog } from 'three';
 import { WORLD_COLORS } from '../app/theme';
 import { BOARD_SCALE } from './layout';
@@ -15,6 +15,7 @@ export function Surroundings({ shadows, clouds, clearcoat, reducedMotion }: { sh
   const scene = useThree((s) => s.scene);
   const sky = useMemo(() => skyTexture(WORLD_COLORS.sky), []);
   const world = useMemo(() => matchWorld(clouds), [clouds]);
+  useEffect(() => () => sky?.dispose(), [sky]);
 
   useLayoutEffect(() => {
     const { background, fog } = scene;

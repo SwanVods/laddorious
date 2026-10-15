@@ -24,7 +24,10 @@ export function webglAvailable(): boolean {
   if (typeof document === 'undefined') return false;
   try {
     const probe = document.createElement('canvas');
-    return Boolean(probe.getContext('webgl2') ?? probe.getContext('webgl'));
+    const gl = probe.getContext('webgl2') ?? probe.getContext('webgl');
+    // The probe's context is let go at once: browsers keep only a few alive (2026-10-15).
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return Boolean(gl);
   } catch {
     return false;
   }
