@@ -2,6 +2,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Color, Fog, MeshStandardMaterial, Object3D, Vector3, type Group, type InstancedMesh } from 'three';
 import { BOARD_COLORS, SEAT_COLORS, WORLD_COLORS } from '../app/theme';
+import { standInsInShadowsOnly } from '../assets/shadowOnly';
 import { PIECE_GEOMETRY, tileGeometry } from '../assets/models';
 import { preloadSlotMeshes, useSlotMesh } from '../assets/slotMesh';
 import { Slot, preloadModels, type SlotName } from '../assets/slots';
@@ -190,6 +191,7 @@ export function MenuScene({ piece, setting, reducedMotion, anchors }: MenuSceneP
         dpr={[1, profile.dpr]}
         gl={{ antialias: profile.antialias }}
         camera={{ fov: MENU_CAMERA.fov, near: 0.1, far: 100, position: MENU_CAMERA.position }}
+        onCreated={({ gl }) => void standInsInShadowsOnly(gl)}
       >
         <MenuContent piece={piece} level={level} reducedMotion={reducedMotion} anchors={anchors} />
         <ContextLossWatch onLost={loseContext} />

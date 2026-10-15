@@ -70,7 +70,7 @@ describe('asset slots (spec #2 §6.3, spec #5 §6)', () => {
     expect(flat.castShadow).toBe(false);
   });
 
-  it("casts a model's shadow from its small Shadow mesh, which draws nothing on screen", () => {
+  it("casts a model's shadow from its small Shadow mesh, kept out of the main pass (2026-10-15)", () => {
     const model = () => {
       const body = new Mesh(new BoxGeometry(), new MeshStandardMaterial({ name: 'Seat' }));
       const shadow = new Mesh(new BoxGeometry(), new MeshStandardMaterial({ name: 'Shadow' }));
@@ -80,12 +80,15 @@ describe('asset slots (spec #2 §6.3, spec #5 §6)', () => {
     prepareModel(lit.root, { shadows: true });
     expect(lit.body.castShadow).toBe(false);
     expect(lit.shadow.castShadow).toBe(true);
-    expect(lit.shadow.visible).toBe(true);
+    // Hidden: only the shadow pass shows it (shadowOnly.ts), so the main pass spends no draw call on it.
+    expect(lit.shadow.visible).toBe(false);
+    expect(lit.shadow.userData.standIn).toBe(true);
     expect(lit.shadow.material).toMatchObject({ colorWrite: false, depthWrite: false });
     // Without shadows it isn't drawn at all.
     const flat = model();
     prepareModel(flat.root, {});
     expect(flat.shadow.visible).toBe(false);
+    expect(flat.shadow.userData.standIn).toBeFalsy();
     expect(flat.body.castShadow).toBe(false);
   });
 

@@ -54,7 +54,7 @@ export function prepareMaterial(material: Material, { seat, clearcoat = true, em
   return copy;
 }
 
-/** Draws nothing on screen: a Shadow mesh only fills the shadow map. */
+/** Draws nothing on screen: a Shadow mesh only fills the shadow map (and is hidden outside the shadow pass, shadowOnly.ts). */
 const UNSEEN = new MeshBasicMaterial({ colorWrite: false, depthWrite: false });
 
 const isShadow = (node: Mesh) => !Array.isArray(node.material) && (node.material as Material).name === 'Shadow';
@@ -74,7 +74,9 @@ export function prepareModel(root: Object3D, options: ModelOptions): void {
     if (isShadow(node)) {
       node.material = UNSEEN;
       node.castShadow = shadows;
-      node.visible = shadows;
+      // Hidden from the main pass; with shadows on, shown for the shadow pass alone (2026-10-15).
+      node.visible = false;
+      node.userData.standIn = shadows;
       return;
     }
     node.castShadow = shadows && !stand;

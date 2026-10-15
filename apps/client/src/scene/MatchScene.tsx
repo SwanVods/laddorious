@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'reac
 import { useStore } from 'zustand';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
+import { standInsInShadowsOnly } from '../assets/shadowOnly';
 import { preloadSlotMeshes } from '../assets/slotMesh';
 import { preloadModels } from '../assets/slots';
 import { Board } from './Board';
@@ -114,7 +115,7 @@ export function MatchScene({ director, seats, me, setting, watch = null, reduced
   return (
     <div className="scene-frame">
       {/* 'percentage' is PCF: three 0.186 dropped the soft PCF type R3F would pick for `true`. */}
-      <Canvas shadows={profile.shadows ? 'percentage' : false} dpr={[1, profile.dpr]} gl={{ antialias: profile.antialias }} camera={{ fov: 42, near: 0.5, far: 200, position: [0, 23, 26] }}>
+      <Canvas shadows={profile.shadows ? 'percentage' : false} dpr={[1, profile.dpr]} gl={{ antialias: profile.antialias }} camera={{ fov: 42, near: 0.5, far: 200, position: [0, 23, 26] }} onCreated={({ gl }) => void standInsInShadowsOnly(gl)}>
         <SceneContent director={director} seats={seats} me={me} board={board} level={level} watch={watch} reducedMotion={reducedMotion} tags={tags} peeking={peeking} />
         {showStats && <StatsProbe />}
         {setting === 'auto' && level === 'high' && <QualityWatch onStepDown={stepDown} />}
