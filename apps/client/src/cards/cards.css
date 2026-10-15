@@ -1,0 +1,17 @@
+/* The card editor (2026-10-15) uses the game's theme tokens (theme.css). */
+.cards-app { max-width: 1100px; margin: 0 auto; padding: 24px max(16px, env(safe-area-inset-left, 0px)); font-family: var(--body); color: var(--ink); background: var(--paper); min-height: 100vh; display: grid; gap: 16px; align-content: start; }
+.cards-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+.cards-head h1 { font-family: var(--display); font-weight: 400; margin: 0; }
+.cards-count { color: var(--muted-on-paper); margin: 0; }
+.cards-tools { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.cards-tools button { font: inherit; padding: 4px 12px; border-radius: 999px; border: 2px solid var(--ink); background: var(--white); color: var(--ink); cursor: pointer; }
+.cards-tools button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+.cards-tools input { font: inherit; padding: 6px 10px; border-radius: 10px; border: 2px solid var(--ink); min-width: 0; flex: 1 1 220px; }
+.cards-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.card-row button { width: 100%; text-align: left; display: grid; grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(0, 3fr); gap: 4px 12px; padding: 10px 12px; border: 2px solid transparent; border-left: 8px solid var(--type); border-radius: 12px; background: var(--white); color: var(--ink); font: inherit; cursor: pointer; }
+.card-row.selected button { border-color: var(--ink); }
+.card-row.off button, .card-row.draft button { opacity: 0.7; }
+.card-row-name { font-weight: 600; }
+.card-row-meta { color: var(--muted-on-paper); font-size: 0.9em; }
+.card-row.movement { --type: var(--type-movement); } .card-row.defense { --type: var(--type-defense); } .card-row.attack { --type: var(--type-attack); } .card-row.risky { --type: var(--type-risky); } .card-row.misc { --type: var(--type-misc); }
+@media (max-width: 720px) { .card-row button { grid-template-columns: 1fr; } }
