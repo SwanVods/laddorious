@@ -32,7 +32,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @laddorious/client exec playwright install --with-deps chromium
-      - run: pnpm e2e
+      # Every project but 'shots': those are review screenshots on a real GPU (pnpm shots), not tests (2026-10-15).
+      - run: pnpm --filter @laddorious/client exec playwright test --project desktop-chromium --project iphone-12-landscape --project pixel-7-landscape --project online
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
