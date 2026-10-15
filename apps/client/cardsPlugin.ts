@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CardCatalog, CardProblem } from '@laddorious/core';
 import type { Plugin } from 'vite';
@@ -47,6 +48,10 @@ export function cardsPlugin(path = CARD_FILE): Plugin {
   return {
     name: 'laddorious-cards',
     apply: 'serve',
+    // The editor already holds what it saved: a reload would lose its place and its "Saved." (2026-10-15).
+    handleHotUpdate({ file: changed }) {
+      if (normalize(changed).toLowerCase() === normalize(path).toLowerCase()) return [];
+    },
     configureServer(server) {
       server.middlewares.use('/__cards', (req, res) => {
         let body = '';

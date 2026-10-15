@@ -45,3 +45,13 @@ describe('the card editor endpoint (2026-10-15)', () => {
     expect((r.body as { message: string }).message).toBe('The card file changed on disk since you opened it. Reload the editor, then make your change again.');
   });
 });
+
+describe('the card editor plugin (2026-10-15)', () => {
+  it("doesn't reload pages when the editor saves the card file", async () => {
+    const { cardsPlugin } = await import('../cardsPlugin');
+    const plugin = cardsPlugin('E:/repo/packages/core/src/cards/cards.json');
+    const hot = plugin.handleHotUpdate as (ctx: { file: string }) => unknown;
+    expect(hot({ file: 'E:/repo/packages/core/src/cards/cards.json' })).toEqual([]);
+    expect(hot({ file: 'E:/repo/apps/client/src/main.tsx' })).toBeUndefined();
+  });
+});
