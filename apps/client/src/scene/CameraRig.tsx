@@ -5,7 +5,7 @@ import { Vector3 } from 'three';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { tuning } from '../app/tuning';
-import { OVERVIEW_TARGET_Z, cameraShot, type Focus, type ShotMode } from './camera';
+import { OVERVIEW_TARGET_Z, cameraShot, heldNext, type Focus, type ShotMode } from './camera';
 import { pinchZoom, wheelZoom } from './zoom';
 import { BOARD_HALF, type Vec3 } from './layout';
 import { NO_PAN, PanDrag, clampPan, dragPan, panAfterShot, panBox, panReach, unitsPerPixel, type Pan } from './pan';
@@ -113,7 +113,7 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       piece: (id): Vec3 => poseAt(state, id, seatOf.get(id) ?? 0, now, boardSize)?.position ?? [0, 0, 0],
     });
     modeRef.current = shot.mode;
-    heldRef.current = state.beat ? (shot.focus ?? heldRef.current) : null;
+    heldRef.current = heldNext({ beat: state.beat, window: state.settled?.view.awaiting.window ?? null, focus: shot.focus, held: heldRef.current });
     panRef.current = panAfterShot(panRef.current, shot.mode);
     const { follow, swoop } = tuning().camera;
     const k = shot.cut ? 1 : 1 - Math.exp(-delta * (shot.mode === 'swoop' ? swoop.ease : follow.ease));

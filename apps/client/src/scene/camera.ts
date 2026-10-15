@@ -84,10 +84,19 @@ export function cameraShot(shown: ShotInput): Shot {
   if (input.window === 'challenge' && (input.faceOffs ?? []).some((f) => f.players.includes(me))) return onPlayer(input, me);
   // Everyone's dice moves: with my piece, if it moves.
   if (beat?.kind === 'move' && beat.events.some((e) => e.type === 'Moved' && e.player === me)) return onPlayer(input, me);
-  // A beat with nothing of its own to show: stay on the last event, while the timeline plays.
-  if (beat && input.held) return onFocus(input, input.held);
+  // A beat with nothing of its own to show, or the card picks after it: stay on the last event (2026-10-15).
+  if ((beat || input.window === 'mystery') && input.held) return onFocus(input, input.held);
   // Everyone rolls, the timeline is over, or nothing to show: the whole board.
   return overview(input);
+}
+
+/**
+ * What the camera stays on next (2026-10-15): the shot's own focus, or the last one while the timeline
+ * plays and through the card picks that follow it; nothing once the window moves on.
+ */
+export function heldNext({ beat, window, focus, held }: { beat: Beat | null; window: WindowKind | null; focus: Focus | null | undefined; held: Focus | null }): Focus | null {
+  if (beat) return focus ?? held;
+  return window === 'mystery' ? held : null;
 }
 
 /** Card beats split a round's moments: my jump before a card doesn't hold the camera through it. */

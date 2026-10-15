@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
 import { presentationFromView } from '../src/director/presentation';
 import { DEFAULT_TUNING } from '../src/app/tuning';
-import { cameraShot, type ShotInput } from '../src/scene/camera';
+import { cameraShot, heldNext, type ShotInput } from '../src/scene/camera';
 import { BOARD_SCALE, COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from '../src/scene/layout';
 import { openingUpdate } from './support/fixtures';
 
@@ -72,6 +72,18 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(shot({ beat: clash, held: { player: 'p2' } })).toMatchObject({ mode: 'follow', target: SPOTS.p2, focus: { player: 'p2' } });
     expect(shot({ beat: clash, held: { tile: 23 } }).target).toEqual(tileToWorld(23));
     expect(shot({ beat: clash }).mode).toBe('overview');
+  });
+
+  it('stays on the last event while someone picks a card after a face-off, instead of the overview (2026-10-15)', () => {
+    expect(shot({ beat: null, window: 'mystery', held: { tile: 23 } }).target).toEqual(tileToWorld(23));
+    expect(shot({ beat: null, window: 'mystery', held: { player: 'p2' } }).target).toEqual(SPOTS.p2);
+    // Nothing was on: the whole board.
+    expect(shot({ beat: null, window: 'mystery' }).mode).toBe('overview');
+    // The rig keeps what the camera was on through the card picks, and lets go when the window moves on.
+    expect(heldNext({ beat: null, window: 'mystery', focus: null, held: { tile: 23 } })).toEqual({ tile: 23 });
+    expect(heldNext({ beat: null, window: 'dice', focus: null, held: { tile: 23 } })).toBeNull();
+    expect(heldNext({ beat: beatOf('slide', [moved('p2', 'snake')]), window: 'dice', focus: { player: 'p2' }, held: { tile: 23 } })).toEqual({ player: 'p2' });
+    expect(heldNext({ beat: beatOf('clash', []), window: 'dice', focus: null, held: { tile: 23 } })).toEqual({ tile: 23 });
   });
 
   it('goes back to the overview when the timeline is over, not to me (2026-10-15)', () => {
