@@ -5,7 +5,7 @@ import { Vector3 } from 'three';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { tuning } from '../app/tuning';
-import { OVERVIEW_TARGET_Z, cameraShot, heldNext, type Focus, type ShotMode } from './camera';
+import { OVERVIEW_TARGET_Z, cameraShot, heldNext, myPickPending, type Focus, type ShotMode } from './camera';
 import { pinchZoom, rememberZoom, savedZoom, wheelZoom } from './zoom';
 import { BOARD_HALF, type Vec3 } from './layout';
 import { NO_PAN, PanDrag, clampPan, dragPan, panAfterShot, panBox, panReach, unitsPerPixel, type Pan } from './pan';
@@ -19,10 +19,12 @@ interface CameraRigProps {
   reducedMotion: boolean;
   boardSize: number;
   peeking?: boolean;
+  /** The card-pick window I picked in, before the view knows (2026-10-15). */
+  pickedWindow?: number | null;
 }
 
 /** Moves the camera by the rules of spec #2 §5.3, easing between shots unless a shot is a cut. */
-export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize, peeking = false }: CameraRigProps) {
+export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize, peeking = false, pickedWindow = null }: CameraRigProps) {
   const camera = useThree((s) => s.camera);
   const canvas = useThree((s) => s.gl.domElement);
   // The overview's zoom (2026-10-15): a mouse wheel or a two-finger pinch over the board.
@@ -102,7 +104,7 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
     const shot = cameraShot({
       beat: state.beat,
       window: state.settled?.view.awaiting.window ?? null,
-      myPick: !!offer && offer.picked === null,
+      myPick: myPickPending(offer, state.settled?.view.awaiting.windowId ?? null, pickedWindow),
       me,
       watch,
       reducedMotion,

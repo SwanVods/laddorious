@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
 import { presentationFromView } from '../src/director/presentation';
 import { DEFAULT_TUNING } from '../src/app/tuning';
-import { cameraShot, heldNext, type ShotInput } from '../src/scene/camera';
+import { cameraShot, heldNext, myPickPending, type ShotInput } from '../src/scene/camera';
 import { BOARD_SCALE, COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from '../src/scene/layout';
 import { openingUpdate } from './support/fixtures';
 
@@ -224,5 +224,16 @@ describe('camera rules (spec #2 §5.3)', () => {
   it('pulls back to the overview for the ranks reveal after the winner cam (polish spec 4.5)', () => {
     const won: GameEvent = { type: 'MatchWon', winner: 'p0', rankings: [], visibility: 'public' };
     expect(shot({ beat: beatOf('ranks', [won]), window: 'none' })).toMatchObject({ mode: 'overview', target: [0, 0, 4 * BOARD_SCALE] });
+  });
+});
+
+describe('my Mystery pick (2026-10-15)', () => {
+  it('waits on my pick while my offer is open, and stops as soon as I pick, before the view catches up', () => {
+    const open = { picked: null };
+    expect(myPickPending(open, 7, null)).toBe(true);
+    expect(myPickPending(open, 7, 7)).toBe(false);
+    expect(myPickPending(open, 8, 7)).toBe(true);
+    expect(myPickPending({ picked: 0 }, 7, null)).toBe(false);
+    expect(myPickPending(null, 7, null)).toBe(false);
   });
 });

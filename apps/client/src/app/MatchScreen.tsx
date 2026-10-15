@@ -154,7 +154,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const dock = view && presentation ? dockModel({ beat, view, record, me }) : null;
   return (
     <div className={tuning().hud.phoneCompactCards ? 'screen match compact-cards' : 'screen match'}>
-      <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} peeking={cardPick !== null && peekWindow === view?.awaiting.windowId} />
+      <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} peeking={cardPick !== null && peekWindow === view?.awaiting.windowId} pickedWindow={pickedWindow} />
       <div className="layer">
         <NameTags seats={seats} me={me} tags={tags} ranks={rankBadges(beat, timeScale)} />
         {view && presentation && (
