@@ -67,7 +67,7 @@ describe('the match world', () => {
     expect(crowns[0]!.at[0]).toBeGreaterThan(0);
     expect(crowns[0]!.scale).toBeGreaterThan(2);
     expect(crowns[0]!.motion).toBeUndefined();
-    expect(world.some((p) => p.slot === 'prop.crown')).toBe(false);
+    expect(world.some((p) => (p.slot as string) === 'prop.crown')).toBe(false);
   });
 
   it('floats the course off the platform, at the sides and back, never in front (spec §4)', () => {
