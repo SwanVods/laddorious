@@ -7,7 +7,8 @@ import { boardOverlayTexture } from '../src/scene/textures';
 import { openingUpdate } from './support/fixtures';
 
 // Count the overlay textures the board makes, and whether each is freed.
-const { made } = vi.hoisted(() => ({ made: [] as Texture[] }));
+const { made, fonts } = vi.hoisted(() => ({ made: [] as Texture[], fonts: { pending: null as Promise<unknown> | null } }));
+vi.mock('../src/scene/fonts', () => ({ webFontsPending: () => fonts.pending }));
 vi.mock('../src/scene/textures', async (importOriginal) => {
   const real = await importOriginal<typeof import('../src/scene/textures')>();
   const { Texture: RealTexture } = await import('three');
@@ -40,5 +41,26 @@ describe('the board overlay (spec #2 §6.1, §6.4 budget)', () => {
     await renderer.unmount();
     expect(made).toHaveLength(1);
     expect(made[0]!.dispose).toHaveBeenCalled();
+  });
+
+  it("paints again once the game's fonts have loaded, freeing the first painting (2026-10-15)", async () => {
+    made.length = 0;
+    vi.mocked(boardOverlayTexture).mockClear();
+    let loaded!: () => void;
+    const ready = new Promise<void>((resolve) => (loaded = resolve));
+    fonts.pending = ready;
+    const director = new Director('p0', () => {});
+    director.push(openingUpdate());
+    const board = director.store.getState().settled!.view.board;
+    const renderer = await ReactThreeTestRenderer.create(<Board board={board} director={director} clearcoat />);
+    expect(boardOverlayTexture).toHaveBeenCalledTimes(1);
+    await ReactThreeTestRenderer.act(async () => {
+      loaded();
+      await ready;
+    });
+    expect(boardOverlayTexture).toHaveBeenCalledTimes(2);
+    expect(made[0]!.dispose).toHaveBeenCalled();
+    await renderer.unmount();
+    fonts.pending = null;
   });
 });

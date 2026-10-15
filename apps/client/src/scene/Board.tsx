@@ -1,11 +1,12 @@
 import type { PlayerView } from '@laddorious/core';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AdditiveBlending, Color, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type InstancedMesh } from 'three';
 import { BOARD_COLORS, WORLD_COLORS } from '../app/theme';
 import { tileGeometry } from '../assets/models';
 import { useSlotMesh } from '../assets/slotMesh';
 import type { Director } from '../director/director';
+import { webFontsPending } from './fonts';
 import { COLUMNS, TILE_ACROSS, TILE_SIZE, TILE_THICKNESS, squareColorIndex, tileToWorld } from './layout';
 import { boardOverlayTexture, sheenTexture } from './textures';
 import { tuning } from '../app/tuning';
@@ -40,7 +41,20 @@ export function Board({ board, director, clearcoat, onTap }: BoardProps) {
   const size = board.size;
   const mysteryKey = JSON.stringify(board.mystery);
   const mystery = useMemo(() => JSON.parse(mysteryKey) as PublicBoard['mystery'], [mysteryKey]);
-  const overlay = useMemo(() => boardOverlayTexture(size, mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink), [size, mystery]);
+  // The numbers are painted in the game's display font: once more when the web fonts have loaded (2026-10-15).
+  const [fontsLoaded, setFontsLoaded] = useState(() => webFontsPending() === null);
+  useEffect(() => {
+    const pending = fontsLoaded ? null : webFontsPending();
+    if (!pending) return;
+    let live = true;
+    void pending.then(() => {
+      if (live) setFontsLoaded(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [fontsLoaded]);
+  const overlay = useMemo(() => boardOverlayTexture(size, mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink, fontsLoaded), [size, mystery, fontsLoaded]);
   // three.js frees a texture's GPU memory only on dispose().
   useEffect(() => () => overlay?.dispose(), [overlay]);
   // Epic "?" tiles shine (2026-10-14): a soft band sweeps across each, all in one draw call.

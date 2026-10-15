@@ -19,8 +19,15 @@ function paint(width: number, height: number, draw: (ctx: CanvasRenderingContext
 
 const BOARD_PX = 1024;
 
-/** All tile numbers and "?" glyphs in one transparent texture over the board (spec #2 §6.1). */
-export function boardOverlayTexture(size: number, mystery: Record<number, Rarity>, glyph: Record<Rarity, string>, ink: string): CanvasTexture | null {
+/** The game's display face for the numbers and "?" glyphs, with fallbacks while it loads (2026-10-15). */
+const BOARD_FONT = "'Lilita One', 'Arial Rounded MT Bold', system-ui, sans-serif";
+
+/**
+ * All tile numbers and "?" glyphs in one transparent texture over the board (spec #2 §6.1): in the game's
+ * display face once the web fonts have loaded, in the system's until then (the board paints again).
+ */
+export function boardOverlayTexture(size: number, mystery: Record<number, Rarity>, glyph: Record<Rarity, string>, ink: string, fontsLoaded = true): CanvasTexture | null {
+  const face = fontsLoaded ? BOARD_FONT : 'system-ui, sans-serif';
   const span = TILE_SIZE * COLUMNS;
   const cell = BOARD_PX / COLUMNS;
   return paint(BOARD_PX, BOARD_PX, (ctx) => {
@@ -32,13 +39,13 @@ export function boardOverlayTexture(size: number, mystery: Record<number, Rarity
       ctx.globalAlpha = 0.7;
       ctx.fillStyle = ink;
       ctx.textAlign = 'left';
-      ctx.font = `bold ${Math.round(cell * 0.24)}px system-ui, sans-serif`;
+      ctx.font = `${Math.round(cell * 0.26)}px ${face}`;
       ctx.fillText(String(tile), px - cell * 0.42, py - cell * 0.32);
       ctx.globalAlpha = 1;
       const rarity = mystery[tile];
       if (rarity) {
         ctx.textAlign = 'center';
-        ctx.font = `900 ${Math.round(cell * 0.62)}px system-ui, sans-serif`;
+        ctx.font = `${Math.round(cell * 0.62)}px ${face}`;
         ctx.lineWidth = cell * 0.06;
         ctx.strokeStyle = ink;
         ctx.strokeText('?', px, py + cell * 0.04);
