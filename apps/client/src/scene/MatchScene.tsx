@@ -4,6 +4,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'reac
 import { useStore } from 'zustand';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
+import { preloadSlotMeshes } from '../assets/slotMesh';
+import { preloadModels } from '../assets/slots';
 import { Board } from './Board';
 import { CameraRig } from './CameraRig';
 import { Jumps } from './Jumps';
@@ -56,6 +58,11 @@ export function SceneContent({ director, seats, me, board, level, watch, reduced
   const tagPeeks = useMemo(createTagPeeks, []);
   const pieces = useMemo((): PieceRegistry => new Map(), []);
   const rolls = useMemo(() => new Map<PlayerId, Roll>(), []);
+  // A match entered without the menu (a resumed online seat) loads the models itself; after the menu it's all cached (2026-10-15).
+  useEffect(() => {
+    preloadModels(profile.lowModels);
+    preloadSlotMeshes(profile.modelEnds);
+  }, [profile.lowModels, profile.modelEnds]);
   // Pieces stand by their measured sizes, so nothing overlaps (2026-10-14).
   useLayoutEffect(() => setSeatPieces(Object.fromEntries(seats.map((s) => [s.playerId, s.piece]))), [seats]);
   const peeked = peeks ?? own;
