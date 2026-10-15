@@ -26,7 +26,7 @@
 | **Spec #5, the art pass, Step 2 of 3** (the board): tiles, launch rockets, landing flags, whirlpools and exit splats on instanced slots (`useSlotMesh`); shadow stand-ins for the pieces, die and crown (spec A12). After the user's first Step 2 review (A13, A14): paths hidden until a piece stands on their start, rides them, or a player taps an end; each jump's ends paired by colour and symbol; rounder, taller tiles; a taller pad; a lighter die; lighter pieces on Low quality. **Done on branch `art/spec-5`, awaiting the user's second Step 2 review** | `docs/superpowers/plans/2026-10-09-art-pass-step2.md` (Tasks 1–9, then R1–R7); commits `1da042b` … `d935fad`, `81ba04c`, then `1487062`, `278f884`, `0ae940e`, `ae08600`, `2e36fb2`, `7f2a13b`, `7d29028` |
 | **Polish pass** (after the user played Spec #2): your die in the centre, thinner slide lanes that never cross, the card pick closing on pick, a 30 s card window, card bubbles, hands without duplicates, and a ranks reveal after the winner cam. **Done, merged to `main`** | `docs/superpowers/specs/2026-10-08-polish-pass-design.md`, `docs/superpowers/plans/2026-10-08-polish-pass.md`; commits `e1d0e96`, `a8ffd37`, `2bfd0c3`, `9eb4742`, `b281271`, `03a392b`, `d17b21b`, `a59c244`, `8a230bb`; browser fix `fa8b190` |
 
-After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). There is no git remote, so the CI workflow has never run.
+After Spec #4 the full suite is 76 test files, 597 tests, all passing, and `pnpm e2e` passes 11 Playwright tests (about 6 minutes): 3 tests × 3 offline projects, and 2 two-player tests in the `online` project against `wrangler dev` (the server's real 15 s bot offer makes them slower). The whole-match test also checks that sound started, played and recorded no errors. 1,000 simulated four-player matches take about 8 s (spec #1's target is under 10 s); the median match is 21 rounds. `pnpm typecheck`, `pnpm lint` and `pnpm build` are clean (Vite warns about the three.js chunk size). (Since 2026-10-15 the repo is on GitHub and CI runs: see the open-items batch below.)
 
 On `art/board-theme` (2026-10-15): 97 test files and 939 tests pass; `pnpm e2e` passes 16 of 17, the online away test flaking as below. Before that, on `fix/adjustments`: 95 test files and 896 tests pass, and `pnpm e2e` passes all 17 (about 10 minutes); the online away test can still flake, for the reason in Open items. A busy match stays under 150,000 triangles on High and 100,000 on Low (`art/test/budget.test.ts`).
 
@@ -53,6 +53,17 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - The rest: the crown on the board's last tile; freed WebGL probe, textures and material copies; tile numbers in the display font after fonts load; Settings' "Right now" after Auto's step-down; the zoom kept between matches; the shield flare after the projectile lands; 3–4-piece face-offs kept on their square; a match without the menu loads its models; online: lobby silence check, a duplicated tab leaves the seat to the first, plain failure messages; stable pair styles; iPad detection without `navigator.platform`; StrictMode-safe effects; LF snapshots; the online e2e checks model loads.
 - **Kept as is, the user's call:** the rotate screen doesn't pause a match; tests needing new scaffolding stay deferred.
 - Then the user's next notes (2026-10-15, same branch): every sound and both songs at one loudness (measured offline: about -19 dB momentary, roughly K-weighted; the effects had been 12 dB apart and the music about 13 dB under them), music and effects sliders both default to 80%; a won face-off stays apart until the knock-backs, which wait for every face-off, and the camera moves on to the undecided one; the phone card list stays through the moves cards make (a launch after Sprint). Confirmed: no full-screen button on iPhone Safari (no Fullscreen API there); iPads with Safari 16.4+ show it.
+
+**The open-items batch (2026-10-15), branch `fix/open-items`, awaiting review:** the user said to fix every open item but two (dropped: the pads' rim facets, a Low crown), and to set up CI now the repo is public (<https://github.com/SwanVods/laddorious>; Claude may push CI fixes, feature work waits for review).
+- A launching rocket crouches, lifts off with its piece on a flaring flame plume (a new Blender model, `art/models/plume.py`), and lands; the user had asked for "rocket lifts off a little".
+- A scene compiles its shaders before its first frame (`scene/compileFirst.tsx`, `compileAsync`, drawing after 15 s at the latest): CI's desktop e2e froze 70 s on the first match frame.
+- Shadow stand-ins draw only into the shadow map (`assets/shadowOnly.ts`): a new High match 79 -> 71 calls, 121.9k -> 114.4k triangles; a busy match prices at 86 calls, 151,319 triangles (+ the vortex and plume below).
+- The vortex has 13 bowl rings (9° of turn a ring), 1,026 triangles; the whirlpool's eye symbol is 0.40 on a 0.25 cap.
+- Rank badges stay in view: after the win a tag whose piece is off screen waits at the screen edge.
+- The camera leaves my Mystery pick as soon as I pick (the screen's `pickedWindow`).
+- Music: the player schedules each song 1.2 s ahead in the audio clock (no Tone transport), songs crossfade over 1.5 s, late notes after a stall are skipped; touch screens ask for `latencyHint: 'playback'` (the user heard stutter on Android Chrome: music and effects, menu too).
+- CI (`.github/workflows/ci.yml`): the first run passed `check`; e2e failed on the desktop freeze, the `shots` project (review screenshots needing a GPU, now left out of CI) and the online flake (now skipped on CI).
+- Not committed: `apps/client/public/tuning.json` has `zoomMin` 0.7 in the working tree, changed outside these commits (the user's, probably).
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
@@ -122,43 +133,32 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 ## Open items
 
 - **Blender:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`). On 2026-10-09 a build run inside the user's open Blender (through the MCP link) crashed it; the bug is fixed (`art/lib/export.py` kept the scene graph's copies of materials), and since then every build and preview runs headless (`pnpm art`, `blender --background --factory-startup --python art/preview.py -- out.png ids`), never in the user's Blender.
-- **Deferred board-theme minors** (2026-10-15; not fixed):
-  - The course pads' mint rim is four profile points, so it shows facets up close; it reads round at 30–60 units, and smoothing it costs about 1,000 triangles the budget doesn't have.
-  - The wings' crown prop is low-poly (700 triangles), faceted when zoomed right in.
+- **Dropped, the user's call (2026-10-15):** the course pads' faceted mint rim and a lighter Low crown stay as they are.
 - **Deferred Phase 5 minors** (from the self-review; not fixed):
   - The rotate screen covers the match but doesn't pause it (kept as is: the user's call, 2026-10-15).
 - **Deferred Phase 6 minors** (from the self-review; not fixed):
   - e2e builds only: in fast mode ROLL and the popups stay live while a bot plays my seat, so a manual tap can race it and show a rejection toast.
   - e2e builds only: banners (1.7 s) and CSS animations aren't time-scaled; only director beats are.
-  - The CI workflow has never run (no git remote). The deploy notes in `apps/client/README.md` were checked against the hosts' docs, not a real deploy.
+  - The deploy notes in `apps/client/README.md` were checked against the hosts' docs, not a real deploy.
 - **Deferred polish-pass minors** (from the self-review; not fixed):
-  - After I pick a card, the camera keeps its "my Mystery pick" swoop until the reveal settles (it reads the settled view); left with the lazy camera, the user's call (2026-10-15).
-  - Rank badges live inside name tags, so a tag hidden behind the camera hides its badge too (rare; the reveal uses the overview).
 - **Deferred adjustments minors** (from the self-review; not fixed):
   - The dev server once served a stale `MatchScreen` (an edit landed between two writes) until restarted; nothing in the build.
   - Changing `tuning.json` while a match is open takes effect on the next page load, not mid-match.
 - **Deferred known-issues minors** (from the self-review; not fixed):
-  - The online e2e test "a player who drops shows as away, and a reload brings them back" is flaky. Cause: e2e bot matches are fast (40-50 s); while B reloads (shader compile included), the match can be won, and the room closes every socket 10 s after a win (`END_LINGER_MS` in `apps/server/src/room.ts`), so A never hears B come back and the Away badge stays. The rejoin itself works. A reliable test needs a match that can't end mid-test (new scaffolding), so it is deferred per the user's rule on multiplayer tests.
+  - The online e2e test "a player who drops shows as away, and a reload brings them back" is flaky. Cause: e2e bot matches are fast (40-50 s); while B reloads (shader compile included), the match can be won, and the room closes every socket 10 s after a win (`END_LINGER_MS` in `apps/server/src/room.ts`), so A never hears B come back and the Away badge stays. The rejoin itself works. A reliable test needs a match that can't end mid-test (new scaffolding), so it is deferred per the user's rule on multiplayer tests. CI skips it (`test.skip` when `CI` is set); it still runs locally.
   - No browser run caught my own face-off or a landing on a stack during the screenshots; the face-off steps and the wiggle are covered by unit tests.
   - No recording compares the new animations with the mockup: a face-off can't be forced in a real match, and the headless browser draws about 10 fps. A dev-only demo page that plays a scripted stack and face-off would make them easy to check.
 - **Deferred Spec #5 Step 2 round 5 minors** (from the self-review; not fixed):
-  - A rocket's flame doesn't flare as it launches: the flame is part of the instanced rocket and its glow can't change per copy. The rocket rocks and squashes instead.
   - In fast e2e builds (beats × 0.05) the 3 s victory beat ends before the crown's 1.2 s flight, so it appears on the head at once; the flight is covered by unit tests, not seen in a browser.
   - The rocket and flag reactions were checked by unit tests only; no browser run caught a bot climbing at the moment of a screenshot.
   - The online "away, then back" e2e test timed out once while other test runs shared the machine (b's away mark stayed past 15 s); it passed when the online tests ran alone. Worth watching for flakiness.
 - **Deferred Spec #3 minors** (from the self-review; not fixed):
-  - Music changes fade out then in (0.4 s + 0.8 s) rather than overlapping, since Tone has one transport.
-  - The in-game sounds weren't listened to after integration (Claude can't hear); they're a straight port of the approved board, checked by tests, the e2e sound check and a dev-build run with no warnings. Worth a listen on a phone.
+  - The in-game sounds weren't listened to after integration (Claude can't hear); they're checked by tests, offline loudness measurements (2026-10-15) and the e2e sound check. The new music scheduler and the phone audio buffers (2026-10-15) are untested by ear: worth a listen on the Android phone that stuttered.
 - **Deferred Spec #4 minors** (from the self-review; not fixed):
   - The Away badge and the "Reconnecting…" pill were checked through the DOM only (the browser pane was hidden); worth a look on a phone.
 - **Deferred Spec #5 Step 1 minors** (from the self-review; not fixed):
   - Sculpted models don't rebuild byte for byte (Blender's SDF nodes differ at float level), so `pnpm art` with no ids rewrites every sculpted file; rebuild only the models you change.
 - **Deferred Spec #5 Step 2 minors** (from the self-review; not fixed):
-  - Opening a match compiles every shader in its first frame: one 15 s task on a fresh browser under SwiftShader (the same on `main` since Step 1), a short hitch on a phone. `renderer.compileAsync` during the MATCH FOUND countdown would spread it. The e2e tests now wait 60 s for the match screen.
-  - The shadow stand-ins are also drawn, unseen, in the main pass: one extra draw call per piece, die and crown.
-  - The vortex's spiral ridges show small kinks close up (about 20° of turn per ring).
-  - The whirlpool and splat stay within radius 0.43 (the lane clearance rule), so the whirlpool's symbol is a little smaller than the approved mockup's.
-  - The crown has no Low file: thinned to 30% it lost its points, so it stays one 6,000-triangle model on Low.
 - **Spec #4 follow-ups the spec left out:** Durable Object hibernation with alarms if traffic grows, private rooms, saving matches across restarts (M8, M9, §11).
 - **Spec #5** (Blender art pass): design approved (`docs/superpowers/specs/2026-10-09-art-pass-design.md`), one plan per step: `docs/superpowers/plans/2026-10-09-art-pass-step1.md` (pipeline and pieces, merged), `-step2.md` (the board, awaiting review), `-step3.md` (the world, next). Each step ends with the user's review in the game.
 - **Later:** Capacitor packaging, the card catalogue (including the "roll again if your die shows n" card), particles.
