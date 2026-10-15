@@ -161,7 +161,7 @@ export type EventBody =
   | { type: 'MysteryOffered'; player: PlayerId; tile: number; rarity: Rarity; cards: string[] }
   | { type: 'CardRerolled'; player: PlayerId; slot: number; from: string; to: string }
   | { type: 'CardSelected'; player: PlayerId; cardId: string; cardType: CardType; rarity: Rarity; auto: boolean }
-  | { type: 'CardResolved'; caster: PlayerId; cardId: string; target: PlayerId | null; result: CardResult; reason?: 'no-target' | 'no-placement' | 'clash'; roll?: number }
+  | { type: 'CardResolved'; caster: PlayerId; cardId: string; target: PlayerId | null; result: CardResult; reason?: 'no-target' | 'no-placement' | 'clash'; roll?: number; targets?: PlayerId[]; blocked?: PlayerId[] }
   | { type: 'Clash'; cardIds: string[]; casters: PlayerId[]; players: PlayerId[] }
   | { type: 'EffectAdded'; effect: ActiveEffect }
   | { type: 'EffectRemoved'; effectId: string; owner: PlayerId; reason: 'card' | 'charges' }

@@ -8,6 +8,7 @@ type Op = Templated<EffectOp>;
 /** Who a card hits, as the subject of a sentence; null for the caster. */
 function subject(t: TargetRule): string | null {
   if (t.condition === 'self') return null;
+  if (t.pick === 'all') return t.condition === 'everyone' ? 'Everyone' : 'Everyone else';
   if (t.condition === 'section') return `A player on tiles ${t.section?.[0]}–${t.section?.[1]}`;
   if (t.pick === 'leader') return 'The leader';
   if (t.pick === 'last') return 'The player in last place';

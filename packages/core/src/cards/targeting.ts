@@ -14,6 +14,8 @@ export function targetCandidates(players: readonly TargetablePlayer[], caster: T
       return [caster];
     case 'other':
       return players.filter((p) => p.id !== caster.id);
+    case 'everyone':
+      return [...players];
     case 'ahead-of-caster':
       return players.filter((p) => p.id !== caster.id && p.position > caster.position);
     case 'behind-of-caster':
@@ -34,7 +36,7 @@ export function isValidTarget(
   return targetCandidates(players, caster, rule).some((p) => p.id === targetId);
 }
 
-/** Select exactly one target by the rule's pick + tieBreak, or null if no candidate qualifies. */
+/** Select exactly one target by the rule's pick + tieBreak, or null if no candidate qualifies (or the card hits them all). */
 export function selectTarget(
   players: readonly TargetablePlayer[],
   caster: TargetablePlayer,
@@ -42,7 +44,7 @@ export function selectTarget(
   misc: RngStream,
 ): string | null {
   const candidates = targetCandidates(players, caster, rule);
-  if (candidates.length === 0) return null;
+  if (candidates.length === 0 || rule.pick === 'all') return null;
   if (rule.pick === 'self') return candidates.some((p) => p.id === caster.id) ? caster.id : null;
   const score = (p: TargetablePlayer): number => {
     const d = Math.abs(p.position - caster.position);
@@ -56,6 +58,7 @@ export function selectTarget(
       case 'last':
         return -p.position;
       case 'self':
+      case 'all':
         return 0;
     }
   };

@@ -1,7 +1,7 @@
 import { jumpKind } from '../board/types';
 import { applyPlannedEdit, planBoardEdit } from '../cards/boardEdit';
 import { cardById } from '../cards/catalog';
-import { isValidTarget, selectTarget } from '../cards/targeting';
+import { isValidTarget, selectTarget, targetCandidates } from '../cards/targeting';
 import { isDie, usesDie, type CardDef, type EffectOp, type EffectTemplate } from '../cards/types';
 import { nextInt, pickWeighted } from '../rng/stream';
 import { addEffect, removeEffect, useAttackShield } from './effects';
@@ -35,6 +35,9 @@ interface CardOutcome {
   reason?: 'no-target' | 'no-placement' | 'clash';
   /** The card's own die, when it has one. */
   roll?: number;
+  /** A card for several players: who it hit, and whose shield blocked it. */
+  targets?: PlayerId[];
+  blocked?: PlayerId[];
   intents: CardIntents | null;
 }
 
@@ -107,6 +110,36 @@ function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: 
   return effects.every(visit) ? intents : null;
 }
 
+/** A card for several players (2026-10-15): each in seat order, a shield blocking it for its owner alone. */
+function resolveAll(s: MatchState, ev: GameEvent[], pc: PendingCard, card: CardDef): CardOutcome {
+  const caster = getPlayer(s, pc.caster);
+  const candidates = seatOrder(s, new Set(targetCandidates(s.players, caster, card.target).map((p) => p.id)));
+  if (candidates.length === 0) return { pc, card, target: null, result: 'fizzled', reason: 'no-target', intents: null };
+  const roll = usesDie(card) ? 1 + nextInt(s.rng.misc, 6) : undefined;
+  const merged: CardIntents = { deltas: [], placements: [], adds: [], removals: [], edits: [] };
+  const targets: PlayerId[] = [];
+  const blocked: PlayerId[] = [];
+  for (const target of candidates) {
+    if (card.type === 'attack' && target !== pc.caster && useAttackShield(s, ev, target)) {
+      blocked.push(target);
+      continue;
+    }
+    const intents = collectIntents(s, card, pc.caster, target, roll);
+    if (!intents) continue;
+    merged.deltas.push(...intents.deltas);
+    merged.placements.push(...intents.placements);
+    merged.adds.push(...intents.adds);
+    merged.removals.push(...intents.removals);
+    targets.push(target);
+  }
+  const result: CardResult = targets.length > 0 ? 'hit' : blocked.length > 0 ? 'blocked' : 'fizzled';
+  return {
+    pc, card, target: null, roll, targets, blocked, result,
+    ...(result === 'fizzled' ? { reason: 'no-placement' as const } : {}),
+    intents: targets.length > 0 ? merged : null,
+  };
+}
+
 /**
  * Resolve one simultaneous group (spec §5.4) and return the players whose
  * position changed (they are settled next).
@@ -117,6 +150,10 @@ export function resolveGroup(s: MatchState, ev: GameEvent[], group: PendingCard[
 
   for (const pc of group) {
     const card = cardById(s.config.cards, pc.cardId);
+    if (card.target.pick === 'all') {
+      outcomes.push(resolveAll(s, ev, pc, card));
+      continue;
+    }
     const caster = getPlayer(s, pc.caster);
     const target =
       pc.target !== null && isValidTarget(s.players, caster, card.target, pc.target)
@@ -190,6 +227,7 @@ export function resolveGroup(s: MatchState, ev: GameEvent[], group: PendingCard[
         result: o.result,
         ...(o.reason ? { reason: o.reason } : {}),
         ...(o.roll !== undefined ? { roll: o.roll } : {}),
+        ...(o.targets ? { targets: o.targets, blocked: o.blocked ?? [] } : {}),
       }),
     );
   }

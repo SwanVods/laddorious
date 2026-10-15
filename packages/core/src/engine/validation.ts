@@ -138,8 +138,10 @@ export function validateCardDef(c: CardDef): void {
   check(RARITIES.includes(c.rarity), where, `unknown rarity ${String(c.rarity)}`);
   check(isPositiveInt(c.weight), where, 'weight must be a positive integer');
   const t = c.target;
-  check(['self', 'other', 'ahead-of-caster', 'behind-of-caster', 'section'].includes(t?.condition), where, 'unknown target condition');
-  check(['self', 'nearest', 'furthest', 'leader', 'last'].includes(t.pick), where, 'unknown target pick');
+  check(['self', 'other', 'everyone', 'ahead-of-caster', 'behind-of-caster', 'section'].includes(t?.condition), where, 'unknown target condition');
+  check(['self', 'nearest', 'furthest', 'leader', 'last', 'all'].includes(t.pick), where, 'unknown target pick');
+  check(t.condition !== 'everyone' || t.pick === 'all', where, "a card for everyone must hit them all (pick 'all')");
+  check(t.pick !== 'all' || !Array.isArray(c.effects) || !c.effects.some((op) => op?.op === 'boardEdit'), where, "A card that hits several players can't change the board yet.");
   check(t.tieBreak === 'random' || t.tieBreak === 'lowest-seat', where, 'unknown target tieBreak');
   if (t.condition === 'section') {
     check(Array.isArray(t.section) && isInt(t.section[0]) && isInt(t.section[1]) && t.section[0] <= t.section[1], where, 'section must be [from, to]');

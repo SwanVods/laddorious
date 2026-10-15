@@ -7,10 +7,12 @@ export const CARD_TYPES: readonly CardType[] = ['movement', 'defense', 'attack',
 export type MoveCause = 'dice' | 'snake' | 'ladder' | 'knockback' | 'card' | 'effect' | 'stepBack';
 
 export interface TargetRule {
-  condition: 'self' | 'other' | 'ahead-of-caster' | 'behind-of-caster' | 'section';
+  /** 'everyone' takes the caster too; it goes with pick 'all' (2026-10-15). */
+  condition: 'self' | 'other' | 'everyone' | 'ahead-of-caster' | 'behind-of-caster' | 'section';
   /** Inclusive tile range, required when condition is 'section'. */
   section?: [number, number];
-  pick: 'self' | 'nearest' | 'furthest' | 'leader' | 'last';
+  /** 'all' hits every candidate, in seat order (2026-10-15). */
+  pick: 'self' | 'nearest' | 'furthest' | 'leader' | 'last' | 'all';
   tieBreak: 'random' | 'lowest-seat';
 }
 
