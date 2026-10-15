@@ -31,6 +31,7 @@ export type SlotName =
   | 'tile'
   | 'pad.target'
   | 'pad.plume'
+  | 'shield'
   | 'slide.exit';
 
 /** The model id (file name without .glb) for each slot that has a Blender model. A slot not listed keeps its code-built model. */
@@ -44,6 +45,7 @@ export const SLOT_FILES: Partial<Record<SlotName, string>> = {
   'piece.duck': 'duck',
   die: 'die',
   crown: 'crown',
+  shield: 'shield',
   tile: 'tile',
   pad: 'pad',
   'pad.target': 'target',

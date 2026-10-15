@@ -22,13 +22,15 @@ const PADS = 14;
 const SEATS = 4;
 /** Paths showing at once: one under each piece, and one a player tapped. */
 const SHOWN = SEATS + 1;
-/** The scene's own parts during a roll: the sky, the number overlay, the "?" rings and four shield bubbles. */
-const CODE = { calls: 7, triangles: 3_200 };
+/** The scene's own parts during a roll: the sky, the number overlay and the "?" rings (the shield bubbles are a model since 2026-10-15). */
+const CODE = { calls: 3, triangles: 320 };
 
 /** How the game draws each model: its copies, whether each copy is its own draw (not instanced), and whether it casts a shadow. */
 const USES: Record<string, { copies: number; separate?: boolean; shadows?: boolean; model?: string }> = {
   die: { copies: SEATS, separate: true, shadows: true },
   crown: { copies: 1, separate: true, shadows: true },
+  // Every piece shielded at once (2026-10-15): a bubble and its band, drawn per piece, casting no shadow.
+  shield: { copies: SEATS, separate: true },
   tile: { copies: 100 },
   pad: { copies: PADS },
   target: { copies: PADS },

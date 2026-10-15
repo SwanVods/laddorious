@@ -298,6 +298,14 @@ export function shieldBlocking(beat: PlayingBeat | null, player: PlayerId, nowMs
   return nowMs >= lands;
 }
 
+/** The shield bubble's look `nowMs` in (2026-10-15: the user asked for a shield you can see): it breathes while up and flashes when it blocks. */
+export function shieldLook(nowMs: number, blocking: boolean, reducedMotion: boolean): { opacity: number; rim: number; scale: number } {
+  if (blocking) return { opacity: 0.65 + 0.1 * Math.abs(Math.sin(nowMs / 60)), rim: 1, scale: 1.08 };
+  if (reducedMotion) return { opacity: 0.35, rim: 0.8, scale: 1 };
+  const k = Math.sin((nowMs / 2000) * Math.PI * 2);
+  return { opacity: 0.35 + 0.05 * k, rim: 0.8 + 0.15 * k, scale: 1 + 0.03 * k };
+}
+
 /** A piece's pose right now, from the director's state. */
 export function poseAt(state: DirectorState, player: PlayerId, seat: number, nowMs: number, boardSize: number): Pose | null {
   if (!state.presentation) return null;

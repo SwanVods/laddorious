@@ -84,6 +84,8 @@ export const MODELS: Record<string, ModelRule> = {
   duck: piece('piece.duck'),
   die: { slot: 'die', origin: 'centre', height: [0.45, 0.56], maxWidth: 0.56, maxTriangles: 2500, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: ['One'], checks: [oneOnTop] },
   crown: { slot: 'crown', origin: 'base', height: [0.5, 0.9], maxWidth: 1.15, maxTriangles: 8000, maxShadowTriangles: SHADOW, maxMaterials: 3, requiredMaterials: [] },
+  // A piece's shield (2026-10-15): a see-through bubble and a glowing band, drawn on its own per piece.
+  shield: { slot: 'shield', origin: 'base', height: [1.5, 1.7], maxWidth: 2, maxTriangles: 1400, maxMaterials: 2, requiredMaterials: ['Bubble', 'Rim'] },
   // The board (spec #5 §4.2, A13): parts stand on the tile top; instancing draws each once per material, and
   // the instance colour (each jump's pair colour) paints Tint, so every jump part has it.
   tile: { slot: 'tile', origin: 'base', height: [0.29, 0.31], maxWidth: 2.31, maxTriangles: 200, maxMaterials: 1, requiredMaterials: ['Tint'] },

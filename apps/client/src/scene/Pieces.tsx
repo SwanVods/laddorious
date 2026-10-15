@@ -1,14 +1,14 @@
 import type { PlayerId } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import type { Group, Mesh, MeshBasicMaterial, Object3D } from 'three';
+import { Mesh, type Group, type MeshStandardMaterial, type Object3D } from 'three';
 import { WORLD_COLORS } from '../app/theme';
 import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { PIECE_SCALE } from './layout';
-import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, stackLandings, withIdle, type Landing, type Pose } from './motion';
+import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, shieldLook, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { dieAtlasTexture } from './textures';
@@ -123,7 +123,14 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
   const orbRef = useRef<Mesh>(null);
   const blobRef = useRef<Mesh>(null);
   const dieRef = useRef<Group>(null);
-  const shieldRef = useRef<Mesh>(null);
+  const shieldRef = useRef<Group>(null);
+  useEffect(
+    () => () =>
+      shieldRef.current?.traverse((node) => {
+        if (node instanceof Mesh && node.userData.ownMaterial) (node.material as MeshStandardMaterial).dispose();
+      }),
+    [],
+  );
   const geometry = useMemo(() => PIECE_GEOMETRY[seat.piece](), [seat.piece]);
   const dieShape = useMemo(() => dieGeometry(), []);
   const atlas = useMemo(() => dieAtlasTexture(WORLD_COLORS.die, WORLD_COLORS.pip), []);
@@ -165,9 +172,31 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
     // The shield bubble shows while a shield effect is up and flares when it blocks.
     const shielded = state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false;
     const blocking = shieldBlocking(state.beat, seat.playerId, now);
-    shieldRef.current.visible = shielded || blocking;
-    shieldRef.current.position.set(pose.position[0], pose.position[1] + 0.7, pose.position[2]);
-    (shieldRef.current.material as MeshBasicMaterial).opacity = blocking ? 0.45 + 0.3 * Math.sin(now / 60) : 0.22;
+    // The bubble breathes while a shield is up and flashes when it blocks (2026-10-15: a shield you can see).
+    const shield = shieldRef.current;
+    shield.visible = shielded || blocking;
+    if (shield.visible) {
+      const look = shieldLook(now, blocking, reducedMotion);
+      shield.position.set(pose.position[0], pose.position[1], pose.position[2]);
+      shield.scale.setScalar(look.scale);
+      shield.traverse((node) => {
+        if (!(node instanceof Mesh)) return;
+        // Model copies share materials: this piece's bubble gets its own, so its opacity is its own.
+        if (!node.userData.ownMaterial) {
+          node.material = (node.material as MeshStandardMaterial).clone();
+          node.userData.ownMaterial = true;
+        }
+        const m = node.material as MeshStandardMaterial;
+        if (m.name === 'Rim') {
+          m.emissiveIntensity = 2 * look.rim;
+        } else {
+          m.transparent = true;
+          m.depthWrite = false;
+          m.opacity = look.opacity;
+          m.color.set(WORLD_COLORS.shield);
+        }
+      });
+    }
   });
 
   return (
@@ -230,10 +259,17 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
           }
         />
       </group>
-      <mesh ref={shieldRef} visible={false}>
-        <sphereGeometry args={[0.95, 24, 16]} />
-        <meshBasicMaterial color={WORLD_COLORS.shield} transparent opacity={0.22} depthWrite={false} />
-      </mesh>
+      <group ref={shieldRef} visible={false}>
+        <Slot
+          name="shield"
+          fallback={
+            <mesh position={[0, 0.62, 0]}>
+              <sphereGeometry args={[0.95, 24, 16]} />
+              <meshStandardMaterial color={WORLD_COLORS.shield} transparent opacity={0.35} depthWrite={false} />
+            </mesh>
+          }
+        />
+      </group>
     </>
   );
 }
