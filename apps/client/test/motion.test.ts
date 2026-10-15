@@ -5,7 +5,7 @@ import type { DirectorState, PlayingBeat } from '../src/director/director';
 import { presentationFromView, type PresentationState } from '../src/director/presentation';
 import { sizeOf } from '../src/scene/footprint';
 import { PARTS, tileToWorld } from '../src/scene/layout';
-import { CROWN_FLY_MS, END_TILE_FORWARD, crownPose, crownWinner, landingPose, stackLandings, STILL_END, beatPose, endReaction, projectileAt, restPose, GENTLE, shieldBlocking } from '../src/scene/motion';
+import { CROWN_FLY_MS, END_TILE_FORWARD, cameraPoint, crownPose, crownWinner, landingPose, stackLandings, STILL_END, beatPose, endReaction, projectileAt, restPose, GENTLE, shieldBlocking } from '../src/scene/motion';
 import { openingUpdate } from './support/fixtures';
 
 const SIZE = 100;
@@ -391,3 +391,34 @@ describe('the shield bubble flaring (2026-10-15)', () => {
   });
 });
 
+describe("the camera's point on a hopping piece (2026-10-15)", () => {
+  // Following each hop up and down, and each hop's start and stop, made the camera wobble (the user felt sick).
+  const from = at({ p0: PLAIN - 4 });
+  const hop = beat([moved('p0', PLAIN - 4, PLAIN)], from);
+  const state = (now: number) => ({ beat: { ...hop }, presentation: from, now });
+  const point = (now: number) => cameraPoint({ beat: hop, presentation: from } as never, 'p0', 0, now, SIZE)!;
+
+  it("glides at board height, with none of the hops' arcs", () => {
+    const top = Math.max(restPose(from, 'p0', 0).position[1], restPose(hop.after, 'p0', 0).position[1]);
+    for (let t = 0; t <= hop.durationMs; t += 25) expect(point(t)[1]).toBeLessThanOrEqual(top + 1e-6);
+    void state;
+  });
+
+  it("keeps moving through each hop's landing, where the piece itself pauses", () => {
+    const pose = (t: number) => beatPose(hop, from, 'p0', 0, t, SIZE).position;
+    // Find a moment the piece stands still between hops.
+    let still = -1;
+    for (let t = 50; t < hop.durationMs - 300; t += 10) {
+      const a = pose(t), b = pose(t + 10);
+      if (Math.hypot(b[0] - a[0], b[2] - a[2]) < 1e-9) { still = t; break; }
+    }
+    expect(still).toBeGreaterThan(0);
+    const a = point(still), b = point(still + 10);
+    expect(Math.hypot(b[0] - a[0], b[2] - a[2])).toBeGreaterThan(0.005);
+  });
+
+  it('ends where the piece lands, and follows the piece itself in other beats', () => {
+    expectNear(point(hop.durationMs + 100), restPose(hop.after, 'p0', 0).position);
+    expectNear(cameraPoint({ beat: null, presentation: from } as never, 'p0', 0, 0, SIZE)!, restPose(from, 'p0', 0).position);
+  });
+});

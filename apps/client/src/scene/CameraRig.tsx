@@ -9,7 +9,7 @@ import { OVERVIEW_TARGET_Z, cameraShot, heldNext, myPickPending, type Focus, typ
 import { pinchZoom, rememberZoom, savedZoom, wheelZoom } from './zoom';
 import { BOARD_HALF, type Vec3 } from './layout';
 import { NO_PAN, PanDrag, clampPan, dragPan, panAfterShot, panBox, panReach, unitsPerPixel, type Pan } from './pan';
-import { poseAt } from './motion';
+import { cameraPoint } from './motion';
 
 interface CameraRigProps {
   director: Director;
@@ -115,7 +115,8 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       pan: panRef.current,
       timeline: state.timeline,
       held: heldRef.current,
-      piece: (id): Vec3 => poseAt(state, id, seatOf.get(id) ?? 0, now, boardSize)?.position ?? [0, 0, 0],
+      // Through hops the camera glides instead of bobbing with the piece (2026-10-15).
+      piece: (id): Vec3 => cameraPoint(state, id, seatOf.get(id) ?? 0, now, boardSize) ?? [0, 0, 0],
     });
     modeRef.current = shot.mode;
     heldRef.current = heldNext({ beat: state.beat, window: state.settled?.view.awaiting.window ?? null, focus: shot.focus, held: heldRef.current });
