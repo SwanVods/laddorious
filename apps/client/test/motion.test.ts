@@ -314,6 +314,12 @@ describe('the crown (round 5)', () => {
     expect(crownWinner(after)).toBe('p2');
   });
 
+  it("waits on the board's last tile, whatever the board's size (2026-10-15)", () => {
+    const small: DirectorState = { presentation: from, beat: null, settled: { view: { ...view, board: { ...view.board, size: 64 } }, events: [], timer: null }, log: [], timeline: null };
+    const last = tileToWorld(64);
+    expectNear(crownPose(small, null, 1000).position, [last[0], 0.01, last[2]]);
+  });
+
   it('spins on tile 100 before the win', () => {
     const a = crownPose(during(null), null, 1000);
     expectNear(a.position, [goal[0], 0.01, goal[2]]);

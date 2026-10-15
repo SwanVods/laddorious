@@ -331,13 +331,14 @@ export function crownWinner(state: DirectorState): PlayerId | null {
 }
 
 /**
- * Where the crown is `nowMs` in (round 5): spinning on tile 100 until the win, then flying along an arc onto
+ * Where the crown is `nowMs` in (round 5): spinning on the last tile until the win, then flying along an arc onto
  * the winner's head (`head`, where it is right now, so the crown follows a piece that is still moving),
  * bouncing as it lands, and turning slowly there through the ranks and the end screen. `sparkle` is how
  * far its landing burst has gone, 0 to 1, while it shows.
  */
 export function crownPose(state: DirectorState, head: Vec3 | null, nowMs: number, reducedMotion = false): { position: Vec3; turn: number; sparkle: number | null } {
-  const goal = tileToWorld(100);
+  // The board's last tile (2026-10-15), 100 until the first view arrives.
+  const goal = tileToWorld(state.settled?.view.board.size ?? 100);
   const home: Vec3 = [goal[0], 0.01, goal[2]];
   if (!head || !crownWinner(state)) return { position: home, turn: (nowMs / 1000) * 0.9, sparkle: null };
   const turn = (nowMs / 1000) * 0.4;
