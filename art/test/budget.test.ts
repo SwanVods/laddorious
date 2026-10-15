@@ -56,11 +56,11 @@ const USES: Record<string, { copies: number; separate?: boolean; shadows?: boole
 
 /**
  * A model drawn on screen and into the shadow map. With a Shadow mesh, that small stand-in fills the
- * shadow map instead, and is drawn unseen on screen too (spec #5 §6); without one, the model is drawn twice.
+ * shadow map instead, and only that (spec #5 §6; shadowOnly.ts since 2026-10-15); without one, the model is drawn twice.
  */
 const shadowed = (m: GlbSummary) =>
   m.shadowTriangles > 0
-    ? { calls: m.materials.length + 2, triangles: m.triangles + 2 * m.shadowTriangles }
+    ? { calls: m.materials.length + 1, triangles: m.triangles + m.shadowTriangles }
     : { calls: m.materials.length * 2, triangles: m.triangles * 2 };
 
 const flat = (m: GlbSummary) => ({ calls: m.materials.length, triangles: m.triangles });
