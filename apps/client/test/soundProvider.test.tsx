@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPrefsStore } from '../src/app/prefs';
+import { DEFAULT_SOUND } from '../src/audio/settings';
 import { AudioEngine } from '../src/audio/engine';
 import { SoundProvider, useSound } from '../src/audio/SoundProvider';
 
@@ -52,9 +53,9 @@ describe('SoundProvider (spec #3 §3, §4, §7)', () => {
 
   it('applies the saved sound settings, and follows changes', () => {
     const { prefs, setSound } = setup();
-    expect(setSound).toHaveBeenLastCalledWith({ muted: false, effects: 0.8, music: 0.6 });
+    expect(setSound).toHaveBeenLastCalledWith(DEFAULT_SOUND);
     act(() => prefs.getState().setMuted(true));
-    expect(setSound).toHaveBeenLastCalledWith({ muted: true, effects: 0.8, music: 0.6 });
+    expect(setSound).toHaveBeenLastCalledWith({ ...DEFAULT_SOUND, muted: true });
   });
 
   it('suspends while the page is hidden and resumes on return', () => {
