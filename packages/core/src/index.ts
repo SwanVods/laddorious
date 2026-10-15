@@ -10,6 +10,7 @@ export * from './board/layout';
 export * from './cards/types';
 export * from './cards/starter';
 export * from './cards/catalog';
+export * from './cards/catalogFile';
 export * from './engine/errors';
 export * from './engine/config';
 export * from './cards/targeting';
