@@ -87,7 +87,8 @@ export class AudioEngine {
 
   private async boot(): Promise<void> {
     const tone = await this.load();
-    if (this.opts.latencyHint) tone.setContext(new tone.Context({ latencyHint: this.opts.latencyHint }));
+    // The new context replaces Tone's default one, which is closed.
+    if (this.opts.latencyHint) tone.setContext(new tone.Context({ latencyHint: this.opts.latencyHint }), true);
     await tone.start();
     const limiter = new tone.Limiter(-1).toDestination();
     const verb = new tone.Reverb({ decay: 1.4, wet: 0.16 }).connect(limiter);
