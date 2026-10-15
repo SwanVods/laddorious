@@ -24,7 +24,7 @@ Success means:
 
 - **The look:** the match and the menu look like the in-match mockup's toys (glossy pieces with little eyes, chunky rounded tiles, a candy island) in the Tangerine Dusk colours.
 - **Visible jumps:** launch pads and slides are easy to read from the overview camera: where a pad sends you, and where a slide takes you.
-- **Performance:** nothing gets slower. The match stays within 100 draw calls and 150,000 triangles, and phones keep their frame rate.
+- **Performance:** nothing gets slower. The match stays within 100 draw calls and 150,000 triangles (156,000 on High since 2026-10-15, the user's call for the wing's crown; Low stays under 100,000), and phones keep their frame rate.
 - **Rebuildable:** every model can be rebuilt from a script in the repo with one command. A change is a readable diff.
 - **Never broken:** the game never breaks because of a model. A missing or broken file falls back to today's code-built model.
 

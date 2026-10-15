@@ -165,10 +165,11 @@ Measured with the built models (2026-10-15):
 | Hoop | 3 | 200 | 1 |
 | Chip | 6 | 112 | 1 |
 | Card | 3 | 350 | 2 |
-| Die prop, crown prop | 1 each | 610, 700 | 2, 1 |
+| Die prop | 1 | 610 | 2 |
+| Crown prop: the finish crown's own model, ×3, still (2026-10-15) | 1 | 6,000 | 2 |
 | Rocket and flag (reused) | 1 each | 1,014, 600 | 3, 1 |
 
-The world comes to 13,952 triangles and 23 draw calls. A busy match prices at 94 draw calls and 149,614 triangles on High, and 73 calls and 80,298 triangles on Low. To make that room, the trails' arrowheads are spaced by the board's step (0.3 of a step, as many to a tile as on the 2.0 board): the bigger board had made every trail longer. The whole-match limits (§1) are the ones that hold.
+The world comes to 13,952 triangles and 23 draw calls. A busy match prices at 94 draw calls and 149,614 triangles on High, and 73 calls and 80,298 triangles on Low. To make that room, the trails' arrowheads are spaced by the board's step (0.3 of a step, as many to a tile as on the 2.0 board): the bigger board had made every trail longer. The whole-match limits (§1) are the ones that hold. On 2026-10-15 the user made the wing's crown the finish crown's own model and raised High's triangle limit to 156,000: a busy match is then 95 calls and 154,914 triangles on High, 74 calls and 85,598 on Low.
 
 Menu models: the podium ≤ 1,600 and the menu platform ≤ 1,000 (both lathed).
 

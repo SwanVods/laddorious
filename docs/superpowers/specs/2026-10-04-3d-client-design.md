@@ -267,7 +267,7 @@ Each `MatchUpdate` is turned into a timeline of beats, played in order. Simultan
 | Low | None; soft blob shadows under pieces | 1.5 | Fewer clouds |
 | Auto | Starts Low on phones (coarse pointer and a short screen side under 500 px), High otherwise; steps down to Low if the frame rate averages under 45 fps for 5 s | — | — |
 
-- **Budget:** at most 100 draw calls and 150k visible triangles in a match.
+- **Budget:** at most 100 draw calls and 150k visible triangles in a match (156k on High since 2026-10-15, the user's call for the wing's crown; spec #5 §1).
 - **Target:** 60 fps on an iPhone 12 or Pixel 6 class phone, never below 30.
 - A dev-only overlay shows fps, draw calls and triangles.
 

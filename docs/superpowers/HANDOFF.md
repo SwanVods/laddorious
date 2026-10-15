@@ -40,14 +40,18 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - The spec is `docs/superpowers/specs/2026-10-15-board-theme-design.md`. It replaces Spec #5 §4.3 and plan 3.
 - **Built** on branch `art/board-theme` (plan `docs/superpowers/plans/2026-10-15-board-theme.md`, 2026-10-15): 2.3 squares on a 2.5 step (0.2 gaps; narrowed from 2.7 at the user's first review, the platform 10% narrower and the props closer); the overview ×1.25 and never turning; drag to pan when zoomed in (`camera.pan` in tuning.json); the world as placements of Blender models (`scene/world.ts`, `WorldParts.tsx`): the striped inflatable platform, the wings' props, five floating obstacles, stepping pads and clouds; the menu's podium on a little platform. Every model is a headless Blender script (lathed or sculpted). **Approved by the user and merged to `main`** (2026-10-15, `c2ff51b`).
 - **Next:** the user's later-fix batch (the notes below and the deferred minors in Open items), or whatever the user brings next.
-- **Room left:** a busy match prices at 94 draw calls and 149,614 triangles on High (386 to spare), 73 calls and 80,298 on Low. The trails' arrowheads are spaced by the board's step to make that room. Anything new in the match must come with a trim.
+- **Room left:** a busy match prices at 95 draw calls and 154,914 triangles on High (limit 156,000 since 2026-10-15), 74 calls and 85,598 on Low (under 100,000). The trails' arrowheads are spaced by the board's step. Anything new in the match must come with a trim.
 - Every 3D object is a Blender model; the artifact is a preview only (the user, 2026-10-15).
 
-**Noted by the user for a later fix batch (2026-10-15):**
-1. **Low quality ends:** on Low, every rocket and flag image stands in the centre of its tile, the same size as the "?" icons (not in the corner).
-2. **Reduced motion:** it should reduce motion, not switch it off. Today it turns off wobbles, flips, drift and swoops entirely; it should keep gentler, shorter versions. (The board theme already does this for its own world motion.)
-3. **Phone card info:** keep it looking like cards or chat bubbles (not plain log lines), on the left under the action log, as wide as the player-status card at the bottom left.
-4. ~~Zoomed overview pan~~: moved into the board theme spec (B5).
+**The deferred batch (2026-10-15), done and merged:** the user's notes and the deferred minors they chose (branch `fix/deferred-batch`, then `main`):
+- Low quality: rocket and flag images in the middle of their tile, as big as a "?".
+- Reduced motion reduces instead of removing: gentler wobbles, rocket and flag, crown bounce, idle and menu motion, a short die tumble, a gliding camera, short CSS animations.
+- Phone card info as little card bubbles under the action log, as wide as the "Your piece" panel.
+- The right wing's crown is the finish tile's own crown, three times its size and still; High's triangle limit is now 156,000 (the user's call). A busy match: 95 calls, 154,914 triangles on High; 74 calls, 85,598 on Low.
+- Bots pick their card at random (Risky cards get played); the simulator: median 21 rounds, picks even across types.
+- Slides never cross lanes, after a card's edit too (a board rule in `boardViolations`); Snake Pit fizzles when no spot is clear.
+- The rest: the crown on the board's last tile; freed WebGL probe, textures and material copies; tile numbers in the display font after fonts load; Settings' "Right now" after Auto's step-down; the zoom kept between matches; the shield flare after the projectile lands; 3–4-piece face-offs kept on their square; a match without the menu loads its models; online: lobby silence check, a duplicated tab leaves the seat to the first, plain failure messages; stable pair styles; iPad detection without `navigator.platform`; StrictMode-safe effects; LF snapshots; the online e2e checks model loads.
+- **Kept as is, the user's call:** the rotate screen doesn't pause a match; tests needing new scaffolding stay deferred.
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
@@ -120,36 +124,21 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 - **Deferred board-theme minors** (2026-10-15; not fixed):
   - The course pads' mint rim is four profile points, so it shows facets up close; it reads round at 30–60 units, and smoothing it costs about 1,000 triangles the budget doesn't have.
   - The wings' crown prop is low-poly (700 triangles), faceted when zoomed right in.
-- **Deferred Phase 4 minors** (from the self-review; not fixed):
-  - The crown is placed at tile 100 directly (`crownPose` in `src/scene/motion.ts`), not at the board's last tile.
-  - `webglAvailable()` (`src/scene/MatchScene.tsx`) never releases its probe context.
-  - Textures and geometries built with `useMemo` in the scene (chevrons, swirl, die atlas, sky, piece and die geometries) are not disposed on unmount; only the board overlay and slide ribbons are.
 - **Deferred Phase 5 minors** (from the self-review; not fixed):
-  - Dev builds only (React StrictMode): MatchScreen's subscription effect disposes the director in its cleanup, so updates held before the screen mounted go to the first, discarded subscription. Today only the opening update can be held, and it has no beats, so nothing is lost.
-  - On a 390 px tall screen the menu's piece picker covers part of the podium's name plate.
-  - iPadOS detection uses the deprecated `navigator.platform` (MacIntel with touch points).
-  - The board overlay paints tile numbers before the web fonts load (system font), carried from Phase 4.
-  - The rotate screen covers the match but doesn't pause it.
-  - The settings' "Right now" level doesn't reflect Auto's live step-down during a match.
+  - The rotate screen covers the match but doesn't pause it (kept as is: the user's call, 2026-10-15).
 - **Deferred Phase 6 minors** (from the self-review; not fixed):
   - e2e builds only: in fast mode ROLL and the popups stay live while a bot plays my seat, so a manual tap can race it and show a rejection toast.
   - e2e builds only: banners (1.7 s) and CSS animations aren't time-scaled; only director beats are.
   - The CI workflow has never run (no git remote). The deploy notes in `apps/client/README.md` were checked against the hosts' docs, not a real deploy.
 - **Deferred polish-pass minors** (from the self-review; not fixed):
-  - After I pick a card, the camera keeps its "my Mystery pick" swoop until the reveal settles (it reads the settled view).
+  - After I pick a card, the camera keeps its "my Mystery pick" swoop until the reveal settles (it reads the settled view); left with the lazy camera, the user's call (2026-10-15).
   - Rank badges live inside name tags, so a tag hidden behind the camera hides its badge too (rare; the reveal uses the overview).
-  - With three different cards per hand, the heuristic bots never pick Risky cards (simulator: 120 → 0 picks per 1,000 matches) and pick Defense half as often. A bot-balance note, not a rules defect.
-  - Card-made slides (Snake Pit, 3 rounds) may still cross a lane; ladders aren't checked against lanes.
 - **Deferred adjustments minors** (from the self-review; not fixed):
   - The dev server once served a stale `MatchScreen` (an edit landed between two writes) until restarted; nothing in the build.
-  - The overview zoom lasts for the match but isn't remembered between matches.
   - Changing `tuning.json` while a match is open takes effect on the next page load, not mid-match.
 - **Deferred known-issues minors** (from the self-review; not fixed):
   - The online e2e test "a player who drops shows as away, and a reload brings them back" is flaky. Cause: e2e bot matches are fast (40-50 s); while B reloads (shader compile included), the match can be won, and the room closes every socket 10 s after a win (`END_LINGER_MS` in `apps/server/src/room.ts`), so A never hears B come back and the Away badge stays. The rejoin itself works. A reliable test needs a match that can't end mid-test (new scaffolding), so it is deferred per the user's rule on multiplayer tests.
   - No browser run caught my own face-off or a landing on a stack during the screenshots; the face-off steps and the wiggle are covered by unit tests.
-  - The golden snapshot file (`packages/core/test/__snapshots__/golden.test.ts.snap`) is rewritten with LF line endings on every test run, so git shows it modified (no content change); `git checkout` it before committing.
-  - Card bubbles over the pieces still appear at the start of each card's beat, during the camera's 450 ms lead-in.
-  - A face-off of three or four pieces stands in a ring that can reach past its tile into a neighbour's (rare).
   - No recording compares the new animations with the mockup: a face-off can't be forced in a real match, and the headless browser draws about 10 fps. A dev-only demo page that plays a scripted stack and face-off would make them easy to check.
 - **Deferred Spec #5 Step 2 round 5 minors** (from the self-review; not fixed):
   - A rocket's flame doesn't flare as it launches: the flame is part of the instanced rocket and its glow can't change per copy. The rocket rocks and squashes instead.
@@ -157,27 +146,17 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - The rocket and flag reactions were checked by unit tests only; no browser run caught a bot climbing at the moment of a screenshot.
   - The online "away, then back" e2e test timed out once while other test runs shared the machine (b's away mark stayed past 15 s); it passed when the online tests ran alone. Worth watching for flakiness.
 - **Deferred Spec #3 minors** (from the self-review; not fixed):
-  - Dev builds only: React StrictMode runs effects twice, so the card-fan (C1) and MATCH FOUND / countdown (Q2, Q3) sounds play twice in dev; production plays them once.
   - Music changes fade out then in (0.4 s + 0.8 s) rather than overlapping, since Tone has one transport.
   - The in-game sounds weren't listened to after integration (Claude can't hear); they're a straight port of the approved board, checked by tests, the e2e sound check and a dev-build run with no warnings. Worth a listen on a phone.
 - **Deferred Spec #4 minors** (from the self-review; not fixed):
-  - The lobby socket has no silence check: a half-open lobby socket freezes the overlay's clock, and its seat becomes an away seat once someone calls in bots.
-  - A duplicated browser tab copies `sessionStorage`, so the two tabs take the same seat from each other in a loop.
-  - A match that fails to start shows the server's raw error text in the unreachable overlay.
-  - A session that never connected at all ends with "The match carried on without you" after 60 s.
   - The Away badge and the "Reconnecting…" pill were checked through the DOM only (the browser pane was hidden); worth a look on a phone.
 - **Deferred Spec #5 Step 1 minors** (from the self-review; not fixed):
   - Sculpted models don't rebuild byte for byte (Blender's SDF nodes differ at float level), so `pnpm art` with no ids rewrites every sculpted file; rebuild only the models you change.
-  - A match entered without the menu (a resumed online seat) hasn't preloaded the models, so they pop in from the stand-ins once.
-  - The online e2e tests don't check for slot warnings; the offline whole-match test does.
 - **Deferred Spec #5 Step 2 minors** (from the self-review; not fixed):
   - Opening a match compiles every shader in its first frame: one 15 s task on a fresh browser under SwiftShader (the same on `main` since Step 1), a short hitch on a phone. `renderer.compileAsync` during the MATCH FOUND countdown would spread it. The e2e tests now wait 60 s for the match screen.
   - The shadow stand-ins are also drawn, unseen, in the main pass: one extra draw call per piece, die and crown.
-  - `useSlotMesh` clones the prepared materials on each quality change and never disposes the copies.
   - The vortex's spiral ridges show small kinks close up (about 20° of turn per ring).
-  - A match entered without the menu hasn't preloaded the board's models either, so they pop in from the stand-ins once.
   - The whirlpool and splat stay within radius 0.43 (the lane clearance rule), so the whirlpool's symbol is a little smaller than the approved mockup's.
-  - A card that removes a jump can change the style of a later jump that had collided with it in the pair assignment (rare).
   - The crown has no Low file: thinned to 30% it lost its points, so it stays one 6,000-triangle model on Low.
 - **Spec #4 follow-ups the spec left out:** Durable Object hibernation with alarms if traffic grows, private rooms, saving matches across restarts (M8, M9, §11).
 - **Spec #5** (Blender art pass): design approved (`docs/superpowers/specs/2026-10-09-art-pass-design.md`), one plan per step: `docs/superpowers/plans/2026-10-09-art-pass-step1.md` (pipeline and pieces, merged), `-step2.md` (the board, awaiting review), `-step3.md` (the world, next). Each step ends with the user's review in the game.
