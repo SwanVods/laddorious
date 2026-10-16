@@ -79,6 +79,17 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
             return `Block the next ${charges > 1 ? `${charges} attacks` : 'attack'} on ${who ? lower(who) : 'you'}${life(l, true)}.`;
           case 'beforeSnake':
             return `Ignore the next ${charges > 1 ? `${charges} snakes` : 'snake'} you land on${life(l, true)}.`;
+          case 'beforeSnakeOrAttack':
+            return charges > 1 ? `Block the next ${charges} snakes or attacks${life(l, true)}.` : `Block the next snake or attack, whichever comes first${life(l, true)}.`;
+          case 'jumpsOff':
+            if (l === 'permanent' || l.rounds === undefined) return 'Snakes and ladders do nothing for the rest of the match.';
+            return `Snakes and ladders do nothing for ${num(l.rounds)} round${l.rounds === 1 ? '' : 's'}.`;
+          case 'skipRoll': {
+            const rolls = charges > 1 ? `next ${charges} rolls` : 'next roll';
+            return who ? `${who} skips their ${rolls}.` : `Skip your ${rolls}.`;
+          }
+          case 'reverseRoll':
+            return `${nextRoll()} moves ${who ? 'them' : 'you'} back.`;
           case 'afterMove':
             return `Next time you land on a snake head, move forward ${num(p.amount)} after sliding.`;
         }

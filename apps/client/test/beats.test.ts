@@ -142,6 +142,9 @@ describe('buildTimeline', () => {
     expect(heldBeat(beats[2]!)).toBe(beats[0]);
     expect(heldBeat(beats[5]!)).toBe(beats[3]);
     expect(heldBeat(beats[1]!)).toBe(beats[1]);
+    // The camera stays on the card's last moment through its pause, not back on the card (2026-10-16).
+    expect(beats[2]!.lastMoment).toBe(beats[1]);
+    expect(beats[5]!.lastMoment).toBe(beats[4]);
     expect(BEAT_MS.cardLead).toBeGreaterThanOrEqual(400);
   });
 

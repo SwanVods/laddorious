@@ -10,6 +10,9 @@ export const CENTER_DIE = { holdMs: 1600, landedMs: 700, fadeMs: 250, moveMs: 12
 /** How long a roll stays up before it fades: at least holdMs, and always landedMs on its face after a long tumble (2026-10-16). */
 const holdOf = (roll: { rollMs: number }) => Math.max(CENTER_DIE.holdMs, roll.rollMs + CENTER_DIE.landedMs);
 
+/** "Move 6", or "Back 4" when a card turned my roll around (2026-10-16). */
+const moveText = (total: number) => (total < 0 ? `Back ${-total}` : `Move ${total}`);
+
 interface Roll {
   face: number;
   forced: boolean;
@@ -92,10 +95,10 @@ export function CenterDie({ director, me, reducedMotion, timeScale = 1 }: { dire
   const face = shown ? (tumbling ? ((shown.face + step) % 6) + 1 : shown.face) : 0;
 
   return (
-    <div className={leaving ? 'center-die leaving' : 'center-die'} role="status" aria-label={shown ? `You rolled ${shown.face}` : `Move ${note?.total ?? 0}`}>
+    <div className={leaving ? 'center-die leaving' : 'center-die'} role="status" aria-label={shown ? `You rolled ${shown.face}` : moveText(note?.total ?? 0)}>
       {shown && <DieFace face={face} forced={shown.forced && !tumbling} className={tumbling ? 'tumbling' : 'landed'} />}
       {shown?.forced && !tumbling && <span className="center-die-badge display">Forced</span>}
-      {note && <span className="center-die-move display">Move {note.total}</span>}
+      {note && <span className="center-die-move display">{moveText(note.total)}</span>}
     </div>
   );
 }

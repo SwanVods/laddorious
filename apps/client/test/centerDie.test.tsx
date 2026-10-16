@@ -133,4 +133,12 @@ describe('CenterDie (polish spec §4.2)', () => {
       tuningStore.setState(DEFAULT_TUNING, true);
     }
   });
+
+  it('says "Back N" when my roll moves me back (2026-10-16)', () => {
+    const push = start();
+    push([rolled('p0', 4)]);
+    advance(BEAT_MS.roll);
+    push([totaled('p0', -4, [4])]);
+    expect(screen.getByText('Back 4')).toBeTruthy();
+  });
 });

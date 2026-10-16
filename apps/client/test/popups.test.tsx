@@ -63,6 +63,8 @@ describe('Dock (spec #2 §7.2)', () => {
     expect(cards[0]!.querySelector('.stamp')!.textContent).toBe('Hit');
     expect(cards[1]!.className).toContain('now');
     expect(cards[2]!.textContent).toContain('Mochi → The leader');
+    // What each card does, on the card itself (2026-10-16: the bubbles show only the name).
+    expect(cards[0]!.querySelector('.q-text')!.textContent).toBe('Move forward 3.');
   });
 
   it('shows nothing when there is nothing to say', () => {

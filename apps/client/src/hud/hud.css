@@ -761,16 +761,6 @@
   line-height: 1;
 }
 
-.pbubble-summary {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pbubble-summary::before {
-  content: '· ';
-}
-
 /* A player whose connection dropped (spec #4 §3.3): their seat plays on by timeouts. */
 .prow.away .portrait {
   opacity: 0.55;

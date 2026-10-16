@@ -33,6 +33,11 @@ export interface Beat {
   after: PresentationState;
   /** A pause holds the beat it follows: the camera and the HUD keep showing that moment. */
   holds?: Beat;
+  /**
+   * A card's pause: the card's last moment (its move, or a slide after it), which the camera stays on while
+   * the HUD keeps showing the card (2026-10-16: the camera used to go back to the caster for the pause).
+   */
+  lastMoment?: Beat;
 }
 
 /** The beat whose moment is on screen: a pause shows the one it holds. */
@@ -50,12 +55,12 @@ const CARD_FOLLOW: ReadonlySet<BeatKind> = new Set(['cardMove', 'slide', 'launch
  */
 function withPauses(beats: Beat[]): Beat[] {
   const out: Beat[] = [];
-  const pause = (holds: Beat, durationMs: number): Beat => ({ kind: 'pause', durationMs, events: [], after: out.at(-1)!.after, holds });
+  const pause = (holds: Beat, durationMs: number, lastMoment?: Beat): Beat => ({ kind: 'pause', durationMs, events: [], after: out.at(-1)!.after, holds, ...(lastMoment ? { lastMoment } : {}) });
   let roll: Beat | null = null;
   let card: Beat | null = null;
   for (const beat of beats) {
     if (card && (beat.kind === 'cardResolved' || !CARD_FOLLOW.has(beat.kind))) {
-      out.push(pause(card, BEAT_MS.cardPause));
+      out.push(pause(card, BEAT_MS.cardPause, out.at(-1)));
       card = null;
     }
     if (beat.kind === 'move' && roll) {
@@ -66,7 +71,7 @@ function withPauses(beats: Beat[]): Beat[] {
     if (beat.kind === 'roll') roll = beat;
     if (beat.kind === 'cardResolved') card = beat;
   }
-  if (card) out.push(pause(card, BEAT_MS.cardPause));
+  if (card) out.push(pause(card, BEAT_MS.cardPause, out.at(-1)));
   // Hold the last moment before the camera goes back to the overview (2026-10-15).
   const last = out.at(-1);
   if (last?.kind === 'pause') last.durationMs = Math.max(last.durationMs, BEAT_MS.endHold);

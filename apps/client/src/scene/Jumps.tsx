@@ -1,4 +1,4 @@
-import type { Jump } from '@laddorious/core';
+import { jumpsAreOff, type Jump } from '@laddorious/core';
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { Color, DoubleSide, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, type BufferGeometry, type InstancedMesh, type Texture } from 'three';
@@ -10,7 +10,7 @@ import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
 import { PARTS, tileToWorld } from './layout';
 import { STILL_END, clamp01, easeOutBack, endReaction, type EndMotion } from './motion';
-import { SYMBOLS, pairStyles, type PairStyle, type SymbolName } from './pairs';
+import { SYMBOLS, offTone, pairStyles, type PairStyle, type SymbolName } from './pairs';
 import { REVEAL_MS, shownPaths, type Peeks } from './paths';
 import { endIconTexture, swirlTexture, type EndIcon } from './textures';
 import { dashPoints, type Dash } from './tracks';
@@ -179,6 +179,8 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
   useFrame(({ clock }) => {
     const { beat, presentation } = director.store.getState();
     const now = Date.now();
+    // Snakes and ladders off (2026-10-16): every end fades to grey and the whirlpools stand still.
+    const off = jumpsAreOff(presentation?.effects ?? []);
     const want = shownPaths({ jumps, positions: presentation?.positions ?? {}, moving: beat?.events ?? [], peeks, now });
     for (const id of want) {
       const r = revealsRef.current.get(id);
@@ -224,7 +226,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       if (!mesh) return;
       list.forEach((j, i) => {
         mesh.setMatrixAt(i, matrix(j));
-        mesh.setColorAt(i, colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud));
+        mesh.setColorAt(i, offTone(colour.set(styles.get(j.id)?.colour ?? WORLD_COLORS.cloud), off));
       });
       mesh.count = list.length;
       mesh.instanceMatrix.needsUpdate = true;
@@ -233,7 +235,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
     // Rockets and flags stand in their tile's corner (2026-10-14); a rocket's porthole faces the camera.
     const rocketAt = (j: Jump) => endMatrix(j, j.from, 0, react(j).rocket, 0, 'rocket');
     const flagAt = (j: Jump) => endMatrix(j, j.to, 0, react(j).flag, PARTS.flag.pole, 'flag');
-    stamp(vorticesRef.current, snakes, (j) => endMatrix(j, j.from, clock.elapsedTime * 2.5));
+    stamp(vorticesRef.current, snakes, (j) => endMatrix(j, j.from, off ? 0 : clock.elapsedTime * 2.5));
     stamp(exitsRef.current, snakes, (j) => endMatrix(j, j.to, 0));
     stamp(padsRef.current, ladders, rocketAt);
     stamp(targetsRef.current, ladders, flagAt);
@@ -278,7 +280,8 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       place.scale.set(s, 1, s);
       place.updateMatrix();
       mesh.setMatrixAt(i, on ? place.matrix.premultiply(on) : place.matrix);
-      mesh.setColorAt(i, tint);
+      // A copy: GOLD and CREAM are shared.
+      mesh.setColorAt(i, offTone(tint.clone(), off));
     };
     const { flat } = PARTS;
     // On a flat image the symbol lies on it, at its spot.

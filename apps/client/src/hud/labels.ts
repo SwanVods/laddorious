@@ -143,6 +143,14 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       return { ...base, icon: 'charm', badge: roundsBadge(effect), description: `Ignores the next slide${from}` };
     case 'beforeAttack':
       return { ...base, icon: 'shield', badge: roundsBadge(effect), description: `Blocks the next attack${from}` };
+    case 'beforeSnakeOrAttack':
+      return { ...base, icon: 'aegis', badge: roundsBadge(effect), description: `Blocks the next slide or attack${from}` };
+    case 'jumpsOff':
+      return { ...base, icon: 'slide', badge: roundsBadge(effect), description: 'Slides and rockets do nothing, for everyone' };
+    case 'skipRoll':
+      return { ...base, icon: 'lock', badge: roundsBadge(effect), description: `Skips the next roll${from}` };
+    case 'reverseRoll':
+      return { ...base, icon: 'back', badge: '←', description: `Next roll moves back${from}` };
     case 'afterMove':
       return { ...base, icon: 'bait', badge: signed(p.amount), description: `Landing on a slide's vacuum moves you ${signed(p.amount)} after sliding${from}` };
   }
@@ -160,12 +168,15 @@ function roundsBadge(effect: ActiveEffect): string {
 export function nextRollMods(effects: ActiveEffect[], me: PlayerId): string[] {
   const mine = effects.filter((e) => e.owner === me).sort((a, b) => a.seq - b.seq);
   const out: string[] = [];
+  // A skip and a backward roll (2026-10-16): the skip comes first, the turn backwards last.
+  if (mine.some((e) => e.params.hook === 'skipRoll')) out.push('Skip');
   for (const e of mine) if (e.params.hook === 'diceFace') out.push(`Die = ${e.params.set}`);
   const totals = mine.flatMap((e) => (e.params.hook === 'diceTotal' ? [e.params] : []));
   const replace = totals.filter((t) => t.op === 'replace').at(-1);
   if (replace) out.push(`Total = ${replace.value}`);
   for (const t of totals) if (t.op === 'multiply') out.push(`Total ×${t.value}`);
   for (const t of totals) if (t.op === 'add') out.push(`Total ${signed(t.value)}`);
+  if (mine.some((e) => e.params.hook === 'reverseRoll')) out.push('Backward');
   return out;
 }
 

@@ -1,5 +1,5 @@
 import { rollDie } from '../rng/stream';
-import { applyFaceEffects, applyTotalEffects } from './effects';
+import { applyFaceEffects, applyTotalEffects, effectsOn, spendCharge } from './effects';
 import type { DiceSeq, GameEvent, InputError, MatchState, Mover, PlayerId } from './types';
 import { bounce, getPlayer, movePlayer, openWindow, pub } from './util';
 
@@ -11,9 +11,17 @@ export function inputError(code: InputError['code'], message: string): InputErro
 
 export function startDicePhase(s: MatchState, ev: GameEvent[]): void {
   const seqs: Record<PlayerId, DiceSeq> = {};
-  for (const p of s.players) seqs[p.id] = { faces: [], status: 'ready' };
+  for (const p of s.players) {
+    // A skip (2026-10-16) is used up as the dice phase opens; the player sits this roll out.
+    const skip = effectsOn(s, p.id, 'skipRoll')[0];
+    if (skip) {
+      spendCharge(s, ev, skip);
+      ev.push(pub({ type: 'RollSkipped', player: p.id, effectId: skip.id }));
+    }
+    seqs[p.id] = { faces: [], status: skip ? 'skipped' : 'ready' };
+  }
   s.phase = { kind: 'dice', seqs };
-  openWindow(s, ev, 'dice', s.players.map((p) => p.id));
+  openWindow(s, ev, 'dice', s.players.filter((p) => seqs[p.id]!.status === 'ready').map((p) => p.id));
 }
 
 function dicePhase(s: MatchState): DicePhase | null {
@@ -55,7 +63,7 @@ export function diceAwaited(phase: DicePhase): PlayerId[] {
 }
 
 export function diceComplete(phase: DicePhase): boolean {
-  return Object.values(phase.seqs).every((seq) => seq.status === 'done');
+  return Object.values(phase.seqs).every((seq) => seq.status !== 'ready');
 }
 
 /** Totals with TOTAL-stage effects, then simultaneous movement with bounce (spec §4.3–4.4). */
@@ -65,6 +73,10 @@ export function finishDicePhase(s: MatchState, ev: GameEvent[]): void {
   const movers: Mover[] = [];
   for (const p of s.players) {
     const seq = phase.seqs[p.id]!;
+    if (seq.status === 'skipped') {
+      s.lastTotals[p.id] = 0;
+      continue;
+    }
     const sum = seq.faces.reduce((a, b) => a + b, 0);
     const total = applyTotalEffects(s, ev, p.id, sum);
     s.lastTotals[p.id] = total;

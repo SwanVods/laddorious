@@ -86,6 +86,27 @@ describe('camera rules (spec #2 §5.3)', () => {
     expect(heldNext({ beat: beatOf('clash', []), window: 'dice', focus: null, held: { tile: 23 } })).toEqual({ tile: 23 });
   });
 
+  it('stays on me after my card pick, not on the event before it (2026-10-16)', () => {
+    // Juno (p2) launched, then my pick opens: the camera swoops to me and remembers it.
+    let held = heldNext({ beat: null, window: 'mystery', focus: { player: 'p2' }, held: null });
+    const picking = shot({ window: 'mystery', myPick: true, held });
+    held = heldNext({ beat: null, window: 'mystery', focus: picking.focus, held });
+    // I've picked; the others are still picking.
+    const waiting = shot({ window: 'mystery', myPick: false, held });
+    expect(waiting.target).toEqual(SPOTS.p0);
+  });
+
+  it("stays on the piece a card moved through the card's pause, not back on its caster (2026-10-16)", () => {
+    const card = beatOf('cardResolved', [{ type: 'CardResolved', caster: 'p1', cardId: 'long-shot', target: 'p2', result: 'hit', roll: 4, visibility: 'public' }]);
+    const move = beatOf('cardMove', [moved('p2', 'card')]);
+    const pause: Beat = { kind: 'pause', durationMs: 600, events: [], after, holds: card, lastMoment: move };
+    expect(shot({ beat: pause }).target).toEqual(SPOTS.p2);
+  });
+
+  it('shows the whole board when a card moves several players (2026-10-16)', () => {
+    expect(shot({ beat: beatOf('cardMove', [moved('p1', 'card'), moved('p2', 'card'), moved('p0', 'card')]) }).mode).toBe('overview');
+  });
+
   it('goes back to the overview when the timeline is over, not to me (2026-10-15)', () => {
     expect(shot({ beat: null, held: { player: 'p2' } }).mode).toBe('overview');
     expect(shot({ beat: null, window: 'none' }).mode).toBe('overview');

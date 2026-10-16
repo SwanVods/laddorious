@@ -20,7 +20,7 @@ import { isTap } from './pan';
 /** Pieces render at 1.3 × their base size (spec #2 §6.2). */
 export { PIECE_SCALE } from './layout';
 const DIE_LIFT = 2.2;
-const SHIELD_HOOKS = new Set(['beforeSnake', 'beforeAttack']);
+const SHIELD_HOOKS = new Set(['beforeSnake', 'beforeAttack', 'beforeSnakeOrAttack']);
 
 export interface Roll {
   face: number;

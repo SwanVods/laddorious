@@ -135,32 +135,56 @@
       "name": "Red Light",
       "rarity": "common",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "lock",
       "note": "Player yang paling unggul tidak dapat lempar dadu untuk 1 ronde berikutnya",
-      "plan": "The leader skips their next roll.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "other",
+        "pick": "leader",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "skipRoll"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "tripwire",
       "name": "Tripwire",
       "rarity": "common",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "lock",
       "note": "Player di depanmu tidak dapat lempar dadu untuk 1 ronde berikutnya",
-      "plan": "The player just ahead of you skips their next roll.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "ahead-of-caster",
+        "pick": "nearest",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "skipRoll"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "earthquake",
@@ -249,16 +273,29 @@
       "name": "Lucky Charm",
       "rarity": "common",
       "type": "defense",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "charm",
       "note": "mendapatkan shield 1 shield untuk ular atau serangan, untuk 2 ronde",
-      "plan": "Block the next snake or attack, whichever comes first (2 rounds).",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "beforeSnakeOrAttack"
+            },
+            "lifetime": {
+              "charges": 1,
+              "rounds": 2
+            }
+          }
+        }
+      ]
     },
     {
       "id": "retreat",
@@ -340,16 +377,28 @@
       "name": "Calm Waters",
       "rarity": "common",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "slide",
       "note": "ular dan tangga tidak aktif selama 1 ronde",
-      "plan": "Snakes and ladders do nothing for 1 round.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "jumpsOff"
+            },
+            "lifetime": {
+              "rounds": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "misery-loves-company",
@@ -722,16 +771,28 @@
       "name": "Time Freeze",
       "rarity": "rare",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "lock",
       "note": "Semua player selain kamu tidak dapat lempar dadu untuk 1 ronde berikutnya",
-      "plan": "Everyone else skips their next roll.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "other",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "skipRoll"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "leapfrog",
@@ -758,32 +819,56 @@
       "name": "Reverse Gear",
       "rarity": "rare",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "back",
       "note": "Dadu milik pemain yang paling unggul akan bergerak mundur untuk 1 ronde berikutnya",
-      "plan": "The leader's next roll moves them back.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "other",
+        "pick": "leader",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "reverseRoll"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "wrong-way",
       "name": "Wrong Way",
       "rarity": "rare",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "back",
       "note": "Dadu milik pemain yang di depanmu akan bergerak mundur untuk 1 ronde berikutnya",
-      "plan": "The next roll of the player ahead of you moves them back.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "ahead-of-caster",
+        "pick": "nearest",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "reverseRoll"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "shield",
@@ -935,16 +1020,28 @@
       "name": "Still Waters",
       "rarity": "rare",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "slide",
       "note": "ular dan tangga tidak aktif selama 2 ronde",
-      "plan": "Snakes and ladders do nothing for 2 rounds.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "jumpsOff"
+            },
+            "lifetime": {
+              "rounds": 2
+            }
+          }
+        }
+      ]
     },
     {
       "id": "sore-loser",
@@ -1154,16 +1251,56 @@
       "name": "Double or Nothing",
       "rarity": "rare",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "x2",
       "note": "50/50 dadu berikutnya akan mendapatkan multiplier 2x, atau bergerak mundur",
-      "plan": "50%: your next roll is doubled. 50%: it moves you back.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "gamble",
+          "outcomes": [
+            {
+              "weight": 50,
+              "ops": [
+                {
+                  "op": "addEffect",
+                  "template": {
+                    "params": {
+                      "hook": "diceTotal",
+                      "op": "multiply",
+                      "value": 2
+                    },
+                    "lifetime": {
+                      "charges": 1
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "weight": 50,
+              "ops": [
+                {
+                  "op": "addEffect",
+                  "template": {
+                    "params": {
+                      "hook": "reverseRoll"
+                    },
+                    "lifetime": {
+                      "charges": 1
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "high-roller",
@@ -1287,16 +1424,28 @@
       "name": "Topsy-Turvy",
       "rarity": "epic",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "back",
       "note": "Dadu milik semua pemain selain kamu akan bergerak mundur untuk 1 ronde berikutnya",
-      "plan": "Everyone else's next roll moves them back.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "other",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "reverseRoll"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "bulwark",
@@ -1331,16 +1480,28 @@
       "name": "Aegis",
       "rarity": "epic",
       "type": "defense",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "aegis",
       "note": "mendapatkan shield dari ular dan serangan 2x hingga akhir permainan",
-      "plan": "Block the next 2 snakes or attacks, any time this match.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "beforeSnakeOrAttack"
+            },
+            "lifetime": {
+              "charges": 2
+            }
+          }
+        }
+      ]
     },
     {
       "id": "fresh-start",
