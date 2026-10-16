@@ -50,7 +50,19 @@ describe('card labels (spec #2 §7.2)', () => {
     expect(fizzleWarning('shove', viewAt({ p0: 5, p1: 10 }))).toBeNull();
     expect(fizzleWarning('sprint', viewAt({ p0: 50 }))).toBeNull();
     const noPads = { ...viewAt({ p0: 95 }) };
-    expect(fizzleWarning('ladder-warp', { ...noPads, board: { ...noPads.board, jumps: [] } })).toBe('No launch pad ahead of you right now. If that holds, it fizzles.');
+    expect(fizzleWarning('ladder-warp', { ...noPads, board: { ...noPads.board, jumps: [] } })).toBe('No rocket ahead of you right now. If that holds, it fizzles.');
+  });
+
+  it('warns for the other move-to cards too, wherever their target stands (2026-10-16)', () => {
+    const at = viewAt({ p0: 20, p1: 50 });
+    const board = (jumps: { from: number; to: number }[]) => ({ ...at, board: { ...at.board, jumps: jumps.map((j, i) => ({ id: `j${i}`, ...j })) } });
+    // Pitfall drops the leader into the nearest whirlpool: none on the board, nowhere to drop.
+    expect(fizzleWarning('pitfall', board([]))).toBe('No whirlpool on the board right now. If that holds, it fizzles.');
+    expect(fizzleWarning('pitfall', board([{ from: 70, to: 30 }]))).toBeNull();
+    // Crossroads: back to the rocket behind you, or on to the next whirlpool; it fizzles only if both are missing.
+    expect(fizzleWarning('crossroads', board([{ from: 30, to: 60 }]))).toBe('No rocket behind you right now. If that holds, it fizzles.');
+    expect(fizzleWarning('crossroads', board([{ from: 10, to: 40 }]))).toBeNull();
+    expect(fizzleWarning('crossroads', board([{ from: 70, to: 30 }]))).toBeNull();
   });
 });
 

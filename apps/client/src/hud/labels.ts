@@ -97,11 +97,39 @@ export function fizzleWarning(id: string, view: PlayerView): string | null {
     if (card.target.condition === 'behind-of-caster') return 'Nobody is behind you right now. If that holds, it fizzles.';
     return 'Nobody it can aim at right now. If that holds, it fizzles.';
   }
-  const needsLadderAhead = card.effects.some((op) => op.op === 'moveTo' && op.rule === 'nearest-ladder-foot-ahead');
-  if (needsLadderAhead && !view.board.jumps.some((j) => j.to > j.from && j.from > me.position)) {
-    return 'No launch pad ahead of you right now. If that holds, it fizzles.';
+  // A "move to" card fizzles when its place is missing for every player it could hit (2026-10-16: every rule, and a
+  // 50/50 card only when both of its places are missing), as the engine's moveToTile decides.
+  const rules = moveToRules(card.effects);
+  if (rules.length > 0) {
+    const heads = (rocket: boolean) => view.board.jumps.filter((j) => j.to > j.from === rocket).map((j) => j.from);
+    const fits = (rule: MoveToRule, from: number) =>
+      rule === 'nearest-ladder-foot-ahead' ? heads(true).some((t) => t > from)
+      : rule === 'snake-head-ahead' ? heads(false).some((t) => t > from)
+      : rule === 'ladder-foot-behind' ? heads(true).some((t) => t < from)
+      : heads(false).some((t) => t !== from);
+    const targets = targetCandidates(view.players, me, card.target);
+    if (!targets.some((t) => rules.some((r) => fits(r, t.position)))) {
+      return `${MISSING_PLACE[rules[0]!].replace('{who}', card.target.condition === 'self' ? 'you' : 'them')} If that holds, it fizzles.`;
+    }
   }
   return null;
+}
+
+type MoveToRule = 'nearest-ladder-foot-ahead' | 'snake-head-ahead' | 'ladder-foot-behind' | 'nearest-snake-head';
+const MISSING_PLACE: Record<MoveToRule, string> = {
+  'nearest-ladder-foot-ahead': 'No rocket ahead of {who} right now.',
+  'snake-head-ahead': 'No whirlpool ahead of {who} right now.',
+  'ladder-foot-behind': 'No rocket behind {who} right now.',
+  'nearest-snake-head': 'No whirlpool on the board right now.',
+};
+
+/** The board-place "move to" rules in a card's steps, a gamble's outcomes included. */
+function moveToRules(ops: CardDef['effects']): MoveToRule[] {
+  return ops.flatMap((op): MoveToRule[] => {
+    if (op.op === 'moveTo') return op.rule in MISSING_PLACE ? [op.rule as MoveToRule] : [];
+    if (op.op === 'gamble') return op.outcomes.flatMap((o) => moveToRules(o.ops));
+    return [];
+  });
 }
 
 export interface EffectChip {
@@ -140,16 +168,16 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       if (p.op === 'replace') return { ...base, icon: 'steady', badge: `=${p.value}`, description: `Next dice total becomes ${p.value}${from}` };
       return { ...base, icon: p.value < 0 ? 'boot' : 'arrow', badge: signed(p.value), description: `Next dice total ${signed(p.value)}${from}` };
     case 'beforeSnake':
-      return { ...base, icon: 'charm', badge: roundsBadge(effect), description: `Ignores the next slide${from}` };
+      return { ...base, icon: 'charm', badge: roundsBadge(effect), description: `Ignores the next whirlpool${from}` };
     case 'beforeAttack':
       return { ...base, icon: 'shield', badge: roundsBadge(effect), description: `Blocks the next attack${from}` };
     case 'beforeSnakeOrAttack':
-      return { ...base, icon: 'aegis', badge: roundsBadge(effect), description: `Blocks the next slide or attack${from}` };
+      return { ...base, icon: 'aegis', badge: roundsBadge(effect), description: `Blocks the next whirlpool or attack${from}` };
     case 'jumpsOff':
-      return { ...base, icon: 'slide', badge: roundsBadge(effect), description: 'Slides and rockets do nothing, for everyone' };
+      return { ...base, icon: 'slide', badge: roundsBadge(effect), description: 'Rockets and whirlpools do nothing, for everyone' };
     case 'rollCheck': {
       const w = p.when === 'over3' ? 'over 3' : p.when;
-      const then = 'multiply' in p.then ? `it's ×${p.then.multiply}` : 'shield' in p.then ? 'block a slide or attack' : `go to the nearest rocket${p.otherwise === 'stay' ? ', else stay put' : ''}`;
+      const then = 'multiply' in p.then ? `it's ×${p.then.multiply}` : 'shield' in p.then ? 'block a whirlpool or attack' : `go to the nearest rocket${p.otherwise === 'stay' ? ', else stay put' : ''}`;
       return { ...base, icon: 'multiply' in p.then ? 'x2' : 'shield' in p.then ? 'aegis' : 'pad', badge: w, description: `If the next roll is ${w}: ${then}${from}` };
     }
     case 'extraRoll':
@@ -168,10 +196,10 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       // "When" effects (2026-10-16): after a launch too, and moving everyone else.
       if (p.who === 'others') {
         const climb = p.condition === 'climbedLadder';
-        return { ...base, icon: climb ? 'pad' : 'slide', badge: signed(p.amount), description: `When you ${climb ? 'launch' : 'slide'}, everyone else moves ${signed(p.amount)}${from}` };
+        return { ...base, icon: climb ? 'pad' : 'slide', badge: signed(p.amount), description: `When you ${climb ? 'ride a rocket' : 'hit a whirlpool'}, everyone else moves ${signed(p.amount)}${from}` };
       }
       if (p.condition === 'climbedLadder') return { ...base, icon: 'pad', badge: signed(p.amount), description: `After your next launch, you move ${signed(p.amount)}${from}` };
-      return { ...base, icon: 'bait', badge: signed(p.amount), description: `Landing on a slide's vacuum moves you ${signed(p.amount)} after sliding${from}` };
+      return { ...base, icon: 'bait', badge: signed(p.amount), description: `Landing in a whirlpool moves you ${signed(p.amount)} after sliding${from}` };
   }
 }
 

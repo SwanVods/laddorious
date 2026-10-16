@@ -4,6 +4,7 @@ The Laddorious web client:
 
 - the main menu, with your piece on a podium;
 - matchmaking with real players when online, or bots; "Play with bots" appears after 15 s;
+- private rooms when online: Play with friends creates a room with a 4-letter code (or a `?room=CODE` link), friends join with it, and the room's host starts the match, bots taking any empty seats;
 - a 4-player match in 3D with the full HUD;
 - the end screen.
 

@@ -62,6 +62,13 @@ describe('cards that hit several players (2026-10-15)', () => {
     expect(() => resolveConfig({ seed: 's', cards: [...cards, bad] })).toThrow(/A card that hits several players can't change the board yet/);
   });
 
+  it("can't swap places: it would clash with itself and always fizzle (2026-10-16)", () => {
+    const swap: CatalogCard = { ...quake, id: 'swap-all', effects: [{ op: 'swap' }] };
+    const gambleSwap: CatalogCard = { ...quake, id: 'swap-maybe', effects: [{ op: 'gamble', outcomes: [{ weight: 1, ops: [{ op: 'swap' }] }, { weight: 1, ops: [{ op: 'moveRelative', amount: 1 }] }] }] };
+    expect(() => resolveConfig({ seed: 's', cards: [...cards, swap] })).toThrow(/A card that hits several players can't swap places/);
+    expect(() => resolveConfig({ seed: 's', cards: [...cards, gambleSwap] })).toThrow(/A card that hits several players can't swap places/);
+  });
+
   it('says "everyone else" and "everyone"', () => {
     expect(describeCard(quake)).toBe('Everyone else moves back 3.');
     expect(describeCard(retreat, { n: 2 })).toBe('Everyone moves back 2.');

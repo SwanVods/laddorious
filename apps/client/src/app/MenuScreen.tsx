@@ -26,6 +26,8 @@ interface MenuScreenProps {
   /** PLAY: start matchmaking, with a board seed in dev builds. */
   onPlay: (opts: FindOptions) => void;
   onSettings: () => void;
+  /** Online builds: Play with friends, for private rooms (2026-10-16). */
+  onFriends?: () => void;
   /** Dev builds: the hidden board seed field (spec #2 §4.4). */
   showSeed?: boolean;
 }
@@ -36,7 +38,7 @@ interface MenuScreenProps {
  * pieces went on 2026-10-14), the profile chip (tap to rename), the logo, the settings gear, PLAY, and
  * rotating rule tips.
  */
-export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: MenuScreenProps) {
+export function MenuScreen({ prefs, onPlay, onSettings, onFriends, showSeed = false }: MenuScreenProps) {
   const profile = useStore(prefs, (s) => s.profile);
   const settings = useStore(prefs, (s) => s.settings);
   const [anchors] = useState(createTagRegistry);
@@ -134,6 +136,11 @@ export function MenuScreen({ prefs, onPlay, onSettings, showSeed = false }: Menu
 
 
         <div className="play-wrap live">
+          {onFriends && (
+            <button type="button" className="btn friends-btn" onClick={onFriends}>
+              Play with friends
+            </button>
+          )}
           <span className="pill play-caption">4-player match</span>
           <button type="button" className="btn primary play-btn" onClick={() => onPlay(seed.trim() ? { seed: seed.trim() } : {})}>
             <Icon name="play" />

@@ -15,6 +15,13 @@ describe('parseLobbyMessage (spec #4 §6, §7)', () => {
     expect(parseLobbyMessage(json({ type: 'ping', t: 1234.5 }))).toEqual({ kind: 'ok', msg: { type: 'ping', t: 1234.5 } });
   });
 
+  it('reads the private room messages; any short code is fine, it just may not match a room (2026-10-16)', () => {
+    for (const type of ['createRoom', 'startRoom']) expect(parseLobbyMessage(json({ type }))).toEqual({ kind: 'ok', msg: { type } });
+    expect(parseLobbyMessage(json({ type: 'joinRoom', code: 'duck' }))).toEqual({ kind: 'ok', msg: { type: 'joinRoom', code: 'duck' } });
+    expect(parseLobbyMessage(json({ type: 'joinRoom', code: 'x' }))).toEqual({ kind: 'ok', msg: { type: 'joinRoom', code: 'x' } });
+    for (const code of [42, null, 'x'.repeat(17)]) expect(parseLobbyMessage(json({ type: 'joinRoom', code })).kind).toBe('close');
+  });
+
   it('turns a bad nickname into Guest, and closes on a piece that is not one of the four', () => {
     const hello = (profile: unknown) => parseLobbyMessage(json({ type: 'hello', version: 1, profile }));
     for (const nickname of ['   ', 'x'.repeat(17), 42]) {

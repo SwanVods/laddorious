@@ -241,7 +241,7 @@
     },
     {
       "id": "snake-charm",
-      "name": "Snake Charm",
+      "name": "Swim Ring",
       "rarity": "common",
       "type": "defense",
       "status": "on",
@@ -701,7 +701,7 @@
     },
     {
       "id": "snake-bait",
-      "name": "Snake Bait",
+      "name": "Bounce Back",
       "rarity": "common",
       "type": "risky",
       "status": "on",
@@ -995,7 +995,7 @@
     },
     {
       "id": "mongoose",
-      "name": "Mongoose",
+      "name": "Life Jacket",
       "rarity": "rare",
       "type": "defense",
       "status": "on",
@@ -1051,7 +1051,7 @@
     },
     {
       "id": "snake-pit",
-      "name": "Snake Pit",
+      "name": "Undertow",
       "rarity": "rare",
       "type": "misc",
       "status": "on",
@@ -1108,7 +1108,7 @@
     },
     {
       "id": "ladder-drop",
-      "name": "Ladder Drop",
+      "name": "Rocket Drop",
       "rarity": "rare",
       "type": "misc",
       "status": "on",
@@ -1192,7 +1192,7 @@
     },
     {
       "id": "ladder-warp",
-      "name": "Ladder Warp",
+      "name": "Rocket Warp",
       "rarity": "rare",
       "type": "movement",
       "status": "on",

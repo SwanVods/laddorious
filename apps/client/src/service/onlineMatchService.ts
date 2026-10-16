@@ -33,7 +33,15 @@ export class OnlineMatchService implements MatchService {
   }
 
   findMatch(profile: Profile): Matchmaking {
-    return new OnlineMatchmaking(profile, this.deps);
+    return new OnlineMatchmaking(profile, this.deps, { type: 'find' });
+  }
+
+  createRoom(profile: Profile): Matchmaking {
+    return new OnlineMatchmaking(profile, this.deps, { type: 'createRoom' });
+  }
+
+  joinRoom(profile: Profile, code: string): Matchmaking {
+    return new OnlineMatchmaking(profile, this.deps, { type: 'joinRoom', code });
   }
 
   /** After a reload: the saved seat's match, or null (spec #4 §3.3). */
@@ -48,7 +56,7 @@ function ownSeatFirst(seats: Array<SeatInfo | null>, you: number): Array<SeatInf
   return [seats[you] ?? null, ...seats.filter((_, i) => i !== you)];
 }
 
-/** One search on the /lobby socket (spec #4 §4). */
+/** One search on the /lobby socket (spec #4 §4): quick match, or a private room (2026-10-16). */
 class OnlineMatchmaking implements Matchmaking {
   private readonly listeners = new Set<(s: MatchmakingState) => void>();
   private state: MatchmakingState;
@@ -63,6 +71,8 @@ class OnlineMatchmaking implements Matchmaking {
   constructor(
     profile: Profile,
     private readonly deps: OnlineDeps,
+    /** What the lobby is asked first: find, createRoom or joinRoom. */
+    start: Extract<LobbyIn, { type: 'find' | 'createRoom' | 'joinRoom' }>,
   ) {
     // Until the lobby answers, I'm alone at the table.
     const me = colorSeat({ playerId: 'p0', nickname: profile.nickname, piece: profile.piece, bot: false }, 0);
@@ -73,7 +83,7 @@ class OnlineMatchmaking implements Matchmaking {
       clearTimeout(this.timeout);
       this.heardAt = Date.now();
       this.post({ type: 'hello', version: PROTOCOL_VERSION, profile });
-      this.post({ type: 'find' });
+      this.post(start);
       this.pinger = setInterval(() => this.tick(), PING_MS);
     };
     this.ws.onmessage = (e) => {
@@ -95,13 +105,17 @@ class OnlineMatchmaking implements Matchmaking {
 
   cancel(): void {
     if (this.state.kind === 'searching') this.post({ type: 'cancel' });
-    else if (this.state.kind !== 'unreachable') return; // ignored once bots are taking seats
+    else if (this.state.kind !== 'unreachable' && this.state.kind !== 'roomError') return; // ignored once bots are taking seats
     this.finish();
     this.emit({ kind: 'cancelled' });
   }
 
   playWithBots(): void {
     if (this.state.kind === 'searching') this.post({ type: 'playWithBots' });
+  }
+
+  startRoom(): void {
+    if (this.state.kind === 'searching' && this.state.room?.host) this.post({ type: 'startRoom' });
   }
 
   private receive(data: unknown): void {
@@ -113,10 +127,15 @@ class OnlineMatchmaking implements Matchmaking {
           msg.seats.map((s, i) => (s ? colorSeat(s, i) : null)),
           msg.you,
         );
-        if (msg.state === 'filling') this.emit({ kind: 'filling', seats });
-        else if (this.state.kind === 'searching') this.emit({ kind: 'searching', elapsedMs: msg.elapsedMs, seats });
+        const room = msg.room ? { room: msg.room } : {};
+        if (msg.state === 'filling') this.emit({ kind: 'filling', seats, ...room });
+        else if (this.state.kind === 'searching') this.emit({ kind: 'searching', elapsedMs: msg.elapsedMs, seats, ...room });
         return;
       }
+      case 'roomError':
+        this.finish();
+        this.emit({ kind: 'roomError', message: msg.message });
+        return;
       case 'found': {
         this.finish();
         const seat = { matchId: msg.matchId, token: msg.token, me: msg.me, seats: msg.seats };

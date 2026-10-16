@@ -70,7 +70,7 @@ describe('Upside Down (2026-10-16: permanent)', () => {
   });
 
   it('writes the texts', () => {
-    expect(describeCard(card(BEHIND))).toBe('A new snake, 8 tiles long, appears 1–6 tiles behind you (3 rounds).');
-    expect(describeCard(card(FLIP))).toBe('Every snake becomes a ladder, and every ladder a snake, for the rest of the match.');
+    expect(describeCard(card(BEHIND))).toBe('A new whirlpool, 8 tiles long, appears 1–6 tiles behind you (3 rounds).');
+    expect(describeCard(card(FLIP))).toBe('Every whirlpool becomes a rocket, and every rocket a whirlpool, for the rest of the match.');
   });
 });

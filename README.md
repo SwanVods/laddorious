@@ -6,7 +6,7 @@ A 3D party race to tile 100 for four players, played in the browser on desktop a
 - **Rockets and whirlpools:** rockets launch you up the board, whirlpools drag you back down.
 - **Face-offs:** players who land on the same tile settle it. Two play Rock, Paper, Scissors; three or four play Minority, where the odd one out wins.
 - **Mystery cards:** purple "?" tiles let you pick one of three cards that move, shield or attack.
-- **Play anywhere:** against bots offline, or online with friends; empty seats fill with bots.
+- **Play anywhere:** against bots offline, online by quick match, or in a private room with friends (share its code); empty seats fill with bots.
 - **Fresh boards:** every board is generated from a seed.
 
 ## Repository map

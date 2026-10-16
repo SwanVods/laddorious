@@ -11,19 +11,19 @@ describe('card text from steps (2026-10-15)', () => {
     [make([{ op: 'moveRelative', amount: 3 }]), 'Move forward 3.'],
     [make([{ op: 'moveRelative', amount: -1 }]), 'Move back 1.'],
     [make([{ op: 'moveRelative', amount: -3 }], { target: AHEAD }), 'The player just ahead of you moves back 3.'],
-    [make([{ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }]), 'Move to the nearest ladder ahead of you.'],
+    [make([{ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }]), 'Move to the nearest rocket ahead of you.'],
     [make([{ op: 'swap' }], { target: LEADER }), 'Swap places with the leader.'],
     [make([{ op: 'addEffect', template: { params: { hook: 'diceTotal', op: 'multiply', value: 2 }, lifetime: { charges: 1 } } }]), 'Your next roll is doubled.'],
     [make([{ op: 'addEffect', template: { params: { hook: 'diceTotal', op: 'multiply', value: 3 }, lifetime: { charges: 1 } } }]), 'Your next roll is tripled.'],
     [make([{ op: 'addEffect', template: { params: { hook: 'diceTotal', op: 'add', value: -3 }, lifetime: { charges: 1 } } }], { target: LEADER }), "The leader's next roll gets −3."],
     [make([{ op: 'addEffect', template: { params: { hook: 'diceTotal', op: 'replace', value: 4 }, lifetime: { charges: 1 } } }]), 'Your next roll is exactly 4.'],
     [make([{ op: 'addEffect', template: { params: { hook: 'beforeAttack' }, lifetime: { rounds: 3, charges: 1 } } }]), 'Block the next attack on you (3 rounds).'],
-    [make([{ op: 'addEffect', template: { params: { hook: 'beforeSnake' }, lifetime: { charges: 1 } } }]), 'Ignore the next snake you land on, any time this match.'],
+    [make([{ op: 'addEffect', template: { params: { hook: 'beforeSnake' }, lifetime: { charges: 1 } } }]), 'Ignore the next whirlpool you land in, any time this match.'],
     [make([{ op: 'addEffect', template: { params: { hook: 'beforeAttack' }, lifetime: { charges: 2 } } }]), 'Block the next 2 attacks on you, any time this match.'],
     [make([{ op: 'removeEffects', filter: { createdByOthers: true }, count: 'all' }]), 'Remove every effect other players put on you.'],
-    [make([{ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: 1, maxAhead: 6, length: 8, lifetime: { rounds: 3 } }], { target: LEADER }), 'A new snake, 8 tiles long, appears 1–6 tiles ahead of the leader (3 rounds).'],
+    [make([{ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: 1, maxAhead: 6, length: 8, lifetime: { rounds: 3 } }], { target: LEADER }), 'A new whirlpool, 8 tiles long, appears 1–6 tiles ahead of the leader (3 rounds).'],
     [make([{ op: 'gamble', outcomes: [{ weight: 40, ops: [{ op: 'moveRelative', amount: 15 }] }, { weight: 60, ops: [{ op: 'moveRelative', amount: -8 }] }] }]), '40%: move forward 15. 60%: move back 8.'],
-    [make([{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: 8, lifetime: { charges: 1 } }]), 'Next time you land on a snake head, move forward 8 after sliding.'],
+    [make([{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: 8, lifetime: { charges: 1 } }]), 'Next time you land in a whirlpool, move forward 8 after sliding.'],
   ])('%#: %s', (card, text) => {
     expect(describeCard(card)).toBe(text);
   });

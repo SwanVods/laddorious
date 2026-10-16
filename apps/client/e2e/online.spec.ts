@@ -16,9 +16,9 @@ async function player(browser: Browser, warnings: string[] = []): Promise<Page> 
 
 /** Both press PLAY, see each other at the table, and the first fills it with bots. */
 async function startTogether(a: Page, b: Page) {
-  await a.getByRole('button', { name: 'PLAY' }).click();
+  await a.getByRole('button', { name: 'PLAY', exact: true }).click();
   await expect(a.getByRole('dialog', { name: 'FINDING PLAYERS' })).toBeVisible();
-  await b.getByRole('button', { name: 'PLAY' }).click();
+  await b.getByRole('button', { name: 'PLAY', exact: true }).click();
   for (const page of [a, b]) await expect(page.locator('.mm-seat:not(.empty)')).toHaveCount(2);
   await a.getByRole('button', { name: 'Play with bots' }).click({ timeout: 25_000 });
   for (const page of [a, b]) await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 20_000 });
@@ -44,6 +44,27 @@ test('a player who drops shows as away, and a reload brings them back (spec #4 Â
   await expect(a.locator('.prow-away')).toHaveCount(1);
   await b.goto('/');
   await expect(b.getByRole('button', { name: 'Match menu' })).toBeVisible();
-  await expect(b.getByRole('button', { name: 'PLAY' })).toHaveCount(0);
+  await expect(b.getByRole('button', { name: 'PLAY', exact: true })).toHaveCount(0);
   await expect(a.locator('.prow-away')).toHaveCount(0);
+});
+
+test('friends meet in a private room by its code or its link, and its host starts the match (2026-10-16)', async ({ browser }) => {
+  const a = await player(browser);
+  await a.getByRole('button', { name: 'Play with friends' }).click();
+  await a.getByRole('button', { name: 'Create a room' }).click();
+  const room = a.getByRole('dialog', { name: 'YOUR ROOM' });
+  await expect(room).toBeVisible();
+  const code = (await room.getByLabel('Room code').textContent())!.trim();
+  expect(code).toMatch(/^[A-Z]{4}$/);
+  // B types the code; C opens the room's link.
+  const b = await player(browser);
+  await b.getByRole('button', { name: 'Play with friends' }).click();
+  await b.getByRole('textbox', { name: 'Room code' }).fill(code.toLowerCase());
+  await b.getByRole('button', { name: 'Join' }).click();
+  const c = await (await browser.newContext()).newPage();
+  await c.goto(`/?room=${code}`);
+  for (const page of [a, b, c]) await expect(page.locator('.mm-seat:not(.empty)')).toHaveCount(3);
+  await expect(b.getByRole('button', { name: 'Start' })).toHaveCount(0);
+  await a.getByRole('button', { name: 'Start' }).click();
+  for (const page of [a, b, c]) await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 20_000 });
 });

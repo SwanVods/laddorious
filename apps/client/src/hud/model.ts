@@ -207,7 +207,8 @@ export function playerRows({ view, presentation, record, seats, me, watch, away 
         statusText: text,
         dice: record.dice[id] ?? null,
         mystery: onMystery ? (view.board.mystery[tile] ?? null) : null,
-        effects: presentation.effects.filter((e) => e.owner === id).map((e) => effectChip(e, names)),
+        // Calm and Still Waters switch the board off for everyone, so every row lists them (2026-10-16).
+        effects: presentation.effects.filter((e) => e.owner === id || e.params.hook === 'jumpsOff').map((e) => effectChip(e, names)),
         card,
       };
     });
@@ -243,7 +244,7 @@ const MOVE_VERB: Partial<Record<Beat['kind'], string>> = {
   launch: ' launches up',
   knockback: ' is knocked back',
   stepBack: ' steps back',
-  snakeBlocked: ' dodges the slide',
+  snakeBlocked: ' dodges the whirlpool',
   cardMove: ' leaps',
 };
 

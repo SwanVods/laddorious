@@ -74,8 +74,8 @@ describe('"if your next roll is…" (2026-10-16)', () => {
   it('writes the texts', () => {
     expect(describeCard(card(ODD_X2))).toBe('If your next roll is odd, it is doubled.');
     expect(describeCard(card(check({ when: 'odd', then: { multiply: 3 } })))).toBe('If your next roll is odd, it is tripled.');
-    expect(describeCard(card(EVEN_SHIELD))).toBe('If your next roll is even, block the next snake or attack (2 rounds).');
-    expect(describeCard(card(check({ when: 'even', then: { shield: { charges: 3, rounds: 5 } } })))).toBe('If your next roll is even, block the next 3 snakes or attacks (5 rounds).');
-    expect(describeCard(card(HIGH))).toBe('If your next roll is over 3, go to the nearest ladder. If not, stay put.');
+    expect(describeCard(card(EVEN_SHIELD))).toBe('If your next roll is even, block the next whirlpool or attack (2 rounds).');
+    expect(describeCard(card(check({ when: 'even', then: { shield: { charges: 3, rounds: 5 } } })))).toBe('If your next roll is even, block the next 3 whirlpools or attacks (5 rounds).');
+    expect(describeCard(card(HIGH))).toBe('If your next roll is over 3, go to the nearest rocket. If not, stay put.');
   });
 });

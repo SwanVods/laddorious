@@ -52,7 +52,7 @@ describe('the seven pieces (spec #5 §4.1)', () => {
     expect(seats.map((s) => s.piece)).toEqual(['rook', 'duck', 'knight', 'pawn']);
   });
 
-  it('is protocol 2, so builds from before the new pieces ask to reload', () => {
-    expect(PROTOCOL_VERSION).toBe(2);
+  it('is protocol 3 since private rooms (2026-10-16), so older builds ask to reload', () => {
+    expect(PROTOCOL_VERSION).toBe(3);
   });
 });

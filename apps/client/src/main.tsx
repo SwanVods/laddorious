@@ -33,6 +33,9 @@ const server = serverUrl(import.meta.env.VITE_SERVER, location);
 const online = server ? new OnlineMatchService({ url: server }) : null;
 // A reload during an online match goes straight back to it (spec #4 §3.3).
 const resume = online?.rejoin() ?? null;
+// A room link (?room=CODE, 2026-10-16) opens the game in that room; the address drops it, so a reload doesn't rejoin.
+const joinCode = new URLSearchParams(location.search).get('room');
+if (joinCode !== null) history.replaceState(null, '', location.pathname + location.hash);
 const prefs = createPrefsStore(browserStorage(), {
   prefersReducedMotion: typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
 });
@@ -41,7 +44,7 @@ const prefs = createPrefsStore(browserStorage(), {
 void loadTuning().then(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SoundProvider engine={sound} prefs={prefs}>
-      <App service={online ?? local} offline={online ? local : undefined} resume={resume} prefs={prefs} dev={import.meta.env.DEV} test={test} />
+      <App service={online ?? local} offline={online ? local : undefined} resume={resume} joinCode={online ? joinCode : null} prefs={prefs} dev={import.meta.env.DEV} test={test} />
     </SoundProvider>
   </StrictMode>,
 ));

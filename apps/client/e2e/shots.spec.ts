@@ -28,7 +28,7 @@ test('the menu on a landscape phone', async ({ page }) => {
 test('a match: the overview, the jumps and a close-up', async ({ page }) => {
   await page.clock.install();
   await page.goto('/');
-  await page.getByRole('button', { name: 'PLAY' }).click();
+  await page.getByRole('button', { name: 'PLAY', exact: true }).click();
   await page.clock.fastForward('00:16');
   await page.getByRole('button', { name: 'Play with bots' }).click();
   await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 20_000 });

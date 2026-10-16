@@ -82,7 +82,7 @@ function lineFor(e: GameEvent, themes: ReadonlyMap<string, [string, string] | nu
       }
       return null;
     case 'SnakeBlocked':
-      return [{ player: e.player }, ' dodged a slide'];
+      return [{ player: e.player }, ' dodged a whirlpool'];
     case 'ChallengeStarted':
       return [`Face-off on tile ${e.tile}: `, ...listParts(e.players)];
     case 'ChallengePickEcho':

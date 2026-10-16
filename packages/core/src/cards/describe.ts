@@ -50,13 +50,13 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
     const dist = num(amount, back ? -1 : 1);
     const dir = back ? 'back' : 'forward';
     if (who === 'others') {
-      const happens = condition === 'climbedLadder' ? 'climb a ladder' : 'hit a snake';
+      const happens = condition === 'climbedLadder' ? 'ride a rocket' : 'hit a whirlpool';
       const rounds = l !== 'permanent' && l.charges === undefined && l.rounds !== undefined ? l.rounds : undefined;
       const head = rounds !== undefined ? `For ${num(rounds)} round${rounds === 1 ? '' : 's'}: if you ${happens}` : `Next time you ${happens}`;
       return `${head}, everyone else moves ${dir} ${dist}.`;
     }
-    if (condition === 'climbedLadder') return `Next time you climb a ladder, move ${dir} ${dist} more.`;
-    return `Next time you land on a snake head, move ${dir} ${dist} after sliding.`;
+    if (condition === 'climbedLadder') return `Next time you ride a rocket, move ${dir} ${dist} more.`;
+    return `Next time you land in a whirlpool, move ${dir} ${dist} after sliding.`;
   };
   const sentence = (op: Op): string => {
     switch (op.op) {
@@ -68,11 +68,11 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
       case 'moveTo':
         switch (op.rule) {
           case 'nearest-snake-head':
-            return who ? `${who} drops onto the nearest snake.` : 'Drop onto the nearest snake.';
+            return who ? `${who} drops into the nearest whirlpool.` : 'Drop into the nearest whirlpool.';
           case 'snake-head-ahead':
-            return who ? `${who} moves on to the next snake.` : 'On to the next snake.';
+            return who ? `${who} moves on to the next whirlpool.` : 'On to the next whirlpool.';
           case 'ladder-foot-behind':
-            return who ? `${who} goes back to the ladder behind them.` : 'Back to the ladder behind you.';
+            return who ? `${who} goes back to the rocket behind them.` : 'Back to the rocket behind you.';
           case 'target': {
             const n = op.offset ?? 0;
             const of = lower(who ?? 'yourself');
@@ -81,7 +81,7 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
           case 'tile':
             return who ? `${who} moves to tile ${num(op.tile ?? 0)}.` : `Move to tile ${num(op.tile ?? 0)}.`;
           default:
-            return who ? `${who} moves to the nearest ladder ahead.` : 'Move to the nearest ladder ahead of you.';
+            return who ? `${who} moves to the nearest rocket ahead.` : 'Move to the nearest rocket ahead of you.';
         }
       case 'swap':
         return `Swap places with ${lower(who ?? 'yourself')}.`;
@@ -108,12 +108,12 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
           case 'beforeAttack':
             return `Block the next ${charges > 1 ? `${charges} attacks` : 'attack'} on ${who ? lower(who) : 'you'}${life(l, true)}.`;
           case 'beforeSnake':
-            return `Ignore the next ${charges > 1 ? `${charges} snakes` : 'snake'} you land on${life(l, true)}.`;
+            return `Ignore the next ${charges > 1 ? `${charges} whirlpools` : 'whirlpool'} you land in${life(l, true)}.`;
           case 'beforeSnakeOrAttack':
-            return charges > 1 ? `Block the next ${charges} snakes or attacks${life(l, true)}.` : `Block the next snake or attack, whichever comes first${life(l, true)}.`;
+            return charges > 1 ? `Block the next ${charges} whirlpools or attacks${life(l, true)}.` : `Block the next whirlpool or attack, whichever comes first${life(l, true)}.`;
           case 'jumpsOff':
-            if (l === 'permanent' || l.rounds === undefined) return 'Snakes and ladders do nothing for the rest of the match.';
-            return `Snakes and ladders do nothing for ${num(l.rounds)} round${l.rounds === 1 ? '' : 's'}.`;
+            if (l === 'permanent' || l.rounds === undefined) return 'Rockets and whirlpools do nothing for the rest of the match.';
+            return `Rockets and whirlpools do nothing for ${num(l.rounds)} round${l.rounds === 1 ? '' : 's'}.`;
           case 'extraRoll':
             return who ? `${who} rolls again this round.` : 'Roll again this round.';
           case 'moreRerolls':
@@ -134,11 +134,11 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
             }
             if ('shield' in then) {
               const n = then.shield.charges;
-              const what = n === 1 ? 'snake or attack' : `${num(n)} snakes or attacks`;
+              const what = n === 1 ? 'whirlpool or attack' : `${num(n)} whirlpools or attacks`;
               const rounds = then.shield.rounds;
               return `${head}, block the next ${what}${rounds === undefined ? ', any time this match' : ` (${num(rounds)} round${rounds === 1 ? '' : 's'})`}.`;
             }
-            return `${head}, go to the nearest ladder.${p.otherwise === 'stay' ? ' If not, stay put.' : ''}`;
+            return `${head}, go to the nearest rocket.${p.otherwise === 'stay' ? ' If not, stay put.' : ''}`;
           }
           case 'skipRoll': {
             const rolls = charges > 1 ? `next ${charges} rolls` : 'next roll';
@@ -156,11 +156,13 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
       case 'boardEdit': {
         const where = who ? lower(who) : 'you';
         const rounds = op.lifetime === 'permanent' ? ' for the rest of the match' : ` (${num(op.lifetime.rounds)} round${op.lifetime.rounds === 1 ? '' : 's'})`;
-        if (op.action === 'flip') return `Every snake becomes a ladder, and every ladder a snake${op.lifetime === 'permanent' ? ', for the rest of the match' : rounds}.`;
-        if (op.action === 'create') return `A new ${op.kind}, ${num(op.length)} tiles long, appears ${num(op.minAhead)}–${num(op.maxAhead)} tiles ${op.behind ? 'behind' : 'ahead of'} ${where}${rounds}.`;
-        if (op.action === 'remove') return `The nearest ${op.kind} ahead of ${where} disappears${rounds}.`;
-        if (op.action === 'move') return `The nearest ${op.kind} moves ${num(op.minAhead)}–${num(op.maxAhead)} tiles ahead of ${where}${rounds}.`;
-        return `The nearest ${op.kind} gets ${num(op.lengthDelta)} tiles longer${rounds}.`;
+        if (op.action === 'flip') return `Every whirlpool becomes a rocket, and every rocket a whirlpool${op.lifetime === 'permanent' ? ', for the rest of the match' : rounds}.`;
+        // Players see rockets and whirlpools, not ladders and snakes (the user, 2026-10-16).
+        const name = op.kind === 'snake' ? 'whirlpool' : 'rocket';
+        if (op.action === 'create') return `A new ${name}, ${num(op.length)} tiles long, appears ${num(op.minAhead)}–${num(op.maxAhead)} tiles ${op.behind ? 'behind' : 'ahead of'} ${where}${rounds}.`;
+        if (op.action === 'remove') return `The nearest ${name} ahead of ${where} disappears${rounds}.`;
+        if (op.action === 'move') return `The nearest ${name} moves ${num(op.minAhead)}–${num(op.maxAhead)} tiles ahead of ${where}${rounds}.`;
+        return `The nearest ${name} gets ${num(op.lengthDelta)} tiles longer${rounds}.`;
       }
       case 'gamble': {
         const total = op.outcomes.reduce((sum, o) => sum + (typeof o.weight === 'number' ? o.weight : 1), 0);
