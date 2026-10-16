@@ -1,11 +1,12 @@
 import type { PlayerId } from '@laddorious/core';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { Vector3 } from 'three';
+import { Vector3, type PerspectiveCamera } from 'three';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { tuning } from '../app/tuning';
-import { OVERVIEW_TARGET_Z, cameraShot, heldNext, myPickPending, type Focus, type ShotMode } from './camera';
+import { OVERVIEW_TARGET_Z, cameraShot, heldNext, homeShown, myPickPending, type Focus, type ShotMode } from './camera';
+import { fitOverview } from './fit';
 import { pinchZoom, rememberZoom, savedZoom, wheelZoom } from './zoom';
 import { BOARD_HALF, type Vec3 } from './layout';
 import { NO_PAN, PanDrag, clampPan, dragPan, panAfterShot, panBox, panReach, unitsPerPixel, type Pan } from './pan';
@@ -21,10 +22,12 @@ interface CameraRigProps {
   peeking?: boolean;
   /** The card-pick window I picked in, before the view knows (2026-10-15). */
   pickedWindow?: number | null;
+  /** When I last pressed Back to my piece (epoch ms; 2026-10-17). */
+  homeAt?: number | null;
 }
 
 /** Moves the camera by the rules of spec #2 §5.3, easing between shots unless a shot is a cut. */
-export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize, peeking = false, pickedWindow = null }: CameraRigProps) {
+export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize, peeking = false, pickedWindow = null, homeAt = null }: CameraRigProps) {
   const camera = useThree((s) => s.camera);
   const canvas = useThree((s) => s.gl.domElement);
   // The overview's zoom (2026-10-15): a mouse wheel or a two-finger pinch over the board.
@@ -32,7 +35,10 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
   const zoomRef = useRef(savedZoom({ min: tuning().camera.overview.zoomMin, max: tuning().camera.overview.zoomMax }));
   // The zoomed-in overview's pan (board theme spec B5), and the last shot's kind: only the overview pans.
   const panRef = useRef<Pan>(NO_PAN);
-  const modeRef = useRef<ShotMode>('overview');
+  // Null until the first frame, so the match starts with every piece in frame (2026-10-17).
+  const modeRef = useRef<ShotMode | null>(null);
+  // The Break the overview last fitted itself to (its start, epoch ms).
+  const fittedBreakRef = useRef<number | null>(null);
   // What the camera was last on: it stays there through beats with nothing to show, while the timeline plays (2026-10-15).
   const heldRef = useRef<Focus | null>(null);
   useEffect(() => {
@@ -115,9 +121,20 @@ export function CameraRig({ director, seats, me, watch, reducedMotion, boardSize
       pan: panRef.current,
       timeline: state.timeline,
       held: heldRef.current,
+      home: homeShown(homeAt, now),
       // Through hops the camera glides instead of bobbing with the piece (2026-10-15).
       piece: (id): Vec3 => cameraPoint(state, id, seatOf.get(id) ?? 0, now, boardSize) ?? [0, 0, 0],
     });
+    // Back on the overview, and at each Break: every piece in frame, panning and zooming out only as needed (2026-10-17).
+    const atBreak = state.beat?.kind === 'roundBreak' ? state.beat.startedAt : null;
+    if (shot.mode === 'overview' && (modeRef.current !== 'overview' || (atBreak !== null && atBreak !== fittedBreakRef.current))) {
+      const points = seats.map((s, i) => cameraPoint(state, s.playerId, i, now, boardSize)).filter((p): p is Vec3 => p !== null);
+      const lens = camera as PerspectiveCamera;
+      const fitted = fitOverview({ zoom: zoomRef.current, pan: panRef.current }, points, { fov: lens.fov, aspect: lens.aspect });
+      zoomRef.current = fitted.zoom;
+      panRef.current = fitted.pan;
+      fittedBreakRef.current = atBreak;
+    }
     modeRef.current = shot.mode;
     heldRef.current = heldNext({ beat: state.beat, window: state.settled?.view.awaiting.window ?? null, focus: shot.focus, held: heldRef.current });
     panRef.current = panAfterShot(panRef.current, shot.mode);

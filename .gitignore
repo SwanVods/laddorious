@@ -13,3 +13,4 @@ playwright-report/
 dist-online-e2e/
 __pycache__/
 docs/
+.superpowers/

@@ -144,6 +144,31 @@
   top: calc(var(--safe-t) + 3cqh);
 }
 
+/* The version and What's new, under the profile chip (2026-10-17). */
+.news-btn {
+  position: absolute;
+  left: calc(var(--safe-l) + 3cqh);
+  top: calc(var(--safe-t) + 3cqh + max(52px, 10cqh));
+  min-height: 36px;
+  border: 0;
+  cursor: pointer;
+}
+
+.news-btn .icon {
+  color: var(--highlight);
+}
+
+.news-btn b {
+  color: var(--highlight);
+}
+
+/* How to play, left of full screen (2026-10-17). */
+.help-btn {
+  position: absolute;
+  right: calc(var(--safe-r) + 3cqh + 2 * (max(44px, 8cqh) + 10px));
+  top: calc(var(--safe-t) + 3cqh);
+}
+
 .gear-btn {
   position: absolute;
   right: calc(var(--safe-r) + 3cqh);

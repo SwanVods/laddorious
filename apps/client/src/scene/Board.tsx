@@ -54,7 +54,7 @@ export function Board({ board, director, clearcoat, onTap }: BoardProps) {
       live = false;
     };
   }, [fontsLoaded]);
-  const overlay = useMemo(() => boardOverlayTexture(size, mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink, fontsLoaded), [size, mystery, fontsLoaded]);
+  const overlay = useMemo(() => boardOverlayTexture(size, mystery, BOARD_COLORS.rarity, WORLD_COLORS.ink, fontsLoaded, BOARD_COLORS.epicGlyph), [size, mystery, fontsLoaded]);
   // three.js frees a texture's GPU memory only on dispose().
   useEffect(() => () => overlay?.dispose(), [overlay]);
   // Epic "?" tiles shine (2026-10-14): a soft band sweeps across each, all in one draw call.

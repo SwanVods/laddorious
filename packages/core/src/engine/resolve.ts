@@ -73,7 +73,8 @@ function moveToTile(s: MatchState, op: Extract<EffectOp, { op: 'moveTo' }>, from
     case 'target':
       return bounce(from + (op.offset ?? 0), s.board.size);
     case 'tile':
-      return op.tile !== undefined && op.tile >= 1 && op.tile < s.board.size ? op.tile : null;
+      // Out while a rocket or whirlpool starts there (2026-10-16): everyone would land on it and ride it.
+      return op.tile !== undefined && op.tile >= 1 && op.tile < s.board.size && !s.board.jumps.some((j) => j.from === op.tile) ? op.tile : null;
   }
 }
 

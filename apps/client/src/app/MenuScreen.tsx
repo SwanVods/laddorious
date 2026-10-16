@@ -10,13 +10,14 @@ import { Icon } from '../ui/Icon';
 import { Portrait } from '../ui/PieceIcon';
 import { NICKNAME_MAX, type PrefsState } from './prefs';
 import { SEAT_COLORS } from './theme';
+import pkg from '../../package.json';
 
 /** Short rule reminders, one at a time (spec #2 §7.1). */
 export const TIPS = [
   'Everyone rolls one die at the same time.',
   'Purple ? squares give you a card to play.',
-  "Land on a slide's vacuum and it pulls you back down.",
-  'Launch pads fling you ahead.',
+  'Stop on a whirlpool and it drags you back down.',
+  'Rockets launch you up the board.',
   'Two pieces on one tile? Rock, paper, scissors decides who stays.',
 ] as const;
 export const TIP_MS = 5000;
@@ -26,6 +27,10 @@ interface MenuScreenProps {
   /** PLAY: start matchmaking, with a board seed in dev builds. */
   onPlay: (opts: FindOptions) => void;
   onSettings: () => void;
+  /** How to play (2026-10-17). */
+  onHelp?: () => void;
+  /** What's new: the changelog (2026-10-17). */
+  onWhatsNew?: () => void;
   /** Online builds: Play with friends, for private rooms (2026-10-16). */
   onFriends?: () => void;
   /** Dev builds: the hidden board seed field (spec #2 §4.4). */
@@ -38,7 +43,7 @@ interface MenuScreenProps {
  * pieces went on 2026-10-14), the profile chip (tap to rename), the logo, the settings gear, PLAY, and
  * rotating rule tips.
  */
-export function MenuScreen({ prefs, onPlay, onSettings, onFriends, showSeed = false }: MenuScreenProps) {
+export function MenuScreen({ prefs, onPlay, onSettings, onHelp, onWhatsNew, onFriends, showSeed = false }: MenuScreenProps) {
   const profile = useStore(prefs, (s) => s.profile);
   const settings = useStore(prefs, (s) => s.settings);
   const [anchors] = useState(createTagRegistry);
@@ -126,6 +131,19 @@ export function MenuScreen({ prefs, onPlay, onSettings, onFriends, showSeed = fa
           <small>RACE TO 100</small>
         </h1>
 
+        {onWhatsNew && (
+          <button type="button" className="pill news-btn live" aria-label={`What's new in v${pkg.version}`} onClick={onWhatsNew}>
+            <Icon name="cleanse" />
+            <span>
+              v{pkg.version} · <b>What's new</b>
+            </span>
+          </button>
+        )}
+        {onHelp && (
+          <button type="button" className="round-btn help-btn live" aria-label="How to play" onClick={onHelp}>
+            <Icon name="qmark" />
+          </button>
+        )}
         <FullscreenButton className="menu-fullscreen-btn" />
         <button type="button" className="round-btn gear-btn live" aria-label="Settings" onClick={onSettings}>
           <Icon name="gear" />

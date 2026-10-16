@@ -8,6 +8,7 @@ import { arrowheadGeometry, arrowheadOutlineGeometry, exitGeometry, padGeometry,
 import { useSlotMesh } from '../assets/slotMesh';
 import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
+import { editProgress } from '../director/beats';
 import { BLOB_GEOMETRY, BLOB_LIFT, blobMaterial, blobWidth } from './blobs';
 import { PARTS, tileToWorld } from './layout';
 import { STILL_END, clamp01, easeOutBack, endReaction, type EndMotion } from './motion';
@@ -199,7 +200,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       if (!want.has(id) && r.hiddenAt === null) r.hiddenAt = now - (1 - revealed(r, now)) * REVEAL_MS;
       if (r.hiddenAt !== null && now - r.hiddenAt >= REVEAL_MS) revealsRef.current.delete(id);
     }
-    const t = beat ? clamp01((Date.now() - beat.startedAt) / beat.durationMs) : 1;
+    const t = beat ? editProgress(beat, Date.now()) : 1;
     const pop = (id: string) => {
       if (beat?.kind !== 'boardEdit' || !presentation) return 1;
       const before = presentation.jumps.some((j) => j.id === id);

@@ -1,6 +1,6 @@
 import type { BoardEdit, GameEvent, MoveCause, PlayerId } from '@laddorious/core';
 import { describe, expect, it } from 'vitest';
-import { BEAT_MS, buildTimeline, heldBeat } from '../src/director/beats';
+import { BEAT_MS, buildTimeline, editProgress, heldBeat } from '../src/director/beats';
 import { BANNER_MS } from '../src/hud/Banner';
 import { presentationFromView, stackOn, type PresentationState } from '../src/director/presentation';
 import { openingUpdate } from './support/fixtures';
@@ -230,13 +230,29 @@ describe('buildTimeline', () => {
     const edit: BoardEdit = { id: 'x9', added: [added], removed: [removed], lifetime: { rounds: 2 }, createdRound: 1, sourceCard: 'ladder-warp', sourcePlayer: 'p0' };
     const [made] = buildTimeline([{ type: 'BoardEdited', edit, visibility: 'public' }], base, 'p0', SIZE);
     expect(made!.kind).toBe('boardEdit');
-    expect(made!.durationMs).toBe(BEAT_MS.boardEdit);
+    // The camera gets there first, then the new rocket or whirlpool pops in (2026-10-17).
+    expect(made!.durationMs).toBe(BEAT_MS.boardEditLead + BEAT_MS.boardEdit);
     expect(made!.after.jumps).toContainEqual(added);
     expect(made!.after.jumps).not.toContainEqual(removed);
     const [expired] = buildTimeline([{ type: 'BoardEditExpired', editId: 'x9', restored: [removed.id], dropped: [], visibility: 'public' }], made!.after, 'p0', SIZE);
     expect(expired!.after.jumps).toContainEqual(removed);
     expect(expired!.after.jumps).not.toContainEqual(added);
     expect(expired!.after.boardEdits).toEqual([]);
+    expect(expired!.durationMs).toBe(BEAT_MS.boardEdit);
+  });
+
+  it('pops a board edit in only after the lead-in, while the camera gets there (2026-10-17)', () => {
+    const edit: BoardEdit = { id: 'x9', added: [{ id: 'x9a', from: 50, to: 71 }], removed: [], lifetime: { rounds: 2 }, createdRound: 1, sourceCard: 'ladder-warp', sourcePlayer: 'p0' };
+    const [made] = buildTimeline([{ type: 'BoardEdited', edit, visibility: 'public' }], start(), 'p0', SIZE);
+    const at = { ...made!, startedAt: 1000 };
+    expect(editProgress(at, 1000)).toBe(0);
+    expect(editProgress(at, 1000 + BEAT_MS.boardEditLead)).toBe(0);
+    expect(editProgress(at, 1000 + BEAT_MS.boardEditLead + BEAT_MS.boardEdit / 2)).toBeCloseTo(0.5);
+    expect(editProgress(at, 1000 + made!.durationMs)).toBe(1);
+    expect(BEAT_MS.boardEditLead).toBeGreaterThanOrEqual(700);
+    // An expiry has no lead-in.
+    const [expired] = buildTimeline([{ type: 'BoardEditExpired', editId: 'x9', restored: [], dropped: [], visibility: 'public' }], made!.after, 'p0', SIZE);
+    expect(editProgress({ ...expired!, startedAt: 1000 }, 1000 + BEAT_MS.boardEdit / 2)).toBeCloseTo(0.5);
   });
 
   it('gives HUD-only events no time but still applies them; a new round gets its break first (2026-10-16)', () => {

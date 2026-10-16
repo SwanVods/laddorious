@@ -71,6 +71,8 @@ export function MatchScreen({ session, prefs, quality, reducedMotion, showStats 
   const [director] = useState(() => new Director(me, (windowId) => session.playbackDone(windowId), undefined, timeScale));
   const [tags] = useState(createTagRegistry);
   const [watch, setWatch] = useState<PlayerId | null>(null);
+  // Back to my piece takes the camera to it for a moment, wherever it stands (2026-10-17).
+  const [homeAt, setHomeAt] = useState<number | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // The window I picked a card in: the pick closes at once, before the host's view catches up (polish spec §4.3).
@@ -140,7 +142,11 @@ export function MatchScreen({ session, prefs, quality, reducedMotion, showStats 
     if (rankings) handlersRef.current.onFinished(rankings);
   }, [rankings]);
 
-  const backToMine = () => setWatch(null);
+  const backToMine = () => {
+    setWatch(null);
+    setHomeAt(Date.now());
+  };
+  const watchPiece = (id: PlayerId | null) => (id ? setWatch(id) : backToMine());
   useHotkeys({ Escape: backToMine }, watch !== null && !leaving && !menuOpen);
 
   const view = settled?.view;
@@ -166,7 +172,7 @@ export function MatchScreen({ session, prefs, quality, reducedMotion, showStats 
   const stage = view ? stageIndex(beat, view.awaiting.window, stageFromLog(log)) : null;
   return (
     <div className={tuning().hud.phoneCompactCards ? 'screen match compact-cards' : 'screen match'}>
-      <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} peeking={cardPick !== null && peekWindow === view?.awaiting.windowId} pickedWindow={pickedWindow} />
+      <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} peeking={cardPick !== null && peekWindow === view?.awaiting.windowId} pickedWindow={pickedWindow} homeAt={homeAt} />
       <div className="layer">
         <NameTags seats={seats} me={me} tags={tags} ranks={rankBadges(beat, timeScale)} />
         {view && presentation && (
@@ -177,7 +183,7 @@ export function MatchScreen({ session, prefs, quality, reducedMotion, showStats 
               <EventFeed lines={lines} seats={seats} />
               <CardList cards={phoneCards(listRecord, beat)} seats={seats} />
             </div>
-            <PlayerColumn rows={rows} bubbles={bubbles} onWatch={setWatch} reducedMotion={reducedMotion} />
+            <PlayerColumn rows={rows} bubbles={bubbles} onWatch={watchPiece} reducedMotion={reducedMotion} />
             {mine && <YourPiece row={mine} mods={nextRollMods(presentation.effects, me)} players={rows.length} boardSize={view.board.size} />}
             <Dock model={dock!} seats={seats} onRoll={() => session.send({ type: 'roll' })} />
           </>

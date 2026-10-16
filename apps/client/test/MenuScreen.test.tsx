@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MenuScreen, TIPS, TIP_MS } from '../src/app/MenuScreen';
 import { createPrefsStore } from '../src/app/prefs';
+import pkg from '../package.json';
 
 // jsdom has no WebGL: stand the podium scene in with a labelled box.
 vi.mock('../src/scene/MenuScene', async () => {
@@ -21,8 +22,10 @@ function open(showSeed = false) {
   const prefs = createPrefsStore(null, { prefersReducedMotion: false, random: () => 0.5 });
   const onPlay = vi.fn();
   const onSettings = vi.fn();
-  render(<MenuScreen prefs={prefs} onPlay={onPlay} onSettings={onSettings} showSeed={showSeed} />);
-  return { prefs, onPlay, onSettings };
+  const onHelp = vi.fn();
+  const onWhatsNew = vi.fn();
+  render(<MenuScreen prefs={prefs} onPlay={onPlay} onSettings={onSettings} onHelp={onHelp} onWhatsNew={onWhatsNew} showSeed={showSeed} />);
+  return { prefs, onPlay, onSettings, onHelp, onWhatsNew };
 }
 
 const rename = (to: string, key = 'Enter') => {
@@ -40,6 +43,24 @@ describe('MenuScreen (spec #2 §7.1)', () => {
     expect(screen.getByText('4-player match')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'PLAY' }));
     expect(onPlay).toHaveBeenCalledWith({});
+  });
+
+  it('opens the rules from the Help button (2026-10-17)', () => {
+    const { onHelp } = open();
+    fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
+    expect(onHelp).toHaveBeenCalled();
+  });
+
+  it("opens the changelog from the version button, which shows this version (2026-10-17)", () => {
+    const { onWhatsNew } = open();
+    const button = screen.getByRole('button', { name: /What's new/ });
+    expect(button.textContent).toContain(`v${pkg.version}`);
+    fireEvent.click(button);
+    expect(onWhatsNew).toHaveBeenCalled();
+  });
+
+  it('says rockets and whirlpools in its tips, never slides or launch pads (2026-10-17)', () => {
+    for (const tip of TIPS) expect(tip).not.toMatch(/slide|launch pad|ladder|snake/i);
   });
 
   it('renames me from the profile chip, and keeps my name for an empty one or Esc', () => {

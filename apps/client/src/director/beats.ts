@@ -146,6 +146,8 @@ export const BEAT_MS = {
   },
   clash: 900,
   boardEdit: 600,
+  /** Before a card's new rocket or whirlpool pops in: the camera gets to its tile first (2026-10-17). */
+  boardEditLead: 900,
   victory: 3000,
   /** The ranks reveal: one step per place behind the winner, then a hold (polish spec §4.5). */
   rankStep: 500,
@@ -203,6 +205,8 @@ function actorOf(event: GameEvent): PlayerId | null {
 }
 
 function joins(beat: Beat, kind: BeatKind, event: GameEvent): boolean {
+  // A card's new effect plays with the card (2026-10-17): a Shield goes up as the piece hops, not after the card's pause.
+  if (beat.kind === 'cardResolved' && event.type === 'EffectAdded') return true;
   if (beat.kind !== kind || kind === 'cardResolved') return false;
   const actor = actorOf(event);
   return actor === null || !beat.events.some((e) => actorOf(e) === actor);
@@ -279,6 +283,18 @@ const rollOf = (beat: Pick<Beat, 'kind' | 'events'>) => {
   return e?.type === 'CardResolved' && e.roll !== undefined ? e : null;
 };
 
+/** How long a board edit waits before it pops in: a card's edit gets the lead-in, an expiry none (2026-10-17). */
+function editLeadOf(beat: Pick<Beat, 'events'>): number {
+  return beat.events.some((e) => e.type === 'BoardEdited') ? BEAT_MS.boardEditLead : 0;
+}
+
+/** How far a board edit has popped in or out, 0 to 1, after its lead-in (2026-10-17). */
+export function editProgress(beat: Pick<Beat, 'events' | 'durationMs'> & { startedAt: number }, nowMs: number): number {
+  const lead = editLeadOf(beat);
+  const span = beat.durationMs - lead;
+  return span > 0 ? Math.min(1, Math.max(0, (nowMs - beat.startedAt - lead) / span)) : 1;
+}
+
 /** How long a card's beat waits before the card plays: the camera's lead-in, then its die's tumble if it rolls one (2026-10-16). */
 export function cardLeadOf(beat: Pick<Beat, 'kind' | 'events'>): number {
   return BEAT_MS.cardLead + (rollOf(beat) ? BEAT_MS.cardRoll : 0);
@@ -322,7 +338,7 @@ function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
     case 'clash':
       return BEAT_MS.clash;
     case 'boardEdit':
-      return BEAT_MS.boardEdit;
+      return editLeadOf(beat) + BEAT_MS.boardEdit;
     case 'victory':
       return BEAT_MS.victory;
     case 'ranks': {

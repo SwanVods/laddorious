@@ -1,7 +1,6 @@
 import type * as Tone from 'tone';
 
-// The game's sounds (spec #3 §5), ported from the approved sound board
-// (docs/superpowers/specs/2026-10-09-sound-board.html). Each recipe schedules its notes from
+// The game's sounds (spec #3 §5), ported from the approved sound board. Each recipe schedules its notes from
 // time t and returns how long it lasts. Tone is passed in: it loads only after the first tap.
 
 /** The Tone.js namespace. */

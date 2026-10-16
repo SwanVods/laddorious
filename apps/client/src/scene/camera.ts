@@ -45,6 +45,16 @@ export interface ShotInput {
   timeline?: { beats: readonly Beat[]; index: number } | null;
   /** What the last shot was on: kept through beats with nothing of their own to show (2026-10-15). */
   held?: Focus | null;
+  /** I just pressed Back to my piece: a moment on it, wherever it stands (2026-10-17). */
+  home?: boolean;
+}
+
+/** How long Back to my piece holds the camera on my piece before the usual rules take over (2026-10-17). */
+export const HOME_MS = 2500;
+
+/** Whether the camera is still on my piece after Back to my piece, pressed at `pressedAt` (epoch ms). */
+export function homeShown(pressedAt: number | null, nowMs: number): boolean {
+  return pressedAt !== null && nowMs - pressedAt < HOME_MS;
 }
 
 /** Every close shot sits this far up and back (tuning.json's camera.close): one distance for all (2026-10-15). */
@@ -70,6 +80,8 @@ export function cameraShot(shown: ShotInput): Shot {
   if (won?.type === 'MatchWon') return won.winner === me ? swoop(input.piece(me), input) : onPlayer(input, won.winner);
   // After the winner cam, the whole board while the other places are revealed (polish spec §4.5).
   if (beat?.kind === 'ranks') return overview(input);
+  // Back to my piece, pressed a moment ago (2026-10-17): on it, wherever it stands, the Break included.
+  if (input.home) return onPlayer(input, me);
   // The break between rounds (2026-10-16): the whole board, to breathe.
   if (beat?.kind === 'roundBreak') return overview(input);
   if (input.peeking) return overview(input);
@@ -98,6 +110,8 @@ export function cameraShot(shown: ShotInput): Shot {
  * focus too (2026-10-16): once I've picked, the camera stays on me, not on the event before my pick.
  */
 export function heldNext({ beat, window, focus, held }: { beat: Beat | null; window: WindowKind | null; focus: Focus | null | undefined; held: Focus | null }): Focus | null {
+  // The Break lets go (2026-10-17): the next round's rolls start on the whole board, not back on the last card's player.
+  if (beat?.kind === 'roundBreak' || beat?.kind === 'ranks') return null;
   if (beat) return focus ?? held;
   return window === 'mystery' ? (focus ?? held) : null;
 }
@@ -129,14 +143,31 @@ function cardShot(input: ShotInput): Shot | null {
     const move = beat.events.find((e) => e.type === 'Moved');
     return move?.type === 'Moved' ? onPlayer(input, move.player) : null;
   }
+  if (beat?.kind === 'boardEdit') return editShot(input);
   const card = beat?.kind === 'cardResolved' ? beat.events.find((e) => e.type === 'CardResolved') : undefined;
   if (card?.type !== 'CardResolved') return null;
+  // A card on EVERYONE or each opponent: the whole board (2026-10-17).
+  if ((card.targets?.length ?? 0) > 1) return overview(input);
   const a = input.piece(card.caster);
   const b = card.target && card.target !== card.caster ? input.piece(card.target) : a;
   const at: Vec3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
   const back = 1 + Math.hypot(b[0] - a[0], b[2] - a[2]) / 10;
   const [x, y, z] = close();
   return { mode: 'follow', position: offset(at, [x * back, y * back, z * back]), target: at, cut: false, focus: { player: card.target ?? card.caster } };
+}
+
+/**
+ * A card's board edit (2026-10-17): on the tile its new rocket or whirlpool starts on, or the one it takes off,
+ * while the edit waits its lead-in; a card that changes several at once shows the whole board.
+ */
+function editShot(input: ShotInput): Shot | null {
+  const made = input.beat?.events.find((e) => e.type === 'BoardEdited');
+  if (made?.type !== 'BoardEdited') return null;
+  const changed = made.edit.added.length > 0 ? made.edit.added : made.edit.removed;
+  const tiles = new Set(changed.map((j) => j.from));
+  if (tiles.size !== 1) return overview(input);
+  const [tile] = tiles;
+  return follow(tileToWorld(tile!), { tile: tile! });
 }
 
 /**
@@ -174,10 +205,13 @@ function othersFaceOff({ beat, me, faceOffs = [] }: ShotInput): number | null {
 }
 
 function overview(input: ShotInput): Shot {
+  return overviewAt(input.zoom ?? 1, input.pan ?? [0, 0]);
+}
+
+/** The overview at a zoom and pan. */
+export function overviewAt(zoom: number, [x, z]: Pan): Shot {
   // How far back and how high come from tuning.json (2026-10-15). It never turns; zoomed in, it pans (board theme spec B5).
   const { overview } = tuning().camera;
-  const zoom = input.zoom ?? 1;
-  const [x, z] = input.pan ?? [0, 0];
   const aim = OVERVIEW_TARGET_Z + z;
   return { mode: 'overview', position: [x, overview.height * zoom, overview.distance * zoom + aim], target: [x, 0, aim], cut: false };
 }

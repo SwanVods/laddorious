@@ -24,9 +24,10 @@ const BOARD_FONT = "'Lilita One', 'Arial Rounded MT Bold', system-ui, sans-serif
 
 /**
  * All tile numbers and "?" glyphs in one transparent texture over the board (spec #2 §6.1): in the game's
- * display face once the web fonts have loaded, in the system's until then (the board paints again).
+ * display face once the web fonts have loaded, in the system's until then (the board paints again). An epic
+ * "?" stands out (2026-10-17): a little bigger, filled with `epic`'s gradient, and glowing.
  */
-export function boardOverlayTexture(size: number, mystery: Record<number, Rarity>, glyph: Record<Rarity, string>, ink: string, fontsLoaded = true): CanvasTexture | null {
+export function boardOverlayTexture(size: number, mystery: Record<number, Rarity>, glyph: Record<Rarity, string>, ink: string, fontsLoaded = true, epic?: readonly [string, string]): CanvasTexture | null {
   const face = fontsLoaded ? BOARD_FONT : 'system-ui, sans-serif';
   const span = TILE_SIZE * COLUMNS;
   const cell = BOARD_PX / COLUMNS;
@@ -44,13 +45,32 @@ export function boardOverlayTexture(size: number, mystery: Record<number, Rarity
       ctx.globalAlpha = 1;
       const rarity = mystery[tile];
       if (rarity) {
+        const shines = rarity === 'epic' && epic !== undefined;
+        const y = py + cell * 0.04;
         ctx.textAlign = 'center';
-        ctx.font = `${Math.round(cell * 0.62)}px ${face}`;
-        ctx.lineWidth = cell * 0.06;
+        ctx.font = `${Math.round(cell * (shines ? 0.7 : 0.62))}px ${face}`;
+        ctx.lineWidth = cell * (shines ? 0.08 : 0.06);
+        ctx.lineJoin = 'round';
         ctx.strokeStyle = ink;
-        ctx.strokeText('?', px, py + cell * 0.04);
-        ctx.fillStyle = glyph[rarity];
-        ctx.fillText('?', px, py + cell * 0.04);
+        if (shines) {
+          // A bright halo, twice over so it reads at a distance.
+          ctx.save();
+          ctx.shadowColor = epic[0];
+          ctx.shadowBlur = cell * 0.22;
+          ctx.strokeText('?', px, y);
+          ctx.strokeText('?', px, y);
+          ctx.restore();
+          // Top to bottom across the glyph itself, leaning a little like the card's frame.
+          const h = cell * 0.2;
+          const fill = ctx.createLinearGradient(px - h * 0.3, y - h, px + h * 0.3, y + h);
+          fill.addColorStop(0, epic[0]);
+          fill.addColorStop(1, epic[1]);
+          ctx.fillStyle = fill;
+        } else {
+          ctx.strokeText('?', px, y);
+          ctx.fillStyle = glyph[rarity];
+        }
+        ctx.fillText('?', px, y);
       }
     }
   });

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Beat } from '../src/director/beats';
 import { presentationFromView } from '../src/director/presentation';
 import { DEFAULT_TUNING } from '../src/app/tuning';
-import { cameraShot, heldNext, myPickPending, type ShotInput } from '../src/scene/camera';
+import { HOME_MS, cameraShot, heldNext, homeShown, myPickPending, type ShotInput } from '../src/scene/camera';
 import { BOARD_SCALE, COLUMNS, TILE_SIZE, tileToWorld, type Vec3 } from '../src/scene/layout';
 import { openingUpdate } from './support/fixtures';
 
@@ -245,6 +245,45 @@ describe('camera rules (spec #2 §5.3)', () => {
   it('pulls back to the overview for the ranks reveal after the winner cam (polish spec 4.5)', () => {
     const won: GameEvent = { type: 'MatchWon', winner: 'p0', rankings: [], visibility: 'public' };
     expect(shot({ beat: beatOf('ranks', [won]), window: 'none' })).toMatchObject({ mode: 'overview', target: [0, 0, 4 * BOARD_SCALE] });
+  });
+});
+
+describe('camera fixes (2026-10-17)', () => {
+  it('lets go of the last focus at the Break, so the next round starts on the overview', () => {
+    const roundBreak = beatOf('roundBreak', []);
+    expect(heldNext({ beat: roundBreak, window: 'dice', focus: null, held: { player: 'p2' } })).toBeNull();
+    expect(heldNext({ beat: beatOf('ranks', []), window: 'none', focus: null, held: { player: 'p2' } })).toBeNull();
+    // The next round's rolls, with nothing held: the whole board.
+    expect(shot({ beat: beatOf('roll', []), held: null }).mode).toBe('overview');
+  });
+
+  it('shows the whole board for a card that hits several players', () => {
+    const quake = beatOf('cardResolved', [{ type: 'CardResolved', caster: 'p1', cardId: 'earthquake', target: null, result: 'hit', targets: ['p0', 'p2', 'p3'], blocked: [], visibility: 'public' }]);
+    expect(shot({ beat: quake }).mode).toBe('overview');
+    // One target in the list is still a close shot.
+    const one = beatOf('cardResolved', [{ type: 'CardResolved', caster: 'p1', cardId: 'earthquake', target: null, result: 'hit', targets: ['p2'], blocked: [], visibility: 'public' }]);
+    expect(shot({ beat: one }).mode).toBe('follow');
+  });
+
+  it('goes to my piece for a moment after Back to my piece, wherever it stands, even mid-card', () => {
+    const card = beatOf('cardResolved', [{ type: 'CardResolved', caster: 'p1', cardId: 'shove', target: 'p2', result: 'hit', visibility: 'public' }]);
+    expect(shot({ home: true, beat: card })).toMatchObject({ mode: 'follow', target: SPOTS.p0, focus: { player: 'p0' } });
+    expect(shot({ home: true }).target).toEqual(SPOTS.p0);
+    // Pressed during the Break, too.
+    expect(shot({ home: true, beat: beatOf('roundBreak', []) }).target).toEqual(SPOTS.p0);
+    expect(homeShown(1000, 1000 + HOME_MS - 1)).toBe(true);
+    expect(homeShown(1000, 1000 + HOME_MS)).toBe(false);
+    expect(homeShown(null, 1000)).toBe(false);
+    expect(HOME_MS).toBeGreaterThanOrEqual(1500);
+  });
+
+  it('goes to the tile a card puts a rocket or whirlpool on, or takes one off', () => {
+    const edited = (added: { from: number; to: number }[], removed: { from: number; to: number }[] = []) =>
+      beatOf('boardEdit', [{ type: 'BoardEdited', edit: { id: 'x', added: added.map((j, i) => ({ id: `a${i}`, ...j })), removed: removed.map((j, i) => ({ id: `r${i}`, ...j })), lifetime: { rounds: 2 }, createdRound: 1, sourceCard: 'c', sourcePlayer: 'p1' }, visibility: 'public' }]);
+    expect(shot({ beat: edited([{ from: 50, to: 71 }]) })).toMatchObject({ mode: 'follow', target: tileToWorld(50), focus: { tile: 50 } });
+    expect(shot({ beat: edited([], [{ from: 64, to: 30 }]) })).toMatchObject({ target: tileToWorld(64), focus: { tile: 64 } });
+    // A card that changes several at once: the whole board.
+    expect(shot({ beat: edited([{ from: 50, to: 71 }, { from: 80, to: 20 }]) }).mode).toBe('overview');
   });
 });
 

@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Mesh, ShaderMaterial, type Group, type Object3D } from 'three';
 import { WORLD_COLORS } from '../app/theme';
-import { BLOB_GEOMETRY, blobMaterial } from './blobs';
 
 import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
@@ -11,20 +10,17 @@ import { cardRollAt } from '../director/beats';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { PIECE_SCALE } from './layout';
-import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, shieldLook, stackLandings, withIdle, type Landing, type Pose } from './motion';
+import { GENTLE, SHIELD_HOOKS, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, shieldLook, shieldRising, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { createShieldMaterial, setShieldLook } from './shieldMaterial';
 import { dieAtlasTexture } from './textures';
 import { tuning } from '../app/tuning';
 import { isTap } from './pan';
-/** A piece's soft shadow on Low, about as wide as its base. */
-const PIECE_SHADOW = BLOB_GEOMETRY.clone().scale(1.5, 1, 1.5);
 
 /** Pieces render at 1.3 × their base size (spec #2 §6.2). */
 export { PIECE_SCALE } from './layout';
 const DIE_LIFT = 2.2;
-const SHIELD_HOOKS = new Set(['beforeSnake', 'beforeAttack', 'beforeSnakeOrAttack']);
 
 export interface Roll {
   face: number;
@@ -130,7 +126,6 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
   const bodyRef = useRef<Group>(null);
   const modelRef = useRef<Group>(null);
   const orbRef = useRef<Mesh>(null);
-  const blobRef = useRef<Mesh>(null);
   const dieRef = useRef<Group>(null);
   const shieldRef = useRef<Group>(null);
   useEffect(
@@ -163,11 +158,6 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
     placePiece(bodyRef.current, modelRef.current, landingPose(acting ? pose : withIdle(pose, now, index * 1.7, reducedMotion ? GENTLE : 1), seat.playerId, landingsRef.current, now, reducedMotion));
     modelRef.current.visible = !pose.orb;
     orbRef.current.visible = pose.orb;
-    if (blobRef.current) {
-      const s = Math.max(0.35, 1 - pose.position[1] * 0.25);
-      blobRef.current.position.set(pose.position[0], 0.012, pose.position[2]);
-      blobRef.current.scale.set(s, s, s);
-    }
     // The die tumbles above the piece and settles on the rolled face; forced faces flash (spec #2 §5.1).
     const roll = rollsRef.current.get(seat.playerId);
     dieRef.current.visible = roll !== undefined && now >= roll.startedAt;
@@ -179,7 +169,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
       setEmissive(dieRef.current, roll.forced ? 0.35 + 0.35 * Math.sin(now / 90) : 0);
     }
     // The shield bubble shows while a shield effect is up and flares when it blocks.
-    const shielded = state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false;
+    const shielded = (state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false) || shieldRising(state.beat, seat.playerId, now);
     const blocking = shieldBlocking(state.beat, seat.playerId, now);
     // The bubble breathes while a shield is up and flashes when it blocks (2026-10-15: a shield you can see).
     const shield = shieldRef.current;
@@ -238,10 +228,6 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
           <meshBasicMaterial color={WORLD_COLORS.orb} />
         </mesh>
       </group>
-      {!shadows && (
-        // The same soft shadow as the props' (2026-10-16), where there are no live shadows.
-        <mesh ref={blobRef} geometry={PIECE_SHADOW} material={blobMaterial()} renderOrder={1} />
-      )}
       <group ref={dieRef} visible={false}>
         <Slot
           name="die"

@@ -8,7 +8,10 @@ export const SEAT_COLORS = ['#ff5470', '#3b82f6', '#a3e635', '#8b5cf6'] as const
 export const BOARD_COLORS = {
   squares: ['#ff5a5f', '#ffa22e', '#ffd83b', '#4fd16a', '#4a9dff'],
   mystery: '#8f4dff',
-  rarity: { common: '#ffffff', rare: '#6ff3ff', epic: '#ffcc33' },
+  /** Rare gold, epic cyan (the user, 2026-10-17: swapped). */
+  rarity: { common: '#ffffff', rare: '#ffcc33', epic: '#6ff3ff' },
+  /** An epic "?" is a gradient, top to bottom: cyan into pink, so it stands out on the purple tile (the user, 2026-10-17). */
+  epicGlyph: ['#6ff3ff', '#ff7ae0'],
   goal: '#ffcc33',
   slide: '#2a2140',
 } as const;
