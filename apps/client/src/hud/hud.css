@@ -776,10 +776,10 @@
   text-transform: uppercase;
 }
 
-/* ---------------------------------------------------------------- compact card list, phones (2026-10-15) */
+/* ---------------------------------------------------------------- compact card list (2026-10-15; desktop too, 2026-10-16) */
 /* Each card is a little card bubble, like the bubbles over the players, as wide as the "Your piece" panel. */
 .card-list {
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 5px;
   width: max(230px, 39cqh);
@@ -855,10 +855,6 @@
 
 /* On short screens the compact list stands in for the bubbles and the bottom queue, which covered the board. */
 @container (max-height: 500px) {
-  .compact-cards .card-list {
-    display: flex;
-  }
-
   .compact-cards .pbubble,
   .compact-cards .dock .queue {
     display: none;

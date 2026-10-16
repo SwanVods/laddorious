@@ -8,6 +8,7 @@ import { RotateScreen } from '../ui/RotateScreen';
 import { ToastHost, showToast } from '../ui/toasts';
 import { EndScreen } from './EndScreen';
 import { ErrorScreen } from './ErrorScreen';
+import { LoadingScreen } from './LoadingScreen';
 import { wantsFullscreen } from './fullscreen';
 import { MatchmakingOverlay } from './MatchmakingOverlay';
 import { MatchScreen } from './MatchScreen';
@@ -170,6 +171,7 @@ export function App({ service, offline, resume = null, prefs, dev, test = null }
       >
         {screen}
         {settingsOpen && <SettingsDialog prefs={prefs} onClose={() => setSettingsOpen(false)} />}
+        <LoadingScreen onRetry={() => window.location.reload()} />
         {route.screen !== 'match' && route.screen !== 'end' && <ToastHost />}
       </CrashBoundary>
       <RotateScreen />

@@ -1,5 +1,6 @@
 import { Component, Suspense, lazy, type ReactNode } from 'react';
 import { Color, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, type Material, type Object3D } from 'three';
+import { loadGltf } from './modelCache';
 import { MESH_SLOTS, SLOT_FILES, modelUrl, slotFile, type SlotName } from './slotFiles';
 
 export type { SlotName } from './slotFiles';
@@ -137,5 +138,6 @@ export function Slot({ name, fallback, low = false, ...options }: { name: SlotNa
 export function preloadModels(low = false): void {
   const names = (Object.keys(SLOT_FILES) as SlotName[]).filter((name) => !MESH_SLOTS.has(name));
   const urls = names.map((name) => slotUrl(name, low)).filter((url): url is string => url !== null);
-  if (urls.length > 0) void import('./GltfModel').then((m) => m.preload(urls));
+  // A failure shows the stand-in and warns when a scene uses the slot; the loading screen counts it.
+  for (const url of urls) void loadGltf(url).catch(() => undefined);
 }
