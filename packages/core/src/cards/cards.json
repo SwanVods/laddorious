@@ -405,32 +405,58 @@
       "name": "Misery Loves Company",
       "rarity": "common",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "slide",
       "note": "jika kamu terkena ular, player lain mundur 2 langkah",
-      "plan": "For 3 rounds: if you hit a snake, everyone else moves back 2.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "conditional",
+          "trigger": {
+            "cause": "dice",
+            "condition": "landedOnSnakeHead"
+          },
+          "amount": -2,
+          "who": "others",
+          "lifetime": {
+            "rounds": 3
+          }
+        }
+      ]
     },
     {
       "id": "rising-tide",
       "name": "Rising Tide",
       "rarity": "common",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "pad",
       "note": "jika kamu terkena tangga, player lain maju 2 langkah",
-      "plan": "For 3 rounds: if you climb a ladder, everyone else moves forward 2.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "conditional",
+          "trigger": {
+            "cause": "dice",
+            "condition": "climbedLadder"
+          },
+          "amount": 2,
+          "who": "others",
+          "lifetime": {
+            "rounds": 3
+          }
+        }
+      ]
     },
     {
       "id": "encore",
@@ -690,32 +716,71 @@
       "name": "Afterburner",
       "rarity": "common",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "pad",
       "note": "maju sebanyak x setelah terkena tangga (x = 3-8)",
-      "plan": "Next time you climb a ladder, move forward 3–8 more.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "values": {
+        "n": {
+          "min": 3,
+          "max": 8
+        }
+      },
+      "effects": [
+        {
+          "op": "conditional",
+          "trigger": {
+            "cause": "dice",
+            "condition": "climbedLadder"
+          },
+          "amount": {
+            "value": "n"
+          },
+          "lifetime": {
+            "charges": 1
+          }
+        }
+      ]
     },
     {
       "id": "even-keel",
       "name": "Even Keel",
       "rarity": "common",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "aegis",
       "note": "jika dadu berikutnya adalah angka genap, mendapatkan 1 shield ular dan serangan 2 ronde",
-      "plan": "If your next roll is even, block the next snake or attack (2 rounds).",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "rollCheck",
+              "when": "even",
+              "then": {
+                "shield": {
+                  "charges": 1,
+                  "rounds": 2
+                }
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "mud-season",
@@ -1307,48 +1372,100 @@
       "name": "High Roller",
       "rarity": "rare",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "pad",
       "note": "jika dadu berikutnya lebih dari 3, bergerak ke tangga terdekat. otherwise, diam",
-      "plan": "If your next roll is over 3, go to the nearest ladder. If not, stay put.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "rollCheck",
+              "when": "over3",
+              "then": {
+                "toLadder": true
+              },
+              "otherwise": "stay"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "odd-luck",
       "name": "Odd Luck",
       "rarity": "rare",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "x2",
       "note": "jika dadu berikutnya adalah angka ganjil, dapatkan multiplier 2x",
-      "plan": "If your next roll is odd, it is doubled.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "rollCheck",
+              "when": "odd",
+              "then": {
+                "multiply": 2
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "even-stevens",
       "name": "Even Stevens",
       "rarity": "rare",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "aegis",
       "note": "jika dadu berikutnya adalah angka genap, mendapatkan 2 shield ular dan serangan",
-      "plan": "If your next roll is even, block the next 2 snakes or attacks (3 rounds).",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "rollCheck",
+              "when": "even",
+              "then": {
+                "shield": {
+                  "charges": 2,
+                  "rounds": 3
+                }
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "crossroads",
@@ -1639,32 +1756,67 @@
       "name": "Odd Fortune",
       "rarity": "epic",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "x2",
       "note": "jika dadu berikutnya adalah angka ganjil, dapatkan multiplier 3x",
-      "plan": "If your next roll is odd, it is tripled.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "rollCheck",
+              "when": "odd",
+              "then": {
+                "multiply": 3
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "even-fortress",
       "name": "Even Fortress",
       "rarity": "epic",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "aegis",
       "note": "jika dadu berikutnya adalah angka genap, dapatan 3 shield ular dan serangan 5 ronde",
-      "plan": "If your next roll is even, block the next 3 snakes or attacks (5 rounds).",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "rollCheck",
+              "when": "even",
+              "then": {
+                "shield": {
+                  "charges": 3,
+                  "rounds": 5
+                }
+              }
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "steady-hand",

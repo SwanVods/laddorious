@@ -118,7 +118,9 @@ describe('WorkerMatchSession with a real host', () => {
     vi.runAllTimers();
     expect(updates.at(-1)!.view.phase.kind).toBe('finished');
     const myRolls = updates.flatMap((u) => u.events).filter((e) => e.type === 'DieRolled' && e.player === 'p0');
-    expect(myRolls.length).toBe(updates.at(-1)!.view.round);
+    // Every round but the ones a card made me skip (2026-10-16).
+    const skipped = updates.flatMap((u) => u.events).filter((e) => e.type === 'RollSkipped' && e.player === 'p0').length;
+    expect(myRolls.length).toBe(updates.at(-1)!.view.round - skipped);
     expect(myRolls.every((e) => e.type === 'DieRolled' && !e.auto)).toBe(true);
     expect(worker.fromHost.some((m) => m.type === 'rejected' || m.type === 'failed')).toBe(false);
   });
