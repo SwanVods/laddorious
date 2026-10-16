@@ -6,9 +6,10 @@ export const TIMER_LOW_S = 3;
 
 /**
  * Top centre, one row (spec #2 §7.2): ROUND n, an icon per stage (past ones done, the current
- * one named), then the open window's timer.
+ * one named), then the open window's timer, at 0 s in a stage with none.
  */
 export function StageBar({ round, stage, timer }: { round: number; stage: number | null; timer: { seconds: number; fraction: number } | null }) {
+  const shown = timer ?? IDLE;
   return (
     <div className="stage-bar">
       <span className="stage-round display">
@@ -28,17 +29,16 @@ export function StageBar({ round, stage, timer }: { round: number; stage: number
           );
         })}
       </ol>
-      {timer && (
-        <>
-          <span className="stage-sep" />
-          <div className="stage-timer" role="timer" aria-label={`${timer.seconds} seconds left`}>
-            <div className={timer.seconds <= TIMER_LOW_S ? 'stage-tbar low' : 'stage-tbar'}>
-              <i style={{ width: `${(timer.fraction * 100).toFixed(1)}%` }} />
-            </div>
-            <span className="display">{`${timer.seconds}s`}</span>
-          </div>
-        </>
-      )}
+      <span className="stage-sep" />
+      <div className="stage-timer" role="timer" aria-label={`${shown.seconds} seconds left`}>
+        <div className={timer && timer.seconds <= TIMER_LOW_S ? 'stage-tbar low' : 'stage-tbar'}>
+          <i style={{ width: `${shown.fraction ? (shown.fraction * 100).toFixed(1) : 0}%` }} />
+        </div>
+        <span className="display">{`${shown.seconds}s`}</span>
+      </div>
     </div>
   );
 }
+
+/** A stage with no countdown shows 0 s and an empty bar (the user, 2026-10-16), so the timer never comes and goes. */
+const IDLE = { seconds: 0, fraction: 0 };

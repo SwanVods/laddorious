@@ -31,7 +31,7 @@ test('a match: the overview, the jumps and a close-up', async ({ page }) => {
   await page.getByRole('button', { name: 'PLAY' }).click();
   await page.clock.fastForward('00:16');
   await page.getByRole('button', { name: 'Play with bots' }).click();
-  await expect(page.getByRole('button', { name: 'Leave match' })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 20_000 });
   // e2e matches race (every seat plays itself, beats at 5%), so shoot soon after the opening.
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${OUT}/match-overview.png` });

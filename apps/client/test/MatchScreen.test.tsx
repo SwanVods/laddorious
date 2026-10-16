@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type { PlayerView, PublicChallenge } from '@laddorious/core';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MatchScreen } from '../src/app/MatchScreen';
 import { createPrefsStore } from '../src/app/prefs';
@@ -51,6 +51,7 @@ function start(
   const match = (
     <MatchScreen
       session={session}
+      prefs={createPrefsStore(null, { prefersReducedMotion: false })}
       quality="auto"
       reducedMotion={false}
       muted={props.muted}
@@ -202,13 +203,25 @@ describe('MatchScreen (spec #2 §7.1, §7.2)', () => {
     expect(screen.getByRole('img', { name: '3D board, auto, watching my piece' })).toBeTruthy();
   });
 
-  it('leaves through the leave dialog, which can also be closed', () => {
+  it('opens the settings from the menu button, with leaving the match at the bottom (2026-10-16)', () => {
+    start();
+    fireEvent.click(screen.getByRole('button', { name: 'Match menu' }));
+    const settings = screen.getByRole('dialog', { name: 'Settings' });
+    expect(within(settings).getByText('Graphics quality')).toBeTruthy();
+    fireEvent.click(within(settings).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Settings' })).toBeNull();
+  });
+
+  it('leaves through the settings and the leave dialog, which can also be closed', () => {
     const onLeave = vi.fn();
     const session = start({ onLeave });
     session.update(opening());
+    fireEvent.click(screen.getByRole('button', { name: 'Match menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Leave match' }));
+    expect(screen.queryByRole('dialog', { name: 'Settings' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Keep playing' }));
     expect(screen.queryByRole('dialog', { name: 'Leave match?' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Match menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Leave match' }));
     fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
     expect(session.leave).toHaveBeenCalledTimes(1);
@@ -272,6 +285,7 @@ describe('MatchScreen presence (spec #4 §3.3)', () => {
 
   it('says the match carries on when leaving a table with other people', () => {
     start({ seats: SEATS.map((s, i) => (i === 1 ? { ...s, nickname: 'Bo', bot: false } : s)) });
+    fireEvent.click(screen.getByRole('button', { name: 'Match menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Leave match' }));
     expect(screen.getByText(/The match carries on without you/)).toBeTruthy();
   });

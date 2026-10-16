@@ -21,7 +21,7 @@ async function startTogether(a: Page, b: Page) {
   await b.getByRole('button', { name: 'PLAY' }).click();
   for (const page of [a, b]) await expect(page.locator('.mm-seat:not(.empty)')).toHaveCount(2);
   await a.getByRole('button', { name: 'Play with bots' }).click({ timeout: 25_000 });
-  for (const page of [a, b]) await expect(page.getByRole('button', { name: 'Leave match' })).toBeVisible({ timeout: 20_000 });
+  for (const page of [a, b]) await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 20_000 });
 }
 
 test('two players find each other, fill the table with bots and play to the end', async ({ browser }) => {
@@ -43,7 +43,7 @@ test('a player who drops shows as away, and a reload brings them back (spec #4 Â
   await b.goto('about:blank'); // the socket closes; the tab keeps its sessionStorage
   await expect(a.locator('.prow-away')).toHaveCount(1);
   await b.goto('/');
-  await expect(b.getByRole('button', { name: 'Leave match' })).toBeVisible();
+  await expect(b.getByRole('button', { name: 'Match menu' })).toBeVisible();
   await expect(b.getByRole('button', { name: 'PLAY' })).toHaveCount(0);
   await expect(a.locator('.prow-away')).toHaveCount(0);
 });

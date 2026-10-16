@@ -33,7 +33,7 @@ export function CardPickPopup({ model, onPick, onReroll, onPeek }: CardPickPopup
   useHotkeys({ '1': () => pick(0), '2': () => pick(1), '3': () => pick(2) }, !locked && !peeking);
 
   return (
-    <div className={peeking ? 'popup live peeking' : 'popup live'} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div className={peeking ? 'popup card-pick live peeking' : 'popup card-pick live'} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       {!peeking && <div className="backdrop" />}
       <div className="popup-content">
         <h2 id={titleId} className="popup-title display" hidden={peeking}>

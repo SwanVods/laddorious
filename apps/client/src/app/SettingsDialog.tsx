@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import { useStore } from 'zustand';
 import type { StoreApi } from 'zustand/vanilla';
 import { autoStepDown, deviceEnv, startLevel, type QualitySetting } from '../scene/quality';
@@ -16,6 +16,8 @@ interface SettingsDialogProps {
   onClose: () => void;
   /** What Auto looks at; the real device by default. */
   device?: { coarsePointer: boolean; shortSide: number };
+  /** Buttons at the foot, like leaving the match when it opens from the match's menu button (2026-10-16). */
+  children?: ReactNode;
 }
 
 /**
@@ -23,7 +25,7 @@ interface SettingsDialogProps {
  * the level in use), Reduced motion, and sound: mute and the effects and music volumes
  * (spec #3 §4). Changes are saved at once.
  */
-export function SettingsDialog({ prefs, onClose, device = deviceEnv() }: SettingsDialogProps) {
+export function SettingsDialog({ prefs, onClose, device = deviceEnv(), children }: SettingsDialogProps) {
   const settings = useStore(prefs, (s) => s.settings);
   const qualityId = useId();
   const motionId = useId();
@@ -96,6 +98,7 @@ export function SettingsDialog({ prefs, onClose, device = deviceEnv() }: Setting
         </label>
       </div>
       <p className="setting-note">{`Right now: ${level === 'high' ? 'High' : 'Low'}${stepped ? ' (Auto lowered it for this match)' : settings.quality === 'auto' ? ' (Auto on this device)' : ''}.`}</p>
+      {children && <div className="dialog-actions">{children}</div>}
     </Dialog>
   );
 }

@@ -102,6 +102,7 @@ export function App({ service, offline, resume = null, prefs, dev, test = null }
         <>
           <MatchScreen
             session={current}
+            prefs={prefs}
             quality={settings.quality}
             reducedMotion={settings.reducedMotion}
             showStats={dev || test !== null}
