@@ -91,6 +91,37 @@ describe('OnlineMatchService matchmaking (spec #4 §4)', () => {
   });
 });
 
+describe('OnlineMatchService private rooms (2026-10-16)', () => {
+  /** A room against a fake lobby: create one, or join one by its code. */
+  function room(code?: string) {
+    const sockets = fakeSockets();
+    const service = new OnlineMatchService({ url: 'ws://test', open: sockets.open, store: memoryStore(), tabs: () => null });
+    const matchmaking = code === undefined ? service.createRoom(ARI) : service.joinRoom(ARI, code);
+    const states: MatchmakingState[] = [];
+    matchmaking.onState((x) => states.push(x));
+    return { matchmaking, last: () => states.at(-1)!, lobby: sockets.made[0]! };
+  }
+
+  it("opens a room, shows its code to its host, and starts it on the host's word", () => {
+    const { matchmaking, last, lobby } = room();
+    lobby.open();
+    expect(lobby.sent).toEqual([{ type: 'hello', version: PROTOCOL_VERSION, profile: ARI }, { type: 'createRoom' }]);
+    lobby.reply({ type: 'matchmaking', state: 'searching', seats: [seat('p0', 'Ari', 'meeple'), null, null, null], you: 0, elapsedMs: 0, room: { code: 'DUCK', host: true } });
+    expect(last()).toMatchObject({ kind: 'searching', room: { code: 'DUCK', host: true } });
+    matchmaking.startRoom!();
+    expect(lobby.sent.at(-1)).toEqual({ type: 'startRoom' });
+  });
+
+  it('joins a room by its code, and says why when the code finds no room', () => {
+    const { last, lobby } = room('duck');
+    lobby.open();
+    expect(lobby.sent.at(-1)).toEqual({ type: 'joinRoom', code: 'duck' });
+    lobby.reply({ type: 'roomError', reason: 'no-room', message: 'No room with that code. Check it, or the game may have started already.' });
+    expect(last()).toEqual({ kind: 'roomError', message: 'No room with that code. Check it, or the game may have started already.' });
+    expect(lobby.closed).toBe(true);
+  });
+});
+
 describe('OnlineMatchService when the server is out of reach (spec #4 §3.3)', () => {
   it("offers offline play when the lobby doesn't open within 5 s", () => {
     const { last, lobby } = search();

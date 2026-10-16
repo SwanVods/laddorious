@@ -11,7 +11,7 @@ const SLOW = process.env.CI ? 3 : 1;
 async function startMatch(page: Page) {
   await page.clock.install();
   await page.goto('/');
-  await page.getByRole('button', { name: 'PLAY' }).click();
+  await page.getByRole('button', { name: 'PLAY', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'FINDING PLAYERS' })).toBeVisible();
   await page.clock.fastForward('00:16');
   await page.getByRole('button', { name: 'Play with bots' }).click();

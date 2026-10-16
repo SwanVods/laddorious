@@ -10,6 +10,7 @@ export class ScriptedMatchmaking implements Matchmaking {
   private listener: ((s: MatchmakingState) => void) | null = null;
   cancel = vi.fn();
   playWithBots = vi.fn();
+  startRoom = vi.fn();
 
   onState(cb: (s: MatchmakingState) => void): () => void {
     this.listener = cb;

@@ -59,6 +59,34 @@ describe('MatchmakingOverlay (spec #2 §7.1, C7)', () => {
     expect(matchmaking.cancel).toHaveBeenCalledTimes(1);
   });
 
+  it("shows a room's code with a link to copy, and only its host can start it (2026-10-16)", () => {
+    const { matchmaking } = open();
+    const bo = { ...SEATS[1]!, nickname: 'Bo', bot: false };
+    matchmaking.emit({ kind: 'searching', elapsedMs: 1_000, seats: [you, bo, null, null], room: { code: 'DUCK', host: true } });
+    const dialog = screen.getByRole('dialog', { name: 'YOUR ROOM' });
+    expect(within(dialog).getByLabelText('Room code').textContent).toBe('DUCK');
+    expect(within(dialog).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['YouYOU', 'Bo', 'Open', 'Open']);
+    expect(within(dialog).getByRole('button', { name: 'Copy link' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Play with bots' })).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Start' }));
+    expect(matchmaking.startRoom).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Leave room' }));
+    expect(matchmaking.cancel).toHaveBeenCalledTimes(1);
+    matchmaking.emit({ kind: 'searching', elapsedMs: 60_000, seats: [bo, you, null, null], room: { code: 'DUCK', host: false } });
+    expect(screen.getByRole('dialog', { name: "FRIEND'S ROOM" })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
+    expect(screen.getByText('Waiting for the host to start. Empty seats get bots.')).toBeTruthy();
+  });
+
+  it("says why a room code didn't work, and goes back to the menu (2026-10-16)", () => {
+    const { matchmaking } = open();
+    matchmaking.emit({ kind: 'roomError', message: 'That room is full.' });
+    expect(screen.getByRole('dialog', { name: "CAN'T JOIN" })).toBeTruthy();
+    expect(screen.getByText('That room is full.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    expect(matchmaking.cancel).toHaveBeenCalledTimes(1);
+  });
+
   it('tags bots BOT and real players nothing (spec #4 §4)', () => {
     const { matchmaking } = open();
     const bo = { ...SEATS[1]!, nickname: 'Bo', bot: false };

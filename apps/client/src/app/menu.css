@@ -174,6 +174,11 @@
   gap: max(5px, 1cqh);
 }
 
+/* Play with friends (2026-10-16): a smaller button above the match pill. */
+.friends-btn {
+  font-size: max(14px, 2.6cqh);
+}
+
 .play-caption {
   padding: max(4px, 0.8cqh) max(10px, 1.6cqh);
   font-size: max(11px, 2cqh);

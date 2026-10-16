@@ -4,8 +4,8 @@ import type { MatchUpdate, PlayerAction, Profile, Seat } from './types';
 // The messages between the game and the multiplayer server (spec #4 §6): JSON text frames,
 // one object with a `type` each.
 
-/** Bumped whenever these messages change. The game and the server are built from the same commit. 2 since spec #5's three new pieces. */
-export const PROTOCOL_VERSION = 2;
+/** Bumped whenever these messages change. The game and the server are built from the same commit. 3 since private rooms (2026-10-16). */
+export const PROTOCOL_VERSION = 3;
 
 /** Why the server ended a lobby or match connection. */
 export type FailReason = 'version' | 'bad-token' | 'seat-lost' | 'server-error';
@@ -16,11 +16,25 @@ export type LobbyIn =
   | { type: 'find' }
   | { type: 'cancel' }
   | { type: 'playWithBots' }
+  // Private rooms (2026-10-16): open one, join one by its code, and its host starts it.
+  | { type: 'createRoom' }
+  | { type: 'joinRoom'; code: string }
+  | { type: 'startRoom' }
   | { type: 'ping'; t: number };
+
+/** A private room's code, and whether you host it (you can start it). */
+export interface RoomInfo {
+  code: string;
+  host: boolean;
+}
+
+/** Why a room code didn't seat you. */
+export type RoomErrorReason = 'no-room' | 'full';
 
 /** Server → game on /lobby. `seats` are in table order; `you` is your own seat's index in it. */
 export type LobbyOut =
-  | { type: 'matchmaking'; state: 'searching' | 'filling'; seats: Array<Seat | null>; you: number; elapsedMs: number }
+  | { type: 'matchmaking'; state: 'searching' | 'filling'; seats: Array<Seat | null>; you: number; elapsedMs: number; room?: RoomInfo }
+  | { type: 'roomError'; reason: RoomErrorReason; message: string }
   | { type: 'found'; matchId: string; me: PlayerId; seats: Seat[]; token: string }
   | { type: 'pong'; t: number; serverTime: number }
   | { type: 'failed'; reason: FailReason; message: string };

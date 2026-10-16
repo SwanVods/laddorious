@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION, type LobbyOut, type PieceId, type Seat } from '@laddorious/host';
+import { PROTOCOL_VERSION, type LobbyIn, type LobbyOut, type PieceId, type Seat } from '@laddorious/host';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BOT_SEAT_MS, BOTS_OFFER_MS, LOBBY_TICK_MS, LobbyCore, type LobbyConn } from '../src/lobby';
 
@@ -25,23 +25,38 @@ class FakeConn implements LobbyConn {
     if (m?.type !== 'matchmaking') throw new Error('no matchmaking update yet');
     return { state: m.state, names: m.seats.map((s) => s?.nickname ?? null), you: m.you, elapsedMs: m.elapsedMs };
   }
+
+  /** The room of the last matchmaking update, if it was a room's. */
+  room() {
+    const m = this.sent.findLast((x) => x.type === 'matchmaking');
+    return m?.type === 'matchmaking' ? m.room : undefined;
+  }
 }
 
 /** A lobby whose matches start at once (or fail to), with each started table recorded. */
 function setup(fail = false) {
   const started: Seat[][] = [];
+  // Rooms get their codes from this list, in order (2026-10-16).
+  const codes = ['ROOM', 'DUCK', 'KNOT'];
   const lobby = new LobbyCore(async (seats) => {
     started.push(seats);
     if (fail) throw new Error('no match objects left');
     return { matchId: `match-${started.length}`, tokens: Object.fromEntries(seats.filter((s) => !s.bot).map((s) => [s.playerId, `token-${s.playerId}`])) };
-  });
+  }, () => codes.shift()!);
   const join = (nickname: string, piece: PieceId = 'knight') => {
     const conn = new FakeConn();
     lobby.receive(conn, { type: 'hello', version: PROTOCOL_VERSION, profile: { nickname, piece } });
     lobby.receive(conn, { type: 'find' });
     return conn;
   };
-  return { lobby, started, join };
+  /** A player who says hello, then sends one room message. */
+  const enter = (nickname: string, msg: LobbyIn) => {
+    const conn = new FakeConn();
+    lobby.receive(conn, { type: 'hello', version: PROTOCOL_VERSION, profile: { nickname, piece: 'knight' } });
+    lobby.receive(conn, msg);
+    return conn;
+  };
+  return { lobby, started, join, enter };
 }
 
 beforeEach(() => {
@@ -207,5 +222,65 @@ describe('LobbyCore protocol (spec #4 §6)', () => {
     const conns = ['Ari', 'Bo', 'Cy', 'Di'].map((n) => join(n));
     await vi.advanceTimersByTimeAsync(0);
     for (const conn of conns) expect(conn.last()).toEqual({ type: 'failed', reason: 'server-error', message: 'no match objects left' });
+  });
+});
+
+describe('LobbyCore private rooms (2026-10-16)', () => {
+  it('opens a room with a code; its creator hosts it, and quick match never seats anyone there', () => {
+    const { enter, join } = setup();
+    const ari = enter('Ari', { type: 'createRoom' });
+    expect(ari.table()).toMatchObject({ state: 'searching', names: ['Ari', null, null, null], you: 0 });
+    expect(ari.room()).toEqual({ code: 'ROOM', host: true });
+    vi.advanceTimersByTime(LOBBY_TICK_MS);
+    expect(ari.table().elapsedMs).toBe(1000);
+    expect(join('Bo').table().names).toEqual(['Bo', null, null, null]);
+    expect(ari.table().names).toEqual(['Ari', null, null, null]);
+  });
+
+  it('seats friends who type the code, in any case, and tells everyone who hosts', () => {
+    const { enter } = setup();
+    const ari = enter('Ari', { type: 'createRoom' });
+    const bo = enter('Bo', { type: 'joinRoom', code: ' room ' });
+    expect(bo.table()).toMatchObject({ names: ['Ari', 'Bo', null, null], you: 1 });
+    expect(bo.room()).toEqual({ code: 'ROOM', host: false });
+    expect(ari.room()).toEqual({ code: 'ROOM', host: true });
+  });
+
+  it('turns away a wrong code and a full room, and a full room waits for its host', async () => {
+    const { enter, started } = setup();
+    enter('Ari', { type: 'createRoom' });
+    expect(enter('Zed', { type: 'joinRoom', code: 'NOPE' }).last()).toEqual({ type: 'roomError', reason: 'no-room', message: 'No room with that code. Check it, or the game may have started already.' });
+    for (const n of ['Bo', 'Cy', 'Di']) enter(n, { type: 'joinRoom', code: 'ROOM' });
+    expect(enter('Eve', { type: 'joinRoom', code: 'ROOM' }).last()).toEqual({ type: 'roomError', reason: 'full', message: 'That room is full.' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(started).toHaveLength(0);
+  });
+
+  it('starts when the host says so, any time: bots fill the empty seats, then the match starts', async () => {
+    const { lobby, enter, started } = setup();
+    const ari = enter('Ari', { type: 'createRoom' });
+    const bo = enter('Bo', { type: 'joinRoom', code: 'ROOM' });
+    lobby.receive(bo, { type: 'startRoom' });
+    lobby.receive(bo, { type: 'playWithBots' });
+    expect(ari.table().state).toBe('searching');
+    lobby.receive(ari, { type: 'startRoom' });
+    expect(ari.table().state).toBe('filling');
+    await vi.advanceTimersByTimeAsync(2 * BOT_SEAT_MS);
+    expect(started[0]!.map((s) => s.bot)).toEqual([false, false, true, true]);
+    expect(started[0]!.slice(0, 2).map((s) => s.nickname)).toEqual(['Ari', 'Bo']);
+    expect(bo.last()).toMatchObject({ type: 'found', me: 'p1' });
+    expect(enter('Cy', { type: 'joinRoom', code: 'ROOM' }).last()).toMatchObject({ type: 'roomError', reason: 'no-room' });
+  });
+
+  it('hands the room to the next player when its host leaves, and closes it when everyone has', () => {
+    const { lobby, enter } = setup();
+    const ari = enter('Ari', { type: 'createRoom' });
+    const bo = enter('Bo', { type: 'joinRoom', code: 'ROOM' });
+    lobby.receive(ari, { type: 'cancel' });
+    expect(bo.table()).toMatchObject({ names: ['Bo', null, null, null], you: 0 });
+    expect(bo.room()).toEqual({ code: 'ROOM', host: true });
+    lobby.drop(bo);
+    expect(enter('Cy', { type: 'joinRoom', code: 'ROOM' }).last()).toMatchObject({ type: 'roomError', reason: 'no-room' });
+    expect(enter('Di', { type: 'createRoom' }).room()).toEqual({ code: 'DUCK', host: true });
   });
 });

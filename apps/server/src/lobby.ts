@@ -1,5 +1,5 @@
 import type { PlayerId } from '@laddorious/core';
-import { BOT_NAMES, buildSeats, PROTOCOL_VERSION, TABLE_SIZE, type LobbyIn, type LobbyOut, type Profile, type Seat } from '@laddorious/host';
+import { BOT_NAMES, buildSeats, PROTOCOL_VERSION, TABLE_SIZE, type LobbyIn, type LobbyOut, type Profile, type RoomErrorReason, type Seat } from '@laddorious/host';
 
 /** How often a forming table hears the time (spec #4 §4 step 3). */
 export const LOBBY_TICK_MS = 1000;
@@ -8,6 +8,18 @@ export const BOTS_OFFER_MS = 15_000;
 /** The pause between bots taking seats (spec #2 §4.4). */
 export const BOT_SEAT_MS = 420;
 export const VERSION_MESSAGE = 'Please reload, the game was updated.';
+/** A room's code: four letters, none that read like a digit or another letter (I, O). */
+export const ROOM_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+export const ROOM_CODE_LENGTH = 4;
+const ROOM_ERRORS: Record<RoomErrorReason, string> = {
+  'no-room': 'No room with that code. Check it, or the game may have started already.',
+  full: 'That room is full.',
+};
+
+/** A fresh random room code. */
+export function randomRoomCode(): string {
+  return Array.from({ length: ROOM_CODE_LENGTH }, () => ROOM_LETTERS[Math.floor(Math.random() * ROOM_LETTERS.length)]).join('');
+}
 
 /** One game's lobby socket, as the lobby sees it. */
 export interface LobbyConn {
@@ -35,19 +47,26 @@ interface Table {
   /** Bots are taking seats or the match is starting: nobody joins or leaves any more. */
   locked: boolean;
   ticker: ReturnType<typeof setInterval> | null;
+  /** A private room's code (2026-10-16): only that code seats anyone, and its first member starts it. */
+  code?: string;
 }
 
 /**
- * Quick-match matchmaking for every game (spec #4 §4): one table forms at a time, each player
+ * Quick-match matchmaking for every game (spec #4 §4), and private rooms by code (2026-10-16): one table forms at a time, each player
  * may call in bots after their own 15 s, bots fill the empty seats, and the match starts.
  * Plain TypeScript: the lobby's Durable Object feeds it sockets and checked messages.
  */
 export class LobbyCore {
   private readonly members = new Map<LobbyConn, Member>();
-  /** Tables still taking players, oldest first. */
+  /** Quick-match tables still taking players, oldest first. */
   private readonly forming: Table[] = [];
+  /** Private rooms still taking players, by code. */
+  private readonly rooms = new Map<string, Table>();
 
-  constructor(private readonly startMatch: (seats: Seat[]) => Promise<StartedMatch>) {}
+  constructor(
+    private readonly startMatch: (seats: Seat[]) => Promise<StartedMatch>,
+    private readonly makeCode: () => string = randomRoomCode,
+  ) {}
 
   receive(conn: LobbyConn, msg: LobbyIn): void {
     const member = this.members.get(conn);
@@ -64,6 +83,15 @@ export class LobbyCore {
         return;
       case 'playWithBots':
         this.playWithBots(member);
+        return;
+      case 'createRoom':
+        this.createRoom(member);
+        return;
+      case 'joinRoom':
+        this.joinRoom(member, msg.code);
+        return;
+      case 'startRoom':
+        this.startRoom(member);
         return;
       case 'ping':
         conn.send({ type: 'pong', t: msg.t, serverTime: Date.now() });
@@ -106,11 +134,43 @@ export class LobbyCore {
     else this.tell(table, 'searching');
   }
 
-  private openTable(): Table {
-    const table: Table = { members: [], locked: false, ticker: null };
+  private openTable(code?: string): Table {
+    const table: Table = { members: [], locked: false, ticker: null, code };
     table.ticker = setInterval(() => this.tell(table, 'searching'), LOBBY_TICK_MS);
-    this.forming.push(table);
+    if (code === undefined) this.forming.push(table);
+    else this.rooms.set(code, table);
     return table;
+  }
+
+  /** A private room with a fresh code; its creator hosts it (2026-10-16). */
+  private createRoom(member: Member): void {
+    if (member.table) return;
+    let code = this.makeCode();
+    while (this.rooms.has(code)) code = this.makeCode();
+    this.sit(member, this.openTable(code));
+  }
+
+  /** Seats the player in the room with this code, in any case; four seats at most, and nobody joins once it starts. */
+  private joinRoom(member: Member, typed: string): void {
+    if (member.table) return;
+    const table = this.rooms.get(typed.trim().toUpperCase());
+    const reason: RoomErrorReason | null = !table || table.locked ? 'no-room' : table.members.length >= TABLE_SIZE ? 'full' : null;
+    if (reason) member.conn.send({ type: 'roomError', reason, message: ROOM_ERRORS[reason] });
+    else this.sit(member, table!);
+  }
+
+  /** The room's host starts it whenever they like: bots fill the empty seats. */
+  private startRoom(member: Member): void {
+    const table = member.table;
+    if (!table || table.code === undefined || table.locked || table.members[0] !== member) return;
+    this.fillWithBots(table);
+  }
+
+  private sit(member: Member, table: Table): void {
+    member.table = table;
+    member.joinedAt = Date.now();
+    table.members.push(member);
+    this.tell(table, 'searching');
   }
 
   private leaveTable(member: Member): void {
@@ -125,7 +185,13 @@ export class LobbyCore {
   /** The first press from a player who has waited 15 s fills the table for everyone. */
   private playWithBots(member: Member): void {
     const table = member.table;
-    if (!table || table.locked || Date.now() - member.joinedAt < BOTS_OFFER_MS) return;
+    // A room starts only when its host says so (startRoom).
+    if (!table || table.code !== undefined || table.locked || Date.now() - member.joinedAt < BOTS_OFFER_MS) return;
+    this.fillWithBots(table);
+  }
+
+  /** Bots take the empty seats one by one, then the match starts. */
+  private fillWithBots(table: Table): void {
     this.lock(table);
     const seats = this.seatsOf(table);
     const seat = (shown: number): void => {
@@ -143,6 +209,7 @@ export class LobbyCore {
     table.ticker = null;
     const i = this.forming.indexOf(table);
     if (i >= 0) this.forming.splice(i, 1);
+    if (table.code !== undefined) this.rooms.delete(table.code);
   }
 
   /** Asks for a match with these seats and sends each human `found` with their seat and token. */
@@ -179,6 +246,8 @@ export class LobbyCore {
   private tell(table: Table, state: 'searching' | 'filling', shown: Seat[] = this.seatsOf(table).slice(0, table.members.length)): void {
     const seats = [...shown, ...Array<null>(TABLE_SIZE - shown.length).fill(null)];
     const now = Date.now();
-    table.members.forEach((m, you) => m.conn.send({ type: 'matchmaking', state, seats, you, elapsedMs: now - m.joinedAt }));
+    table.members.forEach((m, you) =>
+      m.conn.send({ type: 'matchmaking', state, seats, you, elapsedMs: now - m.joinedAt, ...(table.code !== undefined ? { room: { code: table.code, host: you === 0 } } : {}) }),
+    );
   }
 }

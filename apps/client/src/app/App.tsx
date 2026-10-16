@@ -10,6 +10,7 @@ import { EndScreen } from './EndScreen';
 import { ErrorScreen } from './ErrorScreen';
 import { LoadingScreen } from './LoadingScreen';
 import { wantsFullscreen } from './fullscreen';
+import { FriendsDialog, ROOM_CODE_LENGTH, cleanRoomCode } from './FriendsDialog';
 import { MatchmakingOverlay } from './MatchmakingOverlay';
 import { MatchScreen } from './MatchScreen';
 import { MenuScreen } from './MenuScreen';
@@ -20,7 +21,8 @@ import type { TestHooks } from './testMode';
 /** Where the player is (spec #2 §4.1): the screens and what each one holds. */
 type Route =
   | { screen: 'menu' }
-  | { screen: 'matchmaking'; matchmaking: Matchmaking }
+  // `again` starts the same search over, for Try again: quick match, or the same room (2026-10-16).
+  | { screen: 'matchmaking'; matchmaking: Matchmaking; again: () => Matchmaking }
   | { screen: 'match'; session: MatchSession }
   | { screen: 'end'; session: MatchSession; rankings: Ranking[] }
   | { screen: 'error'; message: string };
@@ -36,6 +38,8 @@ interface AppProps {
   dev: boolean;
   /** e2e builds: fast matches, and the render stats for the draw-call check (spec #2 §9.3). */
   test?: TestHooks | null;
+  /** Online builds: a room code from the page's link (?room=CODE); the app opens in that room (2026-10-16). */
+  joinCode?: string | null;
 }
 
 /**
@@ -44,9 +48,20 @@ interface AppProps {
  * It pauses a local match while the page is hidden (C14) and asks for fullscreen on the first
  * touch where the browser allows it (§7.3).
  */
-export function App({ service, offline, resume = null, prefs, dev, test = null }: AppProps) {
-  const [route, setRoute] = useState<Route>(() => (resume ? { screen: 'match', session: resume } : { screen: 'menu' }));
+export function App({ service, offline, resume = null, prefs, dev, test = null, joinCode = null }: AppProps) {
+  const [route, setRoute] = useState<Route>(() => {
+    if (resume) return { screen: 'match', session: resume };
+    // A room link opens the game in that room; a rejoined match comes first.
+    const code = cleanRoomCode(joinCode ?? '');
+    const join = service.joinRoom;
+    if (join && code.length === ROOM_CODE_LENGTH) {
+      const again = () => join.call(service, prefs.getState().profile, code);
+      return { screen: 'matchmaking', matchmaking: again(), again };
+    }
+    return { screen: 'menu' };
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [friendsOpen, setFriendsOpen] = useState(false);
   const [crashes, setCrashes] = useState(0);
   const settings = useStore(prefs, (s) => s.settings);
   const tappedRef = useRef(false);
@@ -67,12 +82,20 @@ export function App({ service, offline, resume = null, prefs, dev, test = null }
   }, [route.screen, sound]);
 
   const toMenu = () => setRoute({ screen: 'menu' });
-  const play = (opts: FindOptions = {}) => setRoute({ screen: 'matchmaking', matchmaking: service.findMatch(prefs.getState().profile, opts) });
+  /** Starts a search, remembering how for Try again. */
+  const search = (again: () => Matchmaking) => {
+    setFriendsOpen(false);
+    setRoute({ screen: 'matchmaking', matchmaking: again(), again });
+  };
+  const play = (opts: FindOptions = {}) => search(() => service.findMatch(prefs.getState().profile, opts));
+  const createRoom = service.createRoom;
+  const joinRoom = service.joinRoom;
+  const rooms = createRoom && joinRoom ? { create: () => search(() => createRoom.call(service, prefs.getState().profile)), join: (code: string) => search(() => joinRoom.call(service, prefs.getState().profile, code)) } : null;
   const playOffline = () => {
     if (!offline) return;
     const matchmaking = offline.findMatch(prefs.getState().profile);
     matchmaking.playWithBots();
-    setRoute({ screen: 'matchmaking', matchmaking });
+    setRoute({ screen: 'matchmaking', matchmaking, again: () => matchmaking });
   };
   const session = route.screen === 'match' || route.screen === 'end' ? route.session : null;
 
@@ -82,13 +105,14 @@ export function App({ service, offline, resume = null, prefs, dev, test = null }
     case 'matchmaking':
       screen = (
         <>
-          <MenuScreen prefs={prefs} onPlay={play} onSettings={() => setSettingsOpen(true)} showSeed={dev} />
+          <MenuScreen prefs={prefs} onPlay={play} onSettings={() => setSettingsOpen(true)} onFriends={rooms ? () => setFriendsOpen(true) : undefined} showSeed={dev} />
+          {friendsOpen && rooms && route.screen === 'menu' && <FriendsDialog onCreate={rooms.create} onJoin={rooms.join} onClose={() => setFriendsOpen(false)} />}
           {route.screen === 'matchmaking' && (
             <MatchmakingOverlay
               matchmaking={route.matchmaking}
               onCancelled={toMenu}
               onReady={(s) => setRoute({ screen: 'match', session: s })}
-              onRetry={() => play()}
+              onRetry={() => search(route.again)}
               onOffline={offline ? playOffline : undefined}
             />
           )}

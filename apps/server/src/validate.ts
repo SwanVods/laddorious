@@ -18,6 +18,8 @@ type Fields = Record<string, unknown>;
 const CHOICES: readonly ChallengeChoice[] = ['rock', 'paper', 'scissors', 'A', 'B'];
 const TOKEN = /^[0-9a-f]{32}$/;
 const MAX_ID = 64;
+/** A typed room code, before it is trimmed and matched. */
+const MAX_ROOM_CODE = 16;
 const MAX_SLOT = 15;
 const MAX_INT = 2 ** 31 - 1;
 
@@ -80,7 +82,14 @@ export function parseLobbyMessage(raw: unknown): Parsed<LobbyIn> {
     case 'find':
     case 'cancel':
     case 'playWithBots':
+    case 'createRoom':
+    case 'startRoom':
       return ok<LobbyIn>({ type });
+    case 'joinRoom': {
+      // Any short code: a typo just finds no room (2026-10-16).
+      const { code } = data;
+      return typeof code === 'string' && code.length <= MAX_ROOM_CODE ? ok<LobbyIn>({ type, code }) : bad(type);
+    }
     case 'ping': {
       const { t } = data;
       return isTime(t) ? ok<LobbyIn>({ type, t }) : bad(type);

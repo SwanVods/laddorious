@@ -10,6 +10,11 @@ export const PLAY_WITH_BOTS_AFTER_MS = 15_000;
 /** Each step of the 3-2-1 countdown after MATCH FOUND. */
 export const COUNT_MS = 750;
 
+/** The link that opens the game straight into a room (2026-10-16). */
+export function roomLink(code: string, page: { origin: string; pathname: string } = location): string {
+  return `${page.origin}${page.pathname}?room=${code}`;
+}
+
 const clock = (ms: number) => {
   const s = Math.floor(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -30,7 +35,8 @@ interface MatchmakingOverlayProps {
 /**
  * Matchmaking, over the menu scene (spec #2 §7.1): FINDING PLAYERS with the elapsed time, my
  * seat and three searching ones, Cancel, and after 15 s "Play with bots". Then the bots take
- * their seats, MATCH FOUND!, a 3-2-1 countdown, and the match.
+ * their seats, MATCH FOUND!, a 3-2-1 countdown, and the match. A private room (2026-10-16) shows its
+ * code and a link to copy instead of the clock, and its host starts it.
  */
 export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry, onOffline }: MatchmakingOverlayProps) {
   const titleId = useId();
@@ -77,7 +83,7 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry,
     return () => clearInterval(id);
   }, [found]);
 
-  useHotkeys({ Escape: () => matchmaking.cancel() }, state?.kind === 'searching' || state?.kind === 'unreachable');
+  useHotkeys({ Escape: () => matchmaking.cancel() }, state?.kind === 'searching' || state?.kind === 'unreachable' || state?.kind === 'roomError');
 
   if (!state || state.kind === 'cancelled') return null;
   if (state.kind === 'unreachable') {
@@ -108,9 +114,28 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry,
       </div>
     );
   }
+  if (state.kind === 'roomError') {
+    return (
+      <div className="popup live matchmaking" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <div className="backdrop" />
+        <div className="popup-content">
+          <h2 id={titleId} className="popup-title display">
+            {"CAN'T JOIN"}
+          </h2>
+          <p className="popup-hint">{state.message}</p>
+          <div className="mm-buttons">
+            <button type="button" className="btn accent" onClick={() => matchmaking.cancel()}>
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const seats = state.kind === 'found' ? found!.seats : state.seats;
-  const title = state.kind === 'searching' ? 'FINDING PLAYERS' : state.kind === 'filling' ? 'ADDING BOTS' : 'MATCH FOUND!';
-  const offerBots = state.kind === 'searching' && state.elapsedMs >= PLAY_WITH_BOTS_AFTER_MS;
+  const room = state.kind === 'searching' || state.kind === 'filling' ? state.room : undefined;
+  const title = state.kind === 'searching' ? (room ? (room.host ? 'YOUR ROOM' : "FRIEND'S ROOM") : 'FINDING PLAYERS') : state.kind === 'filling' ? 'ADDING BOTS' : 'MATCH FOUND!';
+  const offerBots = state.kind === 'searching' && !room && state.elapsedMs >= PLAY_WITH_BOTS_AFTER_MS;
 
   return (
     <div className="popup live matchmaking" role="dialog" aria-modal="true" aria-labelledby={titleId}>
@@ -119,15 +144,23 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry,
         <h2 id={titleId} className={state.kind === 'found' ? 'popup-title display found' : 'popup-title display'}>
           {title}
         </h2>
-        {state.kind === 'searching' && (
+        {state.kind === 'searching' && !room && (
           <span className="mm-time display" role="timer">
             {clock(state.elapsedMs)}
           </span>
         )}
+        {state.kind === 'searching' && room && (
+          <div className="mm-room">
+            <span className="mm-code display" aria-label="Room code">
+              {room.code}
+            </span>
+            <CopyLink code={room.code} />
+          </div>
+        )}
         <ol className="mm-seats">
           {seats.map((seat, i) => (
             // eslint-disable-next-line @eslint-react/no-array-index-key -- a seat's position is its identity
-            <SeatSlot key={i} seat={seat} me={i === 0} />
+            <SeatSlot key={i} seat={seat} me={i === 0} open={room !== undefined} />
           ))}
         </ol>
         {state.kind === 'found' ? (
@@ -138,12 +171,28 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry,
           <p className="popup-hint">
             {state.kind === 'filling'
               ? 'Get ready…'
-              : offerBots
+              : room
+                ? room.host
+                  ? "Share the code with friends. Start when you're ready: empty seats get bots."
+                  : 'Waiting for the host to start. Empty seats get bots.'
+                : offerBots
                 ? 'Taking a while? Start now and bots take the empty seats.'
                 : 'A 4-player match starts as soon as the seats fill.'}
           </p>
         )}
-        {state.kind === 'searching' && (
+        {state.kind === 'searching' && room && (
+          <div className="mm-buttons">
+            {room.host && (
+              <button type="button" className="btn accent" onClick={() => matchmaking.startRoom?.()}>
+                Start
+              </button>
+            )}
+            <button type="button" className="btn" onClick={() => matchmaking.cancel()}>
+              Leave room
+            </button>
+          </div>
+        )}
+        {state.kind === 'searching' && !room && (
           <div className="mm-buttons">
             {offerBots && (
               <button type="button" className="btn accent appear" onClick={() => matchmaking.playWithBots()}>
@@ -160,7 +209,33 @@ export function MatchmakingOverlay({ matchmaking, onCancelled, onReady, onRetry,
   );
 }
 
-function SeatSlot({ seat, me }: { seat: SeatInfo | null; me: boolean }) {
+/** Copies the room's link; it says so for a moment. Clipboard access can be refused: then the code is still on screen. */
+function CopyLink({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const id = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(id);
+  }, [copied]);
+  return (
+    <button
+      type="button"
+      className="btn mm-copy"
+      aria-label="Copy link"
+      onClick={() => {
+        navigator.clipboard?.writeText(roomLink(code)).then(
+          () => setCopied(true),
+          () => {},
+        );
+      }}
+    >
+      {copied ? 'Copied!' : 'Copy link'}
+    </button>
+  );
+}
+
+/** A seat at the table: a player, or an empty one ("Searching" in quick match, "Open" in a room). */
+function SeatSlot({ seat, me, open }: { seat: SeatInfo | null; me: boolean; open: boolean }) {
   if (!seat) {
     return (
       <li className="mm-seat empty">
@@ -169,7 +244,7 @@ function SeatSlot({ seat, me }: { seat: SeatInfo | null; me: boolean }) {
           <i />
           <i />
         </span>
-        <span className="mm-name display">Searching</span>
+        <span className="mm-name display">{open ? 'Open' : 'Searching'}</span>
       </li>
     );
   }
