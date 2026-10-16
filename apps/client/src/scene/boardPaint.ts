@@ -94,23 +94,36 @@ export function paintTexture(): CanvasTexture | null {
   return made;
 }
 
+const painted = new WeakMap<BufferGeometry, BufferGeometry>();
+
 /**
- * Texture coordinates for a model that has none: each vertex is projected along its normal's main axis, from
- * above on the deck and from the side on the rim's walls, so the paint never smears into streaks.
+ * A copy of a model with texture coordinates for the paint (the model has none): each triangle is projected along
+ * its own facing's main axis, from above on the deck and from the side on the rim's walls. A whole triangle takes
+ * one projection: one whose corners were projected two ways squeezed the paint into thin stripes along the rim's
+ * curve (the user, 2026-10-16). The copy has no shared corners, so neighbours can differ; made once per model.
  */
-export function paintUv(geometry: BufferGeometry): void {
-  if (geometry.getAttribute('uv')) return;
-  const pos = geometry.getAttribute('position');
-  const normal = geometry.getAttribute('normal');
+export function paintGeometry(geometry: BufferGeometry): BufferGeometry {
+  const made = painted.get(geometry);
+  if (made) return made;
+  const flat = geometry.index ? geometry.toNonIndexed() : geometry.clone();
+  const pos = flat.getAttribute('position');
   const uv = new Float32Array(pos.count * 2);
-  for (let i = 0; i < pos.count; i++) {
-    const [x, y, z] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
-    const [nx, ny, nz] = normal ? [Math.abs(normal.getX(i)), Math.abs(normal.getY(i)), Math.abs(normal.getZ(i))] : [0, 1, 0];
-    const [u, v] = ny >= nx && ny >= nz ? [x, z] : nx >= nz ? [z, y * PAINT_WALL] : [x, y * PAINT_WALL];
-    uv[i * 2] = u / PAINT_REPEAT;
-    uv[i * 2 + 1] = v / PAINT_REPEAT;
+  const corner = (i: number) => [pos.getX(i), pos.getY(i), pos.getZ(i)] as const;
+  for (let t = 0; t + 2 < pos.count; t += 3) {
+    const [a, b, c] = [corner(t), corner(t + 1), corner(t + 2)];
+    const [ux, uy, uz] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const [vx, vy, vz] = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    const [nx, ny, nz] = [Math.abs(uy * vz - uz * vy), Math.abs(uz * vx - ux * vz), Math.abs(ux * vy - uy * vx)];
+    for (let i = t; i < t + 3; i++) {
+      const [x, y, z] = corner(i);
+      const [u, v] = ny >= nx && ny >= nz ? [x, z] : nx >= nz ? [z, y * PAINT_WALL] : [x, y * PAINT_WALL];
+      uv[i * 2] = u / PAINT_REPEAT;
+      uv[i * 2 + 1] = v / PAINT_REPEAT;
+    }
   }
-  geometry.setAttribute('uv', new BufferAttribute(uv, 2));
+  flat.setAttribute('uv', new BufferAttribute(uv, 2));
+  painted.set(geometry, flat);
+  return flat;
 }
 
 /** A painted copy of a Deck or Stripe material: the paint shows in its own colours. */
