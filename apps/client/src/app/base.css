@@ -114,10 +114,6 @@ input:focus-visible,
   text-shadow: 0 2px 0 var(--ink);
 }
 
-.btn.highlight {
-  background: var(--highlight);
-}
-
 /* A translucent chip on the sky: feed lines, waiting pills, captions (§7.4 Plate). */
 .pill {
   display: inline-flex;

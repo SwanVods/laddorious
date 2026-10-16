@@ -11,11 +11,9 @@
     "icons": "node scripts/icons.mjs"
   },
   "dependencies": {
-    "@laddorious/bots": "workspace:*",
     "@laddorious/core": "workspace:*",
     "@laddorious/host": "workspace:*",
     "@laddorious/sim": "workspace:*",
-    "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

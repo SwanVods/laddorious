@@ -118,7 +118,7 @@ export class SlotBoundary extends Component<BoundaryProps, { failed: boolean }> 
   }
 }
 
-// drei's loader comes in only when a slot has a URL: it stays out of the main bundle and out of tests.
+// The model loader comes in only when a slot has a URL: it stays out of the main bundle and out of tests.
 const GltfModel = lazy(() => import('./GltfModel'));
 
 /** An asset slot: its Blender model when it has one, its code-built default otherwise or on failure. */
