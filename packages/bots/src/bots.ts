@@ -80,7 +80,11 @@ export function scoreCard(card: CardDef, view: PlayerView): number {
       case 'moveRelative':
         return selfTarget ? n(op.amount) : -n(op.amount) * 0.8;
       case 'moveTo':
-        return 6;
+        // Rough worth (2026-10-16): a ladder or a step past someone helps, a snake hurts whoever takes it.
+        if (op.rule === 'nearest-ladder-foot-ahead' || op.rule === 'target') return 6;
+        if (op.rule === 'tile') return n(op.tile ?? 0) - me.position;
+        if (op.rule === 'ladder-foot-behind') return selfTarget ? 2 : -2;
+        return selfTarget ? -6 : 5;
       case 'swap': {
         const ahead = view.players.filter((p) => p.position > me.position).map((p) => p.position - me.position);
         return ahead.length > 0 ? Math.max(...ahead) : 0;

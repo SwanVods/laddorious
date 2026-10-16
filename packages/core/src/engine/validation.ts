@@ -121,7 +121,9 @@ function checkOps(ops: EffectOp[], where: string): void {
         check(isInt(op.amount) || isDie(op.amount), at, "moveRelative.amount must be an integer or the card's die");
         return;
       case 'moveTo':
-        check(op.rule === 'nearest-ladder-foot-ahead', at, 'unknown moveTo rule');
+        check(['nearest-ladder-foot-ahead', 'nearest-snake-head', 'snake-head-ahead', 'ladder-foot-behind', 'target', 'tile'].includes(op.rule), at, 'unknown moveTo rule');
+        if (op.rule === 'tile') check(isPositiveInt(op.tile), at, 'moveTo.tile must be a tile of 1 or more');
+        if (op.rule === 'target') check(op.offset === undefined || (isInt(op.offset) && op.offset >= 0), at, 'moveTo.offset must be a whole number of 0 or more');
         return;
       case 'swap':
         return;

@@ -66,7 +66,23 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
         return who ? `${who} moves ${dir} ${dist}.` : `Move ${dir} ${dist}.`;
       }
       case 'moveTo':
-        return who ? `${who} moves to the nearest ladder ahead.` : 'Move to the nearest ladder ahead of you.';
+        switch (op.rule) {
+          case 'nearest-snake-head':
+            return who ? `${who} drops onto the nearest snake.` : 'Drop onto the nearest snake.';
+          case 'snake-head-ahead':
+            return who ? `${who} moves on to the next snake.` : 'On to the next snake.';
+          case 'ladder-foot-behind':
+            return who ? `${who} goes back to the ladder behind them.` : 'Back to the ladder behind you.';
+          case 'target': {
+            const n = op.offset ?? 0;
+            const of = lower(who ?? 'yourself');
+            return n === 0 ? `Move to the tile of ${of}.` : `Move to ${num(n)} tile${n === 1 ? '' : 's'} ahead of ${of}.`;
+          }
+          case 'tile':
+            return who ? `${who} moves to tile ${num(op.tile ?? 0)}.` : `Move to tile ${num(op.tile ?? 0)}.`;
+          default:
+            return who ? `${who} moves to the nearest ladder ahead.` : 'Move to the nearest ladder ahead of you.';
+        }
       case 'swap':
         return `Swap places with ${lower(who ?? 'yourself')}.`;
       case 'addEffect': {

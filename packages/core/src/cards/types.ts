@@ -55,6 +55,12 @@ export function rollMeets(when: RollCheck['when'], sum: number): boolean {
 
 export type EffectHook = EffectParams['hook'];
 
+/**
+ * Where a "move to" step goes (2026-10-16 adds all but the first): a snake head or ladder foot near the target,
+ * a fixed tile, or, for `target`, the target's own tile plus `offset`, which moves the caster.
+ */
+export type MoveToRule = 'nearest-ladder-foot-ahead' | 'nearest-snake-head' | 'snake-head-ahead' | 'ladder-foot-behind' | 'target' | 'tile';
+
 /** What a "when" effect waits for: a slide down a snake, or a climb up a ladder (2026-10-16). */
 export type JumpCondition = 'landedOnSnakeHead' | 'climbedLadder';
 
@@ -112,7 +118,7 @@ export type BoardEditOp =
 
 export type EffectOp =
   | { op: 'moveRelative'; amount: CardNumber }
-  | { op: 'moveTo'; rule: 'nearest-ladder-foot-ahead' }
+  | { op: 'moveTo'; rule: MoveToRule; offset?: number; tile?: number }
   | { op: 'swap' }
   | { op: 'addEffect'; template: CardEffectTemplate }
   | { op: 'removeEffects'; filter: { createdByOthers?: boolean; hook?: EffectHook }; count: number | 'all' }

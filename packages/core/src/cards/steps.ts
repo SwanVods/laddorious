@@ -81,6 +81,15 @@ function rollCheckKind(id: string, label: string, fields: StepField[], then: (v:
   };
 }
 
+function moveToKind(id: string, label: string, rule: 'nearest-snake-head' | 'snake-head-ahead' | 'ladder-foot-behind'): StepKind {
+  return {
+    id, label, fields: [],
+    make: () => ({ op: 'moveTo', rule }),
+    read: (op) => (op.op === 'moveTo' && op.rule === rule ? {} : null),
+    write: () => ({ op: 'moveTo', rule }),
+  };
+}
+
 function boardKind(id: string, label: string, kind: 'snake' | 'ladder', length: number): StepKind {
   return {
     id,
@@ -110,8 +119,24 @@ export const STEP_KINDS: StepKind[] = [
   {
     id: 'toLadder', label: 'Go to the nearest ladder ahead', fields: [],
     make: () => ({ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }),
-    read: (op) => (op.op === 'moveTo' ? {} : null),
+    read: (op) => (op.op === 'moveTo' && op.rule === 'nearest-ladder-foot-ahead' ? {} : null),
     write: () => ({ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }),
+  },
+  // Moving to a place (2026-10-16).
+  moveToKind('toSnake', 'Go to the nearest snake', 'nearest-snake-head'),
+  moveToKind('toSnakeAhead', 'Go to the next snake ahead', 'snake-head-ahead'),
+  moveToKind('toLadderBehind', 'Go to the ladder behind', 'ladder-foot-behind'),
+  {
+    id: 'toPlayer', label: "Go to the target's tile (you move)", fields: [{ key: 'offset', label: 'tiles past it', kind: 'count', min: 0 }],
+    make: () => ({ op: 'moveTo', rule: 'target', offset: 0 }),
+    read: (op) => (op.op === 'moveTo' && op.rule === 'target' ? { offset: op.offset ?? 0 } : null),
+    write: (v) => ({ op: 'moveTo', rule: 'target', offset: v.offset as Amount }),
+  },
+  {
+    id: 'toTile', label: 'Go to a tile', fields: [{ key: 'tile', label: 'tile', kind: 'count', min: 1 }],
+    make: () => ({ op: 'moveTo', rule: 'tile', tile: 50 }),
+    read: (op) => (op.op === 'moveTo' && op.rule === 'tile' ? { tile: op.tile } : null),
+    write: (v) => ({ op: 'moveTo', rule: 'tile', tile: v.tile as Amount }),
   },
   { id: 'swap', label: 'Swap places', fields: [], make: () => ({ op: 'swap' }), read: (op) => (op.op === 'swap' ? {} : null), write: () => ({ op: 'swap' }) },
   effectKind('dieShows', 'Next die shows', 'diceFace', { die: 'first' }, { key: 'set', label: 'face', kind: 'amount', min: 1, max: 6 }, { set: 6, charges: 1, rounds: 0 }),
