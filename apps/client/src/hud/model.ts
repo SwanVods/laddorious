@@ -282,7 +282,10 @@ export function dockModel({ beat: shown, view, record, me }: DockInput): DockMod
       const totals = Object.entries(record.dice).map(([player, d]) => ({ player, total: d.total ?? d.faces.reduce((a, b) => a + b, 0) }));
       return { kind: 'caption', parts: ['Everyone moves'], totals };
     }
-    const verb = MOVE_VERB[beat.kind];
+    // Sore Loser (2026-10-16): a lost face-off that moves its loser forward isn't a knock back.
+    const knocked = beat.events.flatMap((e) => (e.type === 'Moved' && e.cause === 'knockback' ? [e] : []));
+    const forward = beat.kind === 'knockback' && knocked.length > 0 && knocked.every((e) => e.to > e.from);
+    const verb = forward ? ' lost, but moves forward' : MOVE_VERB[beat.kind];
     if (verb) return { kind: 'caption', parts: [...listParts(moversOf(beat.events)), verb], totals: null };
     if (beat.kind === 'faceOff' || beat.kind === 'faceOffResult') {
       const started = beat.events.find((e) => e.type === 'ChallengeStarted');

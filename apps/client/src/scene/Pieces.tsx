@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Mesh, ShaderMaterial, type Group, type Object3D } from 'three';
 import { WORLD_COLORS } from '../app/theme';
+import { BLOB_GEOMETRY, blobMaterial } from './blobs';
+
 import { PIECE_GEOMETRY, dieGeometry, dieRotationFor } from '../assets/models';
 import { Slot, setEmissive, type SlotName } from '../assets/slots';
 import { cardRollAt } from '../director/beats';
@@ -16,6 +18,8 @@ import { createShieldMaterial, setShieldLook } from './shieldMaterial';
 import { dieAtlasTexture } from './textures';
 import { tuning } from '../app/tuning';
 import { isTap } from './pan';
+/** A piece's soft shadow on Low, about as wide as its base. */
+const PIECE_SHADOW = BLOB_GEOMETRY.clone().scale(1.5, 1, 1.5);
 
 /** Pieces render at 1.3 × their base size (spec #2 §6.2). */
 export { PIECE_SCALE } from './layout';
@@ -235,10 +239,8 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
         </mesh>
       </group>
       {!shadows && (
-        <mesh ref={blobRef} rotation-x={-Math.PI / 2}>
-          <circleGeometry args={[0.55, 20]} />
-          <meshBasicMaterial color={WORLD_COLORS.ink} transparent opacity={0.28} depthWrite={false} />
-        </mesh>
+        // The same soft shadow as the props' (2026-10-16), where there are no live shadows.
+        <mesh ref={blobRef} geometry={PIECE_SHADOW} material={blobMaterial()} renderOrder={1} />
       )}
       <group ref={dieRef} visible={false}>
         <Slot

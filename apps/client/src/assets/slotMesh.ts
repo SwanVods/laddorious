@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Mesh, type BufferGeometry, type Material, type Object3D } from 'three';
+import { Mesh, MeshStandardMaterial, type BufferGeometry, type Material, type Object3D, type Texture } from 'three';
+import { PAINTED, paintTexture, paintUv, paintedMaterial } from '../scene/boardPaint';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadGltf } from './modelCache';
 import { MESH_SLOTS, type SlotName } from './slotFiles';
@@ -33,9 +34,18 @@ export function slotMeshFromScene(root: Object3D): SlotMesh {
   return { geometry, material: materials.length === 1 ? materials[0]! : materials };
 }
 
-/** Ready a slot mesh's materials (Tint white, no clearcoat on Low); the geometry is shared. */
-export function prepareSlotMesh(mesh: SlotMesh, { clearcoat }: { clearcoat: boolean }): SlotMesh {
-  const material = Array.isArray(mesh.material) ? mesh.material.map((m) => prepareMaterial(m, { clearcoat })) : prepareMaterial(mesh.material, { clearcoat });
+/**
+ * Ready a slot mesh's materials (Tint white, no clearcoat on Low); the geometry is shared. A platform's Deck and
+ * Stripe take the brush paint (2026-10-16), projected onto the model, which has no texture coordinates of its own.
+ */
+export function prepareSlotMesh(mesh: SlotMesh, { clearcoat, paint = paintTexture() }: { clearcoat: boolean; paint?: Texture | null }): SlotMesh {
+  const prep = (m: Material) => {
+    const ready = prepareMaterial(m, { clearcoat });
+    if (!paint || !(ready instanceof MeshStandardMaterial) || !PAINTED.has(ready.name)) return ready;
+    paintUv(mesh.geometry);
+    return paintedMaterial(ready, paint);
+  };
+  const material = Array.isArray(mesh.material) ? mesh.material.map(prep) : prep(mesh.material);
   return { geometry: mesh.geometry, material };
 }
 

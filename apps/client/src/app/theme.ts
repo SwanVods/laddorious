@@ -21,6 +21,8 @@ export const WORLD_COLORS = {
   jumpsOff: '#8f8a84',
   /** The platform's deck and the course's pads (board theme spec §3). */
   deck: '#fff7ec',
+  /** The big brush strokes painted over the platform's deck and rim (the user, 2026-10-16). */
+  paint: ['#ff7a1a', '#5ff0c5', '#ff5470', '#ffcc33', '#8f4dff', '#33d6ff', '#4a9dff', '#4fd16a'],
   /** The soft cushions under the platform and the pads. */
   cushion: '#ff9a3d',
   /** The platform's rim stripes, pink and cream. */

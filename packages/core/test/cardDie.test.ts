@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeCard, resolveConfig, type CatalogCard, type GameEvent, type MatchState, type TargetRule } from '../src/index';
+import { CARD_CATALOG, describeCard, resolveConfig, type CatalogCard, type GameEvent, type MatchState, type TargetRule } from '../src/index';
 import { resolveGroup } from '../src/engine/resolve';
 import { setup } from './support/fixtures';
 
@@ -70,5 +70,17 @@ describe("a card's own die (2026-10-15)", () => {
     const sand: CatalogCard = { ...blizzard, target: AHEAD, effects: [{ op: 'addEffect', template: { params: { hook: 'diceTotal', op: 'add', value: { die: true, negate: true } }, lifetime: { charges: 1 } } }] };
     expect(describeCard(sand)).toBe('Roll a die: the next roll of the player just ahead of you is lower by that much.');
     expect(describeCard(blizzard)).toBe("Roll a die: the leader's rolls are lower by that much (3 rounds).");
+  });
+});
+
+describe('Encore (the user, 2026-10-16): its own die moves you on at once', () => {
+  it("moves its caster forward by the card's roll, and keeps its text", () => {
+    const encore = CARD_CATALOG.cards.find((c) => c.id === 'encore')!;
+    const s = setup({ players: 3, positions: [10, 40, 20], misc: [3], config: { cards: [encore, ...cards] } });
+    const ev = play(s, 'p1', 'encore');
+    expect(resolved(ev)).toMatchObject({ target: 'p1', result: 'hit', roll: 4 });
+    expect(s.players[0]!.position).toBe(14);
+    expect(s.effects).toEqual([]);
+    expect(describeCard(encore)).toBe('Roll again this round.');
   });
 });

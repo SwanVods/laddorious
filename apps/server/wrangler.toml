@@ -24,3 +24,21 @@ new_sqlite_classes = ["LobbyDO", "MatchDO"]
 [vars]
 # "1" for e2e runs: bots play every seat, with short windows (spec #2 §9.3).
 FAST = "0"
+
+# Workers Observability (2026-10-16): logs, traces and Issues in the Cloudflare dashboard, every request sampled
+# (1 = 100%; lower it if traffic grows past the free plan's daily log allowance). Query strings are redacted.
+[observability]
+enabled = true
+redact_query_string = true
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+
+[observability.issues]
+enabled = true

@@ -210,3 +210,21 @@ export function sheenTexture(light: string): CanvasTexture | null {
   if (texture) texture.wrapS = RepeatWrapping;
   return texture;
 }
+
+/**
+ * A soft contact shadow (2026-10-16): faint circles of `ink` stacked from the edge in, so it builds to its darkest
+ * in the middle and fades to nothing at the rim.
+ */
+export function blobTexture(ink: string): CanvasTexture | null {
+  const size = 128;
+  return paint(size, size, (ctx) => {
+    ctx.fillStyle = ink;
+    const rings = 36;
+    for (let i = 0; i < rings; i++) {
+      ctx.globalAlpha = 0.05;
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, (size / 2) * (1 - i / rings), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}

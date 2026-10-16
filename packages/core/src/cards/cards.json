@@ -479,6 +479,7 @@
       "weight": 1,
       "icon": "die",
       "note": "lempar dadu lagi",
+      "text": "Roll again this round.",
       "target": {
         "condition": "self",
         "pick": "self",
@@ -486,14 +487,9 @@
       },
       "effects": [
         {
-          "op": "addEffect",
-          "template": {
-            "params": {
-              "hook": "extraRoll"
-            },
-            "lifetime": {
-              "charges": 1
-            }
+          "op": "moveRelative",
+          "amount": {
+            "die": true
           }
         }
       ]

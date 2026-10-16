@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { describeCard, type CatalogCard, type EffectTemplate, type GameEvent, type MatchState, type TargetRule } from '../src/index';
 import { addEffect } from '../src/engine/effects';
 import { runSettle } from '../src/engine/settle';
-import { choose, ofType, play, positions, roll, setup } from './support/fixtures';
+import { choose, makeBoard, ofType, play, positions, roll, setup } from './support/fixtures';
 
 const SELF: TargetRule = { condition: 'self', pick: 'self', tieBreak: 'lowest-seat' };
 const GUARD: EffectTemplate = { params: { hook: 'guardTile' }, lifetime: { rounds: 5 } };
@@ -43,6 +43,17 @@ describe('losing a face-off forward (2026-10-16)', () => {
     const first = play(s, [choose('p1', 'rock'), choose('p2', 'scissors')]).state;
     expect(positions(first)).toEqual([5, 8]);
     expect(first.effects).toEqual([]);
+  });
+
+  it("moves only its owner forward, through a chain of face-offs (the user's report, 2026-10-16)", () => {
+    // I (p1) have Sore Loser and share tile 10 with p2; p3 stands on 13. No rockets or whirlpools anywhere.
+    const s = setup({ players: 3, positions: [10, 10, 13], board: makeBoard(100) });
+    put(s, 'p1', FORWARD);
+    settle(s, ['p1']);
+    // I lose to p2: forward 3 instead, onto p3's tile; I lose to p3: back 3, onto p2 again; I win this time.
+    const { state, events } = play(s, [choose('p1', 'rock'), choose('p2', 'paper'), choose('p1', 'rock'), choose('p3', 'paper'), choose('p1', 'paper'), choose('p2', 'rock')]);
+    expect(ofType(events, 'Moved').map((e) => [e.player, e.from, e.to])).toEqual([['p1', 10, 13], ['p1', 13, 10], ['p2', 10, 7]]);
+    expect(positions(state)).toEqual([10, 7, 13]);
   });
 
   it('writes the texts', () => {

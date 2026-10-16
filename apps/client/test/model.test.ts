@@ -123,6 +123,14 @@ describe('the dock (spec #2 §7.2)', () => {
     expect(dockModel({ beat: beat('slide', [slide]), view: view(), record, me: 'p0' })).toEqual({ kind: 'caption', parts: [{ player: 'p3' }, ' slides down'], totals: null });
   });
 
+  it('says a Sore Loser moves forward, not that they are knocked back (2026-10-16)', () => {
+    const record: RoundRecord = { round: 2, dice: {}, cards: {} };
+    const back: GameEvent = { type: 'Moved', player: 'p2', from: 10, to: 7, cause: 'knockback', bounced: false, visibility: 'public' };
+    const forward: GameEvent = { type: 'Moved', player: 'p1', from: 10, to: 13, cause: 'knockback', bounced: false, visibility: 'public' };
+    expect(dockModel({ beat: beat('knockback', [back]), view: view(), record, me: 'p0' })).toEqual({ kind: 'caption', parts: [{ player: 'p2' }, ' is knocked back'], totals: null });
+    expect(dockModel({ beat: beat('knockback', [forward]), view: view(), record, me: 'p0' })).toEqual({ kind: 'caption', parts: [{ player: 'p1' }, ' lost, but moves forward'], totals: null });
+  });
+
   it('lists the cards in the order the engine revealed them (last place first), marking the one resolving', () => {
     const record: RoundRecord = {
       round: 7,
