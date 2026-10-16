@@ -12,3 +12,4 @@ playwright-report/
 .wrangler/
 dist-online-e2e/
 __pycache__/
+docs/
