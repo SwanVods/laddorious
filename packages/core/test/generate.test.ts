@@ -33,8 +33,8 @@ describe('generateBoard', () => {
     expect(attempts / 200).toBeLessThan(2);
   });
 
-  it('is generator version 4, the one that lets slide lanes cross (2026-10-16; version 3 kept them apart)', () => {
-    expect(cfg.generatorVersion).toBe(4);
+  it('is generator version 5: lanes may cross, and no three snake heads or ladder feet in a row (2026-10-16)', () => {
+    expect(cfg.generatorVersion).toBe(5);
   });
 
   it('lets slide lanes cross: trails only show for a moment (the user, 2026-10-16)', () => {

@@ -59,7 +59,7 @@ describe('resolveConfig', () => {
     expect(cfg.collision).toEqual({ knockback: 3, maxReplays: 3, maxWaves: 3 });
     expect(cfg.mystery.maxRerolls).toBe(2);
     expect(cfg.board.size).toBe(100);
-    expect(cfg.board.generatorVersion).toBe(4);
+    expect(cfg.board.generatorVersion).toBe(5);
     expect(cfg.board.analysis).toEqual({ median4pRounds: [15, 30], maxRounds2p: 70, maxTailProbability: 0.01 });
     expect(cfg.board.mysteryRarityWeights).toEqual({ common: 70, rare: 25, epic: 5 });
     expect(cfg.cards).toEqual(STARTER_CARDS);

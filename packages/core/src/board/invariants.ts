@@ -1,5 +1,8 @@
 import type { Board } from './types';
 
+/** At most this many snake heads in a row, and this many ladder feet (the user, 2026-10-16). */
+export const MAX_JUMP_RUN = 2;
+
 /**
  * Hard board invariants (spec §5.7). They hold for generated boards and
  * after every card edit. Returns human-readable violations; empty = valid.
@@ -48,6 +51,17 @@ export function boardViolations(board: Board): string[] {
       tile = next.get(tile)!;
     }
   }
+  // No three snake heads in a row, and no three ladder feet (the user, 2026-10-16: a match had three snakes in a
+  // row). A snake, ladder, snake run is fine.
+  for (const kind of ['snake', 'ladder'] as const) {
+    const from = new Set(board.jumps.filter((j) => (j.to < j.from) === (kind === 'snake')).map((j) => j.from));
+    let run = 0;
+    for (let t = 1; t < N; t++) {
+      run = from.has(t) ? run + 1 : 0;
+      if (run === MAX_JUMP_RUN + 1) out.push(`three ${kind === 'snake' ? 'snake heads' : 'ladder feet'} in a row at ${t - MAX_JUMP_RUN}–${t}`);
+    }
+  }
+
   // Slide lanes may cross (the user, 2026-10-16): trails only show for a moment now, and keeping them apart
   // left a card's new snake almost nowhere to go (Snake Pit fizzled 85% of the time).
   return [...new Set(out)];
