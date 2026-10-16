@@ -53,6 +53,13 @@ describe('card labels (spec #2 §7.2)', () => {
     expect(fizzleWarning('ladder-warp', { ...noPads, board: { ...noPads.board, jumps: [] } })).toBe('No rocket ahead of you right now. If that holds, it fizzles.');
   });
 
+  it("warns that a move-to-tile card fizzles while a rocket or whirlpool starts on its tile (2026-10-16)", () => {
+    const at = viewAt({ p0: 20, p1: 50 });
+    const board = (jumps: { from: number; to: number }[]) => ({ ...at, board: { ...at.board, jumps: jumps.map((j, i) => ({ id: `j${i}`, ...j })) } });
+    expect(fizzleWarning('fresh-start', board([{ from: 29, to: 60 }]))).toBe('A rocket or whirlpool starts on its tile right now. If that holds, it fizzles.');
+    expect(fizzleWarning('fresh-start', board([{ from: 10, to: 29 }]))).toBeNull();
+  });
+
   it('warns for the other move-to cards too, wherever their target stands (2026-10-16)', () => {
     const at = viewAt({ p0: 20, p1: 50 });
     const board = (jumps: { from: number; to: number }[]) => ({ ...at, board: { ...at.board, jumps: jumps.map((j, i) => ({ id: `j${i}`, ...j })) } });

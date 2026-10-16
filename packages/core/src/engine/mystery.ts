@@ -1,4 +1,4 @@
-import { cardById, drawCard } from '../cards/catalog';
+import { blockedByBoard, cardById, drawCard } from '../cards/catalog';
 import { selectTarget } from '../cards/targeting';
 import { nextInt } from '../rng/stream';
 import { inputError } from './dice';
@@ -19,13 +19,16 @@ type SelectPhase = Extract<MatchState['phase'], { kind: 'mysterySelect' }>;
  */
 export function startMysteryOrEndRound(s: MatchState, ev: GameEvent[]): void {
   const offers: Record<PlayerId, Offer> = {};
+  // Cards out on this board aren't dealt (2026-10-16), unless a rarity would run out without them.
+  const blocked = blockedByBoard(s.config.cards, s.board);
   for (const p of s.players) {
     const rarity = s.board.mystery[p.position];
     if (rarity === undefined || !s.movedThisRound.includes(p.id)) continue;
     const stream = s.rng.cards[p.seat]!;
     // Three different cards: each slot's draw excludes the cards dealt before it (polish spec §3.2).
     const dealt: string[] = [];
-    for (let i = 0; i < 3; i++) dealt.push(drawCard(s.config.cards, rarity, s.config.mystery.typeWeights, stream, dealt) ?? noCardLeft(rarity));
+    const draw = (exclude: readonly string[]) => drawCard(s.config.cards, rarity, s.config.mystery.typeWeights, stream, exclude);
+    for (let i = 0; i < 3; i++) dealt.push(draw([...dealt, ...blocked]) ?? draw(dealt) ?? noCardLeft(rarity));
     const offer: Offer = {
       player: p.id,
       tile: p.position,
@@ -84,7 +87,8 @@ export function rerollInput(s: MatchState, ev: GameEvent[], player: PlayerId, sl
   // Never a card in the hand; a card already seen in it only once the rarity has run out (polish spec §3.2).
   const stream = s.rng.cards[getPlayer(s, player).seat]!;
   const draw = (exclude: readonly string[]) => drawCard(s.config.cards, offer.rarity, s.config.mystery.typeWeights, stream, exclude);
-  const to = draw([...offer.cards, ...offer.seen]) ?? draw(offer.cards) ?? noCardLeft(offer.rarity);
+  const blocked = blockedByBoard(s.config.cards, s.board);
+  const to = draw([...offer.cards, ...offer.seen, ...blocked]) ?? draw([...offer.cards, ...offer.seen]) ?? draw(offer.cards) ?? noCardLeft(offer.rarity);
   offer.cards[slot] = to;
   offer.seen.push(to);
   if (offer.slotRerolls) offer.slotRerolls[slot] += 1;

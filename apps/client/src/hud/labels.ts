@@ -1,4 +1,4 @@
-import { CARD_CATALOG, STARTER_CARDS, describeCard, fillCard, targetCandidates, type ActiveEffect, type CardDef, type CardValues, type InputErrorCode, type PlayerId, type PlayerView, type TargetRule } from '@laddorious/core';
+import { CARD_CATALOG, STARTER_CARDS, blockedByBoard, describeCard, fillCard, targetCandidates, type ActiveEffect, type CardDef, type CardValues, type InputErrorCode, type PlayerId, type PlayerView, type TargetRule } from '@laddorious/core';
 import type { PieceId } from '../service/matchService';
 
 // Words and icons for cards and effects (spec #2 §7.2). Cards come from the card file (2026-10-15), with the
@@ -98,6 +98,8 @@ export function fizzleWarning(id: string, view: PlayerView): string | null {
     if (card.target.condition === 'behind-of-caster') return 'Nobody is behind you right now. If that holds, it fizzles.';
     return 'Nobody it can aim at right now. If that holds, it fizzles.';
   }
+  // A move-to-tile card is out while a rocket or whirlpool starts on its tile (2026-10-16).
+  if (blockedByBoard([card], view.board).length > 0) return 'A rocket or whirlpool starts on its tile right now. If that holds, it fizzles.';
   // A "move to" card fizzles when its place is missing for every player it could hit (2026-10-16: every rule, and a
   // 50/50 card only when both of its places are missing), as the engine's moveToTile decides.
   const rules = moveToRules(card.effects);
