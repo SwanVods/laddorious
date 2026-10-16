@@ -11,9 +11,14 @@ export function inputError(code: InputError['code'], message: string): InputErro
   return { code, message };
 }
 
-export function startDicePhase(s: MatchState, ev: GameEvent[]): void {
+/** Open a dice window: everyone's, or with `only`, just those players' extra roll (Encore, 2026-10-16). */
+export function startDicePhase(s: MatchState, ev: GameEvent[], only?: readonly PlayerId[]): void {
   const seqs: Record<PlayerId, DiceSeq> = {};
   for (const p of s.players) {
+    if (only && !only.includes(p.id)) {
+      seqs[p.id] = { faces: [], status: 'out' };
+      continue;
+    }
     // A skip (2026-10-16) is used up as the dice phase opens; the player sits this roll out.
     const skip = effectsOn(s, p.id, 'skipRoll')[0];
     if (skip) {
@@ -75,7 +80,7 @@ export function finishDicePhase(s: MatchState, ev: GameEvent[]): void {
   const movers: Mover[] = [];
   for (const p of s.players) {
     const seq = phase.seqs[p.id]!;
-    if (seq.status === 'skipped') {
+    if (seq.status === 'skipped' || seq.status === 'out') {
       s.lastTotals[p.id] = 0;
       continue;
     }

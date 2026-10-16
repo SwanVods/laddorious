@@ -50,6 +50,10 @@ function lineFor(e: GameEvent, themes: ReadonlyMap<string, [string, string] | nu
       if ('shield' in then) return [{ player: e.player }, ` rolled ${w}: shielded`];
       return [{ player: e.player }, ` rolled ${w}: off to the nearest rocket`];
     }
+    case 'ExtraRoll':
+      return [...listParts(e.players), e.players.length === 1 ? ' rolls again' : ' roll again'];
+    case 'TileGuarded':
+      return [...listParts(e.knocked), ` ${e.knocked.length === 1 ? 'was' : 'were'} knocked off `, { player: e.guard }, "'s tile"];
     case 'RollSkipped':
       return [{ player: e.player }, ' skips this roll'];
     case 'DiceTotaled': {
@@ -65,6 +69,8 @@ function lineFor(e: GameEvent, themes: ReadonlyMap<string, [string, string] | nu
         case 'ladder':
           return [{ player: e.player }, ` launched up to ${e.to}`];
         case 'knockback':
+          // Sore Loser (2026-10-16): a lost face-off that moves forward.
+          if (e.to > e.from) return [{ player: e.player }, ` lost the face-off: forward to ${e.to}`];
           return [{ player: e.player }, ` was knocked back to ${e.to}`];
         case 'card':
         case 'effect':

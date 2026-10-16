@@ -2,7 +2,7 @@ import { jumpFrom } from '../board/types';
 import { jumpsAreOff } from '../cards/types';
 import { nextInt } from '../rng/stream';
 import { createChallenge } from './challenge';
-import { evaluateAfterMove, useSnakeShield } from './effects';
+import { effectsOn, evaluateAfterMove, spendCharge, useSnakeShield } from './effects';
 import { InvariantError } from './errors';
 import type { GameEvent, MatchState, Mover, PlayerId } from './types';
 import { bounce, getPlayer, movePlayer, openWindow, pub, seatOrder, sharedTiles } from './util';
@@ -98,6 +98,27 @@ export function applySafetyCap(s: MatchState, ev: GameEvent[], movers: Mover[]):
 }
 
 /**
+ * Guarded tiles (2026-10-16): on a shared tile whose guard was there before this step, everyone who arrived
+ * is knocked back as if they lost a face-off, and no face-off starts. Returns the players knocked back.
+ */
+function guardTiles(s: MatchState, ev: GameEvent[], movers: Mover[]): Mover[] {
+  const arrived = new Set(movers.map((m) => m.player));
+  const knockedBack: Mover[] = [];
+  for (const tile of sharedTiles(s)) {
+    const here = seatOrder(s, s.players.filter((p) => p.position === tile).map((p) => p.id));
+    const guard = here.find((id) => !arrived.has(id) && effectsOn(s, id, 'guardTile').length > 0);
+    const knocked = guard ? here.filter((id) => id !== guard && arrived.has(id)) : [];
+    if (!guard || knocked.length === 0) continue;
+    for (const id of knocked) {
+      movePlayer(s, ev, id, Math.max(0, tile - s.config.collision.knockback), 'knockback');
+      knockedBack.push({ player: id, cause: 'knockback' });
+    }
+    ev.push(pub({ type: 'TileGuarded', tile, guard, knocked }));
+  }
+  return knockedBack;
+}
+
+/**
  * Run the settle loop (spec §4.5) until it needs challenge picks ('waiting')
  * or no tile in 1..N is shared ('done').
  */
@@ -111,7 +132,11 @@ export function runSettle(s: MatchState, ev: GameEvent[]): 'waiting' | 'done' {
       for (const ch of ctx.challenges) {
         for (const loser of seatOrder(s, ch.losers)) {
           const p = getPlayer(s, loser);
-          movePlayer(s, ev, loser, Math.max(0, p.position - s.config.collision.knockback), 'knockback');
+          // Sore Loser (2026-10-16): a lost face-off moves its owner forward instead, once.
+          const forward = effectsOn(s, loser, 'loseForward')[0];
+          if (forward) spendCharge(s, ev, forward);
+          const raw = forward ? p.position + s.config.collision.knockback : Math.max(0, p.position - s.config.collision.knockback);
+          movePlayer(s, ev, loser, bounce(raw, s.board.size), 'knockback', raw > s.board.size);
           knocked.push({ player: loser, cause: 'knockback' });
         }
       }
@@ -120,6 +145,11 @@ export function runSettle(s: MatchState, ev: GameEvent[]): 'waiting' | 'done' {
     }
 
     ctx.movers = resolveJumps(s, ev, ctx.movers);
+    const repelled = guardTiles(s, ev, ctx.movers);
+    if (repelled.length > 0) {
+      ctx.movers = repelled;
+      continue;
+    }
     const shared = sharedTiles(s);
     if (shared.length === 0) return 'done';
     if (ctx.wave >= s.config.collision.maxWaves) {

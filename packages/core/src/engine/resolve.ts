@@ -49,6 +49,34 @@ function withRoll<T>(x: T, roll: number | undefined): T {
   return x;
 }
 
+/** Where a "move to" step lands, from the target's tile, or null when there is no such place (2026-10-16). */
+function moveToTile(s: MatchState, op: Extract<EffectOp, { op: 'moveTo' }>, from: number): number | null {
+  const heads = (kind: 'snake' | 'ladder') => s.board.jumps.filter((j) => jumpKind(j) === kind).map((j) => j.from);
+  switch (op.rule) {
+    case 'nearest-ladder-foot-ahead': {
+      const ahead = heads('ladder').filter((t) => t > from);
+      return ahead.length > 0 ? Math.min(...ahead) : null;
+    }
+    case 'snake-head-ahead': {
+      const ahead = heads('snake').filter((t) => t > from);
+      return ahead.length > 0 ? Math.min(...ahead) : null;
+    }
+    case 'ladder-foot-behind': {
+      const behind = heads('ladder').filter((t) => t < from);
+      return behind.length > 0 ? Math.max(...behind) : null;
+    }
+    case 'nearest-snake-head': {
+      // The closest head either way; a tie goes to the one behind.
+      const near = heads('snake').filter((t) => t !== from).sort((a, b) => Math.abs(a - from) - Math.abs(b - from) || a - b);
+      return near[0] ?? null;
+    }
+    case 'target':
+      return bounce(from + (op.offset ?? 0), s.board.size);
+    case 'tile':
+      return op.tile !== undefined && op.tile >= 1 && op.tile < s.board.size ? op.tile : null;
+  }
+}
+
 /** Expand a card's ops against the current (snapshot) state. Returns null if an op has no valid placement. */
 function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: PlayerId, roll?: number): CardIntents | null {
   const intents: CardIntents = { deltas: [], placements: [], adds: [], removals: [], edits: [] };
@@ -59,11 +87,10 @@ function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: 
         intents.deltas.push({ player: target, amount: op.amount as number });
         return true;
       case 'moveTo': {
-        const foot = s.board.jumps
-          .filter((j) => jumpKind(j) === 'ladder' && j.from > targetPos)
-          .sort((a, b) => a.from - b.from)[0];
-        if (!foot) return false;
-        intents.placements.push([{ player: target, tile: foot.from }]);
+        const tile = moveToTile(s, op, targetPos);
+        if (tile === null) return false;
+        // `target` moves the caster to the target (Catch Up, Overtake); every other rule moves the target.
+        intents.placements.push([{ player: op.rule === 'target' ? caster : target, tile }]);
         return true;
       }
       case 'swap': {

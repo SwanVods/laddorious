@@ -99,7 +99,15 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - Slide lanes may cross now (the user, 2026-10-16: trails only show for a moment): the board rule from 2026-10-15 and the generator check from the polish pass are gone; generator version 4, so a seed builds a different board than under 3. Snake Pit had no room 85% of the time, now 14%; golden snapshots updated.
 - End hold fix (the user saw it, 2026-10-16): `endHoldMs` never played in a real match, since every update ends with info beats (RoundEnded, RoundStarted, WindowOpened) and the hold was only added when the very last beat was a move or face-off; it now goes after the last beat that shows something. Checked live with endHoldMs 4000: ~4 s after the last move, face-off knock-back or card before the next window.
 - Break between rounds (the user, 2026-10-16): tuning `roundBreakMs` (3500). Every new round after round 1, once the round has played out (whatever stages it had), plays a `roundBreak` beat (its RoundStarted): the overview, the bar says "Next: round N", no ROLL; the dice timer starts after it. It comes after the end hold, so a round ends with endHoldMs then roundBreakMs. Checked live: knock-back, end hold, "Next: round 2" for 3.5 s, then ROLL.
-- Next: batch 4d (go to a tile, player or snake; guard your tile; face-off; extra reroll; Encore; snake behind you; swap snakes and ladders), its own short plan.
+**Card building blocks 4d (2026-10-16), merged to `main`, released as v0.1.4 and pushed with v0.1.2–v0.1.4 (2026-10-16)** (plan `docs/superpowers/plans/2026-10-16-card-blocks-4d.md`, uncommitted): every card from the user's list is playable now (66 on, 0 drafts, 2 off).
+- Move to a place: `moveTo` rules `nearest-snake-head` (a tie goes behind), `snake-head-ahead`, `ladder-foot-behind`, `tile` (the target moves) and `target` + `offset` (the caster moves to the target's tile, bounced). Pitfall, Crossroads, Catch Up, Overtake, Fresh Start, Fair and Square, Final Battle! (everyone to one tile means one face-off with everyone).
+- Settle: `guardTile` (No Trespassing: arrivals on the guard's tile are knocked back 3, no face-off, event `TileGuarded`; the guard follows its owner) and `loseForward` (Sore Loser: the next lost face-off moves forward 3).
+- Board: `create` with `behind: true` (Booby Trap) and `flip` (Upside Down, permanent by the user's call): every jump reversed on the same tiles, so no tile gains an end and no end is a start (tests pin it, flipping twice too); a jump whose new start would be a "?" tile stays; flipped ids toggle a trailing "~" so a temporary jump still goes when its own edit expires.
+- Extra turns: `extraRoll` (Encore: once the round has played out, its holders roll again in a window of their own, status `out` for everyone else, event `ExtraRoll`; only they can find a card; no new round) and `moreRerolls` (Second Thoughts: the next hand allows one more reroll per card and three more in all; `Offer.perSlot`, `maxRerolls`, `slotRerolls`).
+- Simulate: Overtake flagged strong (43%, small sample), Upside Down weak (15%); Switcheroo (51%) and Ladder Warp (39%) still strong.
+- Gate: 136 test files, 1,172 tests; typecheck, lint, build clean; `pnpm e2e` 17 of 17; seen live: Encore ("Guest7373 rolls again", its own window, then the break into the next round).
+- On merge: version 0.1.4 commit and tag `v0.1.4`.
+- Next: the balance pass (Simulate's flags) and the deferred minors as one batch.
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
 
@@ -177,6 +185,9 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
   - A hits-everyone card with a Swap step clashes with itself and always fizzles, while its event still lists targets (they'd see HIT!); validation could refuse Swap with "everyone".
   - Bots score a several-player card as if it hit one player (Retreat! looks good to a bot though it moves the bot back too).
   - Simulate's tiles for an Everyone card count the caster's steps up and everyone else's down, so Forward! reads −4.8.
+- **Deferred 4d minors** (2026-10-16; not fixed):
+  - The fizzle warning in the card pick only knows the "nearest ladder ahead" rule; the new move-to rules (nearest snake, ladder behind, next snake) can fizzle without a warning.
+  - Upside Down's board edit pops every jump out and in at once; a turning animation could read better.
 - **Deferred 4b minors** (2026-10-16; not fixed):
   - The grey of snakes and ladders while they're off is clear close up but subtle from the overview; a stronger fade or an icon could follow if it's missed.
   - Only the caster's panel lists Calm or Still Waters; the other players see the grey board but no chip.

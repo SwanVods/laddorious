@@ -81,6 +81,15 @@ function rollCheckKind(id: string, label: string, fields: StepField[], then: (v:
   };
 }
 
+function moveToKind(id: string, label: string, rule: 'nearest-snake-head' | 'snake-head-ahead' | 'ladder-foot-behind'): StepKind {
+  return {
+    id, label, fields: [],
+    make: () => ({ op: 'moveTo', rule }),
+    read: (op) => (op.op === 'moveTo' && op.rule === rule ? {} : null),
+    write: () => ({ op: 'moveTo', rule }),
+  };
+}
+
 function boardKind(id: string, label: string, kind: 'snake' | 'ladder', length: number): StepKind {
   return {
     id,
@@ -93,7 +102,7 @@ function boardKind(id: string, label: string, kind: 'snake' | 'ladder', length: 
     ],
     make: () => ({ op: 'boardEdit', action: 'create', kind, minAhead: 1, maxAhead: 6, length, lifetime: { rounds: 3 } }),
     read: (op) =>
-      op.op === 'boardEdit' && op.action === 'create' && op.kind === kind
+      op.op === 'boardEdit' && op.action === 'create' && op.kind === kind && !op.behind
         ? { minAhead: op.minAhead, maxAhead: op.maxAhead, length: op.length, rounds: op.lifetime === 'permanent' ? 0 : op.lifetime.rounds }
         : null,
     write: (v) => ({ op: 'boardEdit', action: 'create', kind, minAhead: v.minAhead as Amount, maxAhead: v.maxAhead as Amount, length: v.length as Amount, lifetime: v.rounds === 0 ? 'permanent' : { rounds: v.rounds as Amount } }),
@@ -110,8 +119,24 @@ export const STEP_KINDS: StepKind[] = [
   {
     id: 'toLadder', label: 'Go to the nearest ladder ahead', fields: [],
     make: () => ({ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }),
-    read: (op) => (op.op === 'moveTo' ? {} : null),
+    read: (op) => (op.op === 'moveTo' && op.rule === 'nearest-ladder-foot-ahead' ? {} : null),
     write: () => ({ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }),
+  },
+  // Moving to a place (2026-10-16).
+  moveToKind('toSnake', 'Go to the nearest snake', 'nearest-snake-head'),
+  moveToKind('toSnakeAhead', 'Go to the next snake ahead', 'snake-head-ahead'),
+  moveToKind('toLadderBehind', 'Go to the ladder behind', 'ladder-foot-behind'),
+  {
+    id: 'toPlayer', label: "Go to the target's tile (you move)", fields: [{ key: 'offset', label: 'tiles past it', kind: 'count', min: 0 }],
+    make: () => ({ op: 'moveTo', rule: 'target', offset: 0 }),
+    read: (op) => (op.op === 'moveTo' && op.rule === 'target' ? { offset: op.offset ?? 0 } : null),
+    write: (v) => ({ op: 'moveTo', rule: 'target', offset: v.offset as Amount }),
+  },
+  {
+    id: 'toTile', label: 'Go to a tile', fields: [{ key: 'tile', label: 'tile', kind: 'count', min: 1 }],
+    make: () => ({ op: 'moveTo', rule: 'tile', tile: 50 }),
+    read: (op) => (op.op === 'moveTo' && op.rule === 'tile' ? { tile: op.tile } : null),
+    write: (v) => ({ op: 'moveTo', rule: 'tile', tile: v.tile as Amount }),
   },
   { id: 'swap', label: 'Swap places', fields: [], make: () => ({ op: 'swap' }), read: (op) => (op.op === 'swap' ? {} : null), write: () => ({ op: 'swap' }) },
   effectKind('dieShows', 'Next die shows', 'diceFace', { die: 'first' }, { key: 'set', label: 'face', kind: 'amount', min: 1, max: 6 }, { set: 6, charges: 1, rounds: 0 }),
@@ -130,6 +155,10 @@ export const STEP_KINDS: StepKind[] = [
   rollCheckKind('ifRollLadder', 'If next roll is…: go to the nearest ladder',
     [{ key: 'otherwise', label: 'if not', kind: 'choice', choices: [['stay', 'stay put'], ['move', 'move as rolled']] }],
     () => ({ toLadder: true }), (t, otherwise) => ('toLadder' in t ? { otherwise: otherwise === 'stay' ? 'stay' : 'move' } : null), { when: 'over3', otherwise: 'stay' }),
+  effectKind('extraRoll', 'Roll again this round', 'extraRoll', {}, null, { charges: 1, rounds: 0 }),
+  effectKind('moreRerolls', 'More rerolls in the next hand', 'moreRerolls', {}, null, { charges: 1, rounds: 0 }),
+  effectKind('guardTile', 'Guard your tile', 'guardTile', {}, null, { charges: 0, rounds: 5 }),
+  effectKind('loseForward', 'Lose a face-off: move forward', 'loseForward', {}, null, { charges: 1, rounds: 0 }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockSnake', 'Ignore snakes', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockEither', 'Block snakes or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
@@ -156,6 +185,32 @@ export const STEP_KINDS: StepKind[] = [
   },
   boardKind('newSnake', 'New snake', 'snake', 8),
   boardKind('newLadder', 'New ladder', 'ladder', 15),
+  {
+    // A snake behind the target (2026-10-16).
+    id: 'newSnakeBehind',
+    label: 'New snake behind',
+    fields: [
+      { key: 'minAhead', label: 'nearest tile behind', kind: 'amount', min: 1 },
+      { key: 'maxAhead', label: 'furthest tile behind', kind: 'amount', min: 1 },
+      { key: 'length', label: 'length', kind: 'amount', min: 1 },
+      { key: 'rounds', label: 'rounds (0 = rest of the match)', kind: 'count', min: 0 },
+    ],
+    make: () => ({ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: 1, maxAhead: 6, length: 8, behind: true, lifetime: { rounds: 3 } }),
+    read: (op) =>
+      op.op === 'boardEdit' && op.action === 'create' && op.behind
+        ? { minAhead: op.minAhead, maxAhead: op.maxAhead, length: op.length, rounds: op.lifetime === 'permanent' ? 0 : op.lifetime.rounds }
+        : null,
+    write: (v) => ({ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: v.minAhead as Amount, maxAhead: v.maxAhead as Amount, length: v.length as Amount, behind: true, lifetime: v.rounds === 0 ? 'permanent' : { rounds: v.rounds as Amount } }),
+  },
+  {
+    // Upside Down (2026-10-16).
+    id: 'flipBoard',
+    label: 'Flip snakes and ladders',
+    fields: [{ key: 'rounds', label: 'rounds (0 = rest of the match)', kind: 'count', min: 0 }],
+    make: () => ({ op: 'boardEdit', action: 'flip', lifetime: 'permanent' }),
+    read: (op) => (op.op === 'boardEdit' && op.action === 'flip' ? { rounds: op.lifetime === 'permanent' ? 0 : op.lifetime.rounds } : null),
+    write: (v) => ({ op: 'boardEdit', action: 'flip', lifetime: v.rounds === 0 ? 'permanent' : { rounds: v.rounds as Amount } }),
+  },
   {
     id: 'cleanse', label: "Remove others' effects", fields: [],
     make: () => ({ op: 'removeEffects', filter: { createdByOthers: true }, count: 'all' }),

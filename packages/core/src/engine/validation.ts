@@ -71,6 +71,16 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
     case 'jumpsOff':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.rounds) && lifetime.charges === undefined, where, 'jumpsOff needs rounds and no uses');
       return;
+    case 'extraRoll':
+    case 'moreRerolls':
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, `${params.hook} needs uses (charges)`);
+      return;
+    case 'guardTile':
+      check(lifetime === 'permanent' || (isPositiveInt(lifetime.rounds) && lifetime.charges === undefined), where, 'guardTile needs rounds and no uses');
+      return;
+    case 'loseForward':
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, 'loseForward needs uses (charges)');
+      return;
     case 'rollCheck': {
       check(['odd', 'even', 'over3'].includes(params.when), where, 'rollCheck.when must be odd, even or over3');
       const then = params.then as Record<string, unknown> | undefined;
@@ -121,7 +131,9 @@ function checkOps(ops: EffectOp[], where: string): void {
         check(isInt(op.amount) || isDie(op.amount), at, "moveRelative.amount must be an integer or the card's die");
         return;
       case 'moveTo':
-        check(op.rule === 'nearest-ladder-foot-ahead', at, 'unknown moveTo rule');
+        check(['nearest-ladder-foot-ahead', 'nearest-snake-head', 'snake-head-ahead', 'ladder-foot-behind', 'target', 'tile'].includes(op.rule), at, 'unknown moveTo rule');
+        if (op.rule === 'tile') check(isPositiveInt(op.tile), at, 'moveTo.tile must be a tile of 1 or more');
+        if (op.rule === 'target') check(op.offset === undefined || (isInt(op.offset) && op.offset >= 0), at, 'moveTo.offset must be a whole number of 0 or more');
         return;
       case 'swap':
         return;
@@ -133,14 +145,15 @@ function checkOps(ops: EffectOp[], where: string): void {
         check(op.count === 'all' || isPositiveInt(op.count), at, 'removeEffects.count must be "all" or a positive integer');
         return;
       case 'boardEdit':
-        check(op.kind === 'snake' || op.kind === 'ladder', at, 'boardEdit.kind must be snake or ladder');
+        check(['create', 'remove', 'move', 'modify', 'flip'].includes(op.action), at, 'unknown boardEdit action');
+        if (op.action !== 'flip') check(op.kind === 'snake' || op.kind === 'ladder', at, 'boardEdit.kind must be snake or ladder');
+        if (op.action === 'create') check(op.behind === undefined || op.behind === true, at, 'boardEdit.behind must be true or left out');
         checkEditLifetime(op.lifetime, at);
         if (op.action === 'create' || op.action === 'move') {
           check(isPositiveInt(op.minAhead) && isInt(op.maxAhead) && op.maxAhead >= op.minAhead, at, 'boardEdit needs 1 <= minAhead <= maxAhead');
         }
         if (op.action === 'create') check(isPositiveInt(op.length), at, 'boardEdit.length must be a positive integer');
         if (op.action === 'modify') check(isInt(op.lengthDelta), at, 'boardEdit.lengthDelta must be an integer');
-        check(['create', 'remove', 'move', 'modify'].includes(op.action), at, 'unknown boardEdit action');
         return;
       case 'gamble':
         check(Array.isArray(op.outcomes) && op.outcomes.length > 0, at, 'gamble needs at least one outcome');

@@ -16,6 +16,9 @@ function isValid(board: Board, edit: PlannedEdit): boolean {
   return boardViolations(withEdit(board, edit)).length === 0;
 }
 
+/** A flipped jump's id: a trailing "~" toggled, so flipping twice gives the jump back as it was (2026-10-16). */
+const flippedId = (id: string) => (id.endsWith('~') ? id.slice(0, -1) : `${id}~`);
+
 /** Nearest jump of `kind` starting strictly ahead of `anchor`. */
 function nearestAhead(board: Board, anchor: number, kind: JumpKind): Jump | undefined {
   return board.jumps
@@ -36,7 +39,7 @@ export function planBoardEdit(board: Board, op: BoardEditOp, anchor: number, new
   switch (op.action) {
     case 'create': {
       for (let ahead = op.minAhead; ahead <= op.maxAhead; ahead++) {
-        const edit = { added: [makeJump(newId, anchor + ahead, op.kind, op.length)], removed: [] };
+        const edit = { added: [makeJump(newId, op.behind ? anchor - ahead : anchor + ahead, op.kind, op.length)], removed: [] };
         if (isValid(board, edit)) return edit;
       }
       return null;
@@ -53,6 +56,12 @@ export function planBoardEdit(board: Board, op: BoardEditOp, anchor: number, new
         if (isValid(board, edit)) return edit;
       }
       return null;
+    }
+    case 'flip': {
+      // Same two tiles, start and end swapped, so no tile gains an end. A jump whose new start would be a "?" tile stays.
+      const flips = board.jumps.filter((j) => board.mystery[j.to] === undefined);
+      const edit = { added: flips.map((j) => ({ id: flippedId(j.id), from: j.to, to: j.from })), removed: flips };
+      return flips.length > 0 && isValid(board, edit) ? edit : null;
     }
     case 'modify': {
       const j = nearestAhead(board, anchor, op.kind);
@@ -76,7 +85,8 @@ export function applyPlannedEdit(board: Board, edit: PlannedEdit): void {
  */
 export function revertEdit(board: Board, edit: PlannedEdit): { restored: string[]; dropped: string[] } {
   const addedIds = new Set(edit.added.map((j) => j.id));
-  board.jumps = board.jumps.filter((j) => !addedIds.has(j.id));
+  // A jump this edit added goes, flipped since (2026-10-16) or not.
+  board.jumps = board.jumps.filter((j) => !addedIds.has(j.id) && !addedIds.has(flippedId(j.id)));
   const restored: string[] = [];
   const dropped: string[] = [];
   for (const j of edit.removed) {

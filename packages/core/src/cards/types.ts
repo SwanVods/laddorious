@@ -38,7 +38,15 @@ export type EffectParams =
   /** Snakes and ladders do nothing, for everyone, while it lasts (2026-10-16). */
   | { hook: 'jumpsOff' }
   /** "If your next roll is…" (2026-10-16): checked on the owner's next roll's faces. */
-  | RollCheck;
+  | RollCheck
+  /** Anyone who lands on the owner's tile is knocked back, with no face-off (2026-10-16). */
+  | { hook: 'guardTile' }
+  /** The owner's next lost face-off moves them forward instead of back (2026-10-16). */
+  | { hook: 'loseForward' }
+  /** Encore (2026-10-16): the owner rolls again once the round has played out. */
+  | { hook: 'extraRoll' }
+  /** Second Thoughts (2026-10-16): the owner's next card hand allows one more reroll on each card. */
+  | { hook: 'moreRerolls' };
 
 /** What a roll check looks for, and what happens when it holds (and, for a ladder, when it doesn't). */
 export interface RollCheck {
@@ -54,6 +62,12 @@ export function rollMeets(when: RollCheck['when'], sum: number): boolean {
 }
 
 export type EffectHook = EffectParams['hook'];
+
+/**
+ * Where a "move to" step goes (2026-10-16 adds all but the first): a snake head or ladder foot near the target,
+ * a fixed tile, or, for `target`, the target's own tile plus `offset`, which moves the caster.
+ */
+export type MoveToRule = 'nearest-ladder-foot-ahead' | 'nearest-snake-head' | 'snake-head-ahead' | 'ladder-foot-behind' | 'target' | 'tile';
 
 /** What a "when" effect waits for: a slide down a snake, or a climb up a ladder (2026-10-16). */
 export type JumpCondition = 'landedOnSnakeHead' | 'climbedLadder';
@@ -105,14 +119,17 @@ export interface ActiveEffect {
 export type BoardEditLifetime = { rounds: number } | 'permanent';
 
 export type BoardEditOp =
-  | { op: 'boardEdit'; action: 'create'; kind: JumpKind; minAhead: number; maxAhead: number; length: number; lifetime: BoardEditLifetime }
+  /** `behind` (2026-10-16): the new jump starts that many tiles behind the target instead of ahead. */
+  | { op: 'boardEdit'; action: 'create'; kind: JumpKind; minAhead: number; maxAhead: number; length: number; behind?: true; lifetime: BoardEditLifetime }
+  /** Every snake becomes a ladder and every ladder a snake, on the same tiles (2026-10-16). */
+  | { op: 'boardEdit'; action: 'flip'; lifetime: BoardEditLifetime }
   | { op: 'boardEdit'; action: 'remove'; kind: JumpKind; lifetime: BoardEditLifetime }
   | { op: 'boardEdit'; action: 'move'; kind: JumpKind; minAhead: number; maxAhead: number; lifetime: BoardEditLifetime }
   | { op: 'boardEdit'; action: 'modify'; kind: JumpKind; lengthDelta: number; lifetime: BoardEditLifetime };
 
 export type EffectOp =
   | { op: 'moveRelative'; amount: CardNumber }
-  | { op: 'moveTo'; rule: 'nearest-ladder-foot-ahead' }
+  | { op: 'moveTo'; rule: MoveToRule; offset?: number; tile?: number }
   | { op: 'swap' }
   | { op: 'addEffect'; template: CardEffectTemplate }
   | { op: 'removeEffects'; filter: { createdByOthers?: boolean; hook?: EffectHook }; count: number | 'all' }
