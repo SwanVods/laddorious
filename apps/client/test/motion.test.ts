@@ -289,9 +289,10 @@ describe('beat poses (spec #2 §5.1)', () => {
 
   it('arcs a launch above both ends and lands on the ladder top', () => {
     const from = at({ p0: 4 });
-    const b = beat([moved('p0', 4, 14, 'ladder')], from);
+    // A tile with nothing on it, so the piece stands in the middle (the fixture board changes with the generator).
+    const b = beat([moved('p0', 4, PLAIN, 'ladder')], from);
     expect(beatPose(b, from, 'p0', 0, b.durationMs / 2, SIZE).position[1]).toBeGreaterThan(1);
-    expectNear(beatPose(b, from, 'p0', 0, b.durationMs, SIZE).position, tileToWorld(14));
+    expectNear(beatPose(b, from, 'p0', 0, b.durationMs, SIZE).position, tileToWorld(PLAIN));
   });
 
   it('eases a piece the beat does not move from its old spot to its new one', () => {

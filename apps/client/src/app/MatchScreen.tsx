@@ -16,7 +16,7 @@ import { EventFeed } from '../hud/EventFeed';
 import { FaceOffPopup } from '../hud/FaceOffPopup';
 import { feedLines } from '../hud/feed';
 import { nextRollMods, rejectionText, setMatchCards } from '../hud/labels';
-import { cardPickModel, countdown, dockModel, faceOffModel, phoneCards, playerRows, stageFromLog, stageIndex } from '../hud/model';
+import { cardPickModel, dockModel, faceOffModel, phoneCards, playerRows, stageFromLog, stageIndex, stageTimer } from '../hud/model';
 import { NameTags } from '../hud/NameTags';
 import { presenceToast } from '../hud/presence';
 import { PlayerColumn } from '../hud/PlayerColumn';
@@ -119,13 +119,14 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const shownBubbles = useCardBubbles(director, timeScale);
   const bubbles = useMemo(() => Object.fromEntries(Object.entries(shownBubbles).map(([id, b]) => [id, b.cardId])), [shownBubbles]);
 
-  // The countdown redraws while a window's timer runs.
+  // The countdown redraws while a window's timer runs, and through the break between rounds (2026-10-16).
   const timer = settled?.timer ?? null;
+  const breaking = beat?.kind === 'roundBreak';
   useEffect(() => {
-    if (!timer) return;
+    if (!timer && !breaking) return;
     const id = setInterval(() => setNow(Date.now()), TICK_MS);
     return () => clearInterval(id);
-  }, [timer]);
+  }, [timer, breaking]);
 
   // The end screen takes over once the victory beat has played (the update has settled).
   const rankings = settled?.view.phase.kind === 'finished' ? settled.view.phase.rankings : null;
@@ -156,6 +157,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   };
 
   const dock = view && presentation ? dockModel({ beat, view, record, me }) : null;
+  const stage = view ? stageIndex(beat, view.awaiting.window, stageFromLog(log)) : null;
   return (
     <div className={tuning().hud.phoneCompactCards ? 'screen match compact-cards' : 'screen match'}>
       <MatchScene key={quality} director={director} seats={seats} me={me} setting={quality} watch={watch} reducedMotion={reducedMotion} showStats={showStats} tags={tags} peeking={cardPick !== null && peekWindow === view?.awaiting.windowId} pickedWindow={pickedWindow} />
@@ -163,7 +165,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
         <NameTags seats={seats} me={me} tags={tags} ranks={rankBadges(beat, timeScale)} />
         {view && presentation && (
           <>
-            <StageBar round={presentation.round} stage={stageIndex(beat, view.awaiting.window, stageFromLog(log))} timer={countdown(settled.timer, view.awaiting.durationMs, now)} />
+            <StageBar round={presentation.round} stage={stage} timer={stageTimer({ beat, stage, window: view.awaiting.window, timer: settled.timer, durationMs: view.awaiting.durationMs, nowMs: now, timeScale })} />
             {/* The action log, and the round's cards as a compact list under it (2026-10-15; desktop too, 2026-10-16). */}
             <div className="left-stack">
               <EventFeed lines={lines} seats={seats} />

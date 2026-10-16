@@ -26,7 +26,7 @@ export const KNOCKBACK = RULES.collision.knockback;
 // ---------------------------------------------------------------- stage bar
 
 export interface Stage {
-  id: 'dice' | 'move' | 'faceOff' | 'mystery' | 'cards';
+  id: 'dice' | 'move' | 'faceOff' | 'mystery' | 'cards' | 'break';
   label: string;
   icon: IconName;
 }
@@ -37,6 +37,8 @@ export const STAGES: readonly Stage[] = [
   { id: 'faceOff', label: 'Face-off', icon: 'swords' },
   { id: 'mystery', label: 'Mystery', icon: 'qmark' },
   { id: 'cards', label: 'Cards', icon: 'card' },
+  // The break between rounds (the user, 2026-10-16): a stage of its own, with its own countdown.
+  { id: 'break', label: 'Break', icon: 'next' },
 ];
 
 const BEAT_STAGE: Partial<Record<Beat['kind'], number>> = {
@@ -48,6 +50,7 @@ const BEAT_STAGE: Partial<Record<Beat['kind'], number>> = {
   cardResolved: 4,
   clash: 4,
   cardMove: 4,
+  roundBreak: 5,
 };
 const WINDOW_STAGE: Partial<Record<WindowKind, number>> = { dice: 0, challenge: 2, mystery: 3 };
 
@@ -84,6 +87,32 @@ export function stageFromLog(log: readonly LoggedEvent[]): number | null {
     }
   }
   return null;
+}
+
+/** The open window's stage: the one its countdown belongs to. */
+const BREAK_STAGE = 5;
+
+/**
+ * The top bar's countdown (the user, 2026-10-16): the open window's, but only in that window's own stage, so the
+ * dice countdown never runs on through the moves, nor a card pick's through the cards; and in the break between
+ * rounds, the break's own.
+ */
+export function stageTimer({ beat, stage, window, timer, durationMs, nowMs, timeScale }: {
+  beat: PlayingBeat | null;
+  stage: number | null;
+  window: WindowKind | null;
+  timer: { endsAt: number } | null;
+  durationMs: number;
+  nowMs: number;
+  timeScale: number;
+}): { seconds: number; fraction: number } | null {
+  const shown = beat && heldBeat(beat);
+  if (beat && shown?.kind === 'roundBreak') {
+    const length = beat.durationMs * timeScale;
+    return countdown({ endsAt: beat.startedAt + length }, length, nowMs);
+  }
+  if (stage === BREAK_STAGE || !window || WINDOW_STAGE[window] !== stage) return null;
+  return countdown(timer, durationMs, nowMs);
 }
 
 /** Seconds left on the open window's countdown, and how full its bar is (0–1). */

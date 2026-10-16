@@ -1,7 +1,7 @@
 import { createStream, intBetween, pickWeighted, type RngStream } from '../rng/stream';
 import { analyzeBoard, type BoardAnalysis } from './analysis';
 import type { BoardConfig } from './config';
-import { boardViolations } from './invariants';
+import { boardViolations, MAX_JUMP_RUN } from './invariants';
 import { RARITIES, jumpKind, jumpLength, type Board, type Jump, type Rarity } from './types';
 
 export type RejectionReason =
@@ -119,7 +119,9 @@ function drawCandidate(seed: string, cfg: BoardConfig, rng: RngStream): Board | 
       if (starts.has(from) || ends.has(from) || starts.has(to) || ends.has(to)) continue; // one jump end per tile (2026-10-15), so no chains
       const inZone = kind === 'snake' && from >= zoneStart;
       if (inZone && (finishZoneSnakes >= cfg.finishZone.maxSnakes || len > cfg.finishZone.maxSnakeLength)) continue;
-      if (kind === 'snake' && wouldExceedSnakeRun(jumps, from, cfg.maxConsecutiveSnakeHeads)) continue;
+      if (kind === 'snake' && wouldExceedRun(jumps, from, 'snake', cfg.maxConsecutiveSnakeHeads)) continue;
+      // The board rule (2026-10-16): no three snake heads in a row, and no three ladder feet.
+      if (wouldExceedRun(jumps, from, kind, MAX_JUMP_RUN)) continue;
       jumps.push({ id: `j${jumps.length + 1}`, from, to });
       starts.add(from);
       ends.add(to);
@@ -146,8 +148,8 @@ function drawCandidate(seed: string, cfg: BoardConfig, rng: RngStream): Board | 
   return { size: N, jumps, mystery, seed, generatorVersion: cfg.generatorVersion };
 }
 
-function wouldExceedSnakeRun(jumps: Jump[], from: number, maxRun: number): boolean {
-  const heads = new Set(jumps.filter((j) => j.to < j.from).map((j) => j.from));
+function wouldExceedRun(jumps: Jump[], from: number, kind: 'snake' | 'ladder', maxRun: number): boolean {
+  const heads = new Set(jumps.filter((j) => (j.to < j.from) === (kind === 'snake')).map((j) => j.from));
   heads.add(from);
   let run = 1;
   for (let t = from - 1; heads.has(t); t--) run++;

@@ -58,10 +58,17 @@ export function planBoardEdit(board: Board, op: BoardEditOp, anchor: number, new
       return null;
     }
     case 'flip': {
-      // Same two tiles, start and end swapped, so no tile gains an end. A jump whose new start would be a "?" tile stays.
-      const flips = board.jumps.filter((j) => board.mystery[j.to] === undefined);
-      const edit = { added: flips.map((j) => ({ id: flippedId(j.id), from: j.to, to: j.from })), removed: flips };
-      return flips.length > 0 && isValid(board, edit) ? edit : null;
+      // Same two tiles, start and end swapped, so no tile gains an end. One by one, in board order: a jump whose
+      // flip would break a board rule (a new start on a "?" tile, three heads in a row) stays as it is (2026-10-16).
+      const edit: PlannedEdit = { added: [], removed: [] };
+      for (const j of board.jumps) {
+        const next = { added: [...edit.added, { id: flippedId(j.id), from: j.to, to: j.from }], removed: [...edit.removed, j] };
+        if (isValid(board, next)) {
+          edit.added = next.added;
+          edit.removed = next.removed;
+        }
+      }
+      return edit.added.length > 0 ? edit : null;
     }
     case 'modify': {
       const j = nearestAhead(board, anchor, op.kind);

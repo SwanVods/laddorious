@@ -70,7 +70,7 @@ describe('StageBar (spec #2 §7.2)', () => {
     const { container, rerender } = render(<StageBar round={7} stage={2} timer={{ seconds: 3, fraction: 0.375 }} />);
     expect(container.querySelector('.stage-round')!.textContent).toBe('ROUND 7');
     const steps = within(screen.getByRole('list', { name: 'Stages of the round' })).getAllByRole('listitem');
-    expect(steps.map((s) => s.className)).toEqual(['done', 'done', 'now', 'next', 'next']);
+    expect(steps.map((s) => s.className)).toEqual(['done', 'done', 'now', 'next', 'next', 'next']);
     expect(steps[2]!.getAttribute('aria-current')).toBe('step');
     expect(screen.getByRole('timer', { name: '3 seconds left' }).querySelector('.stage-tbar')!.className).toContain('low');
     rerender(<StageBar round={7} stage={0} timer={null} />);
