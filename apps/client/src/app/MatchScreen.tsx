@@ -20,7 +20,7 @@ import { cardPickModel, countdown, dockModel, faceOffModel, phoneCards, playerRo
 import { NameTags } from '../hud/NameTags';
 import { presenceToast } from '../hud/presence';
 import { PlayerColumn } from '../hud/PlayerColumn';
-import { roundRecord } from '../hud/record';
+import { cardListRecord, roundRecord } from '../hud/record';
 import { StageBar } from '../hud/StageBar';
 import { YourPiece } from '../hud/YourPiece';
 import { MatchScene } from '../scene/MatchScene';
@@ -112,6 +112,8 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const log = useStore(director.store, (s) => s.log);
   const banner = useBanner(beat, me, seats);
   const record = useMemo(() => roundRecord(log), [log]);
+  // Last round's cards stay in the list until the next round's first die roll (2026-10-16).
+  const listRecord = useMemo(() => cardListRecord(log), [log]);
   const lines = useMemo(() => feedLines(log), [log]);
   // Revealed cards as one-line bubbles beside their players' rows (polish spec §4.4).
   const shownBubbles = useCardBubbles(director, timeScale);
@@ -162,10 +164,10 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
         {view && presentation && (
           <>
             <StageBar round={presentation.round} stage={stageIndex(beat, view.awaiting.window, stageFromLog(log))} timer={countdown(settled.timer, view.awaiting.durationMs, now)} />
-            {/* The action log, and on phones this round's cards as a compact list under it (2026-10-15). */}
+            {/* The action log, and the round's cards as a compact list under it (2026-10-15; desktop too, 2026-10-16). */}
             <div className="left-stack">
               <EventFeed lines={lines} seats={seats} />
-              <CardList cards={phoneCards(record, beat)} seats={seats} />
+              <CardList cards={phoneCards(listRecord, beat)} seats={seats} />
             </div>
             <PlayerColumn rows={rows} bubbles={bubbles} onWatch={setWatch} reducedMotion={reducedMotion} />
             {mine && <YourPiece row={mine} mods={nextRollMods(presentation.effects, me)} players={rows.length} boardSize={view.board.size} />}

@@ -65,3 +65,22 @@ export function roundRecord(log: readonly LoggedEvent[]): RoundRecord {
   }
   return record;
 }
+
+/**
+ * The round whose cards the card list shows (the user, 2026-10-16): this round's once it has any; until then
+ * last round's, through the break and the next round's opening, so the players can see what was played,
+ * until the next round's first die roll.
+ */
+export function cardListRecord(log: readonly LoggedEvent[]): RoundRecord {
+  const current = roundRecord(log);
+  if (Object.keys(current.cards).length > 0) return current;
+  let start = -1;
+  for (let i = log.length - 1; i >= 0; i--) {
+    if (log[i]!.event.type === 'RoundStarted') {
+      start = i;
+      break;
+    }
+  }
+  if (start <= 0 || log.slice(start).some((e) => e.event.type === 'DieRolled')) return current;
+  return roundRecord(log.slice(0, start));
+}
