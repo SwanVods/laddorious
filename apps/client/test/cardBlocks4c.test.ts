@@ -27,8 +27,8 @@ describe('the game shows 4c effects (2026-10-16)', () => {
   it('names the "when" effects on their chips', () => {
     const names = new Map<string, string>();
     expect(effectChip(fx({ hook: 'afterMove', cause: 'dice', condition: 'climbedLadder', amount: 5 }), names)).toMatchObject({ icon: 'pad', description: 'After your next launch, you move +5' });
-    expect(effectChip(fx({ hook: 'afterMove', cause: 'dice', condition: 'landedOnSnakeHead', amount: -2, who: 'others' }), names)).toMatchObject({ icon: 'slide', description: 'When you hit a whirlpool, everyone else moves −2' });
-    expect(effectChip(fx({ hook: 'afterMove', cause: 'dice', condition: 'climbedLadder', amount: 2, who: 'others' }), names)).toMatchObject({ icon: 'pad', description: 'When you ride a rocket, everyone else moves +2' });
+    expect(effectChip(fx({ hook: 'afterMove', cause: 'dice', condition: 'landedOnSnakeHead', amount: -2, who: 'others' }), names)).toMatchObject({ icon: 'slide', description: 'When you hit a whirlpool, each opponent moves −2' });
+    expect(effectChip(fx({ hook: 'afterMove', cause: 'dice', condition: 'climbedLadder', amount: 2, who: 'others' }), names)).toMatchObject({ icon: 'pad', description: 'When you ride a rocket, each opponent moves +2' });
     expect(effectChip(fx({ hook: 'rollCheck', when: 'even', then: { shield: { charges: 1, rounds: 2 } } }), names)).toMatchObject({ icon: 'aegis', badge: 'even' });
   });
 });

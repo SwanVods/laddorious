@@ -70,7 +70,8 @@ export function ordinal(rank: number): string {
 
 export function targetLine(rule: TargetRule): string {
   if (rule.condition === 'self') return 'You';
-  if (rule.pick === 'all') return rule.condition === 'everyone' ? 'Everyone' : 'Everyone else';
+  // EVERYONE in capitals; everyone but you is "Each opponent" (2026-10-16), so the two never read alike.
+  if (rule.pick === 'all') return rule.condition === 'everyone' ? 'EVERYONE' : 'Each opponent';
   if (rule.condition === 'section') return `A player on tiles ${rule.section?.[0]}–${rule.section?.[1]}`;
   if (rule.condition === 'ahead-of-caster') return rule.pick === 'furthest' ? 'Furthest player ahead' : 'Nearest player ahead';
   if (rule.condition === 'behind-of-caster') return rule.pick === 'furthest' ? 'Furthest player behind' : 'Nearest player behind';
@@ -193,10 +194,10 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
     case 'reverseRoll':
       return { ...base, icon: 'back', badge: '←', description: `Next roll moves back${from}` };
     case 'afterMove':
-      // "When" effects (2026-10-16): after a launch too, and moving everyone else.
+      // "When" effects (2026-10-16): after a launch too, and moving each opponent.
       if (p.who === 'others') {
         const climb = p.condition === 'climbedLadder';
-        return { ...base, icon: climb ? 'pad' : 'slide', badge: signed(p.amount), description: `When you ${climb ? 'ride a rocket' : 'hit a whirlpool'}, everyone else moves ${signed(p.amount)}${from}` };
+        return { ...base, icon: climb ? 'pad' : 'slide', badge: signed(p.amount), description: `When you ${climb ? 'ride a rocket' : 'hit a whirlpool'}, each opponent moves ${signed(p.amount)}${from}` };
       }
       if (p.condition === 'climbedLadder') return { ...base, icon: 'pad', badge: signed(p.amount), description: `After your next launch, you move ${signed(p.amount)}${from}` };
       return { ...base, icon: 'bait', badge: signed(p.amount), description: `Landing in a whirlpool moves you ${signed(p.amount)} after sliding${from}` };

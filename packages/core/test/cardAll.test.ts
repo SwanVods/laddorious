@@ -25,7 +25,7 @@ function play(s: MatchState, cardId: string): GameEvent[] {
 }
 
 describe('cards that hit several players (2026-10-15)', () => {
-  it('moves everyone else back; the caster stays', () => {
+  it('moves each opponent back; the caster stays', () => {
     const s = match([10, 20, 30, 40]);
     const ev = play(s, 'quake');
     expect(positions(s)).toEqual([10, 17, 27, 37]);
@@ -69,8 +69,8 @@ describe('cards that hit several players (2026-10-15)', () => {
     expect(() => resolveConfig({ seed: 's', cards: [...cards, gambleSwap] })).toThrow(/A card that hits several players can't swap places/);
   });
 
-  it('says "everyone else" and "everyone"', () => {
-    expect(describeCard(quake)).toBe('Everyone else moves back 3.');
-    expect(describeCard(retreat, { n: 2 })).toBe('Everyone moves back 2.');
+  it('says "each opponent" and "everyone"', () => {
+    expect(describeCard(quake)).toBe('Each opponent moves back 3.');
+    expect(describeCard(retreat, { n: 2 })).toBe('EVERYONE moves back 2.');
   });
 });

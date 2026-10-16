@@ -39,7 +39,7 @@ describe('the game shows a card roll and every target (2026-10-15)', () => {
   });
 
   it('names who a several-player card hits', () => {
-    expect(targetLine({ condition: 'other', pick: 'all', tieBreak: 'lowest-seat' })).toBe('Everyone else');
-    expect(targetLine({ condition: 'everyone', pick: 'all', tieBreak: 'lowest-seat' })).toBe('Everyone');
+    expect(targetLine({ condition: 'other', pick: 'all', tieBreak: 'lowest-seat' })).toBe('Each opponent');
+    expect(targetLine({ condition: 'everyone', pick: 'all', tieBreak: 'lowest-seat' })).toBe('EVERYONE');
   });
 });

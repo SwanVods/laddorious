@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Mesh, MeshStandardMaterial, type BufferGeometry, type Material, type Object3D, type Texture } from 'three';
-import { PAINTED, paintTexture, paintUv, paintedMaterial } from '../scene/boardPaint';
+import { PAINTED, PAINTED_SLOTS, paintRepeat, paintTexture, paintedMaterial } from '../scene/boardPaint';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadGltf } from './modelCache';
 import { MESH_SLOTS, type SlotName } from './slotFiles';
@@ -35,15 +35,14 @@ export function slotMeshFromScene(root: Object3D): SlotMesh {
 }
 
 /**
- * Ready a slot mesh's materials (Tint white, no clearcoat on Low); the geometry is shared. A platform's Deck and
- * Stripe take the brush paint (2026-10-16), projected onto the model, which has no texture coordinates of its own.
+ * Ready a slot mesh's materials (Tint white, no clearcoat on Low); the geometry is shared. Given `paint` (the board's
+ * platform, PAINTED_SLOTS), its Deck and Stripe take the brush paint (2026-10-16), blended on in the shader.
  */
-export function prepareSlotMesh(mesh: SlotMesh, { clearcoat, paint = paintTexture() }: { clearcoat: boolean; paint?: Texture | null }): SlotMesh {
+export function prepareSlotMesh(mesh: SlotMesh, { clearcoat, paint = null }: { clearcoat: boolean; paint?: Texture | null }): SlotMesh {
   const prep = (m: Material) => {
     const ready = prepareMaterial(m, { clearcoat });
     if (!paint || !(ready instanceof MeshStandardMaterial) || !PAINTED.has(ready.name)) return ready;
-    paintUv(mesh.geometry);
-    return paintedMaterial(ready, paint);
+    return paintedMaterial(ready, paint, paintRepeat(mesh.geometry));
   };
   const material = Array.isArray(mesh.material) ? mesh.material.map(prep) : prep(mesh.material);
   return { geometry: mesh.geometry, material };
@@ -128,7 +127,7 @@ export function useSlotMesh(name: SlotName, fallback: () => SlotMesh, { clearcoa
     },
     [stand],
   );
-  const prepared = useMemo(() => (model ? prepareSlotMesh(model, { clearcoat }) : stand), [model, stand, clearcoat]);
+  const prepared = useMemo(() => (model ? prepareSlotMesh(model, { clearcoat, paint: PAINTED_SLOTS.has(name) ? paintTexture() : null }) : stand), [model, stand, clearcoat, name]);
   // The copies a quality setting made go when it changes (2026-10-15).
   useEffect(() => () => {
     if (model) disposeCopies(prepared, model);

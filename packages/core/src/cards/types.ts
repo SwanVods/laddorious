@@ -131,7 +131,8 @@ export type EffectOp =
   | { op: 'moveRelative'; amount: CardNumber }
   | { op: 'moveTo'; rule: MoveToRule; offset?: number; tile?: number }
   | { op: 'swap' }
-  | { op: 'addEffect'; template: CardEffectTemplate }
+  /** `onCaster` (2026-10-16): the effect goes on the card's caster, not its target (Switcheroo's own skip). */
+  | { op: 'addEffect'; template: CardEffectTemplate; onCaster?: true }
   | { op: 'removeEffects'; filter: { createdByOthers?: boolean; hook?: EffectHook }; count: number | 'all' }
   | BoardEditOp
   | { op: 'gamble'; outcomes: Array<{ weight: number; ops: EffectOp[] }> }

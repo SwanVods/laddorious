@@ -45,11 +45,11 @@ function checkAfterMove(cause: MoveCause, lifetime: Lifetime, where: string): vo
   }
 }
 
-/** A "when" effect (2026-10-16): a slide or a climb; moving everyone else only after the owner's dice moves, so it can't chain. */
+/** A "when" effect (2026-10-16): a slide or a climb; moving each opponent only after the owner's dice moves, so it can't chain. */
 function checkWhen(condition: unknown, cause: unknown, who: unknown, where: string): void {
   check(condition === 'landedOnSnakeHead' || condition === 'climbedLadder', where, 'unknown afterMove condition');
   check(who === undefined || who === 'others', where, "afterMove.who must be 'others' or left out");
-  check(who !== 'others' || cause === 'dice', where, 'an effect that moves everyone else only after your dice moves');
+  check(who !== 'others' || cause === 'dice', where, 'an effect that moves each opponent only after your dice moves');
 }
 
 function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string): void {
@@ -138,6 +138,7 @@ function checkOps(ops: EffectOp[], where: string): void {
       case 'swap':
         return;
       case 'addEffect':
+        check(op.onCaster === undefined || op.onCaster === true, at, 'addEffect.onCaster must be true or left out');
         checkLifetime(op.template.lifetime, at);
         checkParams(op.template.params, op.template.lifetime, at);
         return;
@@ -189,6 +190,9 @@ export function validateCardDef(c: CardDef): void {
   // A swap with several players clashes with itself and always fizzles (2026-10-16).
   const swaps = (ops: EffectOp[]): boolean => ops.some((op) => op?.op === 'swap' || (op?.op === 'gamble' && op.outcomes.some((o) => swaps(o.ops))));
   check(t.pick !== 'all' || !Array.isArray(c.effects) || !swaps(c.effects), where, "A card that hits several players can't swap places.");
+  // An effect on the caster (2026-10-16) would be added once for each player hit.
+  const onCaster = (ops: EffectOp[]): boolean => ops.some((op) => (op?.op === 'addEffect' && op.onCaster) || (op?.op === 'gamble' && op.outcomes.some((o) => onCaster(o.ops))));
+  check(t.pick !== 'all' || !Array.isArray(c.effects) || !onCaster(c.effects), where, "A card that hits several players can't put an effect on you.");
   check(t.tieBreak === 'random' || t.tieBreak === 'lowest-seat', where, 'unknown target tieBreak');
   if (t.condition === 'section') {
     check(Array.isArray(t.section) && isInt(t.section[0]) && isInt(t.section[1]) && t.section[0] <= t.section[1], where, 'section must be [from, to]');

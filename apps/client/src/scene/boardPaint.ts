@@ -1,13 +1,18 @@
-import { BufferAttribute, CanvasTexture, MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, type BufferGeometry, type Texture } from 'three';
+import { CanvasTexture, MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, Vector3, type BufferGeometry, type Texture } from 'three';
 import { WORLD_COLORS } from '../app/theme';
+import { PLATFORM } from './layout';
 
 // The painted platform (the user, 2026-10-16): big, colourful brush strokes over the cream deck and the rim,
 // in place of its plain cream and red stripes. One texture, painted in code once, repeated across the platform.
 
+/** The models that take the paint: the board's platform only; the lobby podium keeps its cream and stripes (the user, 2026-10-16). */
+export const PAINTED_SLOTS: ReadonlySet<string> = new Set(['platform']);
 /** The platform materials that take the paint: the deck and the rim's stripes. */
 export const PAINTED = new Set(['Deck', 'Stripe']);
-/** World units per repeat of the texture: far apart, so the strokes read big. */
+/** World units per repeat of the texture on the board's platform: far apart, so the strokes read big. */
 export const PAINT_REPEAT = 22;
+/** The board platform's width; a smaller model (the lobby podium) repeats the paint as much closer (2026-10-16). */
+export const PLATFORM_WIDTH = PLATFORM.halfWidth * 2;
 /** A wall's height is stretched this much in the paint, so the rim's low walls show whole strokes, not a thin band. */
 export const PAINT_WALL = 6;
 const SIZE = 1024;
@@ -95,29 +100,43 @@ export function paintTexture(): CanvasTexture | null {
 }
 
 /**
- * Texture coordinates for a model that has none: each vertex is projected along its normal's main axis, from
- * above on the deck and from the side on the rim's walls, so the paint never smears into streaks.
+ * The paint, read in the shader from the model's own position (the model has no texture coordinates): from above,
+ * and from either side, each weighted by how much the point faces that way, then mixed. It flows round the rim's
+ * curve without a seam (the user, 2026-10-16: projecting each triangle one way cut it into patches) and never
+ * smears down a wall. The sides' heights are stretched, so a low wall shows whole strokes.
  */
-export function paintUv(geometry: BufferGeometry): void {
-  if (geometry.getAttribute('uv')) return;
-  const pos = geometry.getAttribute('position');
-  const normal = geometry.getAttribute('normal');
-  const uv = new Float32Array(pos.count * 2);
-  for (let i = 0; i < pos.count; i++) {
-    const [x, y, z] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
-    const [nx, ny, nz] = normal ? [Math.abs(normal.getX(i)), Math.abs(normal.getY(i)), Math.abs(normal.getZ(i))] : [0, 1, 0];
-    const [u, v] = ny >= nx && ny >= nz ? [x, z] : nx >= nz ? [z, y * PAINT_WALL] : [x, y * PAINT_WALL];
-    uv[i * 2] = u / PAINT_REPEAT;
-    uv[i * 2 + 1] = v / PAINT_REPEAT;
-  }
-  geometry.setAttribute('uv', new BufferAttribute(uv, 2));
+const triplanar = (repeat: number) => [
+  'vec3 paintWeight = pow( abs( normalize( vPaintNormal ) ), vec3( 4.0 ) );',
+  'paintWeight /= paintWeight.x + paintWeight.y + paintWeight.z;',
+  `vec3 paintAt = vPaintPos / ${repeat.toFixed(2)};`,
+  `float paintWall = ${PAINT_WALL.toFixed(1)};`,
+  'vec4 paintTexel = texture2D( paintMap, vec2( paintAt.z, paintAt.y * paintWall ) ) * paintWeight.x',
+  '  + texture2D( paintMap, paintAt.xz ) * paintWeight.y',
+  '  + texture2D( paintMap, vec2( paintAt.x, paintAt.y * paintWall ) ) * paintWeight.z;',
+  'diffuseColor *= paintTexel;',
+].join('\n');
+
+/** How often the paint repeats on a model: in step with its width, so any platform shows the same big strokes. */
+export function paintRepeat(geometry: BufferGeometry): number {
+  if (!geometry.boundingBox) geometry.computeBoundingBox();
+  const size = geometry.boundingBox!.getSize(new Vector3());
+  return (PAINT_REPEAT * Math.max(size.x, size.z)) / PLATFORM_WIDTH;
 }
 
-/** A painted copy of a Deck or Stripe material: the paint shows in its own colours. */
-export function paintedMaterial(material: MeshStandardMaterial, map: Texture): MeshStandardMaterial {
+/** A painted copy of a Deck or Stripe material: the paint shows in its own colours, blended as above. */
+export function paintedMaterial(material: MeshStandardMaterial, map: Texture, repeat = PAINT_REPEAT): MeshStandardMaterial {
   const copy = material.clone();
-  copy.map = map;
   copy.color.set(1, 1, 1);
   copy.roughness = 0.7;
+  copy.onBeforeCompile = (shader) => {
+    shader.uniforms.paintMap = { value: map };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vPaintPos;\nvarying vec3 vPaintNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPaintPos = position;\nvPaintNormal = normal;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform sampler2D paintMap;\nvarying vec3 vPaintPos;\nvarying vec3 vPaintNormal;')
+      .replace('#include <map_fragment>', triplanar(repeat));
+  };
+  copy.customProgramCacheKey = () => `board-paint-${repeat.toFixed(2)}`;
   return copy;
 }

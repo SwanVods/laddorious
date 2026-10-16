@@ -77,6 +77,6 @@ describe('moving to a place (2026-10-16)', () => {
     expect(describeCard(crossroads)).toBe('50%: back to the rocket behind you. 50%: on to the next whirlpool.');
     expect(describeCard(CARDS[3]!)).toBe('Move to the tile of the player just ahead of you.');
     expect(describeCard(CARDS[4]!)).toBe('Move to 1 tile ahead of the player just ahead of you.');
-    expect(describeCard(card('t', EVERYONE, to('tile', { tile: 30 })))).toBe('Everyone moves to tile 30.');
+    expect(describeCard(card('t', EVERYONE, to('tile', { tile: 30 })))).toBe('EVERYONE moves to tile 30.');
   });
 });

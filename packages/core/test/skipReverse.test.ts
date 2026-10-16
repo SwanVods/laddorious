@@ -92,10 +92,10 @@ describe('skip and back on cards (2026-10-16)', () => {
   it('writes the texts', () => {
     expect(describeCard(card([{ op: 'addEffect', template: SKIP }], LEADER))).toBe('The leader skips their next roll.');
     expect(describeCard(card([{ op: 'addEffect', template: SKIP }], AHEAD))).toBe('The player just ahead of you skips their next roll.');
-    expect(describeCard(card([{ op: 'addEffect', template: SKIP }], OTHERS))).toBe('Everyone else skips their next roll.');
+    expect(describeCard(card([{ op: 'addEffect', template: SKIP }], OTHERS))).toBe('Each opponent skips their next roll.');
     expect(describeCard(card([{ op: 'addEffect', template: BACK }], LEADER))).toBe("The leader's next roll moves them back.");
     expect(describeCard(card([{ op: 'addEffect', template: BACK }], AHEAD))).toBe('The next roll of the player just ahead of you moves them back.');
-    expect(describeCard(card([{ op: 'addEffect', template: BACK }], OTHERS))).toBe("Everyone else's next roll moves them back.");
+    expect(describeCard(card([{ op: 'addEffect', template: BACK }], OTHERS))).toBe("Each opponent's next roll moves them back.");
     const gamble = card([{ op: 'gamble', outcomes: [
       { weight: 50, ops: [{ op: 'addEffect', template: { params: { hook: 'diceTotal', op: 'multiply', value: 2 }, lifetime: { charges: 1 } } }] },
       { weight: 50, ops: [{ op: 'addEffect', template: BACK }] },

@@ -38,14 +38,15 @@ const lifeFrom = (v: Record<string, unknown>): Templated<Lifetime> => {
 };
 
 /** An addEffect step whose params are fixed but for one number field. */
-function effectKind(id: string, label: string, hook: string, extra: Record<string, unknown>, field: StepField | null, start: Record<string, unknown>): StepKind {
+/** `onCaster` (2026-10-16): the step puts its effect on you, not the target; each kind reads only its own. */
+function effectKind(id: string, label: string, hook: string, extra: Record<string, unknown>, field: StepField | null, start: Record<string, unknown>, onCaster = false): StepKind {
   return {
     id,
     label,
     fields: [...(field ? [field] : []), USES, ROUNDS],
     make: () => writeOp({ ...start }),
     read(op) {
-      if (op.op !== 'addEffect') return null;
+      if (op.op !== 'addEffect' || !!op.onCaster !== onCaster) return null;
       const p = op.template.params as Record<string, unknown>;
       if (p.hook !== hook || !Object.entries(extra).every(([k, v]) => p[k] === v)) return null;
       return { ...(field ? { [field.key]: p[field.key] } : {}), ...lifeOf(op.template.lifetime) };
@@ -53,7 +54,7 @@ function effectKind(id: string, label: string, hook: string, extra: Record<strin
     write: (v) => writeOp(v),
   };
   function writeOp(v: Record<string, unknown>): Op {
-    return { op: 'addEffect', template: { params: { hook, ...extra, ...(field ? { [field.key]: v[field.key] } : {}) } as never, lifetime: lifeFrom(v) } };
+    return { op: 'addEffect', template: { params: { hook, ...extra, ...(field ? { [field.key]: v[field.key] } : {}) } as never, lifetime: lifeFrom(v) }, ...(onCaster ? { onCaster: true as const } : {}) };
   }
 }
 
@@ -144,6 +145,7 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('rollTimes', 'Next roll ×', 'diceTotal', { op: 'multiply' }, { key: 'value', label: 'times', kind: 'amount', min: 0 }, { value: 2, charges: 1, rounds: 0 }),
   effectKind('rollExactly', 'Next roll is exactly', 'diceTotal', { op: 'replace' }, { key: 'value', label: 'total', kind: 'amount', min: 0 }, { value: 4, charges: 1, rounds: 0 }),
   effectKind('skipRoll', 'Skip next roll', 'skipRoll', {}, null, { charges: 1, rounds: 0 }),
+  effectKind('skipRollSelf', 'Then you skip your next roll (on a card for someone else)', 'skipRoll', {}, null, { charges: 1, rounds: 0 }, true),
   effectKind('rollBack', 'Next roll moves back', 'reverseRoll', {}, null, { charges: 1, rounds: 0 }),
   rollCheckKind('ifRollTimes', 'If next roll is…: ×', [{ key: 'times', label: 'times', kind: 'amount', min: 2 }],
     (v) => ({ multiply: v.times }), (t) => ('multiply' in t ? { times: t.multiply } : null), { times: 2 }),
@@ -164,11 +166,11 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('blockEither', 'Block whirlpools or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
   effectKind('jumpsOff', 'Rockets and whirlpools off', 'jumpsOff', {}, null, { charges: 0, rounds: 1 }),
   {
-    // After a slide or a climb (2026-10-16: ladders, and everyone else moving, too).
+    // After a slide or a climb (2026-10-16: ladders, and each opponent moving, too).
     id: 'snakeThenMove', label: 'After a whirlpool or rocket, move',
     fields: [
       { key: 'condition', label: 'after', kind: 'choice', choices: [['landedOnSnakeHead', 'hitting a whirlpool'], ['climbedLadder', 'riding a rocket']] },
-      { key: 'who', label: 'who moves', kind: 'choice', choices: [['you', 'you'], ['others', 'everyone else']] },
+      { key: 'who', label: 'who moves', kind: 'choice', choices: [['you', 'you'], ['others', 'each opponent']] },
       { key: 'amount', label: 'amount', kind: 'amount' },
       USES,
       ROUNDS,
@@ -239,6 +241,6 @@ export const TARGETS: Array<[string, string, TargetRule]> = [
   ['furthest', 'The furthest player ahead', { condition: 'ahead-of-caster', pick: 'furthest', tieBreak: 'random' }],
   ['behind', 'The player just behind', { condition: 'behind-of-caster', pick: 'nearest', tieBreak: 'random' }],
   ['last', 'The player in last place', { condition: 'other', pick: 'last', tieBreak: 'random' }],
-  ['others', 'Everyone else', { condition: 'other', pick: 'all', tieBreak: 'lowest-seat' }],
-  ['everyone', 'Everyone', { condition: 'everyone', pick: 'all', tieBreak: 'lowest-seat' }],
+  ['others', 'Each opponent', { condition: 'other', pick: 'all', tieBreak: 'lowest-seat' }],
+  ['everyone', 'EVERYONE', { condition: 'everyone', pick: 'all', tieBreak: 'lowest-seat' }],
 ];

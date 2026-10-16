@@ -1,37 +1,57 @@
-import { BoxGeometry, MeshStandardMaterial, Texture } from 'three';
+import { BoxGeometry, MeshStandardMaterial, ShaderLib, Texture } from 'three';
 import { describe, expect, it } from 'vitest';
 import { prepareSlotMesh } from '../src/assets/slotMesh';
-import { PAINT_REPEAT, PAINT_WALL, paintUv } from '../src/scene/boardPaint';
+import { PAINTED_SLOTS, PAINT_REPEAT, PLATFORM_WIDTH, paintedMaterial } from '../src/scene/boardPaint';
 
 // The painted platform (the user, 2026-10-16): big brush strokes over the deck and the rim, in place of the
 // plain cream and the red stripes.
 
+/** The shader a material compiles to: three's standard one, after the material's own changes. */
+function compiled(material: MeshStandardMaterial) {
+  const shader = { uniforms: {} as Record<string, { value: unknown }>, vertexShader: ShaderLib.physical.vertexShader, fragmentShader: ShaderLib.physical.fragmentShader };
+  material.onBeforeCompile(shader as never, null as never);
+  return shader;
+}
+
 describe('the painted platform', () => {
-  it('projects the paint from above on flat parts and from the side on walls, so it never smears', () => {
-    const box = new BoxGeometry(4, 6, 8);
-    box.deleteAttribute('uv');
-    paintUv(box);
-    const pos = box.getAttribute('position');
-    const normal = box.getAttribute('normal');
-    const uv = box.getAttribute('uv');
-    for (let i = 0; i < pos.count; i++) {
-      const [x, y, z] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
-      // A wall shows a thin band of the paint unless its height is stretched to fit more of the strokes.
-      const expected = normal.getY(i) !== 0 ? [x, z] : normal.getX(i) !== 0 ? [z, y * PAINT_WALL] : [x, y * PAINT_WALL];
-      expect([uv.getX(i), uv.getY(i)]).toEqual(expected.map((v) => expect.closeTo(v / PAINT_REPEAT, 6)));
-    }
+  it('blends the paint from above and from both sides by where each point faces, so it flows round curves without seams or smears', () => {
+    const paint = new Texture();
+    const { uniforms, vertexShader, fragmentShader } = compiled(paintedMaterial(new MeshStandardMaterial(), paint));
+    expect(uniforms.paintMap!.value).toBe(paint);
+    expect(vertexShader).toContain('vPaintPos = position;');
+    expect(vertexShader).toContain('vPaintNormal = normal;');
+    // Every point reads all three projections and mixes them; nothing reads the model's own (missing) coordinates.
+    expect(fragmentShader).not.toContain('#include <map_fragment>');
+    expect(fragmentShader.match(/texture2D\( paintMap/g)).toHaveLength(3);
   });
 
-  it('paints the deck and the rim stripes, and nothing else', () => {
+  it('sizes the strokes to the model, so the lobby podium shows as much paint as the board', () => {
+    const paint = new Texture();
+    const deck = (width: number) => prepareSlotMesh({ geometry: new BoxGeometry(width, 1, width * 0.75), material: Object.assign(new MeshStandardMaterial(), { name: 'Deck' }) }, { clearcoat: true, paint });
+    const repeat = (width: number) => Number(compiled(deck(width).material as MeshStandardMaterial).fragmentShader.match(/vPaintPos \/ ([\d.]+);/)![1]);
+    expect(repeat(PLATFORM_WIDTH)).toBeCloseTo(PAINT_REPEAT, 1);
+    expect(repeat(PLATFORM_WIDTH / 10)).toBeCloseTo(PAINT_REPEAT / 10, 1);
+  });
+
+  it('paints the deck and the rim stripes, and nothing else, leaving the model as it is', () => {
     const named = (name: string) => Object.assign(new MeshStandardMaterial({ color: '#ff5470' }), { name });
     const paint = new Texture();
     const box = new BoxGeometry();
-    box.deleteAttribute('uv');
     const ready = prepareSlotMesh({ geometry: box, material: [named('Deck'), named('Stripe'), named('Cushion')] }, { clearcoat: true, paint });
     const [deck, stripe, cushion] = ready.material as MeshStandardMaterial[];
-    expect([deck!.map, stripe!.map, cushion!.map]).toEqual([paint, paint, null]);
+    expect([deck, stripe].map((m) => compiled(m!).uniforms.paintMap?.value)).toEqual([paint, paint]);
+    expect(compiled(cushion!).uniforms.paintMap).toBeUndefined();
     expect(deck!.color.getHexString()).toBe('ffffff');
     expect(cushion!.color.getHexString()).toBe('ff5470');
-    expect(box.getAttribute('uv')).toBeTruthy();
+    expect(ready.geometry).toBe(box);
+  });
+});
+
+describe('which models are painted (2026-10-16)', () => {
+  it("paints the board's platform only: the lobby podium keeps its cream and stripes", () => {
+    expect([...PAINTED_SLOTS]).toEqual(['platform']);
+    const deck = Object.assign(new MeshStandardMaterial({ color: '#fff7ec' }), { name: 'Deck' });
+    const plain = prepareSlotMesh({ geometry: new BoxGeometry(), material: deck }, { clearcoat: true });
+    expect(compiled(plain.material as MeshStandardMaterial).uniforms.paintMap).toBeUndefined();
   });
 });
