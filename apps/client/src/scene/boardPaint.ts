@@ -5,6 +5,8 @@ import { PLATFORM } from './layout';
 // The painted platform (the user, 2026-10-16): big, colourful brush strokes over the cream deck and the rim,
 // in place of its plain cream and red stripes. One texture, painted in code once, repeated across the platform.
 
+/** The models that take the paint: the board's platform only; the lobby podium keeps its cream and stripes (the user, 2026-10-16). */
+export const PAINTED_SLOTS: ReadonlySet<string> = new Set(['platform']);
 /** The platform materials that take the paint: the deck and the rim's stripes. */
 export const PAINTED = new Set(['Deck', 'Stripe']);
 /** World units per repeat of the texture on the board's platform: far apart, so the strokes read big. */

@@ -1,7 +1,7 @@
 import { BoxGeometry, MeshStandardMaterial, ShaderLib, Texture } from 'three';
 import { describe, expect, it } from 'vitest';
 import { prepareSlotMesh } from '../src/assets/slotMesh';
-import { PAINT_REPEAT, PLATFORM_WIDTH, paintedMaterial } from '../src/scene/boardPaint';
+import { PAINTED_SLOTS, PAINT_REPEAT, PLATFORM_WIDTH, paintedMaterial } from '../src/scene/boardPaint';
 
 // The painted platform (the user, 2026-10-16): big brush strokes over the deck and the rim, in place of the
 // plain cream and the red stripes.
@@ -44,5 +44,14 @@ describe('the painted platform', () => {
     expect(deck!.color.getHexString()).toBe('ffffff');
     expect(cushion!.color.getHexString()).toBe('ff5470');
     expect(ready.geometry).toBe(box);
+  });
+});
+
+describe('which models are painted (2026-10-16)', () => {
+  it("paints the board's platform only: the lobby podium keeps its cream and stripes", () => {
+    expect([...PAINTED_SLOTS]).toEqual(['platform']);
+    const deck = Object.assign(new MeshStandardMaterial({ color: '#fff7ec' }), { name: 'Deck' });
+    const plain = prepareSlotMesh({ geometry: new BoxGeometry(), material: deck }, { clearcoat: true });
+    expect(compiled(plain.material as MeshStandardMaterial).uniforms.paintMap).toBeUndefined();
   });
 });
