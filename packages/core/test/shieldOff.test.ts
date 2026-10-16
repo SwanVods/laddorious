@@ -62,7 +62,7 @@ describe('snakes and ladders off (2026-10-16)', () => {
     const others = [fill('r', 'rare'), fill('e', 'epic'), fill('c', 'common')];
     const onLeader = card([{ op: 'addEffect', template: OFF }], LEADER, 'a');
     const withUses = card([{ op: 'addEffect', template: { params: { hook: 'jumpsOff' }, lifetime: { rounds: 1, charges: 1 } } }], SELF, 'b');
-    expect(() => resolveConfig({ seed: 's', cards: [...others, onLeader] })).toThrow(/snakes and ladders off is for everyone: its card targets you/);
+    expect(() => resolveConfig({ seed: 's', cards: [...others, onLeader] })).toThrow(/rockets and whirlpools off is for everyone: its card targets you/);
     expect(() => resolveConfig({ seed: 's', cards: [...others, withUses] })).toThrow(/jumpsOff needs rounds and no uses/);
   });
 

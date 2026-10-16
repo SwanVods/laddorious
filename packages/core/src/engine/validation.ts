@@ -186,13 +186,16 @@ export function validateCardDef(c: CardDef): void {
   check(['self', 'nearest', 'furthest', 'leader', 'last', 'all'].includes(t.pick), where, 'unknown target pick');
   check(t.condition !== 'everyone' || t.pick === 'all', where, "a card for everyone must hit them all (pick 'all')");
   check(t.pick !== 'all' || !Array.isArray(c.effects) || !c.effects.some((op) => op?.op === 'boardEdit'), where, "A card that hits several players can't change the board yet.");
+  // A swap with several players clashes with itself and always fizzles (2026-10-16).
+  const swaps = (ops: EffectOp[]): boolean => ops.some((op) => op?.op === 'swap' || (op?.op === 'gamble' && op.outcomes.some((o) => swaps(o.ops))));
+  check(t.pick !== 'all' || !Array.isArray(c.effects) || !swaps(c.effects), where, "A card that hits several players can't swap places.");
   check(t.tieBreak === 'random' || t.tieBreak === 'lowest-seat', where, 'unknown target tieBreak');
   if (t.condition === 'section') {
     check(Array.isArray(t.section) && isInt(t.section[0]) && isInt(t.section[1]) && t.section[0] <= t.section[1], where, 'section must be [from, to]');
   }
   check(!Array.isArray(c.effects) || !usesDie({ effects: c.effects.map(withoutAllowedDie) }), where, DIE_PLACES);
   const off = (ops: EffectOp[]): boolean => ops.some((op) => (op.op === 'addEffect' && op.template.params.hook === 'jumpsOff') || (op.op === 'gamble' && op.outcomes.some((o) => off(o.ops))));
-  check(!Array.isArray(c.effects) || !off(c.effects) || t.condition === 'self', where, 'snakes and ladders off is for everyone: its card targets you');
+  check(!Array.isArray(c.effects) || !off(c.effects) || t.condition === 'self', where, 'rockets and whirlpools off is for everyone: its card targets you');
   checkOps(c.effects, `${where}.effects`);
 }
 

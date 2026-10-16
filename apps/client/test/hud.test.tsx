@@ -228,6 +228,11 @@ describe('YourPiece (spec #2 §7.2)', () => {
     expect(list.getByText(/Next dice total −3, from Mochi/)).toBeTruthy();
   });
 
+  it("lists another player's Calm Waters on my piece too: it switches the board off for everyone (2026-10-16)", () => {
+    const calm = effect({ id: 'e3', owner: 'p1', sourceCard: 'calm-waters', sourcePlayer: 'p1', params: { hook: 'jumpsOff' }, lifetime: { rounds: 1 }, seq: 3 });
+    expect(mine([calm]).row.effects.map((e) => e.name)).toEqual(['Calm Waters']);
+  });
+
   it('says when nothing changes my roll and no effect is on me', () => {
     mockMatchMedia(false);
     render(<YourPiece {...mine([])} boardSize={100} />);

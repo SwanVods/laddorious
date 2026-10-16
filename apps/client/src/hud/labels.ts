@@ -97,11 +97,39 @@ export function fizzleWarning(id: string, view: PlayerView): string | null {
     if (card.target.condition === 'behind-of-caster') return 'Nobody is behind you right now. If that holds, it fizzles.';
     return 'Nobody it can aim at right now. If that holds, it fizzles.';
   }
-  const needsLadderAhead = card.effects.some((op) => op.op === 'moveTo' && op.rule === 'nearest-ladder-foot-ahead');
-  if (needsLadderAhead && !view.board.jumps.some((j) => j.to > j.from && j.from > me.position)) {
-    return 'No rocket ahead of you right now. If that holds, it fizzles.';
+  // A "move to" card fizzles when its place is missing for every player it could hit (2026-10-16: every rule, and a
+  // 50/50 card only when both of its places are missing), as the engine's moveToTile decides.
+  const rules = moveToRules(card.effects);
+  if (rules.length > 0) {
+    const heads = (rocket: boolean) => view.board.jumps.filter((j) => j.to > j.from === rocket).map((j) => j.from);
+    const fits = (rule: MoveToRule, from: number) =>
+      rule === 'nearest-ladder-foot-ahead' ? heads(true).some((t) => t > from)
+      : rule === 'snake-head-ahead' ? heads(false).some((t) => t > from)
+      : rule === 'ladder-foot-behind' ? heads(true).some((t) => t < from)
+      : heads(false).some((t) => t !== from);
+    const targets = targetCandidates(view.players, me, card.target);
+    if (!targets.some((t) => rules.some((r) => fits(r, t.position)))) {
+      return `${MISSING_PLACE[rules[0]!].replace('{who}', card.target.condition === 'self' ? 'you' : 'them')} If that holds, it fizzles.`;
+    }
   }
   return null;
+}
+
+type MoveToRule = 'nearest-ladder-foot-ahead' | 'snake-head-ahead' | 'ladder-foot-behind' | 'nearest-snake-head';
+const MISSING_PLACE: Record<MoveToRule, string> = {
+  'nearest-ladder-foot-ahead': 'No rocket ahead of {who} right now.',
+  'snake-head-ahead': 'No whirlpool ahead of {who} right now.',
+  'ladder-foot-behind': 'No rocket behind {who} right now.',
+  'nearest-snake-head': 'No whirlpool on the board right now.',
+};
+
+/** The board-place "move to" rules in a card's steps, a gamble's outcomes included. */
+function moveToRules(ops: CardDef['effects']): MoveToRule[] {
+  return ops.flatMap((op): MoveToRule[] => {
+    if (op.op === 'moveTo') return op.rule in MISSING_PLACE ? [op.rule as MoveToRule] : [];
+    if (op.op === 'gamble') return op.outcomes.flatMap((o) => moveToRules(o.ops));
+    return [];
+  });
 }
 
 export interface EffectChip {
