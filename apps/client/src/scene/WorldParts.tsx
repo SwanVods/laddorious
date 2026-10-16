@@ -4,6 +4,7 @@ import { BoxGeometry, BufferGeometry, Color, MeshBasicMaterial, MeshStandardMate
 import { WORLD_COLORS } from '../app/theme';
 import type { SlotName } from '../assets/slotFiles';
 import { useSlotMesh, type SlotMesh } from '../assets/slotMesh';
+import { BLOB_GEOMETRY, BLOB_LIFT, blobMaterial, blobWidth } from './blobs';
 import { MENU_PLATFORM, PLATFORM } from './layout';
 import { worldPose, type Placement } from './world';
 
@@ -57,6 +58,34 @@ function SlotInstances({ slot, placements, clearcoat, reducedMotion }: { slot: S
   return <instancedMesh ref={ref} name={`world-${slot}`} args={[mesh.geometry, mesh.material, placements.length]} visible={!empty} receiveShadow frustumCulled={false} />;
 }
 
+/**
+ * The soft contact shadows of the placements that have one (2026-10-16): one instanced mesh, each shadow on its
+ * ground under its model, shrinking as a hovering model rises.
+ */
+function WorldBlobs({ placements, reducedMotion }: { placements: readonly Placement[]; reducedMotion: boolean }) {
+  const ref = useRef<InstancedMesh>(null);
+  const at = useMemo(() => new Object3D(), []);
+  const moving = placements.some((p) => p.motion);
+  const write = (t: number) => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    placements.forEach((p, i) => {
+      const { radius, ground } = p.shadow!;
+      const { position } = worldPose(p, t, reducedMotion);
+      at.position.set(position[0], ground + BLOB_LIFT, position[2]);
+      at.scale.setScalar(blobWidth(radius, position[1] - ground));
+      at.updateMatrix();
+      mesh.setMatrixAt(i, at.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  };
+  useLayoutEffect(() => write(0));
+  useFrame(({ clock }) => {
+    if (moving) write(clock.elapsedTime);
+  });
+  return <instancedMesh ref={ref} name="world-shadows" args={[BLOB_GEOMETRY, blobMaterial(), placements.length]} frustumCulled={false} renderOrder={1} />;
+}
+
 /** Every placement, grouped by model: one instanced mesh each. */
 export function WorldParts({ placements, clearcoat, reducedMotion }: { placements: readonly Placement[]; clearcoat: boolean; reducedMotion: boolean }) {
   const groups = useMemo(() => {
@@ -64,11 +93,13 @@ export function WorldParts({ placements, clearcoat, reducedMotion }: { placement
     for (const p of placements) bySlot.set(p.slot, [...(bySlot.get(p.slot) ?? []), p]);
     return [...bySlot];
   }, [placements]);
+  const shadowed = useMemo(() => placements.filter((p) => p.shadow), [placements]);
   return (
     <>
       {groups.map(([slot, list]) => (
         <SlotInstances key={`${slot}-${list.length}`} slot={slot} placements={list} clearcoat={clearcoat} reducedMotion={reducedMotion} />
       ))}
+      {shadowed.length > 0 && <WorldBlobs key={shadowed.length} placements={shadowed} reducedMotion={reducedMotion} />}
     </>
   );
 }

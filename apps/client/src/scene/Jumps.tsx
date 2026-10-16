@@ -8,6 +8,7 @@ import { arrowheadGeometry, arrowheadOutlineGeometry, exitGeometry, padGeometry,
 import { useSlotMesh } from '../assets/slotMesh';
 import { capGeometry, symbolGeometry } from '../assets/symbols';
 import type { Director } from '../director/director';
+import { BLOB_GEOMETRY, BLOB_LIFT, blobMaterial, blobWidth } from './blobs';
 import { PARTS, tileToWorld } from './layout';
 import { STILL_END, clamp01, easeOutBack, endReaction, type EndMotion } from './motion';
 import { SYMBOLS, offTone, pairStyles, type PairStyle, type SymbolName } from './pairs';
@@ -23,6 +24,9 @@ const GOLD = new Color(WORLD_COLORS.crown);
 const CREAM = new Color(PAIR_COLORS.cap);
 /** Room for the trails: a long jump's arrowheads on every jump. */
 const MAX_ARROWS = 24 * MAX_JUMPS;
+/** How far the soft shadows under a 3D rocket and flag spread (2026-10-16). */
+const END_SHADOW = { rocket: 0.32, flag: 0.16 } as const;
+
 /** How fast a trail's arrowheads drift along it, in gaps a second. */
 const DRIFT = 0.8;
 
@@ -33,6 +37,8 @@ interface EndRefs {
   targets: RefObject<InstancedMesh | null>;
   /** A launching rocket's flame plume; 3D ends only. */
   plumes?: RefObject<InstancedMesh | null>;
+  /** The soft shadows under the standing rockets and flags; 3D ends only (2026-10-16). */
+  shadows?: RefObject<InstancedMesh | null>;
 }
 
 /** The ends as 3D models (High): rockets, flags, whirlpools and splats, loaded only when shown. */
@@ -56,6 +62,7 @@ function ModelEnds({ clearcoat, refs }: { clearcoat: boolean; refs: EndRefs }) {
       <instancedMesh ref={refs.targets} name="targets" args={[target.geometry, target.material, MAX_JUMPS]} />
       {/* A plume moves from rocket to rocket: bounds fixed at its first launch would hide it at the next. */}
       <instancedMesh ref={refs.plumes} name="plumes" args={[plume.geometry, plume.material, MAX_JUMPS]} visible={false} frustumCulled={false} />
+      <instancedMesh ref={refs.shadows} name="end-shadows" args={[BLOB_GEOMETRY, blobMaterial(), 2 * MAX_JUMPS]} frustumCulled={false} renderOrder={1} />
     </>
   );
 }
@@ -173,6 +180,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
   const padsRef = useRef<InstancedMesh>(null);
   const targetsRef = useRef<InstancedMesh>(null);
   const plumesRef = useRef<InstancedMesh>(null);
+  const shadowsRef = useRef<InstancedMesh>(null);
   const place = useMemo(() => new Object3D(), []);
   const base = useMemo(() => new Matrix4(), []);
 
@@ -239,6 +247,25 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
     stamp(exitsRef.current, snakes, (j) => endMatrix(j, j.to, 0));
     stamp(padsRef.current, ladders, rocketAt);
     stamp(targetsRef.current, ladders, flagAt);
+    // A soft shadow under each standing rocket and flag (2026-10-16), smaller while a rocket lifts on launch.
+    const shadows = shadowsRef.current;
+    if (shadows) {
+      let n = 0;
+      const lay = (tile: number, at: { x: number; z: number }, width: number) => {
+        const [x, , z] = tileToWorld(tile);
+        place.position.set(x + at.x, BLOB_LIFT, z + at.z);
+        place.rotation.set(0, 0, 0);
+        place.scale.setScalar(width);
+        place.updateMatrix();
+        shadows.setMatrixAt(n++, place.matrix);
+      };
+      for (const j of ladders) {
+        lay(j.from, PARTS.corner, blobWidth(END_SHADOW.rocket, react(j).rocket.lift) * pop(j.id));
+        lay(j.to, PARTS.flagCorner, blobWidth(END_SHADOW.flag, 0) * pop(j.id));
+      }
+      shadows.count = n;
+      shadows.instanceMatrix.needsUpdate = true;
+    }
     // A launching rocket's flame plume (2026-10-15): turned over under its nozzle, as long as its flare, flickering.
     const plumes = plumesRef.current;
     if (plumes) {
@@ -383,7 +410,7 @@ export function Jumps({ director, clearcoat, peeks, modelEnds = true, reducedMot
       ))}
       <instancedMesh ref={capsRef} name="caps" args={[cap, capMaterial, MAX_JUMPS]} />
       {modelEnds ? (
-        <ModelEnds clearcoat={clearcoat} refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef, plumes: plumesRef }} />
+        <ModelEnds clearcoat={clearcoat} refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef, plumes: plumesRef, shadows: shadowsRef }} />
       ) : (
         <FlatEnds refs={{ vortices: vorticesRef, exits: exitsRef, pads: padsRef, targets: targetsRef }} />
       )}

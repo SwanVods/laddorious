@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MESH_SLOTS } from '../src/assets/slotFiles';
 import { slotsToPreload } from '../src/assets/slotMesh';
 import { BOARD_HALF, PLATFORM, TILE_THICKNESS } from '../src/scene/layout';
+import { blobWidth } from '../src/scene/blobs';
 import { REDUCED_SHARE, matchWorld, menuWorld, worldPose, type Placement } from '../src/scene/world';
 
 // The world round the board (board theme spec §3, §4, B6).
@@ -121,5 +122,25 @@ describe('loading the world', () => {
     expect(low).not.toContain('slide.vortex');
     expect(low).not.toContain('slide.exit');
     expect(slotsToPreload(true)).toEqual([...MESH_SLOTS, 'crown']);
+  });
+});
+
+describe('soft contact shadows (2026-10-16)', () => {
+  it('gives everything standing on the deck a shadow on the deck, and nothing floating in the sky', () => {
+    const deck = -TILE_THICKNESS;
+    const world = matchWorld(4);
+    const props = new Set(['pad', 'prop.die', 'prop.chip', 'prop.card', 'crown', 'pad.target']);
+    const wings = world.filter((p) => props.has(p.slot));
+    expect(wings.length).toBeGreaterThan(5);
+    // The chip stack casts one shadow, from its bottom chip; the chips above it rest on chips.
+    const grounded = wings.filter((p) => !(p.slot === 'prop.chip' && p.at[1] > deck + 0.01 && !p.tilt));
+    for (const p of grounded) expect(p.shadow, p.slot).toMatchObject({ ground: deck });
+    for (const p of world.filter((p) => p.slot.startsWith('course.') || p.slot === 'step' || p.slot === 'cloud')) expect(p.shadow, p.slot).toBeUndefined();
+  });
+
+  it('shrinks a shadow as its object rises', () => {
+    expect(blobWidth(1, 0)).toBe(2);
+    expect(blobWidth(1, 0.5)).toBeLessThan(blobWidth(1, 0.1));
+    expect(blobWidth(1, 10)).toBe(1);
   });
 });
