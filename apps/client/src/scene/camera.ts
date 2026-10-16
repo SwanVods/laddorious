@@ -92,11 +92,12 @@ export function cameraShot(shown: ShotInput): Shot {
 
 /**
  * What the camera stays on next (2026-10-15): the shot's own focus, or the last one while the timeline
- * plays and through the card picks that follow it; nothing once the window moves on.
+ * plays and through the card picks that follow it; nothing once the window moves on. My own pick is a
+ * focus too (2026-10-16): once I've picked, the camera stays on me, not on the event before my pick.
  */
 export function heldNext({ beat, window, focus, held }: { beat: Beat | null; window: WindowKind | null; focus: Focus | null | undefined; held: Focus | null }): Focus | null {
   if (beat) return focus ?? held;
-  return window === 'mystery' ? held : null;
+  return window === 'mystery' ? (focus ?? held) : null;
 }
 
 /** Card beats split a round's moments: my jump before a card doesn't hold the camera through it. */
