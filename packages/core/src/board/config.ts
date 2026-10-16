@@ -19,7 +19,8 @@ export interface BoardConfig {
 
 export const DEFAULT_BOARD_CONFIG: BoardConfig = {
   size: 100,
-  generatorVersion: 3,
+  // 4 (2026-10-16): slide lanes may cross; 3 kept them apart.
+  generatorVersion: 4,
   ladders: { count: [8, 10], length: [4, 30] },
   snakes: { count: [8, 10], length: [4, 30] },
   mysteryDensity: 0.18,

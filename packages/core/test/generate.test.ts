@@ -33,17 +33,19 @@ describe('generateBoard', () => {
     expect(attempts / 200).toBeLessThan(2);
   });
 
-  it('is generator version 3, the one whose slide lanes never cross (polish spec 3.4)', () => {
-    expect(cfg.generatorVersion).toBe(3);
+  it('is generator version 4, the one that lets slide lanes cross (2026-10-16; version 3 kept them apart)', () => {
+    expect(cfg.generatorVersion).toBe(4);
   });
 
-  it('keeps every pair of slide lanes at least LANE_CLEARANCE apart', () => {
-    for (let i = 0; i < 200; i++) {
+  it('lets slide lanes cross: trails only show for a moment (the user, 2026-10-16)', () => {
+    let crossing = 0;
+    for (let i = 0; i < 100; i++) {
       const lanes = generateBoard(`lanes-${i}`, cfg)
         .board.jumps.filter((j) => jumpKind(j) === 'snake')
         .map((j) => laneCenterline(j.from, j.to));
-      for (let a = 0; a < lanes.length; a++) for (let b = a + 1; b < lanes.length; b++) expect(laneGap(lanes[a]!, lanes[b]!)).toBeGreaterThanOrEqual(LANE_CLEARANCE);
+      for (let a = 0; a < lanes.length; a++) for (let b = a + 1; b < lanes.length; b++) if (laneGap(lanes[a]!, lanes[b]!) < LANE_CLEARANCE) crossing++;
     }
+    expect(crossing).toBeGreaterThan(0);
   });
 
   it('only produces boards that satisfy every hard and generator rule', () => {
@@ -104,9 +106,9 @@ describe('structuralViolations', () => {
     expect(structuralViolations(valid, cfg)).toEqual([]);
   });
 
-  it('flags slide lanes that cross or touch', () => {
+  it('lets slide lanes cross (2026-10-16)', () => {
     // 83 -> 72 crosses 76 -> 61.
-    expect(structuralViolations(makeBoard(100, [...base, [83, 72]], mystery), cfg)).toContain('lane-crossing');
+    expect(structuralViolations(makeBoard(100, [...base, [83, 72]], mystery), cfg)).not.toContain('lane-crossing');
   });
 
   it('flags chains', () => {

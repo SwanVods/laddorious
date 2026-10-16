@@ -1,4 +1,3 @@
-import { laneCenterline, lanesTouch } from './layout';
 import type { Board } from './types';
 
 /**
@@ -49,13 +48,7 @@ export function boardViolations(board: Board): string[] {
       tile = next.get(tile)!;
     }
   }
-  // Slides never cross: their lanes stay a clearance apart, on generated boards and after a card's edit (2026-10-15).
-  const snakes = board.jumps.filter((j) => j.to < j.from);
-  const lanes = snakes.map((j) => laneCenterline(j.from, j.to));
-  lanes.forEach((a, i) =>
-    lanes.slice(i + 1).forEach((b, k) => {
-      if (lanesTouch(a, b)) out.push(`${snakes[i]!.id}: lane touches ${snakes[i + 1 + k]!.id}'s`);
-    }),
-  );
+  // Slide lanes may cross (the user, 2026-10-16): trails only show for a moment now, and keeping them apart
+  // left a card's new snake almost nowhere to go (Snake Pit fizzled 85% of the time).
   return [...new Set(out)];
 }

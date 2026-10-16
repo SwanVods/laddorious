@@ -28,12 +28,12 @@ describe('planBoardEdit', () => {
     expect(planBoardEdit(board, create('snake', 8), 10, 'x1')).toEqual({ added: [{ id: 'x1', from: 14, to: 6 }], removed: [] });
   });
 
-  it("create never lays a slide across another slide's lane (2026-10-15)", () => {
+  it("may lay a slide across another slide's lane (2026-10-16: trails only show for a moment, so crossings don't matter)", () => {
     const board = makeBoard(100, [[15, 8]]);
     const plan = planBoardEdit(board, create('snake', 8), 10, 'x1');
-    for (const j of plan?.added ?? []) expect(lanesTouch(laneCenterline(j.from, j.to), laneCenterline(15, 8)), `${j.from}→${j.to}`).toBe(false);
-    // The engine's own board check agrees.
-    if (plan) expect(boardViolations({ ...board, jumps: [...board.jumps, ...plan.added] })).toEqual([]);
+    expect(plan).toEqual({ added: [{ id: 'x1', from: 12, to: 4 }], removed: [] });
+    expect(lanesTouch(laneCenterline(12, 4), laneCenterline(15, 8))).toBe(true);
+    expect(boardViolations({ ...board, jumps: [...board.jumps, ...plan!.added] })).toEqual([]);
   });
 
   it('create fizzles when every tile it could use holds a jump end', () => {
