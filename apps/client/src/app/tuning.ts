@@ -33,6 +33,8 @@ export interface Tuning {
     knockbackMs: number;
     /** At the end of the moves, the camera holds the last moment this long before going back to the overview (ms). */
     endHoldMs: number;
+    /** A breather between rounds, once everything in a round has played out, before the next one opens (ms). */
+    roundBreakMs: number;
   };
   hud: {
     /** Lines in the action log, top left. */
@@ -50,7 +52,7 @@ export const DEFAULT_TUNING: Tuning = {
     swoop: { ease: 2.8 },
     close: { height: 5.8, back: 7.2 },
   },
-  timing: { hopMs: 230, rollPauseMs: 400, cardLeadMs: 450, cardRollMs: 700, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850, endHoldMs: 1000 },
+  timing: { hopMs: 230, rollPauseMs: 400, cardLeadMs: 450, cardRollMs: 700, cardPauseMs: 600, faceOffIntroMs: 1900, knockbackMs: 850, endHoldMs: 1000, roundBreakMs: 3500 },
   hud: { feedLines: 4, phoneCompactCards: true },
 };
 

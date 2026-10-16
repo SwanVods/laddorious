@@ -34,6 +34,8 @@ describe('the end hold, before the round moves on (2026-10-16: it never showed i
       ['move', hops(5)],
       ['pause', BEAT_MS.endHold],
       ['info', 0],
+      ['roundBreak', BEAT_MS.roundBreak], // then the break between rounds (2026-10-16)
+      ['info', 0],
     ]);
   });
 
@@ -43,8 +45,10 @@ describe('the end hold, before the round moves on (2026-10-16: it never showed i
       moved('p0', 6, 3, 'knockback'),
       ...roundOver,
     ];
-    expect(kinds(events, start({ p0: 6, p1: 6 })).slice(-2)).toEqual([
+    expect(kinds(events, start({ p0: 6, p1: 6 })).slice(-4)).toEqual([
       ['pause', BEAT_MS.endHold],
+      ['info', 0],
+      ['roundBreak', BEAT_MS.roundBreak],
       ['info', 0],
     ]);
   });
@@ -235,7 +239,7 @@ describe('buildTimeline', () => {
     expect(expired!.after.boardEdits).toEqual([]);
   });
 
-  it('gives HUD-only events no time but still applies them', () => {
+  it('gives HUD-only events no time but still applies them; a new round gets its break first (2026-10-16)', () => {
     const beats = buildTimeline(
       [
         { type: 'RoundStarted', round: 2, visibility: 'public' },
@@ -245,9 +249,11 @@ describe('buildTimeline', () => {
       'p0',
       SIZE,
     );
-    expect(beats).toHaveLength(1);
-    expect(beats[0]).toMatchObject({ kind: 'info', durationMs: 0 });
-    expect(beats[0]!.after.round).toBe(2);
+    expect(beats.map((b) => [b.kind, b.durationMs])).toEqual([
+      ['roundBreak', BEAT_MS.roundBreak],
+      ['info', 0],
+    ]);
+    expect(beats[1]!.after.round).toBe(2);
   });
 
   it('stacks pieces that reach one tile in the same beat in the order they land, the first at the bottom (2026-10-15)', () => {

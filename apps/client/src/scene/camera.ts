@@ -70,6 +70,8 @@ export function cameraShot(shown: ShotInput): Shot {
   if (won?.type === 'MatchWon') return won.winner === me ? swoop(input.piece(me), input) : onPlayer(input, won.winner);
   // After the winner cam, the whole board while the other places are revealed (polish spec §4.5).
   if (beat?.kind === 'ranks') return overview(input);
+  // The break between rounds (2026-10-16): the whole board, to breathe.
+  if (beat?.kind === 'roundBreak') return overview(input);
   if (input.peeking) return overview(input);
   if (input.watch) return onPlayer(input, input.watch);
   const card = cardShot(input);
