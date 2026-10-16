@@ -82,13 +82,14 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - Gate: 120 test files, 1,087 tests; typecheck, lint, build clean; `pnpm e2e` 16 of 17, the online away test flaking as in Open items (passed on its own rerun).
 - Released as v0.1.1 (tag on `0bb19e2`, pushed 2026-10-16); commit messages carry no attribution line from then on (the user's rule).
 
-**Card building blocks 4b (2026-10-16), branch `feat/card-blocks-4b`, awaiting review** (plan `docs/superpowers/plans/2026-10-16-card-blocks-4b.md`, uncommitted):
+**Card building blocks 4b (2026-10-16), merged to local `main` on 2026-10-16; the user pushes** (plan `docs/superpowers/plans/2026-10-16-card-blocks-4b.md`, uncommitted):
 - Four new effect hooks: `skipRoll` (the dice phase marks the player `skipped`, emits `RollSkipped`, leaves them out of the window; their face and total effects wait for their next real roll), `reverseRoll` (after Replace → Multiply → Add → floor 0 the total is negated; `DiceTotaled.total` can be negative; the move floors at 0), `beforeSnakeOrAttack` (used after the plain snake or attack shield), `jumpsOff` (global while any is up: no snake or ladder moves anyone, no snake shield is used, "landed on a snake head" doesn't hold; its card targets you, with rounds and no uses; `jumpsAreOff` in core).
 - The game: feed "Mochi skips this roll" and "Pip moves back 4", row status "Skips this roll", dock "You skip this roll. Waiting for …", centre die "Back 4", NEXT ROLL "Skip" / "Backward", chips for all four, the shield bubble for the new shield, and while snakes and ladders are off every end fades toward stone grey (`WORLD_COLORS.jumpsOff`) and the whirlpools stand still.
 - On now: Red Light, Tripwire, Time Freeze, Reverse Gear, Wrong Way, Topsy-Turvy, Double or Nothing, Lucky Charm, Aegis, Calm Waters, Still Waters — 44 on, 22 drafts, 2 off. Simulate (1,000 four-player bot matches): none of the 11 flagged (Aegis wins 34%); Switcheroo (42%) and Ladder Warp (38%) flagged strong.
 - Camera fix (the user saw it, 2026-10-16): after my card pick the camera used to go back to the event before the pick (another player's rocket) until the cards resolved; my pick is now the held focus (`heldNext` in `scene/camera.ts`), so it stays on me.
 - Card bubbles beside the player rows show only the card's name; the cards in the bottom queue show what each does, with the match's numbers (the user, 2026-10-16).
-- Gate: 125 test files, 1,118 tests; typecheck, lint, build clean; `pnpm e2e` 16 of 17, the online away test flaking (passed on its own rerun).
+- Camera fix 2 (the user saw it, 2026-10-16): the pause after a card held the card's own shot, so the camera went target → caster → overview; a card's pause now carries `lastMoment` (its move or a slide after it) and the camera stays there. A card move with several players (Retreat!, Earthquake) shows the overview.
+- Gate: 125 test files, 1,120 tests; typecheck, lint, build clean; `pnpm e2e` 16 of 17, the online away test flaking (passed on its own rerun).
 - Next: batch 4c, the "when" effects and "if your next roll is…" (its own short plan).
 
 Spec #4 (the multiplayer server) is done and merged to `main` (2026-10-09). Two things are the user's own steps:
