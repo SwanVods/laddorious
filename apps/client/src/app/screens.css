@@ -407,6 +407,24 @@
   font: 600 max(11px, 2cqh) / 1.3 var(--body);
 }
 
+/* The version and credits at the foot of the settings (2026-10-16). */
+.about {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-top: max(8px, 1.4cqh);
+  border-top: 2px dashed var(--paper-alt);
+  color: var(--muted-on-paper);
+  font: 600 max(11px, 1.8cqh) / 1.2 var(--body);
+}
+
+.about b {
+  color: var(--ink);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
 /* Sound volumes (spec #3 §4). */
 .volume-row {
   display: grid;

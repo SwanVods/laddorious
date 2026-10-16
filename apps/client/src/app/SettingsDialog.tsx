@@ -3,6 +3,7 @@ import { useStore } from 'zustand';
 import type { StoreApi } from 'zustand/vanilla';
 import { autoStepDown, deviceEnv, startLevel, type QualitySetting } from '../scene/quality';
 import { Dialog } from '../ui/Dialog';
+import pkg from '../../package.json';
 import type { PrefsState } from './prefs';
 
 const QUALITY_OPTIONS: Array<{ value: QualitySetting; label: string; description: string }> = [
@@ -99,6 +100,11 @@ export function SettingsDialog({ prefs, onClose, device = deviceEnv(), children 
       </div>
       <p className="setting-note">{`Right now: ${level === 'high' ? 'High' : 'Low'}${stepped ? ' (Auto lowered it for this match)' : settings.quality === 'auto' ? ' (Auto on this device)' : ''}.`}</p>
       {children && <div className="dialog-actions">{children}</div>}
+      {/* The version and who made it (the user, 2026-10-16); the version is the release in package.json. */}
+      <footer className="about" role="contentinfo">
+        <b className="display">{`Laddorious v${pkg.version}`}</b>
+        <span>Made by Feiralabs</span>
+      </footer>
     </Dialog>
   );
 }
