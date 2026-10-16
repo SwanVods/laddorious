@@ -24,7 +24,11 @@ export type EffectParams =
   | { hook: 'diceTotal'; op: 'replace' | 'multiply' | 'add'; value: number }
   | { hook: 'beforeSnake' }
   | { hook: 'beforeAttack' }
-  | { hook: 'afterMove'; cause: MoveCause; condition: 'landedOnSnakeHead'; amount: number }
+  /**
+   * After the owner's move slides down a snake or climbs a ladder (2026-10-16: ladders too), the owner moves
+   * on by `amount`, or with `who: 'others'` every other player does.
+   */
+  | { hook: 'afterMove'; cause: MoveCause; condition: JumpCondition; amount: number; who?: 'others' }
   /** Skip the owner's next roll (2026-10-16). */
   | { hook: 'skipRoll' }
   /** The owner's next roll moves them back (2026-10-16). */
@@ -32,9 +36,27 @@ export type EffectParams =
   /** Blocks the owner's next snake or attack, whichever comes first (2026-10-16). */
   | { hook: 'beforeSnakeOrAttack' }
   /** Snakes and ladders do nothing, for everyone, while it lasts (2026-10-16). */
-  | { hook: 'jumpsOff' };
+  | { hook: 'jumpsOff' }
+  /** "If your next roll is…" (2026-10-16): checked on the owner's next roll's faces. */
+  | RollCheck;
+
+/** What a roll check looks for, and what happens when it holds (and, for a ladder, when it doesn't). */
+export interface RollCheck {
+  hook: 'rollCheck';
+  when: 'odd' | 'even' | 'over3';
+  then: { multiply: number } | { shield: { charges: number; rounds?: number } } | { toLadder: true };
+  otherwise?: 'stay';
+}
+
+/** Whether a roll's faces add up to what the check looks for. */
+export function rollMeets(when: RollCheck['when'], sum: number): boolean {
+  return when === 'over3' ? sum > 3 : (sum % 2 === 1) === (when === 'odd');
+}
 
 export type EffectHook = EffectParams['hook'];
+
+/** What a "when" effect waits for: a slide down a snake, or a climb up a ladder (2026-10-16). */
+export type JumpCondition = 'landedOnSnakeHead' | 'climbedLadder';
 
 export interface EffectTemplate {
   params: EffectParams;
@@ -96,7 +118,7 @@ export type EffectOp =
   | { op: 'removeEffects'; filter: { createdByOthers?: boolean; hook?: EffectHook }; count: number | 'all' }
   | BoardEditOp
   | { op: 'gamble'; outcomes: Array<{ weight: number; ops: EffectOp[] }> }
-  | { op: 'conditional'; trigger: { cause: MoveCause; condition: 'landedOnSnakeHead' }; amount: number; lifetime: Lifetime };
+  | { op: 'conditional'; trigger: { cause: MoveCause; condition: JumpCondition }; amount: number; who?: 'others'; lifetime: Lifetime };
 
 export interface CardDef {
   id: string;

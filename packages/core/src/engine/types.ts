@@ -1,5 +1,5 @@
 import type { Board, Jump, Rarity } from '../board/types';
-import type { ActiveEffect, BoardEditLifetime, CardType, MoveCause } from '../cards/types';
+import type { ActiveEffect, BoardEditLifetime, CardType, MoveCause, RollCheck } from '../cards/types';
 import type { RngStream } from '../rng/stream';
 import type { MatchConfig } from './config';
 
@@ -144,6 +144,8 @@ export type EventBody =
   | { type: 'WindowOpened'; windowId: number; window: WindowKind; players: PlayerId[]; durationMs: number }
   | { type: 'DieRolled'; player: PlayerId; natural: number; face: number; forced: boolean; auto: boolean }
   | { type: 'RollSkipped'; player: PlayerId; effectId: string }
+  /** A roll check on the player's roll (2026-10-16): whether it held. */
+  | { type: 'RollChecked'; player: PlayerId; effectId: string; met: boolean; check: RollCheck }
   | { type: 'DiceTotaled'; player: PlayerId; faces: number[]; total: number }
   | { type: 'Moved'; player: PlayerId; from: number; to: number; cause: MoveCause; bounced: boolean }
   | { type: 'SnakeBlocked'; player: PlayerId; tile: number; effectId: string }

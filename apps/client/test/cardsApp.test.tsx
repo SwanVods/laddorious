@@ -11,7 +11,7 @@ describe('the card editor: the list (2026-10-15)', () => {
   it('lists every card with its counts by status', async () => {
     render(<CardsApp api={api()} />);
     expect(await screen.findByText('Lucky Number')).toBeTruthy();
-    expect(screen.getByText('44 on · 22 drafts · 2 off')).toBeTruthy();
+    expect(screen.getByText('53 on · 13 drafts · 2 off')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(68);
   });
 
@@ -19,7 +19,7 @@ describe('the card editor: the list (2026-10-15)', () => {
     render(<CardsApp api={api()} />);
     await screen.findByText('Lucky Number');
     fireEvent.click(screen.getByRole('button', { name: 'Drafts' }));
-    expect(screen.getAllByRole('listitem')).toHaveLength(22);
+    expect(screen.getAllByRole('listitem')).toHaveLength(13);
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search cards' }), { target: { value: 'ular' } });
     expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0);
     expect(screen.queryByText('Lucky Number')).toBeNull();

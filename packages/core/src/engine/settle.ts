@@ -19,17 +19,32 @@ const MAX_MOVES_PER_STEP = 1000;
 export function resolveJumps(s: MatchState, ev: GameEvent[], movers: Mover[]): Mover[] {
   const queue = [...movers];
   const moved = new Map<PlayerId, Mover>();
+  // Everyone else's moves from "when" effects (2026-10-16), made once every landing so far has played out.
+  const others = new Map<PlayerId, number>();
   let processed = 0;
-  while (queue.length > 0) {
+  for (;;) {
+    if (queue.length === 0) {
+      if (others.size === 0) break;
+      for (const p of s.players) {
+        const amount = others.get(p.id);
+        if (!amount) continue;
+        const raw = p.position + amount;
+        movePlayer(s, ev, p.id, bounce(raw, s.board.size), 'effect', raw > s.board.size);
+        queue.push({ player: p.id, cause: 'effect' });
+      }
+      others.clear();
+      continue;
+    }
     // Valid cards cannot chain forever (validateCards); this guards hand-built effects.
     if (++processed > MAX_MOVES_PER_STEP) throw new InvariantError('runaway afterMove chain while settling');
     const m = queue.shift()!;
     moved.set(m.player, m);
     const p = getPlayer(s, m.player);
-    const landedOn = p.position;
     // Snakes and ladders off (2026-10-16): nobody slides or climbs, and no snake shield is used.
     const off = jumpsAreOff(s.effects);
     let guard = 0;
+    // What the landing did: its first jump, if one was taken (a "when" effect waits for it).
+    let jumped: 'snake' | 'ladder' | null = null;
     for (;;) {
       const j = off ? undefined : jumpFrom(s.board, p.position);
       if (!j) break;
@@ -40,12 +55,16 @@ export function resolveJumps(s: MatchState, ev: GameEvent[], movers: Mover[]): M
           break;
         }
         movePlayer(s, ev, p.id, j.to, 'snake');
+        jumped ??= 'snake';
       } else {
         movePlayer(s, ev, p.id, j.to, 'ladder');
+        jumped ??= 'ladder';
       }
       if (++guard > s.board.jumps.length) throw new InvariantError('jump cycle while settling');
     }
-    const extra = evaluateAfterMove(s, ev, p.id, m.cause, landedOn);
+    const fired = evaluateAfterMove(s, ev, p.id, m.cause, jumped);
+    for (const o of fired.others) others.set(o.player, (others.get(o.player) ?? 0) + o.amount);
+    const extra = fired.extra;
     if (extra !== 0) {
       const raw = p.position + extra;
       movePlayer(s, ev, p.id, bounce(raw, s.board.size), 'effect', raw > s.board.size);

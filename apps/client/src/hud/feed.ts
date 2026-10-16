@@ -41,6 +41,15 @@ function lineFor(e: GameEvent, themes: ReadonlyMap<string, [string, string] | nu
       return [`Round ${e.round} started`];
     case 'DieRolled':
       return [{ player: e.player }, ` rolled ${e.face}${e.forced ? ' (set by a card)' : ''}`];
+    case 'RollChecked': {
+      // "If your next roll is…" (2026-10-16): say what it did; a multiply or shield that didn't hold says nothing.
+      const then = e.check.then;
+      const w = e.check.when === 'over3' ? 'over 3' : e.check.when;
+      if (!e.met) return 'toLadder' in then && e.check.otherwise === 'stay' ? [{ player: e.player }, ' rolled 3 or less: stays put'] : null;
+      if ('multiply' in then) return [{ player: e.player }, ` rolled ${w}: ${then.multiply === 2 ? 'doubled' : then.multiply === 3 ? 'tripled' : `×${then.multiply}`}!`];
+      if ('shield' in then) return [{ player: e.player }, ` rolled ${w}: shielded`];
+      return [{ player: e.player }, ` rolled ${w}: off to the nearest rocket`];
+    }
     case 'RollSkipped':
       return [{ player: e.player }, ' skips this roll'];
     case 'DiceTotaled': {

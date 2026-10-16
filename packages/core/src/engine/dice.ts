@@ -1,7 +1,9 @@
 import { rollDie } from '../rng/stream';
-import { applyFaceEffects, applyTotalEffects, effectsOn, spendCharge } from './effects';
+import { jumpKind } from '../board/types';
+import { rollMeets } from '../cards/types';
+import { addEffect, applyFaceEffects, applyTotalEffects, effectsOn, spendCharge } from './effects';
 import type { DiceSeq, GameEvent, InputError, MatchState, Mover, PlayerId } from './types';
-import { bounce, getPlayer, movePlayer, openWindow, pub } from './util';
+import { bounce, clonePlain, getPlayer, movePlayer, openWindow, pub } from './util';
 
 type DicePhase = Extract<MatchState['phase'], { kind: 'dice' }>;
 
@@ -78,7 +80,25 @@ export function finishDicePhase(s: MatchState, ev: GameEvent[]): void {
       continue;
     }
     const sum = seq.faces.reduce((a, b) => a + b, 0);
-    const total = applyTotalEffects(s, ev, p.id, sum);
+    // Roll checks (2026-10-16): on the faces, before any total modifier; spent whether they hold or not.
+    let factor = 1;
+    let override: 'ladder' | 'stay' | null = null;
+    for (const e of effectsOn(s, p.id, 'rollCheck')) {
+      const met = rollMeets(e.params.when, sum);
+      ev.push(pub({ type: 'RollChecked', player: p.id, effectId: e.id, met, check: clonePlain(e.params) }));
+      const then = e.params.then;
+      if (met && 'multiply' in then) factor *= then.multiply;
+      if (met && 'shield' in then) addEffect(s, ev, p.id, { params: { hook: 'beforeSnakeOrAttack' }, lifetime: { ...then.shield } }, e.sourceCard, e.sourcePlayer);
+      if ('toLadder' in then) override = met ? 'ladder' : e.params.otherwise === 'stay' ? 'stay' : override;
+      spendCharge(s, ev, e);
+    }
+    let total = applyTotalEffects(s, ev, p.id, sum, factor);
+    if (override === 'stay') total = 0;
+    if (override === 'ladder') {
+      // The nearest ladder's foot ahead; with none ahead, the player stays put.
+      const foot = s.board.jumps.filter((j) => jumpKind(j) === 'ladder' && j.from > p.position).sort((a, b) => a.from - b.from)[0];
+      total = foot ? foot.from - p.position : 0;
+    }
     s.lastTotals[p.id] = total;
     ev.push(pub({ type: 'DiceTotaled', player: p.id, faces: [...seq.faces], total }));
   }

@@ -147,11 +147,22 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       return { ...base, icon: 'aegis', badge: roundsBadge(effect), description: `Blocks the next slide or attack${from}` };
     case 'jumpsOff':
       return { ...base, icon: 'slide', badge: roundsBadge(effect), description: 'Slides and rockets do nothing, for everyone' };
+    case 'rollCheck': {
+      const w = p.when === 'over3' ? 'over 3' : p.when;
+      const then = 'multiply' in p.then ? `it's ×${p.then.multiply}` : 'shield' in p.then ? 'block a slide or attack' : `go to the nearest rocket${p.otherwise === 'stay' ? ', else stay put' : ''}`;
+      return { ...base, icon: 'multiply' in p.then ? 'x2' : 'shield' in p.then ? 'aegis' : 'pad', badge: w, description: `If the next roll is ${w}: ${then}${from}` };
+    }
     case 'skipRoll':
       return { ...base, icon: 'lock', badge: roundsBadge(effect), description: `Skips the next roll${from}` };
     case 'reverseRoll':
       return { ...base, icon: 'back', badge: '←', description: `Next roll moves back${from}` };
     case 'afterMove':
+      // "When" effects (2026-10-16): after a launch too, and moving everyone else.
+      if (p.who === 'others') {
+        const climb = p.condition === 'climbedLadder';
+        return { ...base, icon: climb ? 'pad' : 'slide', badge: signed(p.amount), description: `When you ${climb ? 'launch' : 'slide'}, everyone else moves ${signed(p.amount)}${from}` };
+      }
+      if (p.condition === 'climbedLadder') return { ...base, icon: 'pad', badge: signed(p.amount), description: `After your next launch, you move ${signed(p.amount)}${from}` };
       return { ...base, icon: 'bait', badge: signed(p.amount), description: `Landing on a slide's vacuum moves you ${signed(p.amount)} after sliding${from}` };
   }
 }
@@ -176,6 +187,12 @@ export function nextRollMods(effects: ActiveEffect[], me: PlayerId): string[] {
   if (replace) out.push(`Total = ${replace.value}`);
   for (const t of totals) if (t.op === 'multiply') out.push(`Total ×${t.value}`);
   for (const t of totals) if (t.op === 'add') out.push(`Total ${signed(t.value)}`);
+  for (const e of mine) {
+    if (e.params.hook !== 'rollCheck') continue;
+    const w = e.params.when === 'over3' ? 'over 3' : e.params.when;
+    const then = e.params.then;
+    out.push(`If ${w} ${'multiply' in then ? `×${then.multiply}` : 'shield' in then ? 'shield' : 'rocket'}`);
+  }
   if (mine.some((e) => e.params.hook === 'reverseRoll')) out.push('Backward');
   return out;
 }

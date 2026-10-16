@@ -44,6 +44,20 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
     if (l.rounds !== undefined) return ` (${num(l.rounds)} round${l.rounds === 1 ? '' : 's'})`;
     return shield ? ', any time this match' : '';
   };
+  /** A "when" effect (2026-10-16): after a slide or a climb, you move on, or everyone else moves. */
+  const when = (condition: string, amount: Amount, who: string | undefined, l: Templated<Lifetime>): string => {
+    const back = isBack(amount);
+    const dist = num(amount, back ? -1 : 1);
+    const dir = back ? 'back' : 'forward';
+    if (who === 'others') {
+      const happens = condition === 'climbedLadder' ? 'climb a ladder' : 'hit a snake';
+      const rounds = l !== 'permanent' && l.charges === undefined && l.rounds !== undefined ? l.rounds : undefined;
+      const head = rounds !== undefined ? `For ${num(rounds)} round${rounds === 1 ? '' : 's'}: if you ${happens}` : `Next time you ${happens}`;
+      return `${head}, everyone else moves ${dir} ${dist}.`;
+    }
+    if (condition === 'climbedLadder') return `Next time you climb a ladder, move ${dir} ${dist} more.`;
+    return `Next time you land on a snake head, move ${dir} ${dist} after sliding.`;
+  };
   const sentence = (op: Op): string => {
     switch (op.op) {
       case 'moveRelative': {
@@ -84,6 +98,22 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
           case 'jumpsOff':
             if (l === 'permanent' || l.rounds === undefined) return 'Snakes and ladders do nothing for the rest of the match.';
             return `Snakes and ladders do nothing for ${num(l.rounds)} round${l.rounds === 1 ? '' : 's'}.`;
+          case 'rollCheck': {
+            const w = p.when === 'over3' ? 'over 3' : p.when;
+            const head = `If ${lower(nextRoll())} is ${w}`;
+            const then = p.then;
+            if ('multiply' in then) {
+              const x = num(then.multiply);
+              return `${head}, it is ${x === '2' ? 'doubled' : x === '3' ? 'tripled' : `×${x}`}.`;
+            }
+            if ('shield' in then) {
+              const n = then.shield.charges;
+              const what = n === 1 ? 'snake or attack' : `${num(n)} snakes or attacks`;
+              const rounds = then.shield.rounds;
+              return `${head}, block the next ${what}${rounds === undefined ? ', any time this match' : ` (${num(rounds)} round${rounds === 1 ? '' : 's'})`}.`;
+            }
+            return `${head}, go to the nearest ladder.${p.otherwise === 'stay' ? ' If not, stay put.' : ''}`;
+          }
           case 'skipRoll': {
             const rolls = charges > 1 ? `next ${charges} rolls` : 'next roll';
             return who ? `${who} skips their ${rolls}.` : `Skip your ${rolls}.`;
@@ -91,7 +121,7 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
           case 'reverseRoll':
             return `${nextRoll()} moves ${who ? 'them' : 'you'} back.`;
           case 'afterMove':
-            return `Next time you land on a snake head, move forward ${num(p.amount)} after sliding.`;
+            return when(p.condition, p.amount, p.who, l);
         }
         return '';
       }
@@ -112,7 +142,7 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
           .join(' ');
       }
       case 'conditional':
-        return `Next time you land on a snake head, move forward ${num(op.amount)} after sliding.`;
+        return when(op.trigger.condition, op.amount, op.who, op.lifetime);
     }
   };
   const text = card.effects.map(sentence).join(' ');

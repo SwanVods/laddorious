@@ -21,6 +21,8 @@ export type BeatKind =
   | 'ranks'
   /** A moment to see what just happened (2026-10-14): no events, holding the beat before it. */
   | 'pause'
+  /** A breather between rounds (the user, 2026-10-16): the next round's RoundStarted, held for tuning's roundBreakMs. */
+  | 'roundBreak'
   | 'info';
 
 /** One step of an update's playback (spec #2 §5.1). */
@@ -72,10 +74,14 @@ function withPauses(beats: Beat[]): Beat[] {
     if (beat.kind === 'cardResolved') card = beat;
   }
   if (card) out.push(pause(card, BEAT_MS.cardPause, out.at(-1)));
-  // Hold the last moment before the camera goes back to the overview (2026-10-15).
-  const last = out.at(-1);
+  // Hold the last moment before the camera goes back to the overview (2026-10-15). It goes after the last beat
+  // that shows something: an update always ends with the round's bookkeeping and the next window opening, info
+  // beats with no time of their own, so a hold only at the very end never happened (2026-10-16).
+  let at = out.length - 1;
+  while (at >= 0 && (out[at]!.kind === 'info' || out[at]!.kind === 'roundBreak')) at -= 1;
+  const last = out[at];
   if (last?.kind === 'pause') last.durationMs = Math.max(last.durationMs, BEAT_MS.endHold);
-  else if (last && HELD_AT_END.has(last.kind)) out.push(pause(last, BEAT_MS.endHold));
+  else if (last && HELD_AT_END.has(last.kind)) out.splice(at + 1, 0, { kind: 'pause', durationMs: BEAT_MS.endHold, events: [], after: last.after, holds: last });
   return out;
 }
 
@@ -131,6 +137,10 @@ export const BEAT_MS = {
   get cardPause() {
     return tuning().timing.cardPauseMs;
   },
+  /** Between rounds, once a round has played out (2026-10-16). */
+  get roundBreak() {
+    return tuning().timing.roundBreakMs;
+  },
   get rollPause() {
     return tuning().timing.rollPauseMs;
   },
@@ -180,6 +190,8 @@ function kindOf(event: GameEvent): BeatKind {
       return 'boardEdit';
     case 'MatchWon':
       return 'victory';
+    case 'RoundStarted':
+      return event.round > 1 ? 'roundBreak' : 'info';
     default:
       return 'info';
   }
@@ -318,6 +330,8 @@ function durationOf(beat: Beat, boardSize: number, me: PlayerId): number {
       const places = won?.type === 'MatchWon' ? new Set(won.rankings.filter((r) => r.player !== won.winner).map((r) => r.rank)).size : 0;
       return places * BEAT_MS.rankStep + BEAT_MS.rankHold;
     }
+    case 'roundBreak':
+      return BEAT_MS.roundBreak;
     case 'pause':
       return beat.durationMs;
     case 'info':

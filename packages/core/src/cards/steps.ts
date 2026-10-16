@@ -57,6 +57,30 @@ function effectKind(id: string, label: string, hook: string, extra: Record<strin
   }
 }
 
+const WHEN: StepField = { key: 'when', label: 'if the next roll is', kind: 'choice', choices: [['odd', 'odd'], ['even', 'even'], ['over3', 'over 3']] };
+
+/** "If your next roll is…" (2026-10-16): a roll check whose outcome has its own fields. */
+function rollCheckKind(id: string, label: string, fields: StepField[], then: (v: Record<string, unknown>) => unknown, read: (then: Record<string, unknown>, otherwise: unknown) => Record<string, unknown> | null, start: Record<string, unknown>): StepKind {
+  const write = (v: Record<string, unknown>): Op => ({
+    op: 'addEffect',
+    template: { params: { hook: 'rollCheck', when: v.when, then: then(v), ...(v.otherwise === 'stay' ? { otherwise: 'stay' } : {}) } as never, lifetime: lifeFrom(v) },
+  });
+  return {
+    id,
+    label,
+    fields: [WHEN, ...fields, USES, ROUNDS],
+    make: () => write({ when: 'odd', ...start, charges: 1, rounds: 0 }),
+    read(op) {
+      if (op.op !== 'addEffect') return null;
+      const p = op.template.params as Record<string, unknown>;
+      if (p.hook !== 'rollCheck') return null;
+      const own = read(p.then as Record<string, unknown>, p.otherwise);
+      return own && { when: p.when, ...own, ...lifeOf(op.template.lifetime) };
+    },
+    write,
+  };
+}
+
 function boardKind(id: string, label: string, kind: 'snake' | 'ladder', length: number): StepKind {
   return {
     id,
@@ -96,15 +120,39 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('rollExactly', 'Next roll is exactly', 'diceTotal', { op: 'replace' }, { key: 'value', label: 'total', kind: 'amount', min: 0 }, { value: 4, charges: 1, rounds: 0 }),
   effectKind('skipRoll', 'Skip next roll', 'skipRoll', {}, null, { charges: 1, rounds: 0 }),
   effectKind('rollBack', 'Next roll moves back', 'reverseRoll', {}, null, { charges: 1, rounds: 0 }),
+  rollCheckKind('ifRollTimes', 'If next roll is…: ×', [{ key: 'times', label: 'times', kind: 'amount', min: 2 }],
+    (v) => ({ multiply: v.times }), (t) => ('multiply' in t ? { times: t.multiply } : null), { times: 2 }),
+  rollCheckKind('ifRollShield', 'If next roll is…: block snakes or attacks',
+    [{ key: 'shieldUses', label: 'blocks', kind: 'count', min: 1 }, { key: 'shieldRounds', label: 'for rounds (0 = any time)', kind: 'count', min: 0 }],
+    (v) => ({ shield: { charges: v.shieldUses, ...(v.shieldRounds ? { rounds: v.shieldRounds } : {}) } }),
+    (t) => ('shield' in t ? { shieldUses: (t.shield as { charges: unknown }).charges, shieldRounds: (t.shield as { rounds?: unknown }).rounds ?? 0 } : null),
+    { when: 'even', shieldUses: 1, shieldRounds: 2 }),
+  rollCheckKind('ifRollLadder', 'If next roll is…: go to the nearest ladder',
+    [{ key: 'otherwise', label: 'if not', kind: 'choice', choices: [['stay', 'stay put'], ['move', 'move as rolled']] }],
+    () => ({ toLadder: true }), (t, otherwise) => ('toLadder' in t ? { otherwise: otherwise === 'stay' ? 'stay' : 'move' } : null), { when: 'over3', otherwise: 'stay' }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockSnake', 'Ignore snakes', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockEither', 'Block snakes or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
   effectKind('jumpsOff', 'Snakes and ladders off', 'jumpsOff', {}, null, { charges: 0, rounds: 1 }),
   {
-    id: 'snakeThenMove', label: 'After a snake, move', fields: [{ key: 'amount', label: 'amount', kind: 'amount' }, USES, ROUNDS],
+    // After a slide or a climb (2026-10-16: ladders, and everyone else moving, too).
+    id: 'snakeThenMove', label: 'After a snake or ladder, move',
+    fields: [
+      { key: 'condition', label: 'after', kind: 'choice', choices: [['landedOnSnakeHead', 'sliding down a snake'], ['climbedLadder', 'climbing a ladder']] },
+      { key: 'who', label: 'who moves', kind: 'choice', choices: [['you', 'you'], ['others', 'everyone else']] },
+      { key: 'amount', label: 'amount', kind: 'amount' },
+      USES,
+      ROUNDS,
+    ],
     make: () => ({ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: 8, lifetime: { charges: 1 } }),
-    read: (op) => (op.op === 'conditional' ? { amount: op.amount, ...lifeOf(op.lifetime) } : null),
-    write: (v) => ({ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: v.amount as Amount, lifetime: lifeFrom(v) }),
+    read: (op) => (op.op === 'conditional' ? { condition: op.trigger.condition, who: op.who ?? 'you', amount: op.amount, ...lifeOf(op.lifetime) } : null),
+    write: (v) => ({
+      op: 'conditional',
+      trigger: { cause: 'dice', condition: v.condition as 'landedOnSnakeHead' | 'climbedLadder' },
+      amount: v.amount as Amount,
+      ...(v.who === 'others' ? { who: 'others' as const } : {}),
+      lifetime: lifeFrom(v),
+    }),
   },
   boardKind('newSnake', 'New snake', 'snake', 8),
   boardKind('newLadder', 'New ladder', 'ladder', 15),

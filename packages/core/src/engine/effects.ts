@@ -1,5 +1,4 @@
-import { isSnakeHead } from '../board/types';
-import { jumpsAreOff, type ActiveEffect, type EffectHook, type EffectParams, type EffectTemplate, type MoveCause } from '../cards/types';
+import { type ActiveEffect, type EffectHook, type EffectParams, type EffectTemplate, type MoveCause } from '../cards/types';
 import type { GameEvent, MatchState, PlayerId } from './types';
 import { clonePlain, nextId, pub } from './util';
 
@@ -72,11 +71,13 @@ export function applyFaceEffects(
 }
 
 /** TOTAL stage (spec §5.6): Replace (newest wins) → Multiply (product) → Add (sum) → floor 0. All diceTotal effects fire. */
-export function applyTotalEffects(s: MatchState, ev: GameEvent[], player: PlayerId, sum: number): number {
+export function applyTotalEffects(s: MatchState, ev: GameEvent[], player: PlayerId, sum: number, factor = 1): number {
   const effects = effectsOn(s, player, 'diceTotal');
   let total = sum;
   const replaces = effects.filter((e) => e.params.op === 'replace');
   if (replaces.length > 0) total = replaces[replaces.length - 1]!.params.value;
+  // `factor`: a roll check's multiply that held (2026-10-16), one more Multiply.
+  total *= factor;
   for (const e of effects) if (e.params.op === 'multiply') total *= e.params.value;
   for (const e of effects) if (e.params.op === 'add') total += e.params.value;
   for (const e of effects) spendCharge(s, ev, e);
@@ -104,26 +105,32 @@ export function useAttackShield(s: MatchState, ev: GameEvent[], player: PlayerId
 }
 
 /**
- * afterMove conditionals (spec §4.5 step 1). Every matching effect fires (spends
- * a charge); those whose condition holds contribute their amount. Returns the
- * total extra movement.
+ * afterMove conditionals (spec §4.5 step 1), on what the move's landing did: slid down a snake, climbed a
+ * ladder, or neither. An effect fires only when its slide or climb happened, and only then spends a charge
+ * (2026-10-16: the cards say "next time you…"; it used to be spent by the next move on that cause, slide or
+ * not). Returns the owner's extra movement, and everyone else's from `who: 'others'` effects.
  */
 export function evaluateAfterMove(
   s: MatchState,
   ev: GameEvent[],
   player: PlayerId,
   cause: MoveCause,
-  landedOn: number,
-  boardForCheck = s.board,
-): number {
+  jumped: 'snake' | 'ladder' | null,
+): { extra: number; others: Array<{ player: PlayerId; amount: number }> } {
   let extra = 0;
+  const others: Array<{ player: PlayerId; amount: number }> = [];
+  if (jumped === null) return { extra, others };
   for (const e of effectsOn(s, player, 'afterMove')) {
     if (e.params.cause !== cause) continue;
-    // With snakes and ladders off (2026-10-16), a snake head is just a tile.
-    if (e.params.condition === 'landedOnSnakeHead' && !jumpsAreOff(s.effects) && isSnakeHead(boardForCheck, landedOn)) extra += e.params.amount;
+    if ((e.params.condition === 'landedOnSnakeHead') !== (jumped === 'snake')) continue;
+    if (e.params.who === 'others') {
+      for (const p of s.players) if (p.id !== player) others.push({ player: p.id, amount: e.params.amount });
+    } else {
+      extra += e.params.amount;
+    }
     spendCharge(s, ev, e);
   }
-  return extra;
+  return { extra, others };
 }
 
 /** Round end (spec §4.11): remove effects whose `rounds` lifetime has run out. */

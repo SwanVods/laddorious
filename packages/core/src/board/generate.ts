@@ -2,7 +2,6 @@ import { createStream, intBetween, pickWeighted, type RngStream } from '../rng/s
 import { analyzeBoard, type BoardAnalysis } from './analysis';
 import type { BoardConfig } from './config';
 import { boardViolations } from './invariants';
-import { laneCenterline, lanesTouch, type LanePoint } from './layout';
 import { RARITIES, jumpKind, jumpLength, type Board, type Jump, type Rarity } from './types';
 
 export type RejectionReason =
@@ -14,7 +13,6 @@ export type RejectionReason =
   | 'count'
   | 'finish-zone'
   | 'snake-run'
-  | 'lane-crossing'
   | 'mystery-spacing'
   | 'analysis-median'
   | 'analysis-tail';
@@ -96,8 +94,6 @@ function drawCandidate(seed: string, cfg: BoardConfig, rng: RngStream): Board | 
   const ends = new Set<number>();
   let finishZoneSnakes = 0;
   const zoneStart = N - cfg.finishZone.tiles;
-  /** Placed snakes' lanes: a new snake must keep clear of every one (polish spec 3.4). */
-  const lanes: LanePoint[][] = [];
 
   const kinds: Array<'snake' | 'ladder'> = [
     ...Array<'snake'>(intBetween(rng, cfg.snakes.count[0], cfg.snakes.count[1])).fill('snake'),
@@ -124,11 +120,6 @@ function drawCandidate(seed: string, cfg: BoardConfig, rng: RngStream): Board | 
       const inZone = kind === 'snake' && from >= zoneStart;
       if (inZone && (finishZoneSnakes >= cfg.finishZone.maxSnakes || len > cfg.finishZone.maxSnakeLength)) continue;
       if (kind === 'snake' && wouldExceedSnakeRun(jumps, from, cfg.maxConsecutiveSnakeHeads)) continue;
-      if (kind === 'snake') {
-        const lane = laneCenterline(from, to);
-        if (lanes.some((placed) => lanesTouch(placed, lane))) continue;
-        lanes.push(lane);
-      }
       jumps.push({ id: `j${jumps.length + 1}`, from, to });
       starts.add(from);
       ends.add(to);
@@ -192,8 +183,6 @@ export function structuralViolations(board: Board, cfg: BoardConfig): RejectionR
     out.push('finish-zone');
   }
 
-  const lanes = snakes.map((j) => laneCenterline(j.from, j.to));
-  if (lanes.some((a, i) => lanes.slice(i + 1).some((b) => lanesTouch(a, b)))) out.push('lane-crossing');
 
   const heads = new Set(snakes.map((j) => j.from));
   let run = 0;

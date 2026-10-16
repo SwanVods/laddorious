@@ -243,6 +243,9 @@ export function dockModel({ beat: shown, view, record, me }: DockInput): DockMod
   // A pause shows the moment it follows (2026-10-14).
   const beat = shown && heldBeat(shown);
   if (beat) {
+    // The break between rounds (2026-10-16): no ROLL yet, just what comes next.
+    const next = beat.kind === 'roundBreak' ? beat.events.find((e) => e.type === 'RoundStarted') : undefined;
+    if (next?.type === 'RoundStarted') return { kind: 'caption', parts: [`Next: round ${next.round}`], totals: null };
     if (beat.kind === 'move') {
       const totals = Object.entries(record.dice).map(([player, d]) => ({ player, total: d.total ?? d.faces.reduce((a, b) => a + b, 0) }));
       return { kind: 'caption', parts: ['Everyone moves'], totals };

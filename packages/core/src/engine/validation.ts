@@ -45,6 +45,13 @@ function checkAfterMove(cause: MoveCause, lifetime: Lifetime, where: string): vo
   }
 }
 
+/** A "when" effect (2026-10-16): a slide or a climb; moving everyone else only after the owner's dice moves, so it can't chain. */
+function checkWhen(condition: unknown, cause: unknown, who: unknown, where: string): void {
+  check(condition === 'landedOnSnakeHead' || condition === 'climbedLadder', where, 'unknown afterMove condition');
+  check(who === undefined || who === 'others', where, "afterMove.who must be 'others' or left out");
+  check(who !== 'others' || cause === 'dice', where, 'an effect that moves everyone else only after your dice moves');
+}
+
 function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string): void {
   switch (params.hook) {
     case 'diceFace':
@@ -64,12 +71,27 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
     case 'jumpsOff':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.rounds) && lifetime.charges === undefined, where, 'jumpsOff needs rounds and no uses');
       return;
+    case 'rollCheck': {
+      check(['odd', 'even', 'over3'].includes(params.when), where, 'rollCheck.when must be odd, even or over3');
+      const then = params.then as Record<string, unknown> | undefined;
+      const kinds = then ? ['multiply', 'shield', 'toLadder'].filter((k) => k in then) : [];
+      check(kinds.length === 1, where, 'rollCheck.then must be one of multiply, shield or toLadder');
+      if (then && 'multiply' in then) check(isPositiveInt(then.multiply), where, 'rollCheck multiply must be a positive integer');
+      if (then && 'shield' in then) {
+        const shield = then.shield as { charges?: unknown; rounds?: unknown } | undefined;
+        check(isPositiveInt(shield?.charges) && (shield?.rounds === undefined || isPositiveInt(shield.rounds)), where, 'rollCheck shield needs uses, and rounds if any');
+      }
+      if (then && 'toLadder' in then) check(then.toLadder === true, where, 'rollCheck toLadder must be true');
+      check(params.otherwise === undefined || params.otherwise === 'stay', where, "rollCheck.otherwise must be 'stay' or left out");
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, 'rollCheck needs uses (charges)');
+      return;
+    }
     case 'skipRoll':
     case 'reverseRoll':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, `${params.hook} needs uses (charges)`);
       return;
     case 'afterMove':
-      check(params.condition === 'landedOnSnakeHead', where, 'unknown afterMove condition');
+      checkWhen(params.condition, params.cause, params.who, where);
       check(isInt(params.amount), where, 'afterMove.amount must be an integer');
       checkAfterMove(params.cause, lifetime, where);
       return;
@@ -128,7 +150,7 @@ function checkOps(ops: EffectOp[], where: string): void {
         });
         return;
       case 'conditional':
-        check(op.trigger?.condition === 'landedOnSnakeHead', at, 'unknown conditional trigger');
+        checkWhen(op.trigger?.condition, op.trigger?.cause, op.who, at);
         check(isInt(op.amount), at, 'conditional.amount must be an integer');
         checkLifetime(op.lifetime, at);
         checkAfterMove(op.trigger.cause, op.lifetime, at);

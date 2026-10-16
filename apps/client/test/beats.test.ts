@@ -19,6 +19,41 @@ function moved(player: PlayerId, from: number, to: number, cause: MoveCause = 'd
 
 const hops = (tiles: number) => tiles * BEAT_MS.hopPerTile + BEAT_MS.landing;
 
+/** What ends every real update: the round's bookkeeping and the next window opening (no time of their own). */
+const roundOver: GameEvent[] = [
+  { type: 'RoundEnded', round: 1, visibility: 'public' },
+  { type: 'RoundStarted', round: 2, visibility: 'public' },
+  { type: 'WindowOpened', windowId: 9, window: 'dice', players: ['p0', 'p1'], durationMs: 12_000, visibility: 'public' },
+] as GameEvent[];
+
+describe('the end hold, before the round moves on (2026-10-16: it never showed in a real match)', () => {
+  const kinds = (events: GameEvent[], from = start()) => buildTimeline(events, from, 'p0', SIZE).map((b) => [b.kind, b.durationMs]);
+
+  it('holds the last move of a round, with the round bookkeeping after it', () => {
+    expect(kinds([moved('p0', 0, 3), moved('p1', 0, 5), ...roundOver])).toEqual([
+      ['move', hops(5)],
+      ['pause', BEAT_MS.endHold],
+      ['info', 0],
+      ['roundBreak', BEAT_MS.roundBreak], // then the break between rounds (2026-10-16)
+      ['info', 0],
+    ]);
+  });
+
+  it('holds the end of a face-off the same way', () => {
+    const events: GameEvent[] = [
+      { type: 'ChallengeResolved', challengeId: 'c1', pickRound: 1, picks: { p0: 'rock', p1: 'paper' }, winner: 'p1', losers: ['p0'], outcome: 'win', visibility: 'public' },
+      moved('p0', 6, 3, 'knockback'),
+      ...roundOver,
+    ];
+    expect(kinds(events, start({ p0: 6, p1: 6 })).slice(-4)).toEqual([
+      ['pause', BEAT_MS.endHold],
+      ['info', 0],
+      ['roundBreak', BEAT_MS.roundBreak],
+      ['info', 0],
+    ]);
+  });
+});
+
 describe('buildTimeline', () => {
   it('rolls the dice of one update together', () => {
     const roll = (player: PlayerId, face: number): GameEvent => ({ type: 'DieRolled', player, natural: face, face, forced: false, auto: true, visibility: 'public' });
@@ -96,6 +131,7 @@ describe('buildTimeline', () => {
     expect(beats.map((b) => [b.kind, b.durationMs])).toEqual([
       ['move', hops(6)],
       ['snakeBlocked', BEAT_MS.snakeBlocked],
+      ['pause', BEAT_MS.endHold], // the end hold, before the bookkeeping (2026-10-16)
       ['info', 0],
     ]);
     expect(beats[2]!.after.positions.p0).toBe(16);
@@ -203,7 +239,7 @@ describe('buildTimeline', () => {
     expect(expired!.after.boardEdits).toEqual([]);
   });
 
-  it('gives HUD-only events no time but still applies them', () => {
+  it('gives HUD-only events no time but still applies them; a new round gets its break first (2026-10-16)', () => {
     const beats = buildTimeline(
       [
         { type: 'RoundStarted', round: 2, visibility: 'public' },
@@ -213,9 +249,11 @@ describe('buildTimeline', () => {
       'p0',
       SIZE,
     );
-    expect(beats).toHaveLength(1);
-    expect(beats[0]).toMatchObject({ kind: 'info', durationMs: 0 });
-    expect(beats[0]!.after.round).toBe(2);
+    expect(beats.map((b) => [b.kind, b.durationMs])).toEqual([
+      ['roundBreak', BEAT_MS.roundBreak],
+      ['info', 0],
+    ]);
+    expect(beats[1]!.after.round).toBe(2);
   });
 
   it('stacks pieces that reach one tile in the same beat in the order they land, the first at the bottom (2026-10-15)', () => {
