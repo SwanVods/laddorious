@@ -29,7 +29,7 @@ function rows(v: PlayerView, record = EMPTY, watch: string | null = null) {
 
 describe('stage bar', () => {
   it('follows the beat on stage, then the open window, and keeps the stage through follow-on beats', () => {
-    expect(STAGES.map((s) => s.label)).toEqual(['Dice', 'Move', 'Face-off', 'Mystery', 'Cards']);
+    expect(STAGES.map((s) => s.label)).toEqual(['Dice', 'Move', 'Face-off', 'Mystery', 'Cards', 'Break']);
     expect(stageIndex(beat('roll'), 'dice', null)).toBe(0);
     expect(stageIndex(beat('move'), 'dice', 0)).toBe(1);
     expect(stageIndex(beat('slide'), 'dice', 4)).toBe(4);
