@@ -38,7 +38,7 @@ describe('"when" effects (2026-10-16)', () => {
     expect(state.effects.map((e) => e.params.hook)).toEqual(['afterMove']);
   });
 
-  it('moves everyone else when you hit a whirlpool, every time while it lasts', () => {
+  it('moves each opponent when you hit a whirlpool, every time while it lasts', () => {
     const s = setup({ players: 3, board: makeBoard(100, [[30, 5]]), positions: [27, 50, 60], dice: [[3], [1], [1]] });
     put(s, 'p1', after('landedOnSnakeHead', -2, { rounds: 3 }, true));
     const { state } = play(s, [roll('p1'), roll('p2'), roll('p3')]);
@@ -54,10 +54,10 @@ describe('"when" effects (2026-10-16)', () => {
     expect(positions(state)).toEqual([23, 42, 57]);
   });
 
-  it('moves everyone else only on your dice moves', () => {
+  it('moves each opponent only on your dice moves', () => {
     const fill = (id: string, rarity: CatalogCard['rarity']): CatalogCard => ({ ...card([{ op: 'moveRelative', amount: 1 }], undefined, id), rarity });
     const bad = card([{ op: 'conditional', trigger: { cause: 'effect', condition: 'landedOnSnakeHead' }, who: 'others', amount: -2, lifetime: { rounds: 3, charges: 1 } }], undefined, 'bad');
-    expect(() => resolveConfig({ seed: 's', cards: [fill('c', 'common'), fill('r', 'rare'), fill('e', 'epic'), bad] })).toThrow(/moves everyone else only after your dice moves/);
+    expect(() => resolveConfig({ seed: 's', cards: [fill('c', 'common'), fill('r', 'rare'), fill('e', 'epic'), bad] })).toThrow(/moves each opponent only after your dice moves/);
   });
 
   it('writes the texts', () => {
@@ -65,10 +65,10 @@ describe('"when" effects (2026-10-16)', () => {
       'Next time you ride a rocket, move forward 3–8 more.',
     );
     expect(describeCard(card([{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, who: 'others', amount: -2, lifetime: { rounds: 3 } }]))).toBe(
-      'For 3 rounds: if you hit a whirlpool, everyone else moves back 2.',
+      'For 3 rounds: if you hit a whirlpool, each opponent moves back 2.',
     );
     expect(describeCard(card([{ op: 'conditional', trigger: { cause: 'dice', condition: 'climbedLadder' }, who: 'others', amount: 2, lifetime: { rounds: 3 } }]))).toBe(
-      'For 3 rounds: if you ride a rocket, everyone else moves forward 2.',
+      'For 3 rounds: if you ride a rocket, each opponent moves forward 2.',
     );
     expect(describeCard(card([{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: { value: 'n' }, lifetime: { charges: 1 } }], { n: { min: 3, max: 8 } }))).toBe(
       'Next time you land in a whirlpool, move forward 3–8 after sliding.',

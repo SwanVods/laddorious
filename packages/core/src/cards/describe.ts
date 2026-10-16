@@ -5,10 +5,13 @@ import { isDie, usesDie, type DieAmount, type EffectOp, type Lifetime, type Targ
 
 type Op = Templated<EffectOp>;
 
-/** Who a card hits, as the subject of a sentence; null for the caster. */
+/**
+ * Who a card hits, as the subject of a sentence; null for the caster. A card for every player says EVERYONE, in
+ * capitals, and one for everyone but you says "Each opponent", so the two never read alike (the user, 2026-10-16).
+ */
 function subject(t: TargetRule): string | null {
   if (t.condition === 'self') return null;
-  if (t.pick === 'all') return t.condition === 'everyone' ? 'Everyone' : 'Everyone else';
+  if (t.pick === 'all') return t.condition === 'everyone' ? 'EVERYONE' : 'Each opponent';
   if (t.condition === 'section') return `A player on tiles ${t.section?.[0]}–${t.section?.[1]}`;
   if (t.pick === 'leader') return 'The leader';
   if (t.pick === 'last') return 'The player in last place';
@@ -17,7 +20,8 @@ function subject(t: TargetRule): string | null {
   return t.pick === 'furthest' ? 'The furthest player' : 'The nearest player';
 }
 
-const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+/** A sentence's first letter in lower case, mid-sentence; a word in capitals (EVERYONE) stays as it is. */
+const lower = (s: string) => (/^[A-Z]{2,}\b/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
 const upper = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function describeCard(card: CatalogCard, values?: Record<string, number>): string {
@@ -44,7 +48,7 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
     if (l.rounds !== undefined) return ` (${num(l.rounds)} round${l.rounds === 1 ? '' : 's'})`;
     return shield ? ', any time this match' : '';
   };
-  /** A "when" effect (2026-10-16): after a slide or a climb, you move on, or everyone else moves. */
+  /** A "when" effect (2026-10-16): after a slide or a climb, you move on, or each opponent moves. */
   const when = (condition: string, amount: Amount, who: string | undefined, l: Templated<Lifetime>): string => {
     const back = isBack(amount);
     const dist = num(amount, back ? -1 : 1);
@@ -53,7 +57,7 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
       const happens = condition === 'climbedLadder' ? 'ride a rocket' : 'hit a whirlpool';
       const rounds = l !== 'permanent' && l.charges === undefined && l.rounds !== undefined ? l.rounds : undefined;
       const head = rounds !== undefined ? `For ${num(rounds)} round${rounds === 1 ? '' : 's'}: if you ${happens}` : `Next time you ${happens}`;
-      return `${head}, everyone else moves ${dir} ${dist}.`;
+      return `${head}, each opponent moves ${dir} ${dist}.`;
     }
     if (condition === 'climbedLadder') return `Next time you ride a rocket, move ${dir} ${dist} more.`;
     return `Next time you land in a whirlpool, move ${dir} ${dist} after sliding.`;

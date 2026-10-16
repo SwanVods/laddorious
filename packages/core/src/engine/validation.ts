@@ -45,11 +45,11 @@ function checkAfterMove(cause: MoveCause, lifetime: Lifetime, where: string): vo
   }
 }
 
-/** A "when" effect (2026-10-16): a slide or a climb; moving everyone else only after the owner's dice moves, so it can't chain. */
+/** A "when" effect (2026-10-16): a slide or a climb; moving each opponent only after the owner's dice moves, so it can't chain. */
 function checkWhen(condition: unknown, cause: unknown, who: unknown, where: string): void {
   check(condition === 'landedOnSnakeHead' || condition === 'climbedLadder', where, 'unknown afterMove condition');
   check(who === undefined || who === 'others', where, "afterMove.who must be 'others' or left out");
-  check(who !== 'others' || cause === 'dice', where, 'an effect that moves everyone else only after your dice moves');
+  check(who !== 'others' || cause === 'dice', where, 'an effect that moves each opponent only after your dice moves');
 }
 
 function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string): void {

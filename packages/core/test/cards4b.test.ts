@@ -4,10 +4,10 @@ import { CARD_CATALOG, describeCard, statusOf } from '../src/index';
 const TEXTS: Record<string, string> = {
   'red-light': 'The leader skips their next roll.',
   tripwire: 'The player just ahead of you skips their next roll.',
-  'time-freeze': 'Everyone else skips their next roll.',
+  'time-freeze': 'Each opponent skips their next roll.',
   'reverse-gear': "The leader's next roll moves them back.",
   'wrong-way': 'The next roll of the player just ahead of you moves them back.',
-  'topsy-turvy': "Everyone else's next roll moves them back.",
+  'topsy-turvy': "Each opponent's next roll moves them back.",
   'double-or-nothing': '50%: your next roll is doubled. 50%: your next roll moves you back.',
   'lucky-charm': 'Block the next whirlpool or attack, whichever comes first (2 rounds).',
   aegis: 'Block the next 2 whirlpools or attacks, any time this match.',

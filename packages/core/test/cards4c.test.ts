@@ -3,8 +3,8 @@ import { CARD_CATALOG, describeCard, statusOf } from '../src/index';
 
 const TEXTS: Record<string, string> = {
   afterburner: 'Next time you ride a rocket, move forward 3–8 more.',
-  'misery-loves-company': 'For 3 rounds: if you hit a whirlpool, everyone else moves back 2.',
-  'rising-tide': 'For 3 rounds: if you ride a rocket, everyone else moves forward 2.',
+  'misery-loves-company': 'For 3 rounds: if you hit a whirlpool, each opponent moves back 2.',
+  'rising-tide': 'For 3 rounds: if you ride a rocket, each opponent moves forward 2.',
   'high-roller': 'If your next roll is over 3, go to the nearest rocket. If not, stay put.',
   'odd-luck': 'If your next roll is odd, it is doubled.',
   'odd-fortune': 'If your next roll is odd, it is tripled.',

@@ -164,11 +164,11 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('blockEither', 'Block whirlpools or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
   effectKind('jumpsOff', 'Rockets and whirlpools off', 'jumpsOff', {}, null, { charges: 0, rounds: 1 }),
   {
-    // After a slide or a climb (2026-10-16: ladders, and everyone else moving, too).
+    // After a slide or a climb (2026-10-16: ladders, and each opponent moving, too).
     id: 'snakeThenMove', label: 'After a whirlpool or rocket, move',
     fields: [
       { key: 'condition', label: 'after', kind: 'choice', choices: [['landedOnSnakeHead', 'hitting a whirlpool'], ['climbedLadder', 'riding a rocket']] },
-      { key: 'who', label: 'who moves', kind: 'choice', choices: [['you', 'you'], ['others', 'everyone else']] },
+      { key: 'who', label: 'who moves', kind: 'choice', choices: [['you', 'you'], ['others', 'each opponent']] },
       { key: 'amount', label: 'amount', kind: 'amount' },
       USES,
       ROUNDS,
@@ -239,6 +239,6 @@ export const TARGETS: Array<[string, string, TargetRule]> = [
   ['furthest', 'The furthest player ahead', { condition: 'ahead-of-caster', pick: 'furthest', tieBreak: 'random' }],
   ['behind', 'The player just behind', { condition: 'behind-of-caster', pick: 'nearest', tieBreak: 'random' }],
   ['last', 'The player in last place', { condition: 'other', pick: 'last', tieBreak: 'random' }],
-  ['others', 'Everyone else', { condition: 'other', pick: 'all', tieBreak: 'lowest-seat' }],
-  ['everyone', 'Everyone', { condition: 'everyone', pick: 'all', tieBreak: 'lowest-seat' }],
+  ['others', 'Each opponent', { condition: 'other', pick: 'all', tieBreak: 'lowest-seat' }],
+  ['everyone', 'EVERYONE', { condition: 'everyone', pick: 'all', tieBreak: 'lowest-seat' }],
 ];
