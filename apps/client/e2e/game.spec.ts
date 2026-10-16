@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/**
+ * GitHub's runners have no GPU, so SwiftShader draws, and there a desktop match's first frame (every shader
+ * compiling at once) has taken over a minute since 2026-10-16. CI waits three times as long; local runs keep the
+ * tight limits, so a real slowdown still shows.
+ */
+const SLOW = process.env.CI ? 3 : 1;
+
 /** PLAY, then (clock advanced 16 s) Play with bots, until the match screen is up. */
 async function startMatch(page: Page) {
   await page.clock.install();
@@ -9,7 +16,7 @@ async function startMatch(page: Page) {
   await page.clock.fastForward('00:16');
   await page.getByRole('button', { name: 'Play with bots' }).click();
   // A fresh browser compiles every shader on the match's first frame: about 15 s under SwiftShader.
-  await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 60_000 * SLOW });
 }
 
 test('plays a whole match against the bots, then Play again goes back to matchmaking (spec #2 §9.3)', async ({ page }) => {
@@ -18,7 +25,7 @@ test('plays a whole match against the bots, then Play again goes back to matchma
     if (m.type() === 'warning' && m.text().includes('asset slot')) slotWarnings.push(m.text());
   });
   await startMatch(page);
-  await expect(page.getByRole('heading', { name: /wins?!$/ })).toBeVisible({ timeout: 150_000 });
+  await expect(page.getByRole('heading', { name: /wins?!$/ })).toBeVisible({ timeout: 150_000 * SLOW });
   // Sound ran through the whole match without a single error (spec #3 §7).
   const sound = await page.evaluate(() => window.__laddoriousTest!.soundStats());
   expect(sound.started).toBe(true);

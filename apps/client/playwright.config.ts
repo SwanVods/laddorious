@@ -11,7 +11,8 @@ const ONLINE_PORT = 8788;
  */
 export default defineConfig({
   testDir: './e2e',
-  timeout: 180_000,
+  // CI has no GPU and its runners are slow: the waits in game.spec.ts triple there, and so does this (2026-10-16).
+  timeout: process.env.CI ? 660_000 : 180_000,
   expect: { timeout: 15_000 },
   workers: 1,
   retries: process.env.CI ? 1 : 0,
