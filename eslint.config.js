@@ -35,8 +35,8 @@ export default defineConfig(
     extends: [eslintReact.configs['recommended-typescript']],
   },
   {
-    // The online scripts and the art build run in Node (spec #4 §8, spec #5 §5).
-    files: ['apps/server/scripts/**/*.mjs', 'art/**/*.mjs'],
-    languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly' } },
+    // The online scripts, the art build and the app icon's script run in Node (spec #4 §8, spec #5 §5).
+    files: ['apps/server/scripts/**/*.mjs', 'art/**/*.mjs', 'apps/client/scripts/**/*.mjs'],
+    languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly', Buffer: 'readonly' } },
   },
 );
