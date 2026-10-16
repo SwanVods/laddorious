@@ -80,6 +80,14 @@ function WorldBlobs({ placements, reducedMotion }: { placements: readonly Placem
     mesh.instanceMatrix.needsUpdate = true;
   };
   useLayoutEffect(() => write(0));
+  // Each shadow's strength rides in its instance colour (blobMaterial reads it as opacity).
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const strength = new Color();
+    placements.forEach((p, i) => mesh.setColorAt(i, strength.setScalar(p.shadow!.strength ?? 1)));
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }, [placements]);
   useFrame(({ clock }) => {
     if (moving) write(clock.elapsedTime);
   });

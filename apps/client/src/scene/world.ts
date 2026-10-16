@@ -31,8 +31,8 @@ export interface Placement {
   /** The colour of a Tint model. */
   color?: string;
   motion?: Motion;
-  /** A soft contact shadow (2026-10-16): how far it spreads from the model's centre, and the surface it lies on. */
-  shadow?: { radius: number; ground: number };
+  /** A soft contact shadow (2026-10-16): how far it spreads from the model's centre, the surface it lies on, and how dark it is (1 = full). */
+  shadow?: { radius: number; ground: number; strength?: number };
 }
 
 export interface Pose {
@@ -84,8 +84,11 @@ function obstacle(at: Vec3, padScale: number, riders: Rider[]): Placement[] {
 /** The chips' colours, bottom to top. */
 const CHIPS = [PAIR_COLORS.all.pink, WORLD_COLORS.deck, WORLD_COLORS.course, WORLD_COLORS.crown, PAIR_COLORS.all.pink];
 
-/** A soft shadow this wide (in world units from the centre) on the deck. */
-const onDeck = (radius: number) => ({ radius, ground: DECK });
+/** The lighter shadow of the chips, the cards, the crown and the flag (the user, 2026-10-16: full ones looked too bold). */
+export const SOFT_SHADOW = 0.6;
+
+/** A soft shadow this wide (in world units from the centre) on the deck, this dark. */
+const onDeck = (radius: number, strength?: number) => ({ radius, ground: DECK, ...(strength !== undefined ? { strength } : {}) });
 
 /** The match's world, with this many clouds (QualityProfile.clouds). */
 export function matchWorld(clouds: number): Placement[] {
@@ -96,13 +99,13 @@ export function matchWorld(clouds: number): Placement[] {
     { slot: 'pad', at: [-WING, DECK + 0.3, -7], scale: 9, turn: 0.4, color: PAIR_COLORS.all.pink, motion: { bob: { amp: 0.25, speed: 1.6, phase: 0 } }, shadow: onDeck(2.8) },
     { slot: 'prop.die', at: [-WING - 0.5, DECK, 2.5], turn: 0.7, shadow: onDeck(2.2) },
     // The chip stack's shadow comes from its bottom chip; the leaning chip throws its own.
-    ...CHIPS.map((color, i): Placement => ({ slot: 'prop.chip', at: [-WING - 1 + Math.sin(i) * 0.08, DECK + i * 0.37, 10], turn: i * 0.5, color, ...(i === 0 ? { shadow: onDeck(1.6) } : {}) })),
-    { slot: 'prop.chip', at: [-WING + 1.3, DECK + 1.0, 10.6], tilt: [0.2, 1.1], color: WORLD_COLORS.course, shadow: onDeck(1.2) },
+    ...CHIPS.map((color, i): Placement => ({ slot: 'prop.chip', at: [-WING - 1 + Math.sin(i) * 0.08, DECK + i * 0.37, 10], turn: i * 0.5, color, ...(i === 0 ? { shadow: onDeck(1.6, SOFT_SHADOW) } : {}) })),
+    { slot: 'prop.chip', at: [-WING + 1.3, DECK + 1.0, 10.6], tilt: [0.2, 1.1], color: WORLD_COLORS.course, shadow: onDeck(1.2, SOFT_SHADOW) },
     // Right, from the back: a fan of "?" cards, the crown, a flag (the jump's end).
-    ...[-1, 0, 1].map((k): Placement => ({ slot: 'prop.card', at: [WING + k * 0.5, DECK, -7.5 + k * 0.08], turn: -0.35, tilt: [-0.16, k * -0.32], motion: { sway: { amp: 0.12, speed: 0.7 } }, shadow: onDeck(1.8) })),
+    ...[-1, 0, 1].map((k): Placement => ({ slot: 'prop.card', at: [WING + k * 0.5, DECK, -7.5 + k * 0.08], turn: -0.35, tilt: [-0.16, k * -0.32], motion: { sway: { amp: 0.12, speed: 0.7 } }, shadow: onDeck(1.8, SOFT_SHADOW) })),
     // The finish tile's own crown, three times its size and still (the user, 2026-10-15).
-    { slot: 'crown', at: [WING, DECK, 2], scale: 3, shadow: onDeck(2.2) },
-    { slot: 'pad.target', at: [WING - 0.5, DECK, 10], scale: 4.7, turn: -0.3, color: WORLD_COLORS.cushion, motion: { sway: { amp: 0.08, speed: 2 } }, shadow: onDeck(1.1) },
+    { slot: 'crown', at: [WING, DECK, 2], scale: 3, shadow: onDeck(2.2, SOFT_SHADOW) },
+    { slot: 'pad.target', at: [WING - 0.5, DECK, 10], scale: 4.7, turn: -0.3, color: WORLD_COLORS.cushion, motion: { sway: { amp: 0.08, speed: 2 } }, shadow: onDeck(1.1, SOFT_SHADOW) },
     // The obstacle course, floating at the sides and back (spec §4).
     ...obstacle([-40, 3, -30], 1, [{ slot: 'course.sweeper', offset: [0, 0, 0], motion: { spin: 1.1 } }]),
     ...obstacle(

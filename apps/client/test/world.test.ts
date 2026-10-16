@@ -3,7 +3,7 @@ import { MESH_SLOTS } from '../src/assets/slotFiles';
 import { slotsToPreload } from '../src/assets/slotMesh';
 import { BOARD_HALF, PLATFORM, TILE_THICKNESS } from '../src/scene/layout';
 import { blobWidth } from '../src/scene/blobs';
-import { REDUCED_SHARE, matchWorld, menuWorld, worldPose, type Placement } from '../src/scene/world';
+import { REDUCED_SHARE, SOFT_SHADOW, matchWorld, menuWorld, worldPose, type Placement } from '../src/scene/world';
 
 // The world round the board (board theme spec §3, §4, B6).
 
@@ -142,5 +142,13 @@ describe('soft contact shadows (2026-10-16)', () => {
     expect(blobWidth(1, 0)).toBe(2);
     expect(blobWidth(1, 0.5)).toBeLessThan(blobWidth(1, 0.1));
     expect(blobWidth(1, 10)).toBe(1);
+  });
+});
+
+describe('soft contact shadow strength (2026-10-16)', () => {
+  it('keeps the rocket and die shadows full, and softens the chips, cards, crown and flag', () => {
+    const strength = (slot: string) => matchWorld(4).filter((p) => p.slot === slot && p.shadow).map((p) => p.shadow!.strength ?? 1);
+    expect([...strength('pad'), ...strength('prop.die')]).toEqual([1, 1]);
+    for (const slot of ['prop.chip', 'prop.card', 'crown', 'pad.target']) for (const s of strength(slot)) expect(s, slot).toBe(SOFT_SHADOW);
   });
 });

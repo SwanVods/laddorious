@@ -14,7 +14,10 @@ export const BLOB_LIFT = 0.02;
 
 let material: MeshBasicMaterial | undefined;
 
-/** The shared shadow material: the soft texture, or a faint flat disc's worth of ink where there's no canvas. */
+/**
+ * The shared shadow material: the soft texture, or a faint flat disc's worth of ink where there's no canvas. An
+ * instance colour, where a mesh has them, is read as that shadow's strength (its red, 0–1), not as a tint.
+ */
 export function blobMaterial(): MeshBasicMaterial {
   if (material) return material;
   const map = blobTexture(WORLD_COLORS.ink);
@@ -29,6 +32,9 @@ export function blobMaterial(): MeshBasicMaterial {
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -4,
   });
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', '#if defined( USE_COLOR )\n\tdiffuseColor.a *= vColor.r;\n#endif');
+  };
   return material;
 }
 
