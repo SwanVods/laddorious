@@ -101,10 +101,24 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('blockEither', 'Block snakes or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
   effectKind('jumpsOff', 'Snakes and ladders off', 'jumpsOff', {}, null, { charges: 0, rounds: 1 }),
   {
-    id: 'snakeThenMove', label: 'After a snake, move', fields: [{ key: 'amount', label: 'amount', kind: 'amount' }, USES, ROUNDS],
+    // After a slide or a climb (2026-10-16: ladders, and everyone else moving, too).
+    id: 'snakeThenMove', label: 'After a snake or ladder, move',
+    fields: [
+      { key: 'condition', label: 'after', kind: 'choice', choices: [['landedOnSnakeHead', 'sliding down a snake'], ['climbedLadder', 'climbing a ladder']] },
+      { key: 'who', label: 'who moves', kind: 'choice', choices: [['you', 'you'], ['others', 'everyone else']] },
+      { key: 'amount', label: 'amount', kind: 'amount' },
+      USES,
+      ROUNDS,
+    ],
     make: () => ({ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: 8, lifetime: { charges: 1 } }),
-    read: (op) => (op.op === 'conditional' ? { amount: op.amount, ...lifeOf(op.lifetime) } : null),
-    write: (v) => ({ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: v.amount as Amount, lifetime: lifeFrom(v) }),
+    read: (op) => (op.op === 'conditional' ? { condition: op.trigger.condition, who: op.who ?? 'you', amount: op.amount, ...lifeOf(op.lifetime) } : null),
+    write: (v) => ({
+      op: 'conditional',
+      trigger: { cause: 'dice', condition: v.condition as 'landedOnSnakeHead' | 'climbedLadder' },
+      amount: v.amount as Amount,
+      ...(v.who === 'others' ? { who: 'others' as const } : {}),
+      lifetime: lifeFrom(v),
+    }),
   },
   boardKind('newSnake', 'New snake', 'snake', 8),
   boardKind('newLadder', 'New ladder', 'ladder', 15),

@@ -56,7 +56,10 @@ export function StepsEditor({ ops, card, onChange }: { ops: Op[]; card: CatalogC
               </ol>
             ) : (
               kind.fields.map((f) =>
-                f.kind === 'amount' ? (
+                f.kind === 'choice' ? (
+                  // A choice (2026-10-16: what a "when" step waits for, who moves).
+                  <label key={f.key}>{f.label} <select aria-label={`${kind.label}: ${f.label}`} value={values[f.key] as string} onChange={(e) => set(i, kind.write({ ...values, [f.key]: e.target.value }))}>{(f.choices ?? []).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>
+                ) : f.kind === 'amount' ? (
                   <AmountInput key={f.key} field={f} label={`${kind.label}: ${f.label}`} value={values[f.key] as AmountValue} names={names} onChange={(v) => set(i, kind.write({ ...values, [f.key]: v }))} />
                 ) : (
                   <label key={f.key}>{f.label} <input aria-label={`${kind.label}: ${f.label}`} type="number" min={f.min} value={values[f.key] as number} onChange={(e) => set(i, kind.write({ ...values, [f.key]: Number(e.target.value) }))} /></label>

@@ -69,7 +69,7 @@ export const STARTER_CARDS: CardDef[] = [
     ] }],
   },
   {
-    id: 'snake-bait', name: 'Snake Bait', text: 'If your next dice movement lands on a snake head, move forward 8 after sliding.',
+    id: 'snake-bait', name: 'Snake Bait', text: 'Next time you land on a snake head, move forward 8 after sliding.',
     type: 'risky', rarity: 'rare', weight: 1, target: SELF,
     effects: [{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: 8, lifetime: { charges: 1 } }],
   },

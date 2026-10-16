@@ -82,7 +82,7 @@ function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: 
         intents.adds.push({
           owner: target,
           template: {
-            params: { hook: 'afterMove', cause: op.trigger.cause, condition: op.trigger.condition, amount: op.amount },
+            params: { hook: 'afterMove', cause: op.trigger.cause, condition: op.trigger.condition, amount: op.amount, ...(op.who ? { who: op.who } : {}) },
             lifetime: op.lifetime,
           },
         });

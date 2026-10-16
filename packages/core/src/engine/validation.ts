@@ -45,6 +45,13 @@ function checkAfterMove(cause: MoveCause, lifetime: Lifetime, where: string): vo
   }
 }
 
+/** A "when" effect (2026-10-16): a slide or a climb; moving everyone else only after the owner's dice moves, so it can't chain. */
+function checkWhen(condition: unknown, cause: unknown, who: unknown, where: string): void {
+  check(condition === 'landedOnSnakeHead' || condition === 'climbedLadder', where, 'unknown afterMove condition');
+  check(who === undefined || who === 'others', where, "afterMove.who must be 'others' or left out");
+  check(who !== 'others' || cause === 'dice', where, 'an effect that moves everyone else only after your dice moves');
+}
+
 function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string): void {
   switch (params.hook) {
     case 'diceFace':
@@ -69,7 +76,7 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, `${params.hook} needs uses (charges)`);
       return;
     case 'afterMove':
-      check(params.condition === 'landedOnSnakeHead', where, 'unknown afterMove condition');
+      checkWhen(params.condition, params.cause, params.who, where);
       check(isInt(params.amount), where, 'afterMove.amount must be an integer');
       checkAfterMove(params.cause, lifetime, where);
       return;
@@ -128,7 +135,7 @@ function checkOps(ops: EffectOp[], where: string): void {
         });
         return;
       case 'conditional':
-        check(op.trigger?.condition === 'landedOnSnakeHead', at, 'unknown conditional trigger');
+        checkWhen(op.trigger?.condition, op.trigger?.cause, op.who, at);
         check(isInt(op.amount), at, 'conditional.amount must be an integer');
         checkLifetime(op.lifetime, at);
         checkAfterMove(op.trigger.cause, op.lifetime, at);
