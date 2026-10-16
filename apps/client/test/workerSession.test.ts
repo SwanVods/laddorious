@@ -1,9 +1,46 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MatchUpdate } from '../src/service/matchService';
-import { WorkerMatchSession } from '../src/service/workerSession';
+import { STATS_WAIT_MS, WorkerMatchSession } from '../src/service/workerSession';
+import type { MatchStats } from '@laddorious/host';
 import { FakeWorker, SEATS, loopbackWorker, openingUpdate } from './support/fixtures';
 
 const SEEDS = { seed: 'board-seed', rngSeed: 'secret-rng-seed' };
+
+describe('WorkerMatchSession match stats (2026-10-17)', () => {
+  const STATS = { match: { mode: 'offline' }, players: [], cards: [] } as unknown as MatchStats;
+
+  it("asks the worker for stats with this device's key, and passes its report on", () => {
+    const worker = new FakeWorker();
+    const report = vi.fn();
+    new WorkerMatchSession(worker, SEATS, SEEDS, false, { playerKey: 'key-me', version: '0.2.0', report });
+    expect(worker.posted[0]).toMatchObject({ type: 'create', stats: { playerKey: 'key-me', version: '0.2.0' } });
+    worker.reply({ type: 'stats', stats: STATS });
+    expect(report).toHaveBeenCalledWith(STATS);
+  });
+
+  it("on leave, waits for the worker's last report before stopping it, but not for long", () => {
+    vi.useFakeTimers();
+    const report = vi.fn();
+    const worker = new FakeWorker();
+    const session = new WorkerMatchSession(worker, SEATS, SEEDS, false, { playerKey: 'k', version: '0.2.0', report });
+    session.leave();
+    expect(worker.terminated).toBe(false);
+    worker.reply({ type: 'stats', stats: STATS });
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(worker.terminated).toBe(true);
+    const silent = new FakeWorker();
+    new WorkerMatchSession(silent, SEATS, SEEDS, false, { playerKey: 'k', version: '0.2.0', report }).leave();
+    vi.advanceTimersByTime(STATS_WAIT_MS);
+    expect(silent.terminated).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('stops the worker at once on leave without stats', () => {
+    const worker = new FakeWorker();
+    new WorkerMatchSession(worker, SEATS, SEEDS).leave();
+    expect(worker.terminated).toBe(true);
+  });
+});
 
 describe('WorkerMatchSession', () => {
   it('never reports anyone away', () => {

@@ -1,7 +1,7 @@
 import { createMatch, viewFor } from '@laddorious/core';
 import type { MatchUpdate, SeatInfo } from '../../src/service/matchService';
 import { LocalHost } from '../../src/worker/localHost';
-import type { FromHost, HostWorker, ToHost } from '../../src/worker/protocol';
+import type { FromWorker as FromHost, HostWorker, ToHost } from '../../src/worker/protocol';
 
 /** The table a "Play with bots" match makes when you chose the knight. */
 export const SEATS: SeatInfo[] = [

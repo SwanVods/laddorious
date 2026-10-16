@@ -82,7 +82,7 @@ class OnlineMatchmaking implements Matchmaking {
     this.ws.onopen = () => {
       clearTimeout(this.timeout);
       this.heardAt = Date.now();
-      this.post({ type: 'hello', version: PROTOCOL_VERSION, profile });
+      this.post({ type: 'hello', version: PROTOCOL_VERSION, profile, ...(deps.playerKey ? { playerKey: deps.playerKey } : {}) });
       this.post(start);
       this.pinger = setInterval(() => this.tick(), PING_MS);
     };

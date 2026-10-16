@@ -1,5 +1,9 @@
 import type { InputError, PlayerId } from '@laddorious/core';
-import type { FromHost, HostWorker, ToHost } from '../worker/protocol';
+import type { FromWorker, HostWorker, ToHost } from '../worker/protocol';
+import type { OfflineStats } from './stats';
+
+/** On leave, how long the session waits for the worker's last stats report before stopping it (2026-10-17). */
+export const STATS_WAIT_MS = 1000;
 import { Channel } from './channel';
 import type { MatchFailure, MatchSession, MatchUpdate, PlayerAction, SeatInfo } from './matchService';
 
@@ -8,6 +12,8 @@ export class WorkerMatchSession implements MatchSession {
   readonly me: PlayerId;
   private windowId = 0;
   private left = false;
+  private reported = false;
+  private stopTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly updates = new Channel<MatchUpdate>();
   private readonly rejections = new Channel<InputError>();
   private readonly failures = new Channel<MatchFailure>();
@@ -20,12 +26,14 @@ export class WorkerMatchSession implements MatchSession {
     seeds: { seed: string; rngSeed: string },
     /** e2e builds: the host plays every seat itself, fast (spec #2 §9.3). */
     fast = false,
+    /** Match stats (2026-10-17): the worker reports the match as it ends, and this passes it on. */
+    private readonly stats?: OfflineStats,
   ) {
     this.me = seats.find((s) => !s.bot)!.playerId;
     worker.onmessage = (e) => this.receive(e.data);
     // The worker script itself failed (it could not load, or threw outside the host's guard).
     worker.onerror = (e) => this.failures.emit({ message: e.message || 'the match worker stopped' });
-    worker.postMessage({ type: 'create', seats, seed: seeds.seed, rngSeed: seeds.rngSeed, fast });
+    worker.postMessage({ type: 'create', seats, seed: seeds.seed, rngSeed: seeds.rngSeed, fast, ...(stats ? { stats: { playerKey: stats.playerKey, version: stats.version } } : {}) });
   }
 
   onUpdate(cb: (u: MatchUpdate) => void): () => void {
@@ -64,14 +72,25 @@ export class WorkerMatchSession implements MatchSession {
   leave(): void {
     this.post({ type: 'leave' });
     this.left = true;
-    this.worker.terminate();
+    // The worker reports an unfinished match as it stops: wait for that, but not for long.
+    if (this.stats && !this.reported) this.stopTimer = setTimeout(() => this.worker.terminate(), STATS_WAIT_MS);
+    else this.worker.terminate();
   }
 
   private post(msg: ToHost): void {
     if (!this.left) this.worker.postMessage(msg);
   }
 
-  private receive(msg: FromHost): void {
+  private receive(msg: FromWorker): void {
+    if (msg.type === 'stats') {
+      this.reported = true;
+      this.stats?.report(msg.stats);
+      if (this.left) {
+        if (this.stopTimer !== null) clearTimeout(this.stopTimer);
+        this.worker.terminate();
+      }
+      return;
+    }
     if (this.left) return;
     switch (msg.type) {
       case 'update':

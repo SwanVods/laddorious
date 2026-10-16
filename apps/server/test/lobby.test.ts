@@ -1,6 +1,6 @@
 import { PROTOCOL_VERSION, type LobbyIn, type LobbyOut, type PieceId, type Seat } from '@laddorious/host';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BOT_SEAT_MS, BOTS_OFFER_MS, LOBBY_TICK_MS, LobbyCore, type LobbyConn } from '../src/lobby';
+import { BOT_SEAT_MS, BOTS_OFFER_MS, LOBBY_TICK_MS, LobbyCore, type LobbyConn, type MatchInfo } from '../src/lobby';
 
 /** A game's lobby socket: what it was sent, and whether it was closed. */
 class FakeConn implements LobbyConn {
@@ -36,27 +36,29 @@ class FakeConn implements LobbyConn {
 /** A lobby whose matches start at once (or fail to), with each started table recorded. */
 function setup(fail = false) {
   const started: Seat[][] = [];
+  const infos: MatchInfo[] = [];
   // Rooms get their codes from this list, in order (2026-10-16).
   const codes = ['ROOM', 'DUCK', 'KNOT'];
-  const lobby = new LobbyCore(async (seats) => {
+  const lobby = new LobbyCore(async (seats, info) => {
     started.push(seats);
+    infos.push(info);
     if (fail) throw new Error('no match objects left');
     return { matchId: `match-${started.length}`, tokens: Object.fromEntries(seats.filter((s) => !s.bot).map((s) => [s.playerId, `token-${s.playerId}`])) };
   }, () => codes.shift()!);
-  const join = (nickname: string, piece: PieceId = 'knight') => {
+  const join = (nickname: string, piece: PieceId = 'knight', playerKey?: string) => {
     const conn = new FakeConn();
-    lobby.receive(conn, { type: 'hello', version: PROTOCOL_VERSION, profile: { nickname, piece } });
+    lobby.receive(conn, { type: 'hello', version: PROTOCOL_VERSION, profile: { nickname, piece }, ...(playerKey ? { playerKey } : {}) });
     lobby.receive(conn, { type: 'find' });
     return conn;
   };
   /** A player who says hello, then sends one room message. */
-  const enter = (nickname: string, msg: LobbyIn) => {
+  const enter = (nickname: string, msg: LobbyIn, playerKey?: string) => {
     const conn = new FakeConn();
-    lobby.receive(conn, { type: 'hello', version: PROTOCOL_VERSION, profile: { nickname, piece: 'knight' } });
+    lobby.receive(conn, { type: 'hello', version: PROTOCOL_VERSION, profile: { nickname, piece: 'knight' }, ...(playerKey ? { playerKey } : {}) });
     lobby.receive(conn, msg);
     return conn;
   };
-  return { lobby, started, join, enter };
+  return { lobby, started, infos, join, enter };
 }
 
 beforeEach(() => {
@@ -66,6 +68,28 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+});
+
+describe('LobbyCore match stats (2026-10-17)', () => {
+  it("starts a quick match with each real player's device key, by seat, and says it's a quick match", async () => {
+    const { lobby, infos, join } = setup();
+    const ari = join('Ari', 'duck', 'key-ari');
+    const bo = join('Bo', 'rook');
+    vi.advanceTimersByTime(BOTS_OFFER_MS);
+    lobby.receive(ari, { type: 'playWithBots' });
+    lobby.receive(bo, { type: 'playWithBots' });
+    await vi.advanceTimersByTimeAsync(2 * BOT_SEAT_MS);
+    expect(infos).toEqual([{ mode: 'quick', keys: { p0: 'key-ari' } }]);
+  });
+
+  it("says a private room's match is a room's", async () => {
+    const { lobby, infos, enter } = setup();
+    const ari = enter('Ari', { type: 'createRoom' }, 'key-ari');
+    enter('Bo', { type: 'joinRoom', code: 'ROOM' }, 'key-bo');
+    lobby.receive(ari, { type: 'startRoom' });
+    await vi.advanceTimersByTimeAsync(2 * BOT_SEAT_MS);
+    expect(infos).toEqual([{ mode: 'room', keys: { p0: 'key-ari', p1: 'key-bo' } }]);
+  });
 });
 
 describe('LobbyCore seating (spec #4 §4)', () => {

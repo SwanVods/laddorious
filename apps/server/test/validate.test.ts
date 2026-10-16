@@ -31,6 +31,13 @@ describe('parseLobbyMessage (spec #4 §6, §7)', () => {
     expect(hello(null).kind).toBe('close');
   });
 
+  it("keeps a device's player key from hello for match stats, and drops a bad one without closing (2026-10-17)", () => {
+    const key = '0b6e3a4c-9d2f-4e1a-8b7c-5f3e2d1c0a9b';
+    const hello = (playerKey: unknown) => parseLobbyMessage(json({ type: 'hello', version: 3, profile: { nickname: 'Ari', piece: 'duck' }, playerKey }));
+    expect(hello(key)).toEqual({ kind: 'ok', msg: { type: 'hello', version: 3, profile: { nickname: 'Ari', piece: 'duck' }, playerKey: key } });
+    for (const bad of [42, 'x'.repeat(65), 'not a key!', '']) expect(hello(bad)).toEqual({ kind: 'ok', msg: { type: 'hello', version: 3, profile: { nickname: 'Ari', piece: 'duck' } } });
+  });
+
   it('accepts the three new pieces (spec #5 §4.1)', () => {
     for (const piece of ['rook', 'hat', 'duck']) {
       expect(parseLobbyMessage(json({ type: 'hello', version: 2, profile: { nickname: 'Ari', piece } }))).toMatchObject({ kind: 'ok', msg: { profile: { piece } } });

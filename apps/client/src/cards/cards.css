@@ -59,4 +59,13 @@
 .simulate-table { overflow-x: auto; }
 .simulate-table table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .simulate-table th, .simulate-table td { padding: 4px 10px; text-align: left; border-bottom: 1px solid rgba(15, 46, 54, 0.15); }
+/* Player stats (2026-10-17): the address, key and filter, then the totals. */
+.stats-form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 14px; }
+.stats-form label { display: grid; gap: 4px; font-weight: 600; }
+.stats-form input, .stats-form select { font: inherit; font-weight: 400; padding: 4px 8px; border: 2px solid var(--ink); border-radius: 8px; background: var(--white); color: var(--ink); min-width: 0; }
+.stats-form input[type='text'] { width: min(320px, 80vw); }
+.stats-form button { font: inherit; padding: 6px 16px; border-radius: 999px; border: 2px solid var(--ink); background: var(--panel-header); color: var(--white); font-weight: 600; cursor: pointer; }
+.stats-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+.stats-total { margin: 0; font-weight: 600; }
+.stats-matches { margin: 0; padding-left: 1.2em; color: var(--muted-on-paper); }
 .cards-blocked { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }

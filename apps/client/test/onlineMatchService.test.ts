@@ -30,6 +30,17 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('OnlineMatchService match stats (2026-10-17)', () => {
+  it("says hello with this device's player key", () => {
+    const sockets = fakeSockets();
+    const service = new OnlineMatchService({ url: 'ws://test', open: sockets.open, store: memoryStore(), tabs: () => null, playerKey: 'key-ari' });
+    service.findMatch(ARI);
+    const lobby = sockets.made[0]!;
+    lobby.open();
+    expect(lobby.sent[0]).toEqual({ type: 'hello', version: PROTOCOL_VERSION, profile: ARI, playerKey: 'key-ari' });
+  });
+});
+
 describe('OnlineMatchService matchmaking (spec #4 §4)', () => {
   it('shows me in seat 0 at once, then says hello and find when the lobby opens', () => {
     const { last, lobby } = search();

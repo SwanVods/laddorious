@@ -1,6 +1,6 @@
 import { HeuristicBot } from '@laddorious/bots';
 import { DEFAULT_WINDOWS, InvariantError } from '@laddorious/core';
-import { BOT_DELAY_MAX_MS, type MatchOut, type MatchUpdate, type Seat } from '@laddorious/host';
+import { BOT_DELAY_MAX_MS, type MatchOut, type MatchStats, type MatchUpdate, type Seat } from '@laddorious/host';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EMPTY_MS, END_LINGER_MS, JOIN_DEADLINE_MS, MatchRoom, REJOIN_MS, SILENCE_MS, type RoomConn } from '../src/room';
 
@@ -241,5 +241,17 @@ describe('MatchRoom end (spec #4 §5.2)', () => {
       expect(conn.sent.at(-1)).toEqual({ type: 'failed', reason: 'server-error', message: 'board corrupted' });
       expect(conn.closed).toBe(true);
     }
+  });
+});
+
+describe('MatchRoom match stats (2026-10-17)', () => {
+  it('reports an online match nobody came back to as abandoned, with its real players only and the board seed', () => {
+    const reports: MatchStats[] = [];
+    const room = new MatchRoom({ stats: { mode: 'quick', version: '0.2.0', keys: { p0: 'key-ari' }, onStats: (s) => reports.push(s) } });
+    room.start(SEATS, 'board-seed', 'rng-secret');
+    vi.advanceTimersByTime(EMPTY_MS + 1000);
+    expect(reports).toHaveLength(1);
+    expect(reports[0]!.match).toMatchObject({ mode: 'quick', status: 'abandoned', seed: 'board-seed', humans: 2, bots: 2 });
+    expect(reports[0]!.players.map((p) => [p.nickname, p.playerKey])).toEqual([['Ari', 'key-ari'], ['Bo', '']]);
   });
 });

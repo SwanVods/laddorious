@@ -4,6 +4,7 @@ import type { CardsApi } from './api';
 import { CardForm } from './CardForm';
 import { OddsPanel } from './OddsPanel';
 import { SimulatePanel } from './SimulatePanel';
+import { StatsPanel } from './StatsPanel';
 
 // The card editor (2026-10-15): every card in the card file, to switch on or off, buff, nerf, or draft.
 
@@ -150,6 +151,7 @@ export function CardsApp({ api }: { api: CardsApi }) {
       </div>
       <OddsPanel odds={catalog.odds} onChange={(odds) => change({ ...catalog, odds })} />
       <SimulatePanel catalog={catalog} />
+      <StatsPanel catalog={catalog} />
       <ul className="cards-list">
         {shown.map((c) => (
           <CardRow key={c.id} card={c} selected={c.id === selectedId} onSelect={() => select(c.id)} />

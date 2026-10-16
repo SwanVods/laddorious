@@ -68,6 +68,11 @@ function actionOf(raw: unknown): PlayerAction | null {
   return null;
 }
 
+/** A device's player key for match stats (2026-10-17): a random id, like a UUID. */
+export function isPlayerKey(v: unknown): v is string {
+  return typeof v === 'string' && /^[0-9a-f-]{8,64}$/i.test(v);
+}
+
 /** Reads one frame from a /lobby socket. */
 export function parseLobbyMessage(raw: unknown): Parsed<LobbyIn> {
   const data = frame(raw);
@@ -75,9 +80,11 @@ export function parseLobbyMessage(raw: unknown): Parsed<LobbyIn> {
   const type = data.type as string;
   switch (type) {
     case 'hello': {
-      const { version } = data;
+      const { version, playerKey } = data;
       const profile = profileOf(data.profile);
-      return isInt(version, 0, MAX_INT) && profile ? ok<LobbyIn>({ type, version, profile }) : bad(type);
+      // A bad player key only costs the player their stats link, never their seat (2026-10-17).
+      const key = isPlayerKey(playerKey) ? { playerKey } : {};
+      return isInt(version, 0, MAX_INT) && profile ? ok<LobbyIn>({ type, version, profile, ...key }) : bad(type);
     }
     case 'find':
     case 'cancel':

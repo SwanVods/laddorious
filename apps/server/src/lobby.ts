@@ -36,9 +36,17 @@ export interface StartedMatch {
 interface Member {
   conn: LobbyConn;
   profile: Profile;
+  /** The device's key for match stats, if it sent one (2026-10-17). */
+  playerKey?: string;
   table: Table | null;
   /** When this player sat down: their own waiting time counts from here. */
   joinedAt: number;
+}
+
+/** What the match's stats need from the lobby (2026-10-17): quick match or private room, and the real players' device keys by seat. */
+export interface MatchInfo {
+  mode: 'quick' | 'room';
+  keys: Record<PlayerId, string>;
 }
 
 interface Table {
@@ -64,7 +72,7 @@ export class LobbyCore {
   private readonly rooms = new Map<string, Table>();
 
   constructor(
-    private readonly startMatch: (seats: Seat[]) => Promise<StartedMatch>,
+    private readonly startMatch: (seats: Seat[], info: MatchInfo) => Promise<StartedMatch>,
     private readonly makeCode: () => string = randomRoomCode,
   ) {}
 
@@ -120,7 +128,7 @@ export class LobbyCore {
       conn.close();
       return;
     }
-    this.members.set(conn, { conn, profile: msg.profile, table: null, joinedAt: 0 });
+    this.members.set(conn, { conn, profile: msg.profile, ...(msg.playerKey ? { playerKey: msg.playerKey } : {}), table: null, joinedAt: 0 });
   }
 
   /** Sits the player at the oldest forming table, or opens one; four humans start at once. */
@@ -217,7 +225,11 @@ export class LobbyCore {
     this.lock(table);
     const members = [...table.members];
     for (const m of members) m.table = null;
-    this.startMatch(seats).then(
+    const keys: Record<string, string> = {};
+    members.forEach((m, i) => {
+      if (m.playerKey) keys[seats[i]!.playerId] = m.playerKey;
+    });
+    this.startMatch(seats, { mode: table.code === undefined ? 'quick' : 'room', keys }).then(
       ({ matchId, tokens }) => {
         members.forEach((m, i) => {
           const me = seats[i]!.playerId;

@@ -30,6 +30,8 @@ export interface OnlineDeps {
   store: SeatStore | null;
   /** This browser's other tabs, so a duplicated tab doesn't fight the first one for the seat (2026-10-15). */
   tabs?: () => TabChannel | null;
+  /** This device's key for match stats, sent with hello (2026-10-17). */
+  playerKey?: string;
 }
 
 function median(values: readonly number[]): number {

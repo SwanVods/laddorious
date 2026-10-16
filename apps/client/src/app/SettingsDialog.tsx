@@ -104,6 +104,8 @@ export function SettingsDialog({ prefs, onClose, device = deviceEnv(), children 
       <footer className="about" role="contentinfo">
         <b className="display">{`Laddorious v${pkg.version}`}</b>
         <span>Made by Feiralabs</span>
+        {/* Match stats (2026-10-17): no account, just a random key on this device. */}
+        <small className="about-note">Anonymous match stats help us balance the game.</small>
       </footer>
     </Dialog>
   );
