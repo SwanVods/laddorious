@@ -144,11 +144,11 @@
   top: calc(var(--safe-t) + 3cqh);
 }
 
-/* The version and What's new, under the profile chip (2026-10-17). */
+/* The version and What's new, in the bottom left corner (2026-10-17); the tip sits above it. */
 .news-btn {
   position: absolute;
   left: calc(var(--safe-l) + 3cqh);
-  top: calc(var(--safe-t) + 3cqh + max(52px, 10cqh));
+  bottom: calc(var(--safe-b) + 3cqh);
   min-height: 36px;
   border: 0;
   cursor: pointer;
@@ -227,7 +227,7 @@
 .tip {
   position: absolute;
   left: calc(var(--safe-l) + 3cqh);
-  bottom: calc(var(--safe-b) + 3cqh);
+  bottom: calc(var(--safe-b) + 3cqh + max(46px, 8cqh));
   display: flex;
   align-items: flex-start;
   gap: max(7px, 1.2cqh);
