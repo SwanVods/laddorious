@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Mesh, type BufferGeometry, type Material, type Object3D } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { loadGltf } from './modelCache';
 import { MESH_SLOTS, type SlotName } from './slotFiles';
 import { prepareMaterial, slotUrl } from './slots';
 
@@ -48,17 +49,15 @@ const ready = new Map<string, SlotMesh>();
 const loading = new Map<string, Promise<SlotMesh>>();
 const warned = new Set<SlotName>();
 
-/** Load a model as one mesh, once per file. three's GLTFLoader comes in only when a model loads. */
+/** Load a model as one mesh, once per file, through the shared model cache (2026-10-16). */
 export function loadSlotMesh(url: string): Promise<SlotMesh> {
   let load = loading.get(url);
   if (!load) {
-    load = import('three/addons/loaders/GLTFLoader.js')
-      .then(({ GLTFLoader }) => new GLTFLoader().loadAsync(url))
-      .then((gltf) => {
-        const mesh = slotMeshFromScene(gltf.scene);
-        ready.set(url, mesh);
-        return mesh;
-      });
+    load = loadGltf(url).then((gltf) => {
+      const mesh = slotMeshFromScene(gltf.scene);
+      ready.set(url, mesh);
+      return mesh;
+    });
     loading.set(url, load);
   }
   return load;
