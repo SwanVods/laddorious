@@ -361,16 +361,28 @@
       "name": "Second Thoughts",
       "rarity": "common",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "reroll",
       "note": "mendapatkan +1 reroll",
-      "plan": "Get one more reroll on each card slot.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "moreRerolls"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "calm-waters",
@@ -463,16 +475,28 @@
       "name": "Encore",
       "rarity": "common",
       "type": "movement",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "die",
       "note": "lempar dadu lagi",
-      "plan": "Roll again this round.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "extraRoll"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "sprint",
@@ -820,16 +844,21 @@
       "name": "Pitfall",
       "rarity": "rare",
       "type": "attack",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "slide",
       "note": "Player yang paling unggul, pindah ke ular terdekat",
-      "plan": "The leader drops onto the nearest snake.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "other",
+        "pick": "leader",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveTo",
+          "rule": "nearest-snake-head"
+        }
+      ]
     },
     {
       "id": "time-freeze",
@@ -997,16 +1026,28 @@
       "name": "No Trespassing",
       "rarity": "rare",
       "type": "defense",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "target",
       "note": "jika pemain lain menduduki tilemu, pemain tersebut langsung mundur. berlangsung 5 ronde",
-      "plan": "For 5 rounds: anyone who lands on your tile is knocked back, as if they lost a face-off.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "guardTile"
+            },
+            "lifetime": {
+              "rounds": 5
+            }
+          }
+        }
+      ]
     },
     {
       "id": "snake-pit",
@@ -1041,16 +1082,29 @@
       "name": "Booby Trap",
       "rarity": "rare",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "slide",
       "note": "lempar dadu, tempatkan ular sejauh n tile dibelakangmu (n = angka dadu)",
-      "plan": "A new snake appears 1–6 tiles behind you.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "boardEdit",
+          "action": "create",
+          "kind": "snake",
+          "minAhead": 1,
+          "maxAhead": 6,
+          "length": 8,
+          "behind": true,
+          "lifetime": {
+            "rounds": 3
+          }
+        }
+      ]
     },
     {
       "id": "ladder-drop",
@@ -1113,16 +1167,28 @@
       "name": "Sore Loser",
       "rarity": "rare",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "swords",
       "note": "jika kamu kalah dalam tahap faceoff, bergerak maju alih2 mundur",
-      "plan": "If you lose a face-off, move forward instead of back.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "loseForward"
+            },
+            "lifetime": {
+              "charges": 1
+            }
+          }
+        }
+      ]
     },
     {
       "id": "ladder-warp",
@@ -1260,16 +1326,22 @@
       "name": "Catch Up",
       "rarity": "rare",
       "type": "movement",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "arrow",
       "note": "bergerak ke tempat player berikutnya",
-      "plan": "Move to the tile of the player just ahead of you.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "ahead-of-caster",
+        "pick": "nearest",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveTo",
+          "rule": "target",
+          "offset": 0
+        }
+      ]
     },
     {
       "id": "jackpot",
@@ -1472,16 +1544,40 @@
       "name": "Crossroads",
       "rarity": "rare",
       "type": "risky",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "coin",
       "note": "50/50 bergerak ke tangga sebelumnya atau ular berikutnya",
-      "plan": "50%: back to the ladder behind you. 50%: on to the next snake.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "gamble",
+          "outcomes": [
+            {
+              "weight": 50,
+              "ops": [
+                {
+                  "op": "moveTo",
+                  "rule": "ladder-foot-behind"
+                }
+              ]
+            },
+            {
+              "weight": 50,
+              "ops": [
+                {
+                  "op": "moveTo",
+                  "rule": "snake-head-ahead"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "blizzard",
@@ -1625,64 +1721,88 @@
       "name": "Fresh Start",
       "rarity": "epic",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "target",
       "note": "SEMUA player bergerak ke tile 30",
-      "plan": "Everyone moves to tile 30.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "everyone",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveTo",
+          "rule": "tile",
+          "tile": 30
+        }
+      ]
     },
     {
       "id": "final-battle",
       "name": "Final Battle!",
       "rarity": "epic",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "swords",
       "note": "SEMUA player bergerak ke tile 90",
-      "plan": "Everyone moves to tile 90.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "everyone",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveTo",
+          "rule": "tile",
+          "tile": 90
+        }
+      ]
     },
     {
       "id": "upside-down",
       "name": "Upside Down",
       "rarity": "epic",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "swap",
       "note": "swap seluruh posisi tangga dan ular",
-      "plan": "Every snake becomes a ladder, and every ladder a snake.",
       "target": {
         "condition": "self",
         "pick": "self",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "boardEdit",
+          "action": "flip",
+          "lifetime": "permanent"
+        }
+      ]
     },
     {
       "id": "fair-and-square",
       "name": "Fair and Square",
       "rarity": "epic",
       "type": "misc",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "target",
       "note": "SEMUA player bergerak ke tile 50",
-      "plan": "Everyone moves to tile 50.",
       "target": {
-        "condition": "self",
-        "pick": "self",
+        "condition": "everyone",
+        "pick": "all",
         "tieBreak": "lowest-seat"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveTo",
+          "rule": "tile",
+          "tile": 50
+        }
+      ]
     },
     {
       "id": "rocket-boots",
@@ -1710,16 +1830,22 @@
       "name": "Overtake",
       "rarity": "epic",
       "type": "movement",
-      "status": "draft",
+      "status": "on",
       "weight": 1,
+      "icon": "arrow",
       "note": "bergerak ke 1 tile di depan player di depanmu",
-      "plan": "Move to 1 tile ahead of the player just ahead of you.",
       "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
+        "condition": "ahead-of-caster",
+        "pick": "nearest",
+        "tieBreak": "random"
       },
-      "effects": []
+      "effects": [
+        {
+          "op": "moveTo",
+          "rule": "target",
+          "offset": 1
+        }
+      ]
     },
     {
       "id": "triple-time",
