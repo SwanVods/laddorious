@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Mesh, MeshStandardMaterial, type BufferGeometry, type Material, type Object3D, type Texture } from 'three';
-import { PAINTED, paintGeometry, paintTexture, paintedMaterial } from '../scene/boardPaint';
+import { PAINTED, paintRepeat, paintTexture, paintedMaterial } from '../scene/boardPaint';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadGltf } from './modelCache';
 import { MESH_SLOTS, type SlotName } from './slotFiles';
@@ -39,16 +39,13 @@ export function slotMeshFromScene(root: Object3D): SlotMesh {
  * Stripe take the brush paint (2026-10-16), projected onto the model, which has no texture coordinates of its own.
  */
 export function prepareSlotMesh(mesh: SlotMesh, { clearcoat, paint = paintTexture() }: { clearcoat: boolean; paint?: Texture | null }): SlotMesh {
-  let painted = false;
   const prep = (m: Material) => {
     const ready = prepareMaterial(m, { clearcoat });
     if (!paint || !(ready instanceof MeshStandardMaterial) || !PAINTED.has(ready.name)) return ready;
-    painted = true;
-    return paintedMaterial(ready, paint);
+    return paintedMaterial(ready, paint, paintRepeat(mesh.geometry));
   };
   const material = Array.isArray(mesh.material) ? mesh.material.map(prep) : prep(mesh.material);
-  // A painted model draws from its painted copy, which carries the paint's coordinates (made once per model).
-  return { geometry: painted ? paintGeometry(mesh.geometry) : mesh.geometry, material };
+  return { geometry: mesh.geometry, material };
 }
 
 /** Free the material copies `prepared` made of `model`'s (a quality change replaced them); the model's own stay, shared. */
