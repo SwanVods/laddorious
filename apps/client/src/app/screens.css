@@ -244,12 +244,13 @@
 }
 
 .place-3 .place-step {
-  height: max(60px, 14cqh);
+  height: max(70px, 14cqh);
   background: var(--primary-hover);
 }
 
+/* Tall enough for its number and tile line (the user, 2026-10-16: they ran over its bottom edge). */
 .place-4 .place-step {
-  height: max(44px, 9cqh);
+  height: max(56px, 11.5cqh);
 }
 
 .end-buttons {

@@ -9,7 +9,7 @@ async function startMatch(page: Page) {
   await page.clock.fastForward('00:16');
   await page.getByRole('button', { name: 'Play with bots' }).click();
   // A fresh browser compiles every shader on the match's first frame: about 15 s under SwiftShader.
-  await expect(page.getByRole('button', { name: 'Leave match' })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole('button', { name: 'Match menu' })).toBeVisible({ timeout: 60_000 });
 }
 
 test('plays a whole match against the bots, then Play again goes back to matchmaking (spec #2 §9.3)', async ({ page }) => {

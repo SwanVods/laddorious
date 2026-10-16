@@ -67,14 +67,20 @@ const rowOf = (name: RegExp) => screen.getByRole('button', { name });
 
 describe('StageBar (spec #2 §7.2)', () => {
   it('names only the current stage, marks the past ones done, and turns the timer coral at 3 s', () => {
-    const { container, rerender } = render(<StageBar round={7} stage={2} timer={{ seconds: 3, fraction: 0.375 }} />);
+    const { container } = render(<StageBar round={7} stage={2} timer={{ seconds: 3, fraction: 0.375 }} />);
     expect(container.querySelector('.stage-round')!.textContent).toBe('ROUND 7');
     const steps = within(screen.getByRole('list', { name: 'Stages of the round' })).getAllByRole('listitem');
     expect(steps.map((s) => s.className)).toEqual(['done', 'done', 'now', 'next', 'next', 'next']);
     expect(steps[2]!.getAttribute('aria-current')).toBe('step');
     expect(screen.getByRole('timer', { name: '3 seconds left' }).querySelector('.stage-tbar')!.className).toContain('low');
-    rerender(<StageBar round={7} stage={0} timer={null} />);
-    expect(screen.queryByRole('timer')).toBeNull();
+  });
+
+  it('keeps the timer showing at 0 s, empty and calm, in a stage with no countdown (2026-10-16)', () => {
+    render(<StageBar round={7} stage={1} timer={null} />);
+    const timer = screen.getByRole('timer', { name: '0 seconds left' });
+    expect(timer.textContent).toBe('0s');
+    expect(timer.querySelector('.stage-tbar')!.className).not.toContain('low');
+    expect((timer.querySelector('.stage-tbar i') as HTMLElement).style.width).toBe('0%');
   });
 });
 

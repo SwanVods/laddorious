@@ -606,6 +606,66 @@ kbd {
   font: 700 max(10px, 1.55cqh) / 1.2 var(--body);
 }
 
+/* Landscape phones (the user, 2026-10-16): smaller type and medal so a long card's text stays on the card, and the
+   card grows rather than spill if it still doesn't fit. */
+@container (max-height: 500px) {
+  .card-pick .popup-title {
+    font-size: 28px;
+  }
+
+  .card-pick .pick-cards {
+    align-items: stretch;
+  }
+
+  .pick-card {
+    flex: 1;
+    width: 176px;
+    height: auto;
+    min-height: 156px;
+  }
+
+  .card-pick .reroll-btn {
+    height: 32px;
+  }
+
+  .card-pick .popup-content,
+  .card-pick .pick-slot {
+    gap: 6px;
+  }
+
+  .pick-inner {
+    gap: 3px;
+    padding: 6px 7px;
+  }
+
+  .pick-type {
+    padding: 3px 7px 2px;
+    font-size: 8.5px;
+  }
+
+  .pick-medal {
+    width: 38px;
+    height: 38px;
+    border-width: 3px;
+    box-shadow: 0 3px 0 var(--ink);
+    font-size: 20px;
+  }
+
+  .pick-name {
+    font-size: 14px;
+  }
+
+  .pick-text {
+    font-size: 9.5px;
+    line-height: 1.25;
+  }
+
+  .pick-warn,
+  .pick-target {
+    font-size: 8.5px;
+  }
+}
+
 .reroll-btn {
   display: grid;
   place-items: center;

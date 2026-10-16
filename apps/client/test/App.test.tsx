@@ -156,6 +156,7 @@ describe('App (spec #2 §4.1, §7.1)', () => {
   it('leaves a match through the leave dialog', () => {
     const { made } = setup();
     const session = startMatch(made);
+    fireEvent.click(screen.getByRole('button', { name: 'Match menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Leave match' }));
     fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
     expect(session.leave).toHaveBeenCalledTimes(1);
@@ -271,7 +272,7 @@ describe('App online (spec #4 §3.3)', () => {
 
   it('starts in the match when a reload rejoined one', () => {
     setupOnline(new ScriptedSession());
-    expect(screen.getByRole('button', { name: 'Leave match' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Match menu' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'PLAY' })).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import type { PlayerId, Ranking } from '@laddorious/core';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand';
+import type { StoreApi } from 'zustand/vanilla';
 import { Director } from '../director/director';
 import { BannerView, useBanner } from '../hud/Banner';
 import { CardPickPopup } from '../hud/CardPickPopup';
@@ -24,6 +25,8 @@ import { cardListRecord, roundRecord } from '../hud/record';
 import { StageBar } from '../hud/StageBar';
 import { YourPiece } from '../hud/YourPiece';
 import { MatchScene } from '../scene/MatchScene';
+import type { PrefsState } from './prefs';
+import { SettingsDialog } from './SettingsDialog';
 import { tuning } from './tuning';
 import type { QualitySetting } from '../scene/quality';
 import { createTagRegistry } from '../scene/tags';
@@ -49,6 +52,8 @@ export interface MatchScreenProps {
   /** Sound is muted; with onToggleMute, a speaker button toggles it (spec #3 §4). */
   muted?: boolean;
   onToggleMute?: () => void;
+  /** The settings the match's menu button opens (2026-10-16). */
+  prefs: StoreApi<PrefsState>;
   /** I left through the leave dialog; the session has been left. */
   onLeave: () => void;
   /** The host failed (spec #2 §8): the error screen takes over. */
@@ -61,12 +66,13 @@ export interface MatchScreenProps {
  * The match screen (spec #2 §7.1, §7.2): the 3D board with the HUD over it. It plays the
  * session's updates through a Director and sends my rolls, picks and rerolls.
  */
-export function MatchScreen({ session, quality, reducedMotion, showStats = false, timeScale = 1, muted = false, onToggleMute, onLeave, onFailed, onFinished }: MatchScreenProps) {
+export function MatchScreen({ session, prefs, quality, reducedMotion, showStats = false, timeScale = 1, muted = false, onToggleMute, onLeave, onFailed, onFinished }: MatchScreenProps) {
   const { me, seats } = session;
   const [director] = useState(() => new Director(me, (windowId) => session.playbackDone(windowId), undefined, timeScale));
   const [tags] = useState(createTagRegistry);
   const [watch, setWatch] = useState<PlayerId | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   // The window I picked a card in: the pick closes at once, before the host's view catches up (polish spec §4.3).
   const [pickedWindow, setPickedWindow] = useState<number | null>(null);
   // The pick window I'm peeking at the board from, so a new pick never opens already peeking.
@@ -135,7 +141,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   }, [rankings]);
 
   const backToMine = () => setWatch(null);
-  useHotkeys({ Escape: backToMine }, watch !== null && !leaving);
+  useHotkeys({ Escape: backToMine }, watch !== null && !leaving && !menuOpen);
 
   const view = settled?.view;
   // The HUD's card texts show this match's picked values (2026-10-15); it only rebuilds when they change.
@@ -199,7 +205,8 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
           </button>
         )}
         <FullscreenButton className="match-fullscreen-btn" />
-        <button type="button" className="round-btn menu-btn live" aria-label="Leave match" onClick={() => setLeaving(true)}>
+        {/* The menu button opens the settings, with leaving the match at their foot (the user, 2026-10-16). */}
+        <button type="button" className="round-btn menu-btn live" aria-label="Match menu" onClick={() => setMenuOpen(true)}>
           <Icon name="menu" />
         </button>
         {showStats && <DevStats />}
@@ -216,6 +223,20 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
             onReroll={(slot) => session.send({ type: 'reroll', slot })}
             onPeek={(peeking) => setPeekWindow(peeking ? view.awaiting.windowId : null)}
           />
+        )}
+        {menuOpen && (
+          <SettingsDialog prefs={prefs} onClose={() => setMenuOpen(false)}>
+            <button
+              type="button"
+              className="btn accent"
+              onClick={() => {
+                setMenuOpen(false);
+                setLeaving(true);
+              }}
+            >
+              Leave match
+            </button>
+          </SettingsDialog>
         )}
         {leaving && (
           <Dialog title="Leave match?" onClose={() => setLeaving(false)}>
