@@ -117,15 +117,15 @@ export const STEP_KINDS: StepKind[] = [
     write: (v) => ({ op: 'moveRelative', amount: v.amount as Amount }),
   },
   {
-    id: 'toLadder', label: 'Go to the nearest ladder ahead', fields: [],
+    id: 'toLadder', label: 'Go to the nearest rocket ahead', fields: [],
     make: () => ({ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }),
     read: (op) => (op.op === 'moveTo' && op.rule === 'nearest-ladder-foot-ahead' ? {} : null),
     write: () => ({ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }),
   },
   // Moving to a place (2026-10-16).
-  moveToKind('toSnake', 'Go to the nearest snake', 'nearest-snake-head'),
-  moveToKind('toSnakeAhead', 'Go to the next snake ahead', 'snake-head-ahead'),
-  moveToKind('toLadderBehind', 'Go to the ladder behind', 'ladder-foot-behind'),
+  moveToKind('toSnake', 'Go to the nearest whirlpool', 'nearest-snake-head'),
+  moveToKind('toSnakeAhead', 'Go to the next whirlpool ahead', 'snake-head-ahead'),
+  moveToKind('toLadderBehind', 'Go to the rocket behind', 'ladder-foot-behind'),
   {
     id: 'toPlayer', label: "Go to the target's tile (you move)", fields: [{ key: 'offset', label: 'tiles past it', kind: 'count', min: 0 }],
     make: () => ({ op: 'moveTo', rule: 'target', offset: 0 }),
@@ -147,12 +147,12 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('rollBack', 'Next roll moves back', 'reverseRoll', {}, null, { charges: 1, rounds: 0 }),
   rollCheckKind('ifRollTimes', 'If next roll is…: ×', [{ key: 'times', label: 'times', kind: 'amount', min: 2 }],
     (v) => ({ multiply: v.times }), (t) => ('multiply' in t ? { times: t.multiply } : null), { times: 2 }),
-  rollCheckKind('ifRollShield', 'If next roll is…: block snakes or attacks',
+  rollCheckKind('ifRollShield', 'If next roll is…: block whirlpools or attacks',
     [{ key: 'shieldUses', label: 'blocks', kind: 'count', min: 1 }, { key: 'shieldRounds', label: 'for rounds (0 = any time)', kind: 'count', min: 0 }],
     (v) => ({ shield: { charges: v.shieldUses, ...(v.shieldRounds ? { rounds: v.shieldRounds } : {}) } }),
     (t) => ('shield' in t ? { shieldUses: (t.shield as { charges: unknown }).charges, shieldRounds: (t.shield as { rounds?: unknown }).rounds ?? 0 } : null),
     { when: 'even', shieldUses: 1, shieldRounds: 2 }),
-  rollCheckKind('ifRollLadder', 'If next roll is…: go to the nearest ladder',
+  rollCheckKind('ifRollLadder', 'If next roll is…: go to the nearest rocket',
     [{ key: 'otherwise', label: 'if not', kind: 'choice', choices: [['stay', 'stay put'], ['move', 'move as rolled']] }],
     () => ({ toLadder: true }), (t, otherwise) => ('toLadder' in t ? { otherwise: otherwise === 'stay' ? 'stay' : 'move' } : null), { when: 'over3', otherwise: 'stay' }),
   effectKind('extraRoll', 'Roll again this round', 'extraRoll', {}, null, { charges: 1, rounds: 0 }),
@@ -160,14 +160,14 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('guardTile', 'Guard your tile', 'guardTile', {}, null, { charges: 0, rounds: 5 }),
   effectKind('loseForward', 'Lose a face-off: move forward', 'loseForward', {}, null, { charges: 1, rounds: 0 }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
-  effectKind('blockSnake', 'Ignore snakes', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
-  effectKind('blockEither', 'Block snakes or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
-  effectKind('jumpsOff', 'Snakes and ladders off', 'jumpsOff', {}, null, { charges: 0, rounds: 1 }),
+  effectKind('blockSnake', 'Ignore whirlpools', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
+  effectKind('blockEither', 'Block whirlpools or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
+  effectKind('jumpsOff', 'Rockets and whirlpools off', 'jumpsOff', {}, null, { charges: 0, rounds: 1 }),
   {
     // After a slide or a climb (2026-10-16: ladders, and everyone else moving, too).
-    id: 'snakeThenMove', label: 'After a snake or ladder, move',
+    id: 'snakeThenMove', label: 'After a whirlpool or rocket, move',
     fields: [
-      { key: 'condition', label: 'after', kind: 'choice', choices: [['landedOnSnakeHead', 'sliding down a snake'], ['climbedLadder', 'climbing a ladder']] },
+      { key: 'condition', label: 'after', kind: 'choice', choices: [['landedOnSnakeHead', 'hitting a whirlpool'], ['climbedLadder', 'riding a rocket']] },
       { key: 'who', label: 'who moves', kind: 'choice', choices: [['you', 'you'], ['others', 'everyone else']] },
       { key: 'amount', label: 'amount', kind: 'amount' },
       USES,
@@ -183,12 +183,12 @@ export const STEP_KINDS: StepKind[] = [
       lifetime: lifeFrom(v),
     }),
   },
-  boardKind('newSnake', 'New snake', 'snake', 8),
-  boardKind('newLadder', 'New ladder', 'ladder', 15),
+  boardKind('newSnake', 'New whirlpool', 'snake', 8),
+  boardKind('newLadder', 'New rocket', 'ladder', 15),
   {
     // A snake behind the target (2026-10-16).
     id: 'newSnakeBehind',
-    label: 'New snake behind',
+    label: 'New whirlpool behind',
     fields: [
       { key: 'minAhead', label: 'nearest tile behind', kind: 'amount', min: 1 },
       { key: 'maxAhead', label: 'furthest tile behind', kind: 'amount', min: 1 },
@@ -205,7 +205,7 @@ export const STEP_KINDS: StepKind[] = [
   {
     // Upside Down (2026-10-16).
     id: 'flipBoard',
-    label: 'Flip snakes and ladders',
+    label: 'Flip rockets and whirlpools',
     fields: [{ key: 'rounds', label: 'rounds (0 = rest of the match)', kind: 'count', min: 0 }],
     make: () => ({ op: 'boardEdit', action: 'flip', lifetime: 'permanent' }),
     read: (op) => (op.op === 'boardEdit' && op.action === 'flip' ? { rounds: op.lifetime === 'permanent' ? 0 : op.lifetime.rounds } : null),

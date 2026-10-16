@@ -12,7 +12,7 @@ const put = (s: MatchState, owner: string, t: EffectTemplate) => addEffect(s, []
 const card = (effects: CatalogCard['effects'], values?: CatalogCard['values'], id = 'x'): CatalogCard => ({ id, name: id, type: 'risky', rarity: 'common', weight: 1, target: SELF, effects, ...(values ? { values } : {}) });
 
 describe('"when" effects (2026-10-16)', () => {
-  it('moves you on after you climb a ladder, then is spent', () => {
+  it('moves you on after you ride a rocket, then is spent', () => {
     const s = setup({ players: 2, board: makeBoard(100, [[12, 40]]), positions: [9, 0], dice: [[3], [1]] });
     put(s, 'p1', after('climbedLadder', 5, { charges: 1 }));
     const { state } = play(s, [roll('p1'), roll('p2')]);
@@ -38,7 +38,7 @@ describe('"when" effects (2026-10-16)', () => {
     expect(state.effects.map((e) => e.params.hook)).toEqual(['afterMove']);
   });
 
-  it('moves everyone else when you hit a snake, every time while it lasts', () => {
+  it('moves everyone else when you hit a whirlpool, every time while it lasts', () => {
     const s = setup({ players: 3, board: makeBoard(100, [[30, 5]]), positions: [27, 50, 60], dice: [[3], [1], [1]] });
     put(s, 'p1', after('landedOnSnakeHead', -2, { rounds: 3 }, true));
     const { state } = play(s, [roll('p1'), roll('p2'), roll('p3')]);
@@ -62,16 +62,16 @@ describe('"when" effects (2026-10-16)', () => {
 
   it('writes the texts', () => {
     expect(describeCard(card([{ op: 'conditional', trigger: { cause: 'dice', condition: 'climbedLadder' }, amount: { value: 'n' }, lifetime: { charges: 1 } }], { n: { min: 3, max: 8 } }))).toBe(
-      'Next time you climb a ladder, move forward 3–8 more.',
+      'Next time you ride a rocket, move forward 3–8 more.',
     );
     expect(describeCard(card([{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, who: 'others', amount: -2, lifetime: { rounds: 3 } }]))).toBe(
-      'For 3 rounds: if you hit a snake, everyone else moves back 2.',
+      'For 3 rounds: if you hit a whirlpool, everyone else moves back 2.',
     );
     expect(describeCard(card([{ op: 'conditional', trigger: { cause: 'dice', condition: 'climbedLadder' }, who: 'others', amount: 2, lifetime: { rounds: 3 } }]))).toBe(
-      'For 3 rounds: if you climb a ladder, everyone else moves forward 2.',
+      'For 3 rounds: if you ride a rocket, everyone else moves forward 2.',
     );
     expect(describeCard(card([{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: { value: 'n' }, lifetime: { charges: 1 } }], { n: { min: 3, max: 8 } }))).toBe(
-      'Next time you land on a snake head, move forward 3–8 after sliding.',
+      'Next time you land in a whirlpool, move forward 3–8 after sliding.',
     );
   });
 });

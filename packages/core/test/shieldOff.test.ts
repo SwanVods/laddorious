@@ -67,9 +67,9 @@ describe('snakes and ladders off (2026-10-16)', () => {
   });
 
   it('writes the texts', () => {
-    expect(describeCard(card([{ op: 'addEffect', template: OFF }]))).toBe('Snakes and ladders do nothing for 1 round.');
-    expect(describeCard(card([{ op: 'addEffect', template: { params: { hook: 'jumpsOff' }, lifetime: { rounds: 2 } } }]))).toBe('Snakes and ladders do nothing for 2 rounds.');
-    expect(describeCard(card([{ op: 'addEffect', template: { params: { hook: 'beforeSnakeOrAttack' }, lifetime: { charges: 1, rounds: 2 } } }]))).toBe('Block the next snake or attack, whichever comes first (2 rounds).');
-    expect(describeCard(card([{ op: 'addEffect', template: { params: { hook: 'beforeSnakeOrAttack' }, lifetime: { charges: 2 } } }]))).toBe('Block the next 2 snakes or attacks, any time this match.');
+    expect(describeCard(card([{ op: 'addEffect', template: OFF }]))).toBe('Rockets and whirlpools do nothing for 1 round.');
+    expect(describeCard(card([{ op: 'addEffect', template: { params: { hook: 'jumpsOff' }, lifetime: { rounds: 2 } } }]))).toBe('Rockets and whirlpools do nothing for 2 rounds.');
+    expect(describeCard(card([{ op: 'addEffect', template: { params: { hook: 'beforeSnakeOrAttack' }, lifetime: { charges: 1, rounds: 2 } } }]))).toBe('Block the next whirlpool or attack, whichever comes first (2 rounds).');
+    expect(describeCard(card([{ op: 'addEffect', template: { params: { hook: 'beforeSnakeOrAttack' }, lifetime: { charges: 2 } } }]))).toBe('Block the next 2 whirlpools or attacks, any time this match.');
   });
 });

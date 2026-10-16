@@ -50,7 +50,7 @@ describe('card labels (spec #2 §7.2)', () => {
     expect(fizzleWarning('shove', viewAt({ p0: 5, p1: 10 }))).toBeNull();
     expect(fizzleWarning('sprint', viewAt({ p0: 50 }))).toBeNull();
     const noPads = { ...viewAt({ p0: 95 }) };
-    expect(fizzleWarning('ladder-warp', { ...noPads, board: { ...noPads.board, jumps: [] } })).toBe('No launch pad ahead of you right now. If that holds, it fizzles.');
+    expect(fizzleWarning('ladder-warp', { ...noPads, board: { ...noPads.board, jumps: [] } })).toBe('No rocket ahead of you right now. If that holds, it fizzles.');
   });
 });
 

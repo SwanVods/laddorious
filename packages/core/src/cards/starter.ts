@@ -21,12 +21,12 @@ export const STARTER_CARDS: CardDef[] = [
     effects: [{ op: 'addEffect', template: { params: { hook: 'diceTotal', op: 'multiply', value: 2 }, lifetime: { charges: 1 } } }],
   },
   {
-    id: 'ladder-warp', name: 'Ladder Warp', text: 'Move to the nearest ladder foot ahead of you.',
+    id: 'ladder-warp', name: 'Rocket Warp', text: 'Move to the nearest rocket ahead of you.',
     type: 'movement', rarity: 'epic', weight: 1, target: SELF,
     effects: [{ op: 'moveTo', rule: 'nearest-ladder-foot-ahead' }],
   },
   {
-    id: 'snake-charm', name: 'Snake Charm', text: 'Ignore the next snake you land on (3 rounds).',
+    id: 'snake-charm', name: 'Swim Ring', text: 'Ignore the next whirlpool you land in (3 rounds).',
     type: 'defense', rarity: 'common', weight: 1, target: SELF,
     effects: [{ op: 'addEffect', template: { params: { hook: 'beforeSnake' }, lifetime: { rounds: 3, charges: 1 } } }],
   },
@@ -36,7 +36,7 @@ export const STARTER_CARDS: CardDef[] = [
     effects: [{ op: 'addEffect', template: { params: { hook: 'beforeAttack' }, lifetime: { rounds: 3, charges: 1 } } }],
   },
   {
-    id: 'aegis', name: 'Aegis', text: 'Block all attacks and snakes for 2 rounds.',
+    id: 'aegis', name: 'Aegis', text: 'Block all attacks and whirlpools for 2 rounds.',
     type: 'defense', rarity: 'epic', weight: 1, target: SELF,
     effects: [
       { op: 'addEffect', template: { params: { hook: 'beforeAttack' }, lifetime: { rounds: 2 } } },
@@ -69,7 +69,7 @@ export const STARTER_CARDS: CardDef[] = [
     ] }],
   },
   {
-    id: 'snake-bait', name: 'Snake Bait', text: 'Next time you land on a snake head, move forward 8 after sliding.',
+    id: 'snake-bait', name: 'Bounce Back', text: 'Next time you land in a whirlpool, move forward 8 after sliding.',
     type: 'risky', rarity: 'rare', weight: 1, target: SELF,
     effects: [{ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: 8, lifetime: { charges: 1 } }],
   },
@@ -92,12 +92,12 @@ export const STARTER_CARDS: CardDef[] = [
     effects: [{ op: 'removeEffects', filter: { createdByOthers: true }, count: 'all' }],
   },
   {
-    id: 'snake-pit', name: 'Snake Pit', text: 'Create a snake (length 8) 2–6 tiles ahead of the leader for 3 rounds.',
+    id: 'snake-pit', name: 'Undertow', text: 'Create a whirlpool (length 8) 2–6 tiles ahead of the leader for 3 rounds.',
     type: 'misc', rarity: 'rare', weight: 1, target: LEADER,
     effects: [{ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: 2, maxAhead: 6, length: 8, lifetime: { rounds: 3 } }],
   },
   {
-    id: 'ladder-drop', name: 'Ladder Drop', text: 'Create a ladder (length 15) 2–6 tiles ahead of you for 2 rounds.',
+    id: 'ladder-drop', name: 'Rocket Drop', text: 'Create a rocket (length 15) 2–6 tiles ahead of you for 2 rounds.',
     type: 'misc', rarity: 'epic', weight: 1, target: SELF,
     effects: [{ op: 'boardEdit', action: 'create', kind: 'ladder', minAhead: 2, maxAhead: 6, length: 15, lifetime: { rounds: 2 } }],
   },

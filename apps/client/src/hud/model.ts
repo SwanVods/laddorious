@@ -243,7 +243,7 @@ const MOVE_VERB: Partial<Record<Beat['kind'], string>> = {
   launch: ' launches up',
   knockback: ' is knocked back',
   stepBack: ' steps back',
-  snakeBlocked: ' dodges the slide',
+  snakeBlocked: ' dodges the whirlpool',
   cardMove: ' leaps',
 };
 

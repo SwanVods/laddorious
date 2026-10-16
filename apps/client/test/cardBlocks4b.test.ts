@@ -28,8 +28,8 @@ describe('the game shows 4b effects (2026-10-16)', () => {
     const names = new Map([['p1', 'Juno']]);
     expect(effectChip(fx('skipRoll'), names)).toMatchObject({ icon: 'lock', description: 'Skips the next roll, from Juno' });
     expect(effectChip(fx('reverseRoll'), names)).toMatchObject({ icon: 'back', description: 'Next roll moves back, from Juno' });
-    expect(effectChip(fx('beforeSnakeOrAttack', 'p1'), names)).toMatchObject({ icon: 'aegis', description: 'Blocks the next slide or attack' });
-    expect(effectChip(fx('jumpsOff', 'p1', { rounds: 1 }), names)).toMatchObject({ icon: 'slide', description: 'Slides and rockets do nothing, for everyone' });
+    expect(effectChip(fx('beforeSnakeOrAttack', 'p1'), names)).toMatchObject({ icon: 'aegis', description: 'Blocks the next whirlpool or attack' });
+    expect(effectChip(fx('jumpsOff', 'p1', { rounds: 1 }), names)).toMatchObject({ icon: 'slide', description: 'Rockets and whirlpools do nothing, for everyone' });
   });
 
   it('greys the snakes and ladders while they are off', () => {

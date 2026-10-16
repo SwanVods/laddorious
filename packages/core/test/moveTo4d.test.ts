@@ -44,7 +44,7 @@ describe('moving to a place (2026-10-16)', () => {
     expect(resolved(ev)).toMatchObject({ result: 'fizzled', reason: 'no-placement' });
   });
 
-  it('goes back to the ladder behind, or on to the next snake', () => {
+  it('goes back to the ladder behind, or on to the next whirlpool', () => {
     const board = makeBoard(100, [[12, 40], [20, 60], [70, 55]]);
     expect(positions(play(board, [25, 0], 'back-ladder').s)[0]).toBe(20);
     expect(positions(play(board, [25, 0], 'next-snake').s)[0]).toBe(70);
@@ -72,9 +72,9 @@ describe('moving to a place (2026-10-16)', () => {
   });
 
   it('writes the texts', () => {
-    expect(describeCard(CARDS[0]!)).toBe('The leader drops onto the nearest snake.');
+    expect(describeCard(CARDS[0]!)).toBe('The leader drops into the nearest whirlpool.');
     const crossroads = card('x', SELF, [{ op: 'gamble', outcomes: [{ weight: 50, ops: to('ladder-foot-behind') }, { weight: 50, ops: to('snake-head-ahead') }] }]);
-    expect(describeCard(crossroads)).toBe('50%: back to the ladder behind you. 50%: on to the next snake.');
+    expect(describeCard(crossroads)).toBe('50%: back to the rocket behind you. 50%: on to the next whirlpool.');
     expect(describeCard(CARDS[3]!)).toBe('Move to the tile of the player just ahead of you.');
     expect(describeCard(CARDS[4]!)).toBe('Move to 1 tile ahead of the player just ahead of you.');
     expect(describeCard(card('t', EVERYONE, to('tile', { tile: 30 })))).toBe('Everyone moves to tile 30.');
