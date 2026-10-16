@@ -1,6 +1,6 @@
 # @laddorious/server
 
-The multiplayer server (Spec #4): one Cloudflare Worker that serves the built game and runs the matches. Design: [spec #4](../../docs/superpowers/specs/2026-10-09-multiplayer-server-design.md).
+The multiplayer server: one Cloudflare Worker that serves the built game and runs the matches.
 
 | File | What it does |
 |---|---|
@@ -70,7 +70,7 @@ On Cloudflare (pricing as of October 2026):
 - **Requests:** incoming WebSocket messages bill at 20:1, so a match is about 150–200 billed requests.
 - **Workers Paid ($5 a month):** covers about 7,000 matches a month, then roughly $0.70 per 1,000 matches.
 
-If traffic grows, WebSocket hibernation with alarms (out of scope for spec #4) would cut the Durable Object time sharply.
+If traffic grows, WebSocket hibernation with alarms would cut the Durable Object time sharply.
 
 ## Tests
 

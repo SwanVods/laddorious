@@ -1,6 +1,6 @@
 # Laddorious art
 
-The game's 3D models (Spec #5), built from Blender Python scripts. Each script makes one model, and the build exports it to `apps/client/public/models/<id>.glb`, which the game loads through its asset slots. The `.glb` files are committed, so the game builds without Blender.
+The game's 3D models, built from Blender Python scripts. Each script makes one model, and the build exports it to `apps/client/public/models/<id>.glb`, which the game loads through its asset slots. The `.glb` files are committed, so the game builds without Blender.
 
 ## Building
 
@@ -52,11 +52,11 @@ Models are sculpted, not assembled (the user's direction at the Step 1 review): 
 
 ## Low quality files
 
-A piece script with `LOW = 0.3` also builds `<id>-low.glb` for Low quality (spec #5 A14): `sculpt.DETAIL` scales every `fuse()` target to that share, colour boundaries are kept without their neighbours, and there's no shadow stand-in. `pnpm art knight-low` builds only that file. The contract holds it to its piece's rule with at most 40% of the triangles.
+A piece script with `LOW = 0.3` also builds `<id>-low.glb` for Low quality: `sculpt.DETAIL` scales every `fuse()` target to that share, colour boundaries are kept without their neighbours, and there's no shadow stand-in. `pnpm art knight-low` builds only that file. The contract holds it to its piece's rule with at most 40% of the triangles.
 
 ## Shadow stand-ins
 
-A model that casts a shadow in the game (pieces, die, crown) sets `SHADOW = 400` in its script. The build then adds a copy decimated to about that many triangles, in one material named `Shadow`. The game casts the shadow from the stand-in and never shows it, so the shadow map draws a tenth of the model (spec #5 A12). The contract wants one on those models and none on the board's instanced parts. Preview a stand-in by writing its id as `pawn:shadow`.
+A model that casts a shadow in the game (pieces, die, crown) sets `SHADOW = 400` in its script. The build then adds a copy decimated to about that many triangles, in one material named `Shadow`. The game casts the shadow from the stand-in and never shows it, so the shadow map draws a tenth of the model. The contract wants one on those models and none on the board's instanced parts. Preview a stand-in by writing its id as `pawn:shadow`.
 
 ## Adding a model
 
