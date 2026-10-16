@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { LoggedEvent } from '../src/director/director';
 import { cardListRecord } from '../src/hud/record';
 
-// The card list keeps last round's cards until the next round's first die roll (the user, 2026-10-16).
+// The card list keeps last round's cards until the next round's dice are all in (the user, 2026-10-16): bots roll the
+// moment the window opens, so a single die roll would clear them before anyone could read them.
 
 const ev = (e: object): GameEvent => ({ visibility: 'public', ...e }) as GameEvent;
 const log = (events: object[]): LoggedEvent[] => events.map((e, i) => ({ seq: i + 1, event: ev(e) }));
@@ -22,8 +23,10 @@ describe('which round the card list shows (2026-10-16)', () => {
     expect(record.cards).toEqual({ p0: { cardId: 'sprint', result: 'hit' } });
   });
 
-  it('lets them go at the next round\'s first die roll', () => {
-    const record = cardListRecord(log([...round1, { type: 'RoundStarted', round: 2 }, { type: 'DieRolled', player: 'p1', natural: 2, face: 2, forced: false, auto: false }]));
+  it("keeps them while the others roll, and lets them go once everyone's dice are in", () => {
+    const opening = [...round1, { type: 'RoundStarted', round: 2 }, { type: 'DieRolled', player: 'p1', natural: 2, face: 2, forced: false, auto: false }];
+    expect(cardListRecord(log(opening)).round).toBe(1);
+    const record = cardListRecord(log([...opening, { type: 'DiceTotaled', player: 'p1', faces: [2], total: 2 }]));
     expect(record.round).toBe(2);
     expect(record.cards).toEqual({});
   });

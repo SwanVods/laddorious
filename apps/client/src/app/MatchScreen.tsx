@@ -112,7 +112,7 @@ export function MatchScreen({ session, quality, reducedMotion, showStats = false
   const log = useStore(director.store, (s) => s.log);
   const banner = useBanner(beat, me, seats);
   const record = useMemo(() => roundRecord(log), [log]);
-  // Last round's cards stay in the list until the next round's first die roll (2026-10-16).
+  // Last round's cards stay in the list until the next round's dice are all in (2026-10-16).
   const listRecord = useMemo(() => cardListRecord(log), [log]);
   const lines = useMemo(() => feedLines(log), [log]);
   // Revealed cards as one-line bubbles beside their players' rows (polish spec §4.4).
