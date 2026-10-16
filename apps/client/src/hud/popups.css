@@ -495,12 +495,12 @@ kbd {
 
 .pick-card.rare {
   --frame-a: var(--rarity-rare);
-  --frame-b: var(--mystery);
+  --frame-b: var(--primary);
 }
 
 .pick-card.epic {
   --frame-a: var(--rarity-epic);
-  --frame-b: var(--primary);
+  --frame-b: var(--mystery);
 }
 
 .pick-card.movement {
@@ -692,7 +692,7 @@ kbd {
 }
 
 .peek-btn {
-  background: var(--rarity-rare);
+  background: var(--cool);
 }
 
 /* ---------------------------------------------------------------- banners (§5.1) */
@@ -719,7 +719,7 @@ kbd {
 }
 
 .banner.cool {
-  color: var(--rarity-rare);
+  color: var(--cool);
 }
 
 @keyframes banner-pop {

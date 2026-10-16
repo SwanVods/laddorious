@@ -27,8 +27,11 @@
      which reuse the classic square colours so the cards read as part of the board. */
   --mystery: #8f4dff;
   --rarity-common: #ffffff;
-  --rarity-rare: #6ff3ff;
-  --rarity-epic: #ffcc33;
+  /* Rare gold, epic cyan (the user, 2026-10-17: swapped). */
+  --rarity-rare: #ffcc33;
+  --rarity-epic: #6ff3ff;
+  /* A cool cyan for the peek button and calm banners, whatever the rarities' colours. */
+  --cool: #6ff3ff;
   --type-movement: #4a9dff;
   --type-defense: #4fd16a;
   --type-attack: #ff5a5f;
