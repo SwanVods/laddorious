@@ -1,6 +1,6 @@
 # @laddorious/core
 
-The Laddorious rules engine: a pure, deterministic state machine for a 2–4 player match, plus the seeded board generator. Design: [Spec #1](../../docs/superpowers/specs/2026-10-03-game-core-design.md).
+The Laddorious rules engine: a pure, deterministic state machine for a 2–4 player match, plus the seeded board generator.
 
 ## What it exports
 

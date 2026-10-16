@@ -7,7 +7,7 @@ The Laddorious web client:
 - a 4-player match in 3D with the full HUD;
 - the end screen.
 
-It runs in desktop browsers and in landscape on phones; Capacitor builds for iOS and Android come later. Design: [Spec #2](../../docs/superpowers/specs/2026-10-04-3d-client-design.md).
+It runs in desktop browsers and in landscape on phones; Capacitor builds for iOS and Android come later.
 
 ## Local development
 
@@ -27,7 +27,7 @@ Dev builds (`pnpm dev`) add two things:
 
 ## Playing online
 
-`VITE_SERVER`, read at build time (spec #4 M11), picks where matches run:
+`VITE_SERVER`, read at build time, picks where matches run:
 
 | Value | What happens |
 |---|---|
@@ -144,9 +144,8 @@ A match stays within 100 draw calls and 150,000 triangles: `test/scene.test.tsx`
 
 ## Sound
 
-Every sound effect and both music loops are made in code with [Tone.js](https://tonejs.github.io/) 15.1.22. There are no audio files. Design: [Spec #3](../../docs/superpowers/specs/2026-10-09-sound-design.md).
+Every sound effect and both music loops are made in code with [Tone.js](https://tonejs.github.io/) 15.1.22. There are no audio files.
 
-- **The sound board:** the approved sounds and loops are in [`2026-10-09-sound-board.html`](../../docs/superpowers/specs/2026-10-09-sound-board.html). Open it in a browser to hear any sound by its code (U1, D2, S1…). It's the reference for tuning.
 - **Where it lives** (`src/audio/`):
   - `sounds.ts` holds the 42 recipes and their level trims;
   - `music.ts` holds the menu and match loops;
@@ -165,13 +164,13 @@ To retune a sound:
 
 ## Asset slots and Blender models
 
-Every model sits in a named slot with a code-built stand-in (`src/assets/slots.tsx`, `src/assets/models.ts`). The Blender models (Spec #5) are built from scripts in [`art/`](../../art/README.md) into `public/models/<id>.glb`.
+Every model sits in a named slot with a code-built stand-in (`src/assets/slots.tsx`, `src/assets/models.ts`). The Blender models are built from scripts in [`art/`](../../art/README.md) into `public/models/<id>.glb`.
 
 - **`src/assets/slotFiles.ts`** lists which slots have a model, and its id.
 - **Loading:** a listed slot loads its model with drei's `useGLTF`, and the menu preloads them all. While a model loads, or if it fails, the stand-in shows and a warning is logged once.
 - **Instanced slots** (`MESH_SLOTS`: tiles, pads, targets, vortices, exits) load through `useSlotMesh` (`src/assets/slotMesh.ts`): the model becomes one geometry with a group per material, so every copy draws once per material. It returns the stand-in until the model loads and never suspends, so callers re-place their instances when it changes. The stand-ins lie flat and face +Z, like the models; rockets and flags face the camera and turn only as they react.
 - **Trails** (`src/scene/tracks.ts`): a shown path is a line of chevron arrowheads (`dashPoints`), flat along a slide's lane or tilted along a rocket's flight arc (`ladderCurve`), drifting on. They pop in one by one, take the pair colour and have a dark ink outline: two instanced meshes in all, however many paths show.
-- **Rockets and flags** (spec #5 A18): they stand in their tile's top-right corner (`PARTS.corner`), so pieces stack in the middle. `endReaction` makes a rocket rock as a piece launches and a flag swing and pop as one lands; flat icons only pop, and reduced motion keeps them still.
+- **Rockets and flags**: they stand in their tile's top-right corner (`PARTS.corner`), so pieces stack in the middle. `endReaction` makes a rocket rock as a piece launches and a flag swing and pop as one lands; flat icons only pop, and reduced motion keeps them still.
 - **Landings on a stack** (`stackLandings`, `landingPose` in `src/scene/motion.ts`): the piece on top wobbles for 0.8 s and the one under it squashes once.
 - **Turning pieces** (`placePiece` in `src/scene/Pieces.tsx`): the body moves, squashes and turns to face its way; flips, wobbles and the idle sway turn the inner model about the piece's own side axis (rotation x), which the camera sees side-on.
 - **Nothing overlaps** (`src/scene/footprint.ts`, `src/assets/pieceSizes.ts`): pieces stand by their measured sizes, stacked head to foot, nose to nose in a face-off. `pnpm test` checks the size table against the built models and every pair of pieces as turned footprints.
@@ -181,11 +180,11 @@ Every model sits in a named slot with a code-built stand-in (`src/assets/slots.t
 - **Full screen** (`src/ui/FullscreenButton.tsx`): a round button in the menu and in matches, hidden where the Fullscreen API isn't available.
 - **Pauses** (`withPauses` in `src/director/beats.ts`): beats with no events after the last roll and after each card; `heldBeat` gives the moment they hold, for the camera and the HUD.
 - **Epic "?" tiles** shine: a band of light sweeps across each (`sheenTexture`, one instanced mesh in `Board.tsx`).
-- **Cards and face-offs** (spec #2 C16): cards resolve one at a time and the camera visits each (`cardShot` in `camera.ts`, `BEAT_MS.cardLead`); a face-off shows its intro, the picks, then the result banner, one after another (`faceOffModel`, banners with `delayMs`).
+- **Cards and face-offs**: cards resolve one at a time and the camera visits each (`cardShot` in `camera.ts`, `BEAT_MS.cardLead`); a face-off shows its intro, the picks, then the result banner, one after another (`faceOffModel`, banners with `delayMs`).
 - **Name tags:** your own always shows; another player's shows while the mouse is over their piece or for 3 s after a tap on it, and every tag once the match is won (`tagVisible` in `src/scene/tags.ts`). A tag hides while its piece's die shows. A tap on a piece doesn't also peek the path under it.
 - **The crown** (`src/scene/Crown.tsx`): it spins on tile 100 until the win, then flies onto the winner's head (`crownPose` in `motion.ts`), measured from the piece's model, with a bounce and a burst of gold sparkles, and stays there through the end screen.
-- **Pairs instead of paths** (spec #5 A13): a path shows only while a piece stands on its start, while a piece rides it, or for 3 s after a tap on either end's tile (`src/scene/paths.ts`), growing in along its length. Each jump's two ends share a colour and a symbol (`src/scene/pairs.ts`); the parts take the colour as their instance colour, and the symbols are flat decals (`src/assets/symbols.ts`), one instanced mesh per symbol. `PARTS` in `src/scene/layout.ts` sets the parts' sizes and where the symbols lie; the Blender models are built to it.
-- **Low quality** loads each piece's lighter file, `<id>-low.glb` (spec #5 A14), through `slotFile(name, low)`, and skips the four end models (`preloadSlotMeshes(modelEnds)`).
+- **Pairs instead of paths**: a path shows only while a piece stands on its start, while a piece rides it, or for 3 s after a tap on either end's tile (`src/scene/paths.ts`), growing in along its length. Each jump's two ends share a colour and a symbol (`src/scene/pairs.ts`); the parts take the colour as their instance colour, and the symbols are flat decals (`src/assets/symbols.ts`), one instanced mesh per symbol. `PARTS` in `src/scene/layout.ts` sets the parts' sizes and where the symbols lie; the Blender models are built to it.
+- **Low quality** loads each piece's lighter file, `<id>-low.glb`, through `slotFile(name, low)`, and skips the four end models (`preloadSlotMeshes(modelEnds)`).
 - **`prepareModel`** readies each model's materials:
   - `Seat` takes the player's colour;
   - on Low quality, glossy plastic drops its clearcoat;
@@ -213,7 +212,7 @@ pnpm --filter @laddorious/client exec playwright install chromium
 - check that a portrait viewport shows the rotate screen;
 - check that a match stays within 100 draw calls.
 
-A fourth project, `online`, runs `e2e/online.spec.ts` (spec #4 §10). Playwright also builds an online e2e build (`VITE_SERVER=same-origin`) into `dist-online-e2e/` and serves it with `wrangler dev` on port 8788, with `FAST=1`. Two browser contexts:
+A fourth project, `online`, runs `e2e/online.spec.ts`. Playwright also builds an online e2e build (`VITE_SERVER=same-origin`) into `dist-online-e2e/` and serves it with `wrangler dev` on port 8788, with `FAST=1`. Two browser contexts:
 
 - find each other, fill the table with bots and play to the end;
 - drop one player and bring them back with a reload, checking the Away badge.

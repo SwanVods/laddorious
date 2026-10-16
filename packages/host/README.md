@@ -1,6 +1,6 @@
 # @laddorious/host
 
-The match host (spec #4 §3.1): one match's engine state, window timers and bots, for any mix of humans and bots. Each human only ever receives `viewFor(state, them)` and `eventsFor(events, them)`.
+The match host: one match's engine state, window timers and bots, for any mix of humans and bots. Each human only ever receives `viewFor(state, them)` and `eventsFor(events, them)`.
 
 Two places run it:
 

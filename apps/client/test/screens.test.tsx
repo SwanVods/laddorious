@@ -7,6 +7,7 @@ import { ErrorScreen } from '../src/app/ErrorScreen';
 import { COUNT_MS, MatchmakingOverlay, PLAY_WITH_BOTS_AFTER_MS } from '../src/app/MatchmakingOverlay';
 import { createPrefsStore } from '../src/app/prefs';
 import { SettingsDialog } from '../src/app/SettingsDialog';
+import pkg from '../package.json';
 import { autoStepDown } from '../src/scene/quality';
 import { AudioEngine } from '../src/audio/engine';
 import { SoundProvider } from '../src/audio/SoundProvider';
@@ -175,6 +176,14 @@ describe('ErrorScreen (spec #2 §7.1, §8)', () => {
 });
 
 describe('SettingsDialog (spec #2 §7.1, §9.2)', () => {
+  it("shows the game's version and who made it (2026-10-16)", () => {
+    const prefs = createPrefsStore(null, { prefersReducedMotion: false });
+    render(<SettingsDialog prefs={prefs} device={{ coarsePointer: false, shortSide: 900 }} onClose={() => {}} />);
+    const about = screen.getByRole('contentinfo');
+    expect(about.textContent).toContain(`Laddorious v${pkg.version}`);
+    expect(about.textContent).toContain('Made by Feiralabs');
+  });
+
   it("shows Low right now once Auto has lowered the quality in this match (2026-10-15)", () => {
     const prefs = createPrefsStore(null, { prefersReducedMotion: false });
     autoStepDown.setState({ stepped: true });
