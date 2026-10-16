@@ -25,7 +25,7 @@ const BOARD_FONT = "'Lilita One', 'Arial Rounded MT Bold', system-ui, sans-serif
 /**
  * All tile numbers and "?" glyphs in one transparent texture over the board (spec #2 §6.1): in the game's
  * display face once the web fonts have loaded, in the system's until then (the board paints again). An epic
- * "?" stands out (2026-10-17): a little bigger, filled with `epic`'s gradient like an epic card's frame, and glowing.
+ * "?" stands out (2026-10-17): a little bigger, filled with `epic`'s gradient, and glowing.
  */
 export function boardOverlayTexture(size: number, mystery: Record<number, Rarity>, glyph: Record<Rarity, string>, ink: string, fontsLoaded = true, epic?: readonly [string, string]): CanvasTexture | null {
   const face = fontsLoaded ? BOARD_FONT : 'system-ui, sans-serif';

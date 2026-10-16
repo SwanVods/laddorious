@@ -28,8 +28,7 @@ describe('rarity colours (2026-10-17)', () => {
     expect(frame('epic')).toEqual(['var(--rarity-epic)', 'var(--mystery)']);
   });
 
-  it('paints an epic "?" on the board as a gradient from the epic colour', () => {
-    expect(BOARD_COLORS.epicGlyph).toHaveLength(2);
-    expect(BOARD_COLORS.epicGlyph[0]).toBe(BOARD_COLORS.rarity.epic);
+  it('paints an epic "?" on the board as a gradient from the epic colour into pink (the user picked it)', () => {
+    expect(BOARD_COLORS.epicGlyph).toEqual([BOARD_COLORS.rarity.epic, '#ff7ae0']);
   });
 });

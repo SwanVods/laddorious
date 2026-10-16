@@ -10,8 +10,8 @@ export const BOARD_COLORS = {
   mystery: '#8f4dff',
   /** Rare gold, epic cyan (the user, 2026-10-17: swapped). */
   rarity: { common: '#ffffff', rare: '#ffcc33', epic: '#6ff3ff' },
-  /** An epic "?" is a gradient, top to bottom, like an epic card's frame (2026-10-17). */
-  epicGlyph: ['#6ff3ff', '#8f4dff'],
+  /** An epic "?" is a gradient, top to bottom: cyan into pink, so it stands out on the purple tile (the user, 2026-10-17). */
+  epicGlyph: ['#6ff3ff', '#ff7ae0'],
   goal: '#ffcc33',
   slide: '#2a2140',
 } as const;
