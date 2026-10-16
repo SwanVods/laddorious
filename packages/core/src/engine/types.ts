@@ -20,8 +20,8 @@ export type WindowKind = 'dice' | 'challenge' | 'mystery' | 'none';
 export interface DiceSeq {
   /** One face per die rolled this round: always one today, a list so a future card can add dice. */
   faces: number[];
-  /** 'skipped': a card made the player sit this roll out (2026-10-16). */
-  status: 'ready' | 'done' | 'skipped';
+  /** 'skipped': a card made the player sit this roll out; 'out': not in this extra roll (2026-10-16). */
+  status: 'ready' | 'done' | 'skipped' | 'out';
 }
 
 export interface Mover {
@@ -65,8 +65,13 @@ export interface Offer {
   tile: number;
   rarity: Rarity;
   cards: [string, string, string];
+  /** No rerolls left on this card. */
   rerolled: [boolean, boolean, boolean];
   rerollsUsed: number;
+  /** Second Thoughts (2026-10-16): this hand's limits when they differ from the match's (1 a card, maxRerolls in all). */
+  perSlot?: number;
+  maxRerolls?: number;
+  slotRerolls?: [number, number, number];
   /** Every card shown in this hand, in the order shown: rerolls avoid them while they can (polish spec §3.2). */
   seen: string[];
   picked: number | null;
@@ -144,6 +149,8 @@ export type EventBody =
   | { type: 'WindowOpened'; windowId: number; window: WindowKind; players: PlayerId[]; durationMs: number }
   | { type: 'DieRolled'; player: PlayerId; natural: number; face: number; forced: boolean; auto: boolean }
   | { type: 'RollSkipped'; player: PlayerId; effectId: string }
+  /** Encore (2026-10-16): these players roll again before the round ends. */
+  | { type: 'ExtraRoll'; players: PlayerId[] }
   /** Players who landed on a guarded tile, knocked back with no face-off (2026-10-16). */
   | { type: 'TileGuarded'; tile: number; guard: PlayerId; knocked: PlayerId[] }
   /** A roll check on the player's roll (2026-10-16): whether it held. */

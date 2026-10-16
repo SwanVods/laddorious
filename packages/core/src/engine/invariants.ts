@@ -18,8 +18,9 @@ export function assertInvariants(s: MatchState): void {
   if (bv.length > 0) throw new InvariantError(`board invariant broken: ${bv.join('; ')}`);
   if (s.phase.kind === 'mysterySelect') {
     for (const o of Object.values(s.phase.offers)) {
-      const rerolledCount = o.rerolled.filter(Boolean).length;
-      if (o.rerollsUsed > s.config.mystery.maxRerolls || rerolledCount !== o.rerollsUsed) {
+      // A hand with Second Thoughts (2026-10-16) counts rerolls per card; any other, one per card.
+      const used = o.slotRerolls ? o.slotRerolls.reduce((x, y) => x + y, 0) : o.rerolled.filter(Boolean).length;
+      if (o.rerollsUsed > (o.maxRerolls ?? s.config.mystery.maxRerolls) || used !== o.rerollsUsed) {
         throw new InvariantError(`offer for ${o.player} has inconsistent rerolls`);
       }
       if (new Set(o.cards).size !== o.cards.length) throw new InvariantError(`hand of ${o.player} holds a card twice`);

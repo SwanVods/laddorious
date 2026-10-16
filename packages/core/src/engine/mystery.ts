@@ -4,6 +4,8 @@ import { nextInt } from '../rng/stream';
 import { inputError } from './dice';
 import { InvariantError } from './errors';
 import { groupPendingCards, resolveGroup } from './resolve';
+import { startDicePhase } from './dice';
+import { effectsOn, spendCharge } from './effects';
 import { endRound } from './round';
 import type { Rarity } from '../board/types';
 import type { GameEvent, InputError, MatchState, Offer, PendingCard, PlayerId } from './types';
@@ -35,12 +37,20 @@ export function startMysteryOrEndRound(s: MatchState, ev: GameEvent[]): void {
       picked: null,
       autoPicked: false,
     };
+    // Second Thoughts (2026-10-16): one more reroll on each card for every one held, three more in all; spent here.
+    const more = effectsOn(s, p.id, 'moreRerolls');
+    if (more.length > 0) {
+      offer.perSlot = 1 + more.length;
+      offer.maxRerolls = s.config.mystery.maxRerolls + 3 * more.length;
+      offer.slotRerolls = [0, 0, 0];
+      for (const e of more) spendCharge(s, ev, e);
+    }
     offers[p.id] = offer;
     ev.push(priv(p.id, { type: 'MysteryOffered', player: p.id, tile: p.position, rarity, cards: [...offer.cards] }));
   }
   const players = Object.keys(offers);
   if (players.length === 0) {
-    endRound(s, ev);
+    endRoundOrEncore(s, ev);
     return;
   }
   s.phase = { kind: 'mysterySelect', offers };
@@ -68,7 +78,7 @@ export function rerollInput(s: MatchState, ev: GameEvent[], player: PlayerId, sl
   const offer = offerFor(s, player);
   if ('code' in offer) return offer;
   if (!isSlot(slot)) return inputError('INVALID_SLOT', `slot must be 0, 1 or 2, got ${slot}`);
-  if (offer.rerollsUsed >= s.config.mystery.maxRerolls) return inputError('REROLL_LIMIT', 'no rerolls left');
+  if (offer.rerollsUsed >= (offer.maxRerolls ?? s.config.mystery.maxRerolls)) return inputError('REROLL_LIMIT', 'no rerolls left');
   if (offer.rerolled[slot]) return inputError('SLOT_ALREADY_REROLLED', `slot ${slot} was already rerolled`);
   const from = offer.cards[slot];
   // Never a card in the hand; a card already seen in it only once the rarity has run out (polish spec §3.2).
@@ -77,7 +87,8 @@ export function rerollInput(s: MatchState, ev: GameEvent[], player: PlayerId, sl
   const to = draw([...offer.cards, ...offer.seen]) ?? draw(offer.cards) ?? noCardLeft(offer.rarity);
   offer.cards[slot] = to;
   offer.seen.push(to);
-  offer.rerolled[slot] = true;
+  if (offer.slotRerolls) offer.slotRerolls[slot] += 1;
+  offer.rerolled[slot] = !offer.slotRerolls || offer.slotRerolls[slot] >= (offer.perSlot ?? 1);
   offer.rerollsUsed += 1;
   ev.push(priv(player, { type: 'CardRerolled', player, slot, from, to }));
   return null;
@@ -140,5 +151,21 @@ export function continueResolution(s: MatchState, ev: GameEvent[]): void {
     }
   }
   s.resolution = null;
-  endRound(s, ev);
+  endRoundOrEncore(s, ev);
+}
+
+/**
+ * The round has played out (2026-10-16): players holding an Encore roll again first, in a window of their own,
+ * and only they can land on a card; the round ends once nobody holds one.
+ */
+function endRoundOrEncore(s: MatchState, ev: GameEvent[]): void {
+  const again = s.players.filter((p) => effectsOn(s, p.id, 'extraRoll').length > 0).map((p) => p.id);
+  if (again.length === 0) {
+    endRound(s, ev);
+    return;
+  }
+  for (const id of again) spendCharge(s, ev, effectsOn(s, id, 'extraRoll')[0]!);
+  ev.push(pub({ type: 'ExtraRoll', players: again }));
+  s.movedThisRound = [];
+  startDicePhase(s, ev, again);
 }

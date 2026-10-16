@@ -71,6 +71,10 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
     case 'jumpsOff':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.rounds) && lifetime.charges === undefined, where, 'jumpsOff needs rounds and no uses');
       return;
+    case 'extraRoll':
+    case 'moreRerolls':
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, `${params.hook} needs uses (charges)`);
+      return;
     case 'guardTile':
       check(lifetime === 'permanent' || (isPositiveInt(lifetime.rounds) && lifetime.charges === undefined), where, 'guardTile needs rounds and no uses');
       return;

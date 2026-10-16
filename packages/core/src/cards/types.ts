@@ -42,7 +42,11 @@ export type EffectParams =
   /** Anyone who lands on the owner's tile is knocked back, with no face-off (2026-10-16). */
   | { hook: 'guardTile' }
   /** The owner's next lost face-off moves them forward instead of back (2026-10-16). */
-  | { hook: 'loseForward' };
+  | { hook: 'loseForward' }
+  /** Encore (2026-10-16): the owner rolls again once the round has played out. */
+  | { hook: 'extraRoll' }
+  /** Second Thoughts (2026-10-16): the owner's next card hand allows one more reroll on each card. */
+  | { hook: 'moreRerolls' };
 
 /** What a roll check looks for, and what happens when it holds (and, for a ladder, when it doesn't). */
 export interface RollCheck {

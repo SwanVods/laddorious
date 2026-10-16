@@ -114,6 +114,10 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
           case 'jumpsOff':
             if (l === 'permanent' || l.rounds === undefined) return 'Snakes and ladders do nothing for the rest of the match.';
             return `Snakes and ladders do nothing for ${num(l.rounds)} round${l.rounds === 1 ? '' : 's'}.`;
+          case 'extraRoll':
+            return who ? `${who} rolls again this round.` : 'Roll again this round.';
+          case 'moreRerolls':
+            return `${who ? `${who}'s` : 'Your'} next card hand: one more reroll on each card.`;
           case 'guardTile': {
             const head = l === 'permanent' || l.rounds === undefined ? 'For the rest of the match' : `For ${num(l.rounds)} round${l.rounds === 1 ? '' : 's'}`;
             return `${head}: anyone who lands on your tile is knocked back, as if they lost a face-off.`;

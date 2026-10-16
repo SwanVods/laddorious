@@ -152,6 +152,10 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       const then = 'multiply' in p.then ? `it's ×${p.then.multiply}` : 'shield' in p.then ? 'block a slide or attack' : `go to the nearest rocket${p.otherwise === 'stay' ? ', else stay put' : ''}`;
       return { ...base, icon: 'multiply' in p.then ? 'x2' : 'shield' in p.then ? 'aegis' : 'pad', badge: w, description: `If the next roll is ${w}: ${then}${from}` };
     }
+    case 'extraRoll':
+      return { ...base, icon: 'die', badge: '+1', description: `Rolls again this round${from}` };
+    case 'moreRerolls':
+      return { ...base, icon: 'reroll', badge: '+1', description: `Next card hand: one more reroll on each card${from}` };
     case 'guardTile':
       return { ...base, icon: 'target', badge: roundsBadge(effect), description: `Anyone who lands on your tile is knocked back${from}` };
     case 'loseForward':
