@@ -157,6 +157,12 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
     case 'reverseRoll':
       return { ...base, icon: 'back', badge: '←', description: `Next roll moves back${from}` };
     case 'afterMove':
+      // "When" effects (2026-10-16): after a launch too, and moving everyone else.
+      if (p.who === 'others') {
+        const climb = p.condition === 'climbedLadder';
+        return { ...base, icon: climb ? 'pad' : 'slide', badge: signed(p.amount), description: `When you ${climb ? 'launch' : 'slide'}, everyone else moves ${signed(p.amount)}${from}` };
+      }
+      if (p.condition === 'climbedLadder') return { ...base, icon: 'pad', badge: signed(p.amount), description: `After your next launch, you move ${signed(p.amount)}${from}` };
       return { ...base, icon: 'bait', badge: signed(p.amount), description: `Landing on a slide's vacuum moves you ${signed(p.amount)} after sliding${from}` };
   }
 }
@@ -181,6 +187,12 @@ export function nextRollMods(effects: ActiveEffect[], me: PlayerId): string[] {
   if (replace) out.push(`Total = ${replace.value}`);
   for (const t of totals) if (t.op === 'multiply') out.push(`Total ×${t.value}`);
   for (const t of totals) if (t.op === 'add') out.push(`Total ${signed(t.value)}`);
+  for (const e of mine) {
+    if (e.params.hook !== 'rollCheck') continue;
+    const w = e.params.when === 'over3' ? 'over 3' : e.params.when;
+    const then = e.params.then;
+    out.push(`If ${w} ${'multiply' in then ? `×${then.multiply}` : 'shield' in then ? 'shield' : 'rocket'}`);
+  }
   if (mine.some((e) => e.params.hook === 'reverseRoll')) out.push('Backward');
   return out;
 }
