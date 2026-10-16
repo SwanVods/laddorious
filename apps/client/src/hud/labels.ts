@@ -143,6 +143,10 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       return { ...base, icon: 'charm', badge: roundsBadge(effect), description: `Ignores the next slide${from}` };
     case 'beforeAttack':
       return { ...base, icon: 'shield', badge: roundsBadge(effect), description: `Blocks the next attack${from}` };
+    case 'skipRoll':
+      return { ...base, icon: 'lock', badge: roundsBadge(effect), description: `Skips the next roll${from}` };
+    case 'reverseRoll':
+      return { ...base, icon: 'back', badge: '←', description: `Next roll moves back${from}` };
     case 'afterMove':
       return { ...base, icon: 'bait', badge: signed(p.amount), description: `Landing on a slide's vacuum moves you ${signed(p.amount)} after sliding${from}` };
   }

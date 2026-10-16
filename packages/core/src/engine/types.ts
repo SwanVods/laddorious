@@ -20,7 +20,8 @@ export type WindowKind = 'dice' | 'challenge' | 'mystery' | 'none';
 export interface DiceSeq {
   /** One face per die rolled this round: always one today, a list so a future card can add dice. */
   faces: number[];
-  status: 'ready' | 'done';
+  /** 'skipped': a card made the player sit this roll out (2026-10-16). */
+  status: 'ready' | 'done' | 'skipped';
 }
 
 export interface Mover {
@@ -142,6 +143,7 @@ export type EventBody =
   | { type: 'RoundStarted'; round: number }
   | { type: 'WindowOpened'; windowId: number; window: WindowKind; players: PlayerId[]; durationMs: number }
   | { type: 'DieRolled'; player: PlayerId; natural: number; face: number; forced: boolean; auto: boolean }
+  | { type: 'RollSkipped'; player: PlayerId; effectId: string }
   | { type: 'DiceTotaled'; player: PlayerId; faces: number[]; total: number }
   | { type: 'Moved'; player: PlayerId; from: number; to: number; cause: MoveCause; bounced: boolean }
   | { type: 'SnakeBlocked'; player: PlayerId; tile: number; effectId: string }

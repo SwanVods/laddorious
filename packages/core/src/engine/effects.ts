@@ -80,7 +80,11 @@ export function applyTotalEffects(s: MatchState, ev: GameEvent[], player: Player
   for (const e of effects) if (e.params.op === 'multiply') total *= e.params.value;
   for (const e of effects) if (e.params.op === 'add') total += e.params.value;
   for (const e of effects) spendCharge(s, ev, e);
-  return Math.max(0, Math.trunc(total));
+  const floored = Math.max(0, Math.trunc(total));
+  // A reversed roll (2026-10-16) moves its player back by the total, after every other modifier.
+  const reverse = effectsOn(s, player, 'reverseRoll');
+  for (const e of reverse) spendCharge(s, ev, e);
+  return reverse.length > 0 ? -floored : floored;
 }
 
 /** Returns the id of the effect that cancelled the snake, or null. */

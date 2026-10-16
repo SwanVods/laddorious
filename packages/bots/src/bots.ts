@@ -88,6 +88,8 @@ export function scoreCard(card: CardDef, view: PlayerView): number {
       case 'addEffect': {
         const p = op.template.params;
         if (p.hook === 'diceFace') return 3;
+        if (p.hook === 'skipRoll') return selfTarget ? -3.5 : 3.5;
+        if (p.hook === 'reverseRoll') return selfTarget ? -7 : 5;
         if (p.hook === 'diceTotal') {
           if (p.op === 'multiply') return 4 * (n(p.value) - 1);
           if (p.op === 'replace') return n(p.value) - 4;

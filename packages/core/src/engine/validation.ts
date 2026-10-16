@@ -59,6 +59,10 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
     case 'beforeSnake':
     case 'beforeAttack':
       return;
+    case 'skipRoll':
+    case 'reverseRoll':
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, `${params.hook} needs uses (charges)`);
+      return;
     case 'afterMove':
       check(params.condition === 'landedOnSnakeHead', where, 'unknown afterMove condition');
       check(isInt(params.amount), where, 'afterMove.amount must be an integer');

@@ -94,6 +94,8 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('rollPlus', 'Next roll + / −', 'diceTotal', { op: 'add' }, { key: 'value', label: 'plus (negative = minus)', kind: 'amount', die: true }, { value: 2, charges: 1, rounds: 0 }),
   effectKind('rollTimes', 'Next roll ×', 'diceTotal', { op: 'multiply' }, { key: 'value', label: 'times', kind: 'amount', min: 0 }, { value: 2, charges: 1, rounds: 0 }),
   effectKind('rollExactly', 'Next roll is exactly', 'diceTotal', { op: 'replace' }, { key: 'value', label: 'total', kind: 'amount', min: 0 }, { value: 4, charges: 1, rounds: 0 }),
+  effectKind('skipRoll', 'Skip next roll', 'skipRoll', {}, null, { charges: 1, rounds: 0 }),
+  effectKind('rollBack', 'Next roll moves back', 'reverseRoll', {}, null, { charges: 1, rounds: 0 }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockSnake', 'Ignore snakes', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
   {

@@ -24,7 +24,11 @@ export type EffectParams =
   | { hook: 'diceTotal'; op: 'replace' | 'multiply' | 'add'; value: number }
   | { hook: 'beforeSnake' }
   | { hook: 'beforeAttack' }
-  | { hook: 'afterMove'; cause: MoveCause; condition: 'landedOnSnakeHead'; amount: number };
+  | { hook: 'afterMove'; cause: MoveCause; condition: 'landedOnSnakeHead'; amount: number }
+  /** Skip the owner's next roll (2026-10-16). */
+  | { hook: 'skipRoll' }
+  /** The owner's next roll moves them back (2026-10-16). */
+  | { hook: 'reverseRoll' };
 
 export type EffectHook = EffectParams['hook'];
 
