@@ -87,6 +87,7 @@ The adjustments were approved and merged to `main` (2026-10-15). The board theme
 - The game: feed "Mochi skips this roll" and "Pip moves back 4", row status "Skips this roll", dock "You skip this roll. Waiting for …", centre die "Back 4", NEXT ROLL "Skip" / "Backward", chips for all four, the shield bubble for the new shield, and while snakes and ladders are off every end fades toward stone grey (`WORLD_COLORS.jumpsOff`) and the whirlpools stand still.
 - On now: Red Light, Tripwire, Time Freeze, Reverse Gear, Wrong Way, Topsy-Turvy, Double or Nothing, Lucky Charm, Aegis, Calm Waters, Still Waters — 44 on, 22 drafts, 2 off. Simulate (1,000 four-player bot matches): none of the 11 flagged (Aegis wins 34%); Switcheroo (42%) and Ladder Warp (38%) flagged strong.
 - Camera fix (the user saw it, 2026-10-16): after my card pick the camera used to go back to the event before the pick (another player's rocket) until the cards resolved; my pick is now the held focus (`heldNext` in `scene/camera.ts`), so it stays on me.
+- Card bubbles beside the player rows show only the card's name; the cards in the bottom queue show what each does, with the match's numbers (the user, 2026-10-16).
 - Gate: 125 test files, 1,118 tests; typecheck, lint, build clean; `pnpm e2e` 16 of 17, the online away test flaking (passed on its own rerun).
 - Next: batch 4c, the "when" effects and "if your next roll is…" (its own short plan).
 
@@ -159,7 +160,6 @@ Each new spec starts with brainstorming and a design doc, as Specs #1 and #2 did
 
 - **Blender:** on 2026-10-04 the user okayed using it to make the client's 3D objects (memory `blender-for-3d-objects`). On 2026-10-09 a build run inside the user's open Blender (through the MCP link) crashed it; the bug is fixed (`art/lib/export.py` kept the scene graph's copies of materials), and since then every build and preview runs headless (`pnpm art`, `blender --background --factory-startup --python art/preview.py -- out.png ids`), never in the user's Blender.
 - **Deferred card-catalogue minors** (2026-10-15; not fixed):
-  - Card bubbles beside the player rows now show the generated text, which can be longer than the old hand-written one-liners and gets cut off; a short-summary field could come back if it bothers.
   - After a Save in the card editor, an open game tab keeps the old cards until it is reloaded (the dev server skips the hot update so the editor keeps its place).
   - A hand-edited `cards.json` with a mistake stops matches from starting (ConfigError at match creation); the editor never saves one, and `pnpm test` catches it.
   - Simulate always plays four-player matches.
