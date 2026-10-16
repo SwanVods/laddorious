@@ -102,7 +102,7 @@ function boardKind(id: string, label: string, kind: 'snake' | 'ladder', length: 
     ],
     make: () => ({ op: 'boardEdit', action: 'create', kind, minAhead: 1, maxAhead: 6, length, lifetime: { rounds: 3 } }),
     read: (op) =>
-      op.op === 'boardEdit' && op.action === 'create' && op.kind === kind
+      op.op === 'boardEdit' && op.action === 'create' && op.kind === kind && !op.behind
         ? { minAhead: op.minAhead, maxAhead: op.maxAhead, length: op.length, rounds: op.lifetime === 'permanent' ? 0 : op.lifetime.rounds }
         : null,
     write: (v) => ({ op: 'boardEdit', action: 'create', kind, minAhead: v.minAhead as Amount, maxAhead: v.maxAhead as Amount, length: v.length as Amount, lifetime: v.rounds === 0 ? 'permanent' : { rounds: v.rounds as Amount } }),
@@ -183,6 +183,32 @@ export const STEP_KINDS: StepKind[] = [
   },
   boardKind('newSnake', 'New snake', 'snake', 8),
   boardKind('newLadder', 'New ladder', 'ladder', 15),
+  {
+    // A snake behind the target (2026-10-16).
+    id: 'newSnakeBehind',
+    label: 'New snake behind',
+    fields: [
+      { key: 'minAhead', label: 'nearest tile behind', kind: 'amount', min: 1 },
+      { key: 'maxAhead', label: 'furthest tile behind', kind: 'amount', min: 1 },
+      { key: 'length', label: 'length', kind: 'amount', min: 1 },
+      { key: 'rounds', label: 'rounds (0 = rest of the match)', kind: 'count', min: 0 },
+    ],
+    make: () => ({ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: 1, maxAhead: 6, length: 8, behind: true, lifetime: { rounds: 3 } }),
+    read: (op) =>
+      op.op === 'boardEdit' && op.action === 'create' && op.behind
+        ? { minAhead: op.minAhead, maxAhead: op.maxAhead, length: op.length, rounds: op.lifetime === 'permanent' ? 0 : op.lifetime.rounds }
+        : null,
+    write: (v) => ({ op: 'boardEdit', action: 'create', kind: 'snake', minAhead: v.minAhead as Amount, maxAhead: v.maxAhead as Amount, length: v.length as Amount, behind: true, lifetime: v.rounds === 0 ? 'permanent' : { rounds: v.rounds as Amount } }),
+  },
+  {
+    // Upside Down (2026-10-16).
+    id: 'flipBoard',
+    label: 'Flip snakes and ladders',
+    fields: [{ key: 'rounds', label: 'rounds (0 = rest of the match)', kind: 'count', min: 0 }],
+    make: () => ({ op: 'boardEdit', action: 'flip', lifetime: 'permanent' }),
+    read: (op) => (op.op === 'boardEdit' && op.action === 'flip' ? { rounds: op.lifetime === 'permanent' ? 0 : op.lifetime.rounds } : null),
+    write: (v) => ({ op: 'boardEdit', action: 'flip', lifetime: v.rounds === 0 ? 'permanent' : { rounds: v.rounds as Amount } }),
+  },
   {
     id: 'cleanse', label: "Remove others' effects", fields: [],
     make: () => ({ op: 'removeEffects', filter: { createdByOthers: true }, count: 'all' }),

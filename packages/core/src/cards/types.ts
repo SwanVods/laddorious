@@ -115,7 +115,10 @@ export interface ActiveEffect {
 export type BoardEditLifetime = { rounds: number } | 'permanent';
 
 export type BoardEditOp =
-  | { op: 'boardEdit'; action: 'create'; kind: JumpKind; minAhead: number; maxAhead: number; length: number; lifetime: BoardEditLifetime }
+  /** `behind` (2026-10-16): the new jump starts that many tiles behind the target instead of ahead. */
+  | { op: 'boardEdit'; action: 'create'; kind: JumpKind; minAhead: number; maxAhead: number; length: number; behind?: true; lifetime: BoardEditLifetime }
+  /** Every snake becomes a ladder and every ladder a snake, on the same tiles (2026-10-16). */
+  | { op: 'boardEdit'; action: 'flip'; lifetime: BoardEditLifetime }
   | { op: 'boardEdit'; action: 'remove'; kind: JumpKind; lifetime: BoardEditLifetime }
   | { op: 'boardEdit'; action: 'move'; kind: JumpKind; minAhead: number; maxAhead: number; lifetime: BoardEditLifetime }
   | { op: 'boardEdit'; action: 'modify'; kind: JumpKind; lengthDelta: number; lifetime: BoardEditLifetime };

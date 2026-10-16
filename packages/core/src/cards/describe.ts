@@ -152,7 +152,8 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
       case 'boardEdit': {
         const where = who ? lower(who) : 'you';
         const rounds = op.lifetime === 'permanent' ? ' for the rest of the match' : ` (${num(op.lifetime.rounds)} round${op.lifetime.rounds === 1 ? '' : 's'})`;
-        if (op.action === 'create') return `A new ${op.kind}, ${num(op.length)} tiles long, appears ${num(op.minAhead)}–${num(op.maxAhead)} tiles ahead of ${where}${rounds}.`;
+        if (op.action === 'flip') return `Every snake becomes a ladder, and every ladder a snake${op.lifetime === 'permanent' ? ', for the rest of the match' : rounds}.`;
+        if (op.action === 'create') return `A new ${op.kind}, ${num(op.length)} tiles long, appears ${num(op.minAhead)}–${num(op.maxAhead)} tiles ${op.behind ? 'behind' : 'ahead of'} ${where}${rounds}.`;
         if (op.action === 'remove') return `The nearest ${op.kind} ahead of ${where} disappears${rounds}.`;
         if (op.action === 'move') return `The nearest ${op.kind} moves ${num(op.minAhead)}–${num(op.maxAhead)} tiles ahead of ${where}${rounds}.`;
         return `The nearest ${op.kind} gets ${num(op.lengthDelta)} tiles longer${rounds}.`;

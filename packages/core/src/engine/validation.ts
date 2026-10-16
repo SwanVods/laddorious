@@ -141,14 +141,15 @@ function checkOps(ops: EffectOp[], where: string): void {
         check(op.count === 'all' || isPositiveInt(op.count), at, 'removeEffects.count must be "all" or a positive integer');
         return;
       case 'boardEdit':
-        check(op.kind === 'snake' || op.kind === 'ladder', at, 'boardEdit.kind must be snake or ladder');
+        check(['create', 'remove', 'move', 'modify', 'flip'].includes(op.action), at, 'unknown boardEdit action');
+        if (op.action !== 'flip') check(op.kind === 'snake' || op.kind === 'ladder', at, 'boardEdit.kind must be snake or ladder');
+        if (op.action === 'create') check(op.behind === undefined || op.behind === true, at, 'boardEdit.behind must be true or left out');
         checkEditLifetime(op.lifetime, at);
         if (op.action === 'create' || op.action === 'move') {
           check(isPositiveInt(op.minAhead) && isInt(op.maxAhead) && op.maxAhead >= op.minAhead, at, 'boardEdit needs 1 <= minAhead <= maxAhead');
         }
         if (op.action === 'create') check(isPositiveInt(op.length), at, 'boardEdit.length must be a positive integer');
         if (op.action === 'modify') check(isInt(op.lengthDelta), at, 'boardEdit.lengthDelta must be an integer');
-        check(['create', 'remove', 'move', 'modify'].includes(op.action), at, 'unknown boardEdit action');
         return;
       case 'gamble':
         check(Array.isArray(op.outcomes) && op.outcomes.length > 0, at, 'gamble needs at least one outcome');
