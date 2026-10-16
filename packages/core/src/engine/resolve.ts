@@ -103,7 +103,7 @@ function collectIntents(s: MatchState, card: CardDef, caster: PlayerId, target: 
         return true;
       }
       case 'addEffect':
-        intents.adds.push({ owner: target, template: op.template as EffectTemplate });
+        intents.adds.push({ owner: op.onCaster ? caster : target, template: op.template as EffectTemplate });
         return true;
       case 'conditional':
         intents.adds.push({

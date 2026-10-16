@@ -138,6 +138,7 @@ function checkOps(ops: EffectOp[], where: string): void {
       case 'swap':
         return;
       case 'addEffect':
+        check(op.onCaster === undefined || op.onCaster === true, at, 'addEffect.onCaster must be true or left out');
         checkLifetime(op.template.lifetime, at);
         checkParams(op.template.params, op.template.lifetime, at);
         return;
@@ -189,6 +190,9 @@ export function validateCardDef(c: CardDef): void {
   // A swap with several players clashes with itself and always fizzles (2026-10-16).
   const swaps = (ops: EffectOp[]): boolean => ops.some((op) => op?.op === 'swap' || (op?.op === 'gamble' && op.outcomes.some((o) => swaps(o.ops))));
   check(t.pick !== 'all' || !Array.isArray(c.effects) || !swaps(c.effects), where, "A card that hits several players can't swap places.");
+  // An effect on the caster (2026-10-16) would be added once for each player hit.
+  const onCaster = (ops: EffectOp[]): boolean => ops.some((op) => (op?.op === 'addEffect' && op.onCaster) || (op?.op === 'gamble' && op.outcomes.some((o) => onCaster(o.ops))));
+  check(t.pick !== 'all' || !Array.isArray(c.effects) || !onCaster(c.effects), where, "A card that hits several players can't put an effect on you.");
   check(t.tieBreak === 'random' || t.tieBreak === 'lowest-seat', where, 'unknown target tieBreak');
   if (t.condition === 'section') {
     check(Array.isArray(t.section) && isInt(t.section[0]) && isInt(t.section[1]) && t.section[0] <= t.section[1], where, 'section must be [from, to]');

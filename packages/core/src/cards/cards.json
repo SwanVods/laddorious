@@ -1622,9 +1622,29 @@
         "pick": "furthest",
         "tieBreak": "random"
       },
+      "values": {
+        "n": {
+          "min": 1,
+          "max": 2
+        }
+      },
       "effects": [
         {
           "op": "swap"
+        },
+        {
+          "op": "addEffect",
+          "template": {
+            "params": {
+              "hook": "skipRoll"
+            },
+            "lifetime": {
+              "charges": {
+                "value": "n"
+              }
+            }
+          },
+          "onCaster": true
         }
       ]
     },

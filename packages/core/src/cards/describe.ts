@@ -90,6 +90,8 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
       case 'swap':
         return `Swap places with ${lower(who ?? 'yourself')}.`;
       case 'addEffect': {
+        // An effect on the caster (2026-10-16): its own sentence, as if the card were yours alone.
+        if (op.onCaster) return `Then ${lower(describeCard({ ...card, text: '', target: { condition: 'self', pick: 'self', tieBreak: 'lowest-seat' }, effects: [{ ...op, onCaster: undefined }] }, values))}`;
         const p = op.template.params;
         const l = op.template.lifetime;
         const charges = l !== 'permanent' && typeof l.charges === 'number' ? l.charges : 1;
@@ -145,7 +147,10 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
             return `${head}, go to the nearest rocket.${p.otherwise === 'stay' ? ' If not, stay put.' : ''}`;
           }
           case 'skipRoll': {
-            const rolls = charges > 1 ? `next ${charges} rolls` : 'next roll';
+            const uses = l !== 'permanent' ? l.charges : undefined;
+            // A per-match number of rolls (Switcheroo's own skip, 2026-10-16): a picked 1 reads as one roll.
+            const many = uses !== undefined && typeof uses !== 'number' ? num(uses) : String(charges);
+            const rolls = many === '1' ? 'next roll' : `next ${many} rolls`;
             return who ? `${who} skips their ${rolls}.` : `Skip your ${rolls}.`;
           }
           case 'reverseRoll':
