@@ -21,8 +21,9 @@ function open(showSeed = false) {
   const prefs = createPrefsStore(null, { prefersReducedMotion: false, random: () => 0.5 });
   const onPlay = vi.fn();
   const onSettings = vi.fn();
-  render(<MenuScreen prefs={prefs} onPlay={onPlay} onSettings={onSettings} showSeed={showSeed} />);
-  return { prefs, onPlay, onSettings };
+  const onHelp = vi.fn();
+  render(<MenuScreen prefs={prefs} onPlay={onPlay} onSettings={onSettings} onHelp={onHelp} showSeed={showSeed} />);
+  return { prefs, onPlay, onSettings, onHelp };
 }
 
 const rename = (to: string, key = 'Enter') => {
@@ -40,6 +41,16 @@ describe('MenuScreen (spec #2 §7.1)', () => {
     expect(screen.getByText('4-player match')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'PLAY' }));
     expect(onPlay).toHaveBeenCalledWith({});
+  });
+
+  it('opens the rules from the Help button (2026-10-17)', () => {
+    const { onHelp } = open();
+    fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
+    expect(onHelp).toHaveBeenCalled();
+  });
+
+  it('says rockets and whirlpools in its tips, never slides or launch pads (2026-10-17)', () => {
+    for (const tip of TIPS) expect(tip).not.toMatch(/slide|launch pad|ladder|snake/i);
   });
 
   it('renames me from the profile chip, and keeps my name for an empty one or Esc', () => {

@@ -144,6 +144,13 @@
   top: calc(var(--safe-t) + 3cqh);
 }
 
+/* How to play, left of full screen (2026-10-17). */
+.help-btn {
+  position: absolute;
+  right: calc(var(--safe-r) + 3cqh + 2 * (max(44px, 8cqh) + 10px));
+  top: calc(var(--safe-t) + 3cqh);
+}
+
 .gear-btn {
   position: absolute;
   right: calc(var(--safe-r) + 3cqh);
