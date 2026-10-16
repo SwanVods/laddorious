@@ -42,7 +42,7 @@ export function CardPickPopup({ model, onPick, onReroll, onPeek }: CardPickPopup
         {!peeking && (
           <>
             <p className="popup-sub">
-              {`${RARITY_NAMES[model.rarity]} ? square · only you see these cards · ${model.rerollsLeft} ${model.rerollsLeft === 1 ? 'reroll' : 'rerolls'} left, 1 per card`}
+              {`${RARITY_NAMES[model.rarity]} ? square · only you see these cards · ${model.rerollsLeft} ${model.rerollsLeft === 1 ? 'reroll' : 'rerolls'} left, ${model.perSlot} per card`}
             </p>
             <div className="pick-cards">
               {model.slots.map(({ slot, info, warning, canReroll }) => (

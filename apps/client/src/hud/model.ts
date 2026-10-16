@@ -135,6 +135,8 @@ function statusOf(view: PlayerView, player: PlayerId, me: PlayerId): { status: R
   const phase = view.phase;
   if (aw.window === 'dice') {
     if (phase.kind === 'dice' && phase.seqs[player]?.status === 'skipped') return { status: 'idle', text: 'Skips this roll' };
+    // An extra roll (Encore, 2026-10-16) that isn't theirs.
+    if (phase.kind === 'dice' && phase.seqs[player]?.status === 'out') return { status: 'idle', text: 'Waiting' };
     if (!aw.players.includes(player)) return { status: 'done', text: 'Rolled' };
     return player === me ? { status: 'turn', text: 'Your turn to roll' } : { status: 'waiting', text: 'Rolling…' };
   }
@@ -268,8 +270,8 @@ export function dockModel({ beat: shown, view, record, me }: DockInput): DockMod
   const phase = view.phase;
   if (aw.window === 'dice') {
     if (aw.players.includes(me)) return { kind: 'roll', windowId: aw.windowId };
-    const skipped = phase.kind === 'dice' && phase.seqs[me]?.status === 'skipped';
-    return { kind: 'wait', parts: [skipped ? 'You skip this roll. Waiting for ' : 'Waiting for ', ...listParts(aw.players), ' to roll'] };
+    const status = phase.kind === 'dice' ? phase.seqs[me]?.status : undefined;
+    return { kind: 'wait', parts: [status === 'skipped' ? 'You skip this roll. Waiting for ' : 'Waiting for ', ...listParts(aw.players), status === 'out' ? ' to roll again' : ' to roll'] };
   }
   if (aw.window === 'challenge' && phase.kind === 'settle') {
     const open = phase.challenges.filter((c) => c.winner === null);
@@ -386,6 +388,8 @@ export interface CardPickModel {
   tile: number;
   slots: CardSlot[];
   rerollsLeft: number;
+  /** Rerolls each card allows: 1, or more with Second Thoughts (2026-10-16). */
+  perSlot: number;
 }
 
 /** The card-pick popup, only for the offer's owner (spec #2 §7.2); null otherwise. */
@@ -396,11 +400,12 @@ export function cardPickModel(view: PlayerView, beat: Beat | null = null, maxRer
   const offer = view.myOffer;
   if (view.phase.kind !== 'mysterySelect' || !offer || offer.picked !== null) return null;
   if (beat && RESOLVING.has(heldBeat(beat).kind)) return null;
-  const rerollsLeft = Math.max(0, maxRerolls - offer.rerollsUsed);
+  const rerollsLeft = Math.max(0, (offer.maxRerolls ?? maxRerolls) - offer.rerollsUsed);
   return {
     rarity: offer.rarity,
     tile: offer.tile,
     rerollsLeft,
+    perSlot: offer.perSlot ?? 1,
     slots: offer.cards.map((id, slot) => ({
       slot,
       info: cardInfo(id),

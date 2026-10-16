@@ -151,6 +151,7 @@ const offer = (over: Partial<CardPickModel> = {}): CardPickModel => ({
   rarity: 'epic',
   tile: 9,
   rerollsLeft: 2,
+  perSlot: 1,
   slots: ['aegis', 'switcheroo', 'jackpot'].map((id, slot) => ({
     slot,
     info: cardInfo(id),
