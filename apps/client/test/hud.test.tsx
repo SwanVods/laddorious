@@ -137,13 +137,14 @@ describe('PlayerColumn (spec #2 §7.2, §9.2)', () => {
     expect(rowOf(/^Juno/).querySelector('.chip-card i')!.className).toBe('hit');
   });
 
-  it("shows a revealed card as a one-line bubble beside its player's row (polish pass)", () => {
+  it("shows a revealed card's name in a bubble beside its player's row; the bottom card has its text (2026-10-16)", () => {
     render(<PlayerColumn rows={mysteryRows()} onWatch={() => {}} reducedMotion={false} bubbles={{ p1: 'shield' }} />);
     const bubbles = document.querySelectorAll('.pbubble');
     expect(bubbles).toHaveLength(1);
     expect(bubbles[0]!.closest('li')).toBe(rowOf(/^Mochi/).closest('li'));
     expect(bubbles[0]!.querySelector('.pbubble-name')!.textContent).toBe('Shield');
-    expect(bubbles[0]!.querySelector('.pbubble-summary')!.textContent).toBe('Block the next attack on you (5 rounds).');
+    expect(bubbles[0]!.querySelector('.pbubble-summary')).toBeNull();
+    expect(bubbles[0]!.textContent).toBe('Shield');
   });
 
   it('says what each player is doing', () => {

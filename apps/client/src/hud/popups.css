@@ -101,7 +101,7 @@ kbd {
 
 .q-card {
   position: relative;
-  width: max(120px, 22cqh);
+  width: max(150px, 26cqh);
   border: 3px solid var(--ink);
   border-radius: 14px;
   background: var(--white);
@@ -209,6 +209,16 @@ kbd {
   display: block;
   font-size: max(13px, 2.1cqh);
   line-height: 1.05;
+}
+
+/* What the card does (2026-10-16), under its name and target. */
+.q-text {
+  margin: 0;
+  padding: 0 9px 9px;
+  color: var(--ink);
+  font-size: max(10px, 1.55cqh);
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .q-body small {

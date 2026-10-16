@@ -87,8 +87,8 @@ function CardBubble({ cardId }: { cardId: string }) {
       <span className="pbubble-medal">
         <Icon name={info.icon} />
       </span>
+      {/* Only the name (the user, 2026-10-16): what it does is on the card at the bottom. */}
       <b className="pbubble-name display">{info.name}</b>
-      <span className="pbubble-summary">{info.summary}</span>
     </div>
   );
 }

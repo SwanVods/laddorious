@@ -114,6 +114,8 @@ function QueueItem({ card, order, seats }: { card: QueueCard; order: number; sea
           <small>{who}</small>
         </span>
       </span>
+      {/* What the card does (2026-10-16): the bubbles beside the rows show only its name. */}
+      <p className="q-text">{info.text}</p>
       {card.result && <em className={`stamp display ${card.result}`}>{RESULT_NAMES[card.result]}</em>}
     </li>
   );
