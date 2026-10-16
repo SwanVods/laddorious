@@ -10,7 +10,7 @@ import { cardRollAt } from '../director/beats';
 import type { Director } from '../director/director';
 import type { SeatInfo } from '../service/matchService';
 import { PIECE_SCALE } from './layout';
-import { GENTLE, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, shieldLook, stackLandings, withIdle, type Landing, type Pose } from './motion';
+import { GENTLE, SHIELD_HOOKS, clamp01, easeOut, landingPose, poseAt, projectileAt, shieldBlocking, shieldLook, shieldRising, stackLandings, withIdle, type Landing, type Pose } from './motion';
 import type { PieceRegistry } from './Crown';
 import type { TagPeeks } from './tags';
 import { createShieldMaterial, setShieldLook } from './shieldMaterial';
@@ -21,7 +21,6 @@ import { isTap } from './pan';
 /** Pieces render at 1.3 × their base size (spec #2 §6.2). */
 export { PIECE_SCALE } from './layout';
 const DIE_LIFT = 2.2;
-const SHIELD_HOOKS = new Set(['beforeSnake', 'beforeAttack', 'beforeSnakeOrAttack']);
 
 export interface Roll {
   face: number;
@@ -170,7 +169,7 @@ function Actor({ director, seat, index, shadows, clearcoat, low, reducedMotion, 
       setEmissive(dieRef.current, roll.forced ? 0.35 + 0.35 * Math.sin(now / 90) : 0);
     }
     // The shield bubble shows while a shield effect is up and flares when it blocks.
-    const shielded = state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false;
+    const shielded = (state.presentation?.effects.some((e) => e.owner === seat.playerId && SHIELD_HOOKS.has(e.params.hook)) ?? false) || shieldRising(state.beat, seat.playerId, now);
     const blocking = shieldBlocking(state.beat, seat.playerId, now);
     // The bubble breathes while a shield is up and flashes when it blocks (2026-10-15: a shield you can see).
     const shield = shieldRef.current;

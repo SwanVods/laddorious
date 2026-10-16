@@ -302,6 +302,16 @@ export function shieldBlocking(beat: PlayingBeat | null, player: PlayerId, nowMs
   return nowMs >= lands;
 }
 
+/** The effects that block, shown as a bubble around the piece. */
+export const SHIELD_HOOKS: ReadonlySet<string> = new Set(['beforeSnake', 'beforeAttack', 'beforeSnakeOrAttack']);
+
+/** Whether a card puts a shield on `player` in this beat, and it's up already: from the piece's hop, after the lead-in (2026-10-17). */
+export function shieldRising(beat: PlayingBeat | null, player: PlayerId, nowMs: number): boolean {
+  if (beat?.kind !== 'cardResolved') return false;
+  if (!beat.events.some((e) => e.type === 'EffectAdded' && e.effect.owner === player && SHIELD_HOOKS.has(e.effect.params.hook))) return false;
+  return nowMs >= beat.startedAt + cardLeadOf(beat);
+}
+
 /** The shield bubble's look `nowMs` in (2026-10-15: the user asked for a shield you can see): it breathes while up and flashes when it blocks. */
 export function shieldLook(nowMs: number, blocking: boolean, reducedMotion: boolean): { opacity: number; rim: number; scale: number } {
   if (blocking) return { opacity: 0.65 + 0.1 * Math.abs(Math.sin(nowMs / 60)), rim: 1, scale: 1.08 };
