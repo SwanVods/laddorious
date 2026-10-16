@@ -63,8 +63,8 @@ const onFocus = (input: ShotInput, focus: Focus): Shot => ('player' in focus ? o
  * over it goes back to the overview.
  */
 export function cameraShot(shown: ShotInput): Shot {
-  // A pause holds the shot of the moment it follows (2026-10-14).
-  const input = shown.beat ? { ...shown, beat: heldBeat(shown.beat) } : shown;
+  // A pause holds the shot of the moment it follows (2026-10-14); a card's pause, the card's last moment (2026-10-16).
+  const input = shown.beat ? { ...shown, beat: shown.beat.lastMoment ?? heldBeat(shown.beat) } : shown;
   const { beat, me } = input;
   const won = beat?.kind === 'victory' ? beat.events.find((e) => e.type === 'MatchWon') : undefined;
   if (won?.type === 'MatchWon') return won.winner === me ? swoop(input.piece(me), input) : onPlayer(input, won.winner);
@@ -122,6 +122,8 @@ function jumpsThisRound({ timeline, beat, me }: ShotInput): boolean {
 function cardShot(input: ShotInput): Shot | null {
   const { beat } = input;
   if (beat?.kind === 'cardMove') {
+    // A card that moves several players (Retreat!, Earthquake): the whole board, not one of them (2026-10-16).
+    if (new Set(beat.events.flatMap((e) => (e.type === 'Moved' ? [e.player] : []))).size > 1) return overview(input);
     const move = beat.events.find((e) => e.type === 'Moved');
     return move?.type === 'Moved' ? onPlayer(input, move.player) : null;
   }
