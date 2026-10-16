@@ -98,6 +98,8 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('rollBack', 'Next roll moves back', 'reverseRoll', {}, null, { charges: 1, rounds: 0 }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockSnake', 'Ignore snakes', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
+  effectKind('blockEither', 'Block snakes or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),
+  effectKind('jumpsOff', 'Snakes and ladders off', 'jumpsOff', {}, null, { charges: 0, rounds: 1 }),
   {
     id: 'snakeThenMove', label: 'After a snake, move', fields: [{ key: 'amount', label: 'amount', kind: 'amount' }, USES, ROUNDS],
     make: () => ({ op: 'conditional', trigger: { cause: 'dice', condition: 'landedOnSnakeHead' }, amount: 8, lifetime: { charges: 1 } }),

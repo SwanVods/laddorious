@@ -143,6 +143,10 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       return { ...base, icon: 'charm', badge: roundsBadge(effect), description: `Ignores the next slide${from}` };
     case 'beforeAttack':
       return { ...base, icon: 'shield', badge: roundsBadge(effect), description: `Blocks the next attack${from}` };
+    case 'beforeSnakeOrAttack':
+      return { ...base, icon: 'aegis', badge: roundsBadge(effect), description: `Blocks the next slide or attack${from}` };
+    case 'jumpsOff':
+      return { ...base, icon: 'slide', badge: roundsBadge(effect), description: 'Slides and rockets do nothing, for everyone' };
     case 'skipRoll':
       return { ...base, icon: 'lock', badge: roundsBadge(effect), description: `Skips the next roll${from}` };
     case 'reverseRoll':

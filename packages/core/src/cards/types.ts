@@ -28,7 +28,11 @@ export type EffectParams =
   /** Skip the owner's next roll (2026-10-16). */
   | { hook: 'skipRoll' }
   /** The owner's next roll moves them back (2026-10-16). */
-  | { hook: 'reverseRoll' };
+  | { hook: 'reverseRoll' }
+  /** Blocks the owner's next snake or attack, whichever comes first (2026-10-16). */
+  | { hook: 'beforeSnakeOrAttack' }
+  /** Snakes and ladders do nothing, for everyone, while it lasts (2026-10-16). */
+  | { hook: 'jumpsOff' };
 
 export type EffectHook = EffectParams['hook'];
 
@@ -46,6 +50,9 @@ export interface DieAmount {
 
 /** A number on a card that may be the card's own die. */
 export type CardNumber = number | DieAmount;
+
+/** Whether snakes and ladders are off for everyone right now (2026-10-16). */
+export const jumpsAreOff = (effects: readonly { params: { hook: string } }[]): boolean => effects.some((e) => e.params.hook === 'jumpsOff');
 
 export const isDie = (x: unknown): x is DieAmount => typeof x === 'object' && x !== null && (x as { die?: unknown }).die === true;
 

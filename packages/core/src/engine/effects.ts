@@ -1,5 +1,5 @@
 import { isSnakeHead } from '../board/types';
-import type { ActiveEffect, EffectHook, EffectParams, EffectTemplate, MoveCause } from '../cards/types';
+import { jumpsAreOff, type ActiveEffect, type EffectHook, type EffectParams, type EffectTemplate, type MoveCause } from '../cards/types';
 import type { GameEvent, MatchState, PlayerId } from './types';
 import { clonePlain, nextId, pub } from './util';
 
@@ -87,17 +87,17 @@ export function applyTotalEffects(s: MatchState, ev: GameEvent[], player: Player
   return reverse.length > 0 ? -floored : floored;
 }
 
-/** Returns the id of the effect that cancelled the snake, or null. */
+/** Returns the id of the effect that cancelled the snake, or null. A plain snake shield goes before a snake-or-attack one (2026-10-16). */
 export function useSnakeShield(s: MatchState, ev: GameEvent[], player: PlayerId): string | null {
-  const shield = effectsOn(s, player, 'beforeSnake')[0];
+  const shield = effectsOn(s, player, 'beforeSnake')[0] ?? effectsOn(s, player, 'beforeSnakeOrAttack')[0];
   if (!shield) return null;
   spendCharge(s, ev, shield);
   return shield.id;
 }
 
-/** Returns the id of the effect that blocked the attack, or null. */
+/** Returns the id of the effect that blocked the attack, or null. A plain shield goes before a snake-or-attack one (2026-10-16). */
 export function useAttackShield(s: MatchState, ev: GameEvent[], player: PlayerId): string | null {
-  const shield = effectsOn(s, player, 'beforeAttack')[0];
+  const shield = effectsOn(s, player, 'beforeAttack')[0] ?? effectsOn(s, player, 'beforeSnakeOrAttack')[0];
   if (!shield) return null;
   spendCharge(s, ev, shield);
   return shield.id;
@@ -119,7 +119,8 @@ export function evaluateAfterMove(
   let extra = 0;
   for (const e of effectsOn(s, player, 'afterMove')) {
     if (e.params.cause !== cause) continue;
-    if (e.params.condition === 'landedOnSnakeHead' && isSnakeHead(boardForCheck, landedOn)) extra += e.params.amount;
+    // With snakes and ladders off (2026-10-16), a snake head is just a tile.
+    if (e.params.condition === 'landedOnSnakeHead' && !jumpsAreOff(s.effects) && isSnakeHead(boardForCheck, landedOn)) extra += e.params.amount;
     spendCharge(s, ev, e);
   }
   return extra;

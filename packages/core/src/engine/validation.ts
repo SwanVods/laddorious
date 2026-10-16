@@ -59,6 +59,11 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
     case 'beforeSnake':
     case 'beforeAttack':
       return;
+    case 'beforeSnakeOrAttack':
+      return;
+    case 'jumpsOff':
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.rounds) && lifetime.charges === undefined, where, 'jumpsOff needs rounds and no uses');
+      return;
     case 'skipRoll':
     case 'reverseRoll':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, `${params.hook} needs uses (charges)`);
@@ -151,6 +156,8 @@ export function validateCardDef(c: CardDef): void {
     check(Array.isArray(t.section) && isInt(t.section[0]) && isInt(t.section[1]) && t.section[0] <= t.section[1], where, 'section must be [from, to]');
   }
   check(!Array.isArray(c.effects) || !usesDie({ effects: c.effects.map(withoutAllowedDie) }), where, DIE_PLACES);
+  const off = (ops: EffectOp[]): boolean => ops.some((op) => (op.op === 'addEffect' && op.template.params.hook === 'jumpsOff') || (op.op === 'gamble' && op.outcomes.some((o) => off(o.ops))));
+  check(!Array.isArray(c.effects) || !off(c.effects) || t.condition === 'self', where, 'snakes and ladders off is for everyone: its card targets you');
   checkOps(c.effects, `${where}.effects`);
 }
 

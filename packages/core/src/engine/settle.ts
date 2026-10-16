@@ -1,4 +1,5 @@
 import { jumpFrom } from '../board/types';
+import { jumpsAreOff } from '../cards/types';
 import { nextInt } from '../rng/stream';
 import { createChallenge } from './challenge';
 import { evaluateAfterMove, useSnakeShield } from './effects';
@@ -26,9 +27,11 @@ export function resolveJumps(s: MatchState, ev: GameEvent[], movers: Mover[]): M
     moved.set(m.player, m);
     const p = getPlayer(s, m.player);
     const landedOn = p.position;
+    // Snakes and ladders off (2026-10-16): nobody slides or climbs, and no snake shield is used.
+    const off = jumpsAreOff(s.effects);
     let guard = 0;
     for (;;) {
-      const j = jumpFrom(s.board, p.position);
+      const j = off ? undefined : jumpFrom(s.board, p.position);
       if (!j) break;
       if (j.to < j.from) {
         const shield = useSnakeShield(s, ev, p.id);
