@@ -19,6 +19,37 @@ function moved(player: PlayerId, from: number, to: number, cause: MoveCause = 'd
 
 const hops = (tiles: number) => tiles * BEAT_MS.hopPerTile + BEAT_MS.landing;
 
+/** What ends every real update: the round's bookkeeping and the next window opening (no time of their own). */
+const roundOver: GameEvent[] = [
+  { type: 'RoundEnded', round: 1, visibility: 'public' },
+  { type: 'RoundStarted', round: 2, visibility: 'public' },
+  { type: 'WindowOpened', windowId: 9, window: 'dice', players: ['p0', 'p1'], durationMs: 12_000, visibility: 'public' },
+] as GameEvent[];
+
+describe('the end hold, before the round moves on (2026-10-16: it never showed in a real match)', () => {
+  const kinds = (events: GameEvent[], from = start()) => buildTimeline(events, from, 'p0', SIZE).map((b) => [b.kind, b.durationMs]);
+
+  it('holds the last move of a round, with the round bookkeeping after it', () => {
+    expect(kinds([moved('p0', 0, 3), moved('p1', 0, 5), ...roundOver])).toEqual([
+      ['move', hops(5)],
+      ['pause', BEAT_MS.endHold],
+      ['info', 0],
+    ]);
+  });
+
+  it('holds the end of a face-off the same way', () => {
+    const events: GameEvent[] = [
+      { type: 'ChallengeResolved', challengeId: 'c1', pickRound: 1, picks: { p0: 'rock', p1: 'paper' }, winner: 'p1', losers: ['p0'], outcome: 'win', visibility: 'public' },
+      moved('p0', 6, 3, 'knockback'),
+      ...roundOver,
+    ];
+    expect(kinds(events, start({ p0: 6, p1: 6 })).slice(-2)).toEqual([
+      ['pause', BEAT_MS.endHold],
+      ['info', 0],
+    ]);
+  });
+});
+
 describe('buildTimeline', () => {
   it('rolls the dice of one update together', () => {
     const roll = (player: PlayerId, face: number): GameEvent => ({ type: 'DieRolled', player, natural: face, face, forced: false, auto: true, visibility: 'public' });
@@ -96,6 +127,7 @@ describe('buildTimeline', () => {
     expect(beats.map((b) => [b.kind, b.durationMs])).toEqual([
       ['move', hops(6)],
       ['snakeBlocked', BEAT_MS.snakeBlocked],
+      ['pause', BEAT_MS.endHold], // the end hold, before the bookkeeping (2026-10-16)
       ['info', 0],
     ]);
     expect(beats[2]!.after.positions.p0).toBe(16);
