@@ -1,5 +1,13 @@
 import type { Jump } from '@laddorious/core';
-import { PAIR_COLORS } from '../app/theme';
+import { Color } from 'three';
+import { PAIR_COLORS, WORLD_COLORS } from '../app/theme';
+
+/** Snakes and ladders while they're off (2026-10-16): faded toward stone grey, so they read as switched off. */
+export const OFF_TINT = new Color(WORLD_COLORS.jumpsOff);
+
+export function offTone(colour: Color, off: boolean): Color {
+  return off ? colour.lerp(OFF_TINT, 0.75) : colour;
+}
 
 /** The symbols that pair a jump's start with its end (spec #5 A13), drawn by `symbolGeometry`. */
 export const SYMBOLS = ['circle', 'triangle', 'square', 'diamond', 'heart', 'plus', 'moon', 'bolt'] as const;

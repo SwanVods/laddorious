@@ -17,6 +17,8 @@ export const BOARD_COLORS = {
 export const WORLD_COLORS = {
   sky: ['#0b4a5a', '#2f8f8a', '#ffc184'],
   fog: '#ffc79a',
+  /** Snakes and ladders while they're switched off (2026-10-16): stone grey. */
+  jumpsOff: '#8f8a84',
   /** The platform's deck and the course's pads (board theme spec §3). */
   deck: '#fff7ec',
   /** The soft cushions under the platform and the pads. */

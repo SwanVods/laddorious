@@ -127,10 +127,14 @@ export interface RowsInput {
   away?: readonly PlayerId[];
 }
 
+/** A player's row status in words (tests). */
+export const statusText = (view: PlayerView, player: PlayerId, me: PlayerId): string => statusOf(view, player, me).text;
+
 function statusOf(view: PlayerView, player: PlayerId, me: PlayerId): { status: RowStatus; text: string } {
   const aw = view.awaiting;
   const phase = view.phase;
   if (aw.window === 'dice') {
+    if (phase.kind === 'dice' && phase.seqs[player]?.status === 'skipped') return { status: 'idle', text: 'Skips this roll' };
     if (!aw.players.includes(player)) return { status: 'done', text: 'Rolled' };
     return player === me ? { status: 'turn', text: 'Your turn to roll' } : { status: 'waiting', text: 'Rolling…' };
   }
@@ -261,7 +265,8 @@ export function dockModel({ beat: shown, view, record, me }: DockInput): DockMod
   const phase = view.phase;
   if (aw.window === 'dice') {
     if (aw.players.includes(me)) return { kind: 'roll', windowId: aw.windowId };
-    return { kind: 'wait', parts: ['Waiting for ', ...listParts(aw.players), ' to roll'] };
+    const skipped = phase.kind === 'dice' && phase.seqs[me]?.status === 'skipped';
+    return { kind: 'wait', parts: [skipped ? 'You skip this roll. Waiting for ' : 'Waiting for ', ...listParts(aw.players), ' to roll'] };
   }
   if (aw.window === 'challenge' && phase.kind === 'settle') {
     const open = phase.challenges.filter((c) => c.winner === null);

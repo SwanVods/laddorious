@@ -41,8 +41,12 @@ function lineFor(e: GameEvent, themes: ReadonlyMap<string, [string, string] | nu
       return [`Round ${e.round} started`];
     case 'DieRolled':
       return [{ player: e.player }, ` rolled ${e.face}${e.forced ? ' (set by a card)' : ''}`];
+    case 'RollSkipped':
+      return [{ player: e.player }, ' skips this roll'];
     case 'DiceTotaled': {
       const sum = e.faces.reduce((a, b) => a + b, 0);
+      // A reversed roll (2026-10-16) moves its player back.
+      if (e.total < 0) return [{ player: e.player }, ` moves back ${-e.total}`];
       return e.total === sum ? null : [{ player: e.player }, ` moves ${e.total} instead of ${sum}`];
     }
     case 'Moved':

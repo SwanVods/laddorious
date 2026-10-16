@@ -168,12 +168,15 @@ function roundsBadge(effect: ActiveEffect): string {
 export function nextRollMods(effects: ActiveEffect[], me: PlayerId): string[] {
   const mine = effects.filter((e) => e.owner === me).sort((a, b) => a.seq - b.seq);
   const out: string[] = [];
+  // A skip and a backward roll (2026-10-16): the skip comes first, the turn backwards last.
+  if (mine.some((e) => e.params.hook === 'skipRoll')) out.push('Skip');
   for (const e of mine) if (e.params.hook === 'diceFace') out.push(`Die = ${e.params.set}`);
   const totals = mine.flatMap((e) => (e.params.hook === 'diceTotal' ? [e.params] : []));
   const replace = totals.filter((t) => t.op === 'replace').at(-1);
   if (replace) out.push(`Total = ${replace.value}`);
   for (const t of totals) if (t.op === 'multiply') out.push(`Total ×${t.value}`);
   for (const t of totals) if (t.op === 'add') out.push(`Total ${signed(t.value)}`);
+  if (mine.some((e) => e.params.hook === 'reverseRoll')) out.push('Backward');
   return out;
 }
 
