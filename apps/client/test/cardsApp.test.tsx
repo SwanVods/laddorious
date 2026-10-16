@@ -32,3 +32,36 @@ describe('the card editor: the list (2026-10-15)', () => {
     expect(await screen.findByText('Your next die shows 1–6.')).toBeTruthy();
   });
 });
+
+describe('the card editor: filter and sort by rarity and type (2026-10-16)', () => {
+  /** Each listed card's rarity and type, from its row, in list order. */
+  const rows = () => screen.getAllByRole('listitem').map((li) => li.querySelector('.card-row-meta')!.textContent!.split(' · ').slice(0, 2));
+  const count = (kind: 'rarity' | 'type', value: string) => CARD_CATALOG.cards.filter((c) => c[kind] === value).length;
+
+  it('filters by rarity and by type, together', async () => {
+    render(<CardsApp api={api()} />);
+    await screen.findByText('Lucky Number');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Rarity' }), { target: { value: 'epic' } });
+    expect(rows()).toHaveLength(count('rarity', 'epic'));
+    expect(rows().every(([rarity]) => rarity === 'epic')).toBe(true);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Type' }), { target: { value: 'attack' } });
+    expect(rows().every(([rarity, type]) => rarity === 'epic' && type === 'attack')).toBe(true);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Rarity' }), { target: { value: 'all' } });
+    expect(rows()).toHaveLength(count('type', 'attack'));
+  });
+
+  it('sorts by rarity, or by type, and back to the card file order', async () => {
+    render(<CardsApp api={api()} />);
+    await screen.findByText('Lucky Number');
+    const fileOrder = screen.getAllByRole('listitem').map((li) => li.textContent);
+    const sort = screen.getByRole('combobox', { name: 'Sort' });
+    fireEvent.change(sort, { target: { value: 'rarity' } });
+    const rarities = rows().map(([rarity]) => ['common', 'rare', 'epic'].indexOf(rarity!));
+    expect(rarities).toEqual([...rarities].sort((a, b) => a - b));
+    fireEvent.change(sort, { target: { value: 'type' } });
+    const types = rows().map(([, type]) => ['movement', 'defense', 'attack', 'risky', 'misc'].indexOf(type!));
+    expect(types).toEqual([...types].sort((a, b) => a - b));
+    fireEvent.change(sort, { target: { value: 'file' } });
+    expect(screen.getAllByRole('listitem').map((li) => li.textContent)).toEqual(fileOrder);
+  });
+});

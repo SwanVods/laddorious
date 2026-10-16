@@ -1,4 +1,4 @@
-import { catalogProblems, describeCard, statusOf, type CardCatalog, type CardStatus, type CatalogCard } from '@laddorious/core';
+import { CARD_TYPES, RARITIES, catalogProblems, describeCard, statusOf, type CardCatalog, type CardStatus, type CardType, type CatalogCard, type Rarity } from '@laddorious/core';
 import { useEffect, useMemo, useState } from 'react';
 import type { CardsApi } from './api';
 import { CardForm } from './CardForm';
@@ -9,6 +9,15 @@ import { SimulatePanel } from './SimulatePanel';
 
 type StatusFilter = 'all' | CardStatus;
 const FILTERS: Array<[StatusFilter, string]> = [['all', 'All'], ['on', 'On'], ['draft', 'Drafts'], ['off', 'Off']];
+/** The list's order (2026-10-16): as in the card file, or by rarity, or by type, each then by the other and the name. */
+type SortBy = 'file' | 'rarity' | 'type';
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const rank = (c: CatalogCard) => RARITIES.indexOf(c.rarity);
+const kind = (c: CatalogCard) => CARD_TYPES.indexOf(c.type);
+const ORDERS: Record<Exclude<SortBy, 'file'>, (a: CatalogCard, b: CatalogCard) => number> = {
+  rarity: (a, b) => rank(a) - rank(b) || kind(a) - kind(b) || a.name.localeCompare(b.name),
+  type: (a, b) => kind(a) - kind(b) || rank(a) - rank(b) || a.name.localeCompare(b.name),
+};
 
 export function CardsApp({ api }: { api: CardsApi }) {
   const [catalog, setCatalog] = useState<CardCatalog | null>(null);
@@ -16,6 +25,9 @@ export function CardsApp({ api }: { api: CardsApi }) {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [query, setQuery] = useState('');
+  const [rarity, setRarity] = useState<'all' | Rarity>('all');
+  const [type, setType] = useState<'all' | CardType>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('file');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -34,10 +46,15 @@ export function CardsApp({ api }: { api: CardsApi }) {
   const shown = useMemo(() => {
     if (!catalog) return [];
     const q = query.trim().toLowerCase();
-    return catalog.cards.filter(
-      (c) => (filter === 'all' || statusOf(c) === filter) && (q === '' || [c.name, c.note ?? '', c.plan ?? '', c.id].some((s) => s.toLowerCase().includes(q))),
+    const list = catalog.cards.filter(
+      (c) =>
+        (filter === 'all' || statusOf(c) === filter) &&
+        (rarity === 'all' || c.rarity === rarity) &&
+        (type === 'all' || c.type === type) &&
+        (q === '' || [c.name, c.note ?? '', c.plan ?? '', c.id].some((s) => s.toLowerCase().includes(q))),
     );
-  }, [catalog, filter, query]);
+    return sortBy === 'file' ? list : [...list].sort(ORDERS[sortBy]);
+  }, [catalog, filter, rarity, type, sortBy, query]);
 
   if (error) return <main className="cards-app"><p role="alert">{error}</p></main>;
   if (!catalog) return <main className="cards-app"><p>Reading the card file…</p></main>;
@@ -77,6 +94,8 @@ export function CardsApp({ api }: { api: CardsApi }) {
     const card: CatalogCard = { id, name: `New card ${id.slice('new-card-'.length)}`, rarity: 'common', type: 'movement', status: 'draft', weight: 1, plan: '', target: { condition: 'self', pick: 'self', tieBreak: 'lowest-seat' }, effects: [] };
     change({ ...catalog, cards: [...catalog.cards, card] });
     setFilter('all');
+    setRarity('all');
+    setType('all');
     select(id);
   };
   const duplicate = (card: CatalogCard) => {
@@ -103,6 +122,27 @@ export function CardsApp({ api }: { api: CardsApi }) {
             </button>
           ))}
         </div>
+        <select aria-label="Rarity" value={rarity} onChange={(e) => setRarity(e.target.value as 'all' | Rarity)}>
+          <option value="all">All rarities</option>
+          {RARITIES.map((r) => (
+            <option key={r} value={r}>
+              {capital(r)}
+            </option>
+          ))}
+        </select>
+        <select aria-label="Type" value={type} onChange={(e) => setType(e.target.value as 'all' | CardType)}>
+          <option value="all">All types</option>
+          {CARD_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {capital(t)}
+            </option>
+          ))}
+        </select>
+        <select aria-label="Sort" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+          <option value="file">Card file order</option>
+          <option value="rarity">Sort by rarity</option>
+          <option value="type">Sort by type</option>
+        </select>
         <button type="button" onClick={newCard}>
           New card
         </button>

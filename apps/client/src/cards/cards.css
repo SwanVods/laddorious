@@ -7,6 +7,7 @@
 .cards-tools button { font: inherit; padding: 4px 12px; border-radius: 999px; border: 2px solid var(--ink); background: var(--white); color: var(--ink); cursor: pointer; }
 .cards-tools button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
 .cards-tools input { font: inherit; padding: 6px 10px; border-radius: 10px; border: 2px solid var(--ink); min-width: 0; flex: 1 1 220px; }
+.cards-tools select { font: inherit; padding: 4px 10px; border-radius: 999px; border: 2px solid var(--ink); background: var(--white); color: var(--ink); cursor: pointer; }
 .cards-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .card-row button { width: 100%; text-align: left; display: grid; grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(0, 3fr); gap: 4px 12px; padding: 10px 12px; border: 2px solid transparent; border-left: 8px solid var(--type); border-radius: 12px; background: var(--white); color: var(--ink); font: inherit; cursor: pointer; }
 .card-row.selected button { border-color: var(--ink); }
