@@ -36,7 +36,22 @@ export type EffectParams =
   /** Blocks the owner's next snake or attack, whichever comes first (2026-10-16). */
   | { hook: 'beforeSnakeOrAttack' }
   /** Snakes and ladders do nothing, for everyone, while it lasts (2026-10-16). */
-  | { hook: 'jumpsOff' };
+  | { hook: 'jumpsOff' }
+  /** "If your next roll is…" (2026-10-16): checked on the owner's next roll's faces. */
+  | RollCheck;
+
+/** What a roll check looks for, and what happens when it holds (and, for a ladder, when it doesn't). */
+export interface RollCheck {
+  hook: 'rollCheck';
+  when: 'odd' | 'even' | 'over3';
+  then: { multiply: number } | { shield: { charges: number; rounds?: number } } | { toLadder: true };
+  otherwise?: 'stay';
+}
+
+/** Whether a roll's faces add up to what the check looks for. */
+export function rollMeets(when: RollCheck['when'], sum: number): boolean {
+  return when === 'over3' ? sum > 3 : (sum % 2 === 1) === (when === 'odd');
+}
 
 export type EffectHook = EffectParams['hook'];
 

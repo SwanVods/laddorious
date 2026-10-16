@@ -71,6 +71,21 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
     case 'jumpsOff':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.rounds) && lifetime.charges === undefined, where, 'jumpsOff needs rounds and no uses');
       return;
+    case 'rollCheck': {
+      check(['odd', 'even', 'over3'].includes(params.when), where, 'rollCheck.when must be odd, even or over3');
+      const then = params.then as Record<string, unknown> | undefined;
+      const kinds = then ? ['multiply', 'shield', 'toLadder'].filter((k) => k in then) : [];
+      check(kinds.length === 1, where, 'rollCheck.then must be one of multiply, shield or toLadder');
+      if (then && 'multiply' in then) check(isPositiveInt(then.multiply), where, 'rollCheck multiply must be a positive integer');
+      if (then && 'shield' in then) {
+        const shield = then.shield as { charges?: unknown; rounds?: unknown } | undefined;
+        check(isPositiveInt(shield?.charges) && (shield?.rounds === undefined || isPositiveInt(shield.rounds)), where, 'rollCheck shield needs uses, and rounds if any');
+      }
+      if (then && 'toLadder' in then) check(then.toLadder === true, where, 'rollCheck toLadder must be true');
+      check(params.otherwise === undefined || params.otherwise === 'stay', where, "rollCheck.otherwise must be 'stay' or left out");
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, 'rollCheck needs uses (charges)');
+      return;
+    }
     case 'skipRoll':
     case 'reverseRoll':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, `${params.hook} needs uses (charges)`);

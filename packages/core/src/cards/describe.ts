@@ -98,6 +98,22 @@ export function describeCard(card: CatalogCard, values?: Record<string, number>)
           case 'jumpsOff':
             if (l === 'permanent' || l.rounds === undefined) return 'Snakes and ladders do nothing for the rest of the match.';
             return `Snakes and ladders do nothing for ${num(l.rounds)} round${l.rounds === 1 ? '' : 's'}.`;
+          case 'rollCheck': {
+            const w = p.when === 'over3' ? 'over 3' : p.when;
+            const head = `If ${lower(nextRoll())} is ${w}`;
+            const then = p.then;
+            if ('multiply' in then) {
+              const x = num(then.multiply);
+              return `${head}, it is ${x === '2' ? 'doubled' : x === '3' ? 'tripled' : `×${x}`}.`;
+            }
+            if ('shield' in then) {
+              const n = then.shield.charges;
+              const what = n === 1 ? 'snake or attack' : `${num(n)} snakes or attacks`;
+              const rounds = then.shield.rounds;
+              return `${head}, block the next ${what}${rounds === undefined ? ', any time this match' : ` (${num(rounds)} round${rounds === 1 ? '' : 's'})`}.`;
+            }
+            return `${head}, go to the nearest ladder.${p.otherwise === 'stay' ? ' If not, stay put.' : ''}`;
+          }
           case 'skipRoll': {
             const rolls = charges > 1 ? `next ${charges} rolls` : 'next roll';
             return who ? `${who} skips their ${rolls}.` : `Skip your ${rolls}.`;

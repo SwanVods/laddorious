@@ -147,6 +147,11 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       return { ...base, icon: 'aegis', badge: roundsBadge(effect), description: `Blocks the next slide or attack${from}` };
     case 'jumpsOff':
       return { ...base, icon: 'slide', badge: roundsBadge(effect), description: 'Slides and rockets do nothing, for everyone' };
+    case 'rollCheck': {
+      const w = p.when === 'over3' ? 'over 3' : p.when;
+      const then = 'multiply' in p.then ? `it's ×${p.then.multiply}` : 'shield' in p.then ? 'block a slide or attack' : `go to the nearest rocket${p.otherwise === 'stay' ? ', else stay put' : ''}`;
+      return { ...base, icon: 'multiply' in p.then ? 'x2' : 'shield' in p.then ? 'aegis' : 'pad', badge: w, description: `If the next roll is ${w}: ${then}${from}` };
+    }
     case 'skipRoll':
       return { ...base, icon: 'lock', badge: roundsBadge(effect), description: `Skips the next roll${from}` };
     case 'reverseRoll':

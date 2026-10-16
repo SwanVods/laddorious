@@ -92,6 +92,7 @@ export function scoreCard(card: CardDef, view: PlayerView): number {
         if (p.hook === 'reverseRoll') return selfTarget ? -7 : 5;
         if (p.hook === 'beforeSnakeOrAttack') return 3;
         if (p.hook === 'jumpsOff') return 0;
+        if (p.hook === 'rollCheck') return 'multiply' in p.then ? n(p.then.multiply) - 1 : 'shield' in p.then ? 1.5 : 3;
         if (p.hook === 'diceTotal') {
           if (p.op === 'multiply') return 4 * (n(p.value) - 1);
           if (p.op === 'replace') return n(p.value) - 4;

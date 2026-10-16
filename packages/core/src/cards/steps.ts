@@ -57,6 +57,30 @@ function effectKind(id: string, label: string, hook: string, extra: Record<strin
   }
 }
 
+const WHEN: StepField = { key: 'when', label: 'if the next roll is', kind: 'choice', choices: [['odd', 'odd'], ['even', 'even'], ['over3', 'over 3']] };
+
+/** "If your next roll is…" (2026-10-16): a roll check whose outcome has its own fields. */
+function rollCheckKind(id: string, label: string, fields: StepField[], then: (v: Record<string, unknown>) => unknown, read: (then: Record<string, unknown>, otherwise: unknown) => Record<string, unknown> | null, start: Record<string, unknown>): StepKind {
+  const write = (v: Record<string, unknown>): Op => ({
+    op: 'addEffect',
+    template: { params: { hook: 'rollCheck', when: v.when, then: then(v), ...(v.otherwise === 'stay' ? { otherwise: 'stay' } : {}) } as never, lifetime: lifeFrom(v) },
+  });
+  return {
+    id,
+    label,
+    fields: [WHEN, ...fields, USES, ROUNDS],
+    make: () => write({ when: 'odd', ...start, charges: 1, rounds: 0 }),
+    read(op) {
+      if (op.op !== 'addEffect') return null;
+      const p = op.template.params as Record<string, unknown>;
+      if (p.hook !== 'rollCheck') return null;
+      const own = read(p.then as Record<string, unknown>, p.otherwise);
+      return own && { when: p.when, ...own, ...lifeOf(op.template.lifetime) };
+    },
+    write,
+  };
+}
+
 function boardKind(id: string, label: string, kind: 'snake' | 'ladder', length: number): StepKind {
   return {
     id,
@@ -96,6 +120,16 @@ export const STEP_KINDS: StepKind[] = [
   effectKind('rollExactly', 'Next roll is exactly', 'diceTotal', { op: 'replace' }, { key: 'value', label: 'total', kind: 'amount', min: 0 }, { value: 4, charges: 1, rounds: 0 }),
   effectKind('skipRoll', 'Skip next roll', 'skipRoll', {}, null, { charges: 1, rounds: 0 }),
   effectKind('rollBack', 'Next roll moves back', 'reverseRoll', {}, null, { charges: 1, rounds: 0 }),
+  rollCheckKind('ifRollTimes', 'If next roll is…: ×', [{ key: 'times', label: 'times', kind: 'amount', min: 2 }],
+    (v) => ({ multiply: v.times }), (t) => ('multiply' in t ? { times: t.multiply } : null), { times: 2 }),
+  rollCheckKind('ifRollShield', 'If next roll is…: block snakes or attacks',
+    [{ key: 'shieldUses', label: 'blocks', kind: 'count', min: 1 }, { key: 'shieldRounds', label: 'for rounds (0 = any time)', kind: 'count', min: 0 }],
+    (v) => ({ shield: { charges: v.shieldUses, ...(v.shieldRounds ? { rounds: v.shieldRounds } : {}) } }),
+    (t) => ('shield' in t ? { shieldUses: (t.shield as { charges: unknown }).charges, shieldRounds: (t.shield as { rounds?: unknown }).rounds ?? 0 } : null),
+    { when: 'even', shieldUses: 1, shieldRounds: 2 }),
+  rollCheckKind('ifRollLadder', 'If next roll is…: go to the nearest ladder',
+    [{ key: 'otherwise', label: 'if not', kind: 'choice', choices: [['stay', 'stay put'], ['move', 'move as rolled']] }],
+    () => ({ toLadder: true }), (t, otherwise) => ('toLadder' in t ? { otherwise: otherwise === 'stay' ? 'stay' : 'move' } : null), { when: 'over3', otherwise: 'stay' }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockSnake', 'Ignore snakes', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockEither', 'Block snakes or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),

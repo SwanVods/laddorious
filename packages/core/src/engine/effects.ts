@@ -71,11 +71,13 @@ export function applyFaceEffects(
 }
 
 /** TOTAL stage (spec §5.6): Replace (newest wins) → Multiply (product) → Add (sum) → floor 0. All diceTotal effects fire. */
-export function applyTotalEffects(s: MatchState, ev: GameEvent[], player: PlayerId, sum: number): number {
+export function applyTotalEffects(s: MatchState, ev: GameEvent[], player: PlayerId, sum: number, factor = 1): number {
   const effects = effectsOn(s, player, 'diceTotal');
   let total = sum;
   const replaces = effects.filter((e) => e.params.op === 'replace');
   if (replaces.length > 0) total = replaces[replaces.length - 1]!.params.value;
+  // `factor`: a roll check's multiply that held (2026-10-16), one more Multiply.
+  total *= factor;
   for (const e of effects) if (e.params.op === 'multiply') total *= e.params.value;
   for (const e of effects) if (e.params.op === 'add') total += e.params.value;
   for (const e of effects) spendCharge(s, ev, e);
