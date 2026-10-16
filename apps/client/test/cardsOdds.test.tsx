@@ -17,7 +17,7 @@ describe('the card editor: odds and new cards (2026-10-15)', () => {
     const { saveCards } = setup();
     await screen.findByText('Lucky Number');
     fireEvent.change(screen.getByLabelText('Epic weight'), { target: { value: '10' } });
-    expect(screen.getByText('Epic: 10 (10%)')).toBeTruthy(); // 10 of 70 + 25 + 10
+    expect(screen.getByText('Epic: 10 (11%)')).toBeTruthy(); // 10 of 40 + 40 + 10
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await screen.findByText('Saved.');
     expect(saveCards.mock.calls[0]![0].odds.rarityWeights.epic).toBe(10);

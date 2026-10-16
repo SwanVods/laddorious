@@ -10,7 +10,7 @@ const TEXTS: Record<string, string> = {
   'topsy-turvy': "Each opponent's next roll moves them back.",
   'double-or-nothing': '50%: your next roll is doubled. 50%: your next roll moves you back.',
   'lucky-charm': 'Block the next whirlpool or attack, whichever comes first (2 rounds).',
-  aegis: 'Block the next 2 whirlpools or attacks, any time this match.',
+  aegis: 'Block the next 3 whirlpools or attacks, any time this match.',
   'calm-waters': 'Rockets and whirlpools do nothing for 1 round.',
   'still-waters': 'Rockets and whirlpools do nothing for 2 rounds.',
 };

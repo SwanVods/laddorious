@@ -2,9 +2,9 @@
   "version": 1,
   "odds": {
     "rarityWeights": {
-      "common": 70,
-      "rare": 25,
-      "epic": 5
+      "common": 40,
+      "rare": 40,
+      "epic": 11
     },
     "typeWeights": {
       "movement": 1,
@@ -838,7 +838,7 @@
     {
       "id": "pitfall",
       "name": "Pitfall",
-      "rarity": "rare",
+      "rarity": "epic",
       "type": "attack",
       "status": "on",
       "weight": 1,
@@ -1438,7 +1438,7 @@
     {
       "id": "high-roller",
       "name": "High Roller",
-      "rarity": "rare",
+      "rarity": "epic",
       "type": "risky",
       "status": "on",
       "weight": 1,
@@ -1698,7 +1698,7 @@
               "hook": "beforeAttack"
             },
             "lifetime": {
-              "charges": 1
+              "charges": 2
             }
           }
         }
@@ -1712,7 +1712,7 @@
       "status": "on",
       "weight": 1,
       "icon": "aegis",
-      "note": "mendapatkan shield dari ular dan serangan 2x hingga akhir permainan",
+      "note": "mendapatkan shield dari ular dan serangan 3x hingga akhir permainan",
       "target": {
         "condition": "self",
         "pick": "self",
@@ -1726,7 +1726,7 @@
               "hook": "beforeSnakeOrAttack"
             },
             "lifetime": {
-              "charges": 2
+              "charges": 3
             }
           }
         }
@@ -1734,13 +1734,13 @@
     },
     {
       "id": "fresh-start",
-      "name": "Fresh Start",
+      "name": "New Game+",
       "rarity": "epic",
       "type": "misc",
       "status": "on",
       "weight": 1,
       "icon": "target",
-      "note": "SEMUA player bergerak ke tile 30",
+      "note": "SEMUA player bergerak ke tile 29",
       "target": {
         "condition": "everyone",
         "pick": "all",
@@ -1750,19 +1750,19 @@
         {
           "op": "moveTo",
           "rule": "tile",
-          "tile": 30
+          "tile": 29
         }
       ]
     },
     {
       "id": "final-battle",
-      "name": "Final Battle!",
+      "name": "Epic Battle!",
       "rarity": "epic",
       "type": "misc",
       "status": "on",
       "weight": 1,
       "icon": "swords",
-      "note": "SEMUA player bergerak ke tile 90",
+      "note": "SEMUA player bergerak ke tile 91",
       "target": {
         "condition": "everyone",
         "pick": "all",
@@ -1772,7 +1772,7 @@
         {
           "op": "moveTo",
           "rule": "tile",
-          "tile": 90
+          "tile": 91
         }
       ]
     },
@@ -1837,7 +1837,7 @@
       "effects": [
         {
           "op": "moveRelative",
-          "amount": 15
+          "amount": 12
         }
       ]
     },
