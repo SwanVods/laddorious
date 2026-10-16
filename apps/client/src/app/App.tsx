@@ -16,6 +16,7 @@ import { MatchScreen } from './MatchScreen';
 import { MenuScreen } from './MenuScreen';
 import type { PrefsState } from './prefs';
 import { HelpDialog } from './HelpDialog';
+import { WhatsNewDialog } from './WhatsNewDialog';
 import { SettingsDialog } from './SettingsDialog';
 import type { TestHooks } from './testMode';
 
@@ -64,6 +65,7 @@ export function App({ service, offline, resume = null, prefs, dev, test = null, 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [newsOpen, setNewsOpen] = useState(false);
   const [crashes, setCrashes] = useState(0);
   const settings = useStore(prefs, (s) => s.settings);
   const tappedRef = useRef(false);
@@ -107,7 +109,7 @@ export function App({ service, offline, resume = null, prefs, dev, test = null, 
     case 'matchmaking':
       screen = (
         <>
-          <MenuScreen prefs={prefs} onPlay={play} onSettings={() => setSettingsOpen(true)} onHelp={() => setHelpOpen(true)} onFriends={rooms ? () => setFriendsOpen(true) : undefined} showSeed={dev} />
+          <MenuScreen prefs={prefs} onPlay={play} onSettings={() => setSettingsOpen(true)} onHelp={() => setHelpOpen(true)} onWhatsNew={() => setNewsOpen(true)} onFriends={rooms ? () => setFriendsOpen(true) : undefined} showSeed={dev} />
           {friendsOpen && rooms && route.screen === 'menu' && <FriendsDialog onCreate={rooms.create} onJoin={rooms.join} onClose={() => setFriendsOpen(false)} />}
           {route.screen === 'matchmaking' && (
             <MatchmakingOverlay
@@ -199,6 +201,7 @@ export function App({ service, offline, resume = null, prefs, dev, test = null, 
         {screen}
         {settingsOpen && <SettingsDialog prefs={prefs} onClose={() => setSettingsOpen(false)} />}
         {helpOpen && route.screen === 'menu' && <HelpDialog onClose={() => setHelpOpen(false)} />}
+        {newsOpen && route.screen === 'menu' && <WhatsNewDialog onClose={() => setNewsOpen(false)} />}
         <LoadingScreen onRetry={() => window.location.reload()} />
         {route.screen !== 'match' && route.screen !== 'end' && <ToastHost />}
       </CrashBoundary>

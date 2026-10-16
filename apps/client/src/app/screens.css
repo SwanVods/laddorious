@@ -71,6 +71,42 @@
   line-height: 1.1;
 }
 
+/* What's new (2026-10-17): the changelog, newest first, scrolling. */
+.news-dialog {
+  width: min(92cqw, max(340px, 100cqh));
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: max(12px, 2.4cqh);
+  max-height: 64cqh;
+  overflow-y: auto;
+}
+
+.news-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.news-head h3 {
+  margin: 0;
+  font-size: max(16px, 3.2cqh);
+  color: var(--panel-header);
+}
+
+.news-date {
+  color: var(--muted-on-paper);
+  font: 600 max(12px, 2.1cqh) / 1 var(--body);
+}
+
+.news-entry ul {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+  font: 500 max(13px, 2.3cqh) / 1.4 var(--body);
+}
+
 /* Play with friends: create a room, or type a friend's code. */
 .friends-option {
   display: flex;

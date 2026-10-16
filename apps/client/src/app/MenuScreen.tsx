@@ -10,6 +10,7 @@ import { Icon } from '../ui/Icon';
 import { Portrait } from '../ui/PieceIcon';
 import { NICKNAME_MAX, type PrefsState } from './prefs';
 import { SEAT_COLORS } from './theme';
+import pkg from '../../package.json';
 
 /** Short rule reminders, one at a time (spec #2 §7.1). */
 export const TIPS = [
@@ -28,6 +29,8 @@ interface MenuScreenProps {
   onSettings: () => void;
   /** How to play (2026-10-17). */
   onHelp?: () => void;
+  /** What's new: the changelog (2026-10-17). */
+  onWhatsNew?: () => void;
   /** Online builds: Play with friends, for private rooms (2026-10-16). */
   onFriends?: () => void;
   /** Dev builds: the hidden board seed field (spec #2 §4.4). */
@@ -40,7 +43,7 @@ interface MenuScreenProps {
  * pieces went on 2026-10-14), the profile chip (tap to rename), the logo, the settings gear, PLAY, and
  * rotating rule tips.
  */
-export function MenuScreen({ prefs, onPlay, onSettings, onHelp, onFriends, showSeed = false }: MenuScreenProps) {
+export function MenuScreen({ prefs, onPlay, onSettings, onHelp, onWhatsNew, onFriends, showSeed = false }: MenuScreenProps) {
   const profile = useStore(prefs, (s) => s.profile);
   const settings = useStore(prefs, (s) => s.settings);
   const [anchors] = useState(createTagRegistry);
@@ -128,6 +131,14 @@ export function MenuScreen({ prefs, onPlay, onSettings, onHelp, onFriends, showS
           <small>RACE TO 100</small>
         </h1>
 
+        {onWhatsNew && (
+          <button type="button" className="pill news-btn live" aria-label={`What's new in v${pkg.version}`} onClick={onWhatsNew}>
+            <Icon name="cleanse" />
+            <span>
+              v{pkg.version} · <b>What's new</b>
+            </span>
+          </button>
+        )}
         {onHelp && (
           <button type="button" className="round-btn help-btn live" aria-label="How to play" onClick={onHelp}>
             <Icon name="qmark" />

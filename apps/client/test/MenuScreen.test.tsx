@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MenuScreen, TIPS, TIP_MS } from '../src/app/MenuScreen';
 import { createPrefsStore } from '../src/app/prefs';
+import pkg from '../package.json';
 
 // jsdom has no WebGL: stand the podium scene in with a labelled box.
 vi.mock('../src/scene/MenuScene', async () => {
@@ -22,8 +23,9 @@ function open(showSeed = false) {
   const onPlay = vi.fn();
   const onSettings = vi.fn();
   const onHelp = vi.fn();
-  render(<MenuScreen prefs={prefs} onPlay={onPlay} onSettings={onSettings} onHelp={onHelp} showSeed={showSeed} />);
-  return { prefs, onPlay, onSettings, onHelp };
+  const onWhatsNew = vi.fn();
+  render(<MenuScreen prefs={prefs} onPlay={onPlay} onSettings={onSettings} onHelp={onHelp} onWhatsNew={onWhatsNew} showSeed={showSeed} />);
+  return { prefs, onPlay, onSettings, onHelp, onWhatsNew };
 }
 
 const rename = (to: string, key = 'Enter') => {
@@ -47,6 +49,14 @@ describe('MenuScreen (spec #2 §7.1)', () => {
     const { onHelp } = open();
     fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
     expect(onHelp).toHaveBeenCalled();
+  });
+
+  it("opens the changelog from the version button, which shows this version (2026-10-17)", () => {
+    const { onWhatsNew } = open();
+    const button = screen.getByRole('button', { name: /What's new/ });
+    expect(button.textContent).toContain(`v${pkg.version}`);
+    fireEvent.click(button);
+    expect(onWhatsNew).toHaveBeenCalled();
   });
 
   it('says rockets and whirlpools in its tips, never slides or launch pads (2026-10-17)', () => {

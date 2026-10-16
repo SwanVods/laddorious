@@ -9,6 +9,8 @@ A 3D party race to tile 100 for four players, played in the browser on desktop a
 - **Play anywhere:** against bots offline, online by quick match, or in a private room with friends (share its code); empty seats fill with bots.
 - **Fresh boards:** every board is generated from a seed.
 
+What changed in each release: [CHANGELOG.md](CHANGELOG.md). Every version bump adds its entry there, and the game shows it in the lobby under What's new.
+
 ## Repository map
 
 | Path | Package | What it is |
