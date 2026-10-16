@@ -155,6 +155,8 @@ export const STEP_KINDS: StepKind[] = [
   rollCheckKind('ifRollLadder', 'If next roll is…: go to the nearest ladder',
     [{ key: 'otherwise', label: 'if not', kind: 'choice', choices: [['stay', 'stay put'], ['move', 'move as rolled']] }],
     () => ({ toLadder: true }), (t, otherwise) => ('toLadder' in t ? { otherwise: otherwise === 'stay' ? 'stay' : 'move' } : null), { when: 'over3', otherwise: 'stay' }),
+  effectKind('guardTile', 'Guard your tile', 'guardTile', {}, null, { charges: 0, rounds: 5 }),
+  effectKind('loseForward', 'Lose a face-off: move forward', 'loseForward', {}, null, { charges: 1, rounds: 0 }),
   effectKind('blockAttack', 'Block attacks', 'beforeAttack', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockSnake', 'Ignore snakes', 'beforeSnake', {}, null, { charges: 1, rounds: 3 }),
   effectKind('blockEither', 'Block snakes or attacks', 'beforeSnakeOrAttack', {}, null, { charges: 1, rounds: 2 }),

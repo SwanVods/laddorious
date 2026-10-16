@@ -71,6 +71,12 @@ function checkParams(params: CardEffectParams, lifetime: Lifetime, where: string
     case 'jumpsOff':
       check(lifetime !== 'permanent' && isPositiveInt(lifetime.rounds) && lifetime.charges === undefined, where, 'jumpsOff needs rounds and no uses');
       return;
+    case 'guardTile':
+      check(lifetime === 'permanent' || (isPositiveInt(lifetime.rounds) && lifetime.charges === undefined), where, 'guardTile needs rounds and no uses');
+      return;
+    case 'loseForward':
+      check(lifetime !== 'permanent' && isPositiveInt(lifetime.charges), where, 'loseForward needs uses (charges)');
+      return;
     case 'rollCheck': {
       check(['odd', 'even', 'over3'].includes(params.when), where, 'rollCheck.when must be odd, even or over3');
       const then = params.then as Record<string, unknown> | undefined;

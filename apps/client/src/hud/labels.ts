@@ -152,6 +152,10 @@ export function effectChip(effect: ActiveEffect, names: ReadonlyMap<PlayerId, st
       const then = 'multiply' in p.then ? `it's ×${p.then.multiply}` : 'shield' in p.then ? 'block a slide or attack' : `go to the nearest rocket${p.otherwise === 'stay' ? ', else stay put' : ''}`;
       return { ...base, icon: 'multiply' in p.then ? 'x2' : 'shield' in p.then ? 'aegis' : 'pad', badge: w, description: `If the next roll is ${w}: ${then}${from}` };
     }
+    case 'guardTile':
+      return { ...base, icon: 'target', badge: roundsBadge(effect), description: `Anyone who lands on your tile is knocked back${from}` };
+    case 'loseForward':
+      return { ...base, icon: 'swords', badge: roundsBadge(effect), description: `Lose a face-off: move forward instead${from}` };
     case 'skipRoll':
       return { ...base, icon: 'lock', badge: roundsBadge(effect), description: `Skips the next roll${from}` };
     case 'reverseRoll':

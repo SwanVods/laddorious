@@ -144,6 +144,8 @@ export type EventBody =
   | { type: 'WindowOpened'; windowId: number; window: WindowKind; players: PlayerId[]; durationMs: number }
   | { type: 'DieRolled'; player: PlayerId; natural: number; face: number; forced: boolean; auto: boolean }
   | { type: 'RollSkipped'; player: PlayerId; effectId: string }
+  /** Players who landed on a guarded tile, knocked back with no face-off (2026-10-16). */
+  | { type: 'TileGuarded'; tile: number; guard: PlayerId; knocked: PlayerId[] }
   /** A roll check on the player's roll (2026-10-16): whether it held. */
   | { type: 'RollChecked'; player: PlayerId; effectId: string; met: boolean; check: RollCheck }
   | { type: 'DiceTotaled'; player: PlayerId; faces: number[]; total: number }

@@ -38,7 +38,11 @@ export type EffectParams =
   /** Snakes and ladders do nothing, for everyone, while it lasts (2026-10-16). */
   | { hook: 'jumpsOff' }
   /** "If your next roll is…" (2026-10-16): checked on the owner's next roll's faces. */
-  | RollCheck;
+  | RollCheck
+  /** Anyone who lands on the owner's tile is knocked back, with no face-off (2026-10-16). */
+  | { hook: 'guardTile' }
+  /** The owner's next lost face-off moves them forward instead of back (2026-10-16). */
+  | { hook: 'loseForward' };
 
 /** What a roll check looks for, and what happens when it holds (and, for a ladder, when it doesn't). */
 export interface RollCheck {
