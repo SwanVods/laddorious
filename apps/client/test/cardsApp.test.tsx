@@ -11,16 +11,16 @@ describe('the card editor: the list (2026-10-15)', () => {
   it('lists every card with its counts by status', async () => {
     render(<CardsApp api={api()} />);
     expect(await screen.findByText('Lucky Number')).toBeTruthy();
-    expect(screen.getByText('66 on · 0 drafts · 2 off')).toBeTruthy();
-    expect(screen.getAllByRole('listitem')).toHaveLength(68);
+    expect(screen.getByText('67 on · 0 drafts · 0 off')).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(67);
   });
 
   it('filters by status and searches by name or note', async () => {
     render(<CardsApp api={api()} />);
     await screen.findByText('Lucky Number');
-    // Every card is on or off now (2026-10-16: no drafts left): the Off filter shows the two kept off.
+    // Every card is on (2026-10-17): the Off filter shows none.
     fireEvent.click(screen.getByRole('button', { name: 'Off' }));
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search cards' }), { target: { value: 'ular' } });
     expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0);

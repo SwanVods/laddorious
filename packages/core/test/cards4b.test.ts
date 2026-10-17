@@ -7,7 +7,7 @@ const TEXTS: Record<string, string> = {
   'time-freeze': 'Each opponent skips their next roll.',
   'reverse-gear': "The leader's next roll moves them back.",
   'wrong-way': 'The next roll of the player just ahead of you moves them back.',
-  'topsy-turvy': "Each opponent's next roll moves them back.",
+  'topsy-turvy': "Each opponent's next roll moves them back. (2 rounds)", // the user's own text (2026-10-17)
   'double-or-nothing': '50%: your next roll is doubled. 50%: your next roll moves you back.',
   'lucky-charm': 'Block the next whirlpool or attack, whichever comes first (2 rounds).',
   aegis: 'Block the next 3 whirlpools or attacks, any time this match.',

@@ -1189,7 +1189,7 @@
     {
       "id": "ladder-warp",
       "name": "Rocket Warp",
-      "rarity": "rare",
+      "rarity": "epic",
       "type": "movement",
       "status": "on",
       "weight": 1,
@@ -1656,7 +1656,8 @@
       "status": "on",
       "weight": 1,
       "icon": "back",
-      "note": "Dadu milik semua pemain selain kamu akan bergerak mundur untuk 1 ronde berikutnya",
+      "note": "Dadu milik semua pemain selain kamu akan bergerak mundur untuk 2 ronde berikutnya",
+      "text": "Each opponent's next roll moves them back. (2 rounds)",
       "target": {
         "condition": "other",
         "pick": "all",
@@ -1670,7 +1671,8 @@
               "hook": "reverseRoll"
             },
             "lifetime": {
-              "charges": 1
+              "charges": 1,
+              "rounds": 2
             }
           }
         }
@@ -1961,41 +1963,11 @@
       ]
     },
     {
-      "id": "steady-hand",
-      "name": "Steady Hand",
-      "rarity": "common",
-      "type": "misc",
-      "status": "off",
-      "weight": 1,
-      "icon": "steady",
-      "note": "In the game before the Excel list; kept switched off.",
-      "target": {
-        "condition": "self",
-        "pick": "self",
-        "tieBreak": "lowest-seat"
-      },
-      "effects": [
-        {
-          "op": "addEffect",
-          "template": {
-            "params": {
-              "hook": "diceTotal",
-              "op": "replace",
-              "value": 4
-            },
-            "lifetime": {
-              "charges": 1
-            }
-          }
-        }
-      ]
-    },
-    {
       "id": "cleanse",
       "name": "Cleanse",
       "rarity": "common",
       "type": "misc",
-      "status": "off",
+      "status": "on",
       "weight": 1,
       "icon": "cleanse",
       "note": "In the game before the Excel list; kept switched off.",
