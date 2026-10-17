@@ -4,7 +4,7 @@ import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/dist-e2e/**', '**/dist-online-e2e/**', '**/test-results/**', '**/playwright-report/**', '**/coverage/**', '**/.wrangler/**'] },
+  { ignores: ['**/node_modules/**', '**/dist/**', '**/dist-e2e/**', '**/dist-online-e2e/**', '**/test-results/**', '**/playwright-report/**', '**/coverage/**', '**/.wrangler/**', 'docs/**'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   {
