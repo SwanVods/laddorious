@@ -2,6 +2,15 @@
 
 What changed in each release of Laddorious, newest first. The game's lobby shows this file under What's new.
 
+## 0.3.0 — 2026-10-17
+
+- Anonymous match stats: every match you play, online or against bots, is recorded to help balance the cards. There's no account; your device just gets a random ID. Bots are never counted.
+- The settings say so, under the version.
+- The stats change nothing in how you play.
+- Rocket Warp is now an epic card.
+- Topsy-Turvy lasts 2 rounds.
+- Cleanse is back in the deck.
+
 ## 0.2.0 — 2026-10-17
 
 - How to play: a new button in the lobby explains the rules.
