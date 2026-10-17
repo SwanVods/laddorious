@@ -46,6 +46,8 @@ describe('the stats SQL on SQLite (2026-10-17)', () => {
     expect(all.players).toEqual({ players: 2, leftEarly: 0 });
     expect(all.cards.find((c) => c.cardId === 'sprint')).toEqual({ cardId: 'sprint', rarity: 'common', offered: 2, picked: 2, auto: 0, hit: 1, blocked: 0, fizzled: 1, wins: 1 });
     expect(all.cards[0]!.cardId).toBe('sprint'); // most picked first
+    // A card nobody picked counts zero plays, not null (2026-10-17: SQL's = on a null result is null).
+    expect(all.cards.find((c) => c.cardId === 'shove')).toMatchObject({ picked: 0, hit: 0, blocked: 0, fizzled: 0, wins: 0 });
     const offline = await summary('offline');
     expect(offline.matches).toEqual([{ mode: 'offline', status: 'finished', matches: 1, avgRounds: 10, avgDurationMs: 600_000, humanWins: 1 }]);
     expect(offline.cards.map((c) => c.cardId).sort()).toEqual(['shove', 'sprint']);

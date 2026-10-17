@@ -102,7 +102,7 @@ async function summary(db: StatsDb, mode: string) {
     db.prepare(`SELECT COUNT(DISTINCT p.player_key) AS players, SUM(p.left_early) AS leftEarly FROM match_players p JOIN matches m ON m.id = p.match_id WHERE ${where}`).all(),
     db
       .prepare(
-        `SELECT c.card_id AS cardId, c.rarity AS rarity, COUNT(*) AS offered, SUM(c.picked) AS picked, SUM(c.auto) AS auto, SUM(c.result = 'hit') AS hit, SUM(c.result = 'blocked') AS blocked, SUM(c.result = 'fizzled') AS fizzled, SUM(c.picker_won) AS wins FROM card_offers c JOIN matches m ON m.id = c.match_id WHERE ${where} GROUP BY c.card_id, c.rarity ORDER BY picked DESC`,
+        `SELECT c.card_id AS cardId, c.rarity AS rarity, COUNT(*) AS offered, SUM(c.picked) AS picked, SUM(c.auto) AS auto, SUM(c.result IS 'hit') AS hit, SUM(c.result IS 'blocked') AS blocked, SUM(c.result IS 'fizzled') AS fizzled, SUM(c.picker_won) AS wins FROM card_offers c JOIN matches m ON m.id = c.match_id WHERE ${where} GROUP BY c.card_id, c.rarity ORDER BY picked DESC`,
       )
       .all(),
   ]);
