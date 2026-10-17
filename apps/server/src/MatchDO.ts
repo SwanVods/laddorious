@@ -1,9 +1,12 @@
 import { DurableObject } from 'cloudflare:workers';
 import type { PlayerId } from '@laddorious/core';
-import { randomHex, type MatchIn, type MatchOut, type Seat } from '@laddorious/host';
+import { randomHex, type MatchIn, type MatchOut, type MatchStats, type Seat } from '@laddorious/host';
+import pkg from '../package.json';
 import type { Env } from './env';
+import type { MatchInfo } from './lobby';
 import { MatchRoom } from './room';
 import { acceptSocket } from './socket';
+import { writeStats } from './stats';
 import { parseMatchMessage } from './validate';
 
 /**
@@ -14,8 +17,11 @@ export class MatchDO extends DurableObject<Env> {
   private room: MatchRoom | null = null;
 
   /** Called by the lobby over RPC: starts the match with secret random seeds; returns the rejoin tokens. */
-  start(seats: Seat[]): Record<PlayerId, string> {
-    this.room = new MatchRoom({ fast: this.env.FAST === '1' });
+  start(seats: Seat[], info: MatchInfo): Record<PlayerId, string> {
+    const fast = this.env.FAST === '1';
+    // Match stats (2026-10-17), written after the response so the match never waits on the database. Fast e2e matches don't count.
+    const stats = fast ? undefined : { mode: info.mode, version: pkg.version, keys: info.keys, onStats: (s: MatchStats) => this.ctx.waitUntil(writeStats(this.env.STATS, s)) };
+    this.room = new MatchRoom({ fast, ...(stats ? { stats } : {}) });
     return this.room.start(seats, randomHex(), randomHex());
   }
 

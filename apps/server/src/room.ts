@@ -1,5 +1,5 @@
 import type { PlayerId } from '@laddorious/core';
-import { MatchHost, randomHex, type FromHost, type MatchIn, type MatchOut, type Seat } from '@laddorious/host';
+import { MatchHost, randomHex, type FromHost, type MatchIn, type MatchOut, type MatchStatsOptions, type Seat } from '@laddorious/host';
 
 /** A human who hasn't joined this long after the start counts as away (spec #4 §5.1). */
 export const JOIN_DEADLINE_MS = 15_000;
@@ -50,8 +50,8 @@ export class MatchRoom {
   private empty: Timer | null = null;
   private closed = false;
 
-  constructor(opts: { fast?: boolean } = {}) {
-    this.host = new MatchHost({ send: (to, msg) => this.fromHost(to, msg), fast: opts.fast, onEnd: (outcome) => this.ended(outcome) });
+  constructor(opts: { fast?: boolean; /** Match stats (2026-10-17). */ stats?: MatchStatsOptions } = {}) {
+    this.host = new MatchHost({ send: (to, msg) => this.fromHost(to, msg), fast: opts.fast, onEnd: (outcome) => this.ended(outcome), ...(opts.stats ? { stats: opts.stats } : {}) });
   }
 
   /** Starts the match and returns one rejoin token per human seat. */

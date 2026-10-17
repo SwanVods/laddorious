@@ -12,7 +12,8 @@ export type FailReason = 'version' | 'bad-token' | 'seat-lost' | 'server-error';
 
 /** Game → server on /lobby. `hello` comes first. */
 export type LobbyIn =
-  | { type: 'hello'; version: number; profile: Profile }
+  /** `playerKey`: a random id kept on the device, only for match stats (2026-10-17); never sent to other players. */
+  | { type: 'hello'; version: number; profile: Profile; playerKey?: string }
   | { type: 'find' }
   | { type: 'cancel' }
   | { type: 'playWithBots' }

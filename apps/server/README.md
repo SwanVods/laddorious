@@ -56,6 +56,23 @@ $env:VITE_SERVER = "wss://laddorious.<your-subdomain>.workers.dev"; pnpm build
 
 Then publish `apps/client/dist` as the client README describes. The Worker still deploys with `pnpm deploy:cloudflare`.
 
+## Match stats
+
+Every match is recorded for real players only, never bots, in a D1 database: one row per match (`matches`), one per real player (`match_players`) and one per card a real player was shown (`card_offers`). Online matches are written by their match object when they end. An offline match runs in the browser, which posts its summary to `/api/stats`; the server checks it and stores it as `offline`. Unfinished matches are kept with the status `abandoned`. Players are linked by a random key kept on their device, with no account.
+
+Setting it up, once:
+
+1. **Create the database:** `pnpm --filter @laddorious/server exec wrangler d1 create laddorious-stats`. Put the `[[d1_databases]]` block it prints into `wrangler.toml`, with `binding = "STATS"` and `migrations_dir = "migrations"`.
+2. **Create the tables:** `pnpm --filter @laddorious/server exec wrangler d1 migrations apply laddorious-stats --remote`.
+3. **Set the key that reads the stats:** `pnpm --filter @laddorious/server exec wrangler secret put STATS_KEY`, and type a long random key.
+4. **Deploy:** `pnpm deploy:cloudflare`.
+
+Without the database, matches play as usual and nothing is recorded.
+
+**Reading the stats:** the card editor (`pnpm cards`) has a Player stats panel. Give it the game's address and the stats key; it reads `/api/stats/summary`, for all matches, online only or offline only. For anything else, query D1 directly, for example `pnpm --filter @laddorious/server exec wrangler d1 execute laddorious-stats --remote --command "SELECT status, COUNT(*) FROM matches GROUP BY status"`.
+
+**Free plan:** D1 allows 100,000 rows written and 5 million read a day. A match writes about 15–25 rows, so that's several thousand matches a day: far more than the Durable Object limit below. Offline summaries can be faked, so read offline numbers with care.
+
 ## Limits and costs
 
 Measured over 200 simulated 4-player matches (about 21 rounds and 7 minutes each; spec §9):

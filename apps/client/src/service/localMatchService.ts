@@ -2,6 +2,7 @@ import { buildSeats, randomHex } from '@laddorious/host';
 import type { HostWorker } from '../worker/protocol';
 import type { FindOptions, Matchmaking, MatchmakingState, MatchService, Profile, SeatInfo } from './matchService';
 import { colorSeats } from './seats';
+import type { OfflineStats } from './stats';
 import { WorkerMatchSession } from './workerSession';
 
 /** How often `searching` reports the elapsed time, and the pause between bots taking seats (spec #2 §4.4). */
@@ -17,12 +18,12 @@ function seatsFor(profile: Profile): SeatInfo[] {
 export class LocalMatchService implements MatchService {
   constructor(
     private readonly createWorker: () => HostWorker,
-    /** e2e builds: matches play themselves, fast (spec #2 §9.3). */
-    private readonly opts: { fast?: boolean } = {},
+    /** e2e builds: matches play themselves, fast (spec #2 §9.3). Stats: report each match (2026-10-17). */
+    private readonly opts: { fast?: boolean; stats?: OfflineStats } = {},
   ) {}
 
   findMatch(profile: Profile, opts: FindOptions = {}): Matchmaking {
-    return new LocalMatchmaking(seatsFor(profile), this.createWorker, opts.seed ?? null, this.opts.fast ?? false);
+    return new LocalMatchmaking(seatsFor(profile), this.createWorker, opts.seed ?? null, this.opts.fast ?? false, this.opts.stats);
   }
 }
 
@@ -39,6 +40,7 @@ class LocalMatchmaking implements Matchmaking {
     /** A dev seed for the board; the dice (rng) seed is always random and secret. */
     private readonly boardSeed: string | null,
     private readonly fast: boolean,
+    private readonly stats?: OfflineStats,
   ) {
     this.table = [seats[0]!, null, null, null];
     this.state = this.searching();
@@ -75,7 +77,7 @@ class LocalMatchmaking implements Matchmaking {
         this.seatBot(seat + 1);
         return;
       }
-      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: this.boardSeed ?? randomHex(), rngSeed: randomHex() }, this.fast);
+      const session = new WorkerMatchSession(this.createWorker(), this.seats, { seed: this.boardSeed ?? randomHex(), rngSeed: randomHex() }, this.fast, this.stats);
       this.emit({ kind: 'found', session });
     }, BOT_SEAT_MS);
   }

@@ -1,5 +1,6 @@
 import { makeBots, type Bot } from '@laddorious/bots';
 import { awaiting, catalogConfig, createMatch, eventsFor, step, viewFor, type GameEvent, type Input, type MatchState, type PlayerId } from '@laddorious/core';
+import { StatsTally, type MatchStats, type MatchStatus, type StatsContext } from './stats';
 import { PausableTimers } from './timers';
 import type { FromHost, MatchUpdate, PlayerAction, Seat } from './types';
 
@@ -11,6 +12,9 @@ export const BOT_DELAY_MAX_MS = 2_500;
 /** Fast mode (e2e builds, spec #2 §9.3): every seat plays itself at once and windows are short, so a match takes seconds. */
 export const FAST = { windows: { diceMs: 1500, challengeMs: 1500, mysteryMs: 1500 }, botDelayMinMs: 20, botDelayMaxMs: 80, playbackCapMs: 1500 } as const;
 
+/** What a host needs to report a match's stats. */
+export type MatchStatsOptions = Omit<StatsContext, 'seed'> & { onStats(stats: MatchStats): void };
+
 export interface MatchHostOptions {
   /** Delivers a message to one human seat. */
   send(to: PlayerId, msg: FromHost): void;
@@ -18,6 +22,8 @@ export interface MatchHostOptions {
   fast?: boolean;
   /** Called once, when the match is won or the host fails. */
   onEnd?(outcome: 'won' | 'failed'): void;
+  /** Match stats (2026-10-17): reported once, when the match is won, fails, or stops unfinished. The board seed comes from create. */
+  stats?: MatchStatsOptions;
 }
 
 /**
@@ -38,6 +44,8 @@ export class MatchHost {
   private watching = new Set<PlayerId>();
   private stopped = false;
   private ended = false;
+  private tally: StatsTally | null = null;
+  private reported = false;
   private readonly fast: boolean;
   private readonly timers = new PausableTimers();
 
@@ -48,6 +56,7 @@ export class MatchHost {
   create(seats: readonly Seat[], seed: string, rngSeed: string): void {
     this.guard(() => {
       this.humans = [...new Set(seats.filter((s) => !s.bot).map((s) => s.playerId))];
+      if (this.opts.stats) this.tally = new StatsTally(seats, { ...this.opts.stats, seed });
       // In fast mode a bot plays the human seats too.
       const played = this.fast ? seats : seats.filter((s) => s.bot);
       this.bots = makeBots(played.map((s) => ({ id: s.playerId })), 'heuristic', rngSeed, 0);
@@ -112,6 +121,8 @@ export class MatchHost {
   }
 
   stop(): void {
+    // Stopped before anyone won: the match was abandoned.
+    if (!this.ended) this.report('abandoned');
     this.stopped = true;
     this.timers.clearAll();
   }
@@ -125,6 +136,7 @@ export class MatchHost {
   }
 
   private afterStep(events: GameEvent[]): void {
+    this.tally?.add(events);
     const aw = awaiting(this.state());
     if (aw.windowId !== this.windowId) {
       // A new window: no countdown until the connected humans have watched the events (C13).
@@ -191,7 +203,19 @@ export class MatchHost {
   private end(outcome: 'won' | 'failed'): void {
     if (this.ended) return;
     this.ended = true;
+    this.report(outcome === 'won' ? 'finished' : 'failed');
     this.opts.onEnd?.(outcome);
+  }
+
+  /** The match's stats, once. A failing stats callback never takes the match down with it. */
+  private report(status: MatchStatus): void {
+    if (this.reported || !this.tally || !this.opts.stats) return;
+    this.reported = true;
+    try {
+      this.opts.stats.onStats(this.tally.result(status, [...this.away]));
+    } catch {
+      // Stats are best effort.
+    }
   }
 
   /** Every entry point runs here: an escaping exception (an engine InvariantError included) ends the match. */
@@ -200,6 +224,7 @@ export class MatchHost {
     try {
       fn();
     } catch (err) {
+      this.report('failed');
       this.stop();
       const message = err instanceof Error ? err.message : String(err);
       for (const id of this.humans) this.opts.send(id, { type: 'failed', message });

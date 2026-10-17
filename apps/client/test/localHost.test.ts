@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocalHost } from '../src/worker/localHost';
-import type { FromHost } from '../src/worker/protocol';
+import type { FromWorker } from '../src/worker/protocol';
 import { SEATS } from './support/fixtures';
 
 // The host's own rules are tested in packages/host; this checks the worker's messages reach it.
@@ -15,12 +15,34 @@ afterEach(() => {
 });
 
 function startHost() {
-  const sent: FromHost[] = [];
+  const sent: FromWorker[] = [];
   const host = new LocalHost((msg) => sent.push(structuredClone(msg)));
   host.handle({ type: 'create', seats: SEATS, seed: 'board-seed', rngSeed: 'secret' });
   const updates = () => sent.filter((m) => m.type === 'update').map((m) => m.update);
   return { host, sent, updates, last: () => updates().at(-1)! };
 }
+
+describe('LocalHost match stats (2026-10-17)', () => {
+  it('reports an offline match when it ends, with this device key for the human seat', () => {
+    const sent: FromWorker[] = [];
+    const host = new LocalHost((msg) => sent.push(structuredClone(msg)));
+    host.handle({ type: 'create', seats: SEATS, seed: 'board-seed', rngSeed: 'secret', stats: { playerKey: 'key-me', version: '0.2.0' } });
+    host.handle({ type: 'leave' });
+    const report = sent.find((m) => m.type === 'stats');
+    expect(report?.type === 'stats' && report.stats.match).toMatchObject({ mode: 'offline', status: 'abandoned', version: '0.2.0', seed: 'board-seed', humans: 1, bots: 3 });
+    expect(report?.type === 'stats' && report.stats.players.map((p) => p.playerKey)).toEqual(['key-me']);
+  });
+
+  it('reports nothing without stats, or in fast e2e matches', () => {
+    for (const extra of [{}, { fast: true, stats: { playerKey: 'k', version: '0.2.0' } }]) {
+      const sent: FromWorker[] = [];
+      const host = new LocalHost((msg) => sent.push(msg));
+      host.handle({ type: 'create', seats: SEATS, seed: 'board-seed', rngSeed: 'secret', ...extra });
+      host.handle({ type: 'leave' });
+      expect(sent.some((m) => m.type === 'stats')).toBe(false);
+    }
+  });
+});
 
 describe('LocalHost (the offline worker, spec #2 §4.4)', () => {
   it('starts the match and sends the human seat its opening view', () => {
@@ -52,7 +74,7 @@ describe('LocalHost (the offline worker, spec #2 §4.4)', () => {
   });
 
   it('fails a match without a human seat', () => {
-    const sent: FromHost[] = [];
+    const sent: FromWorker[] = [];
     new LocalHost((msg) => sent.push(msg)).handle({ type: 'create', seats: SEATS.map((s) => ({ ...s, bot: true })), seed: 's', rngSeed: 'r' });
     expect(sent).toEqual([{ type: 'failed', message: 'a local match needs a human seat' }]);
   });

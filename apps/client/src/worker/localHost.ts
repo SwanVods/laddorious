@@ -1,6 +1,6 @@
 import type { PlayerId } from '@laddorious/core';
-import { MatchHost } from '@laddorious/host';
-import type { FromHost, ToHost } from './protocol';
+import { MatchHost, type MatchStats } from '@laddorious/host';
+import type { FromWorker, ToHost } from './protocol';
 
 /**
  * The offline match (spec #2 §4.4): the worker's messages for its one human seat, passed to the
@@ -10,7 +10,7 @@ export class LocalHost {
   private host: MatchHost | null = null;
   private me: PlayerId = '';
 
-  constructor(private readonly post: (msg: FromHost) => void) {}
+  constructor(private readonly post: (msg: FromWorker) => void) {}
 
   handle(msg: ToHost): void {
     if (msg.type === 'create') {
@@ -20,7 +20,10 @@ export class LocalHost {
         return;
       }
       this.me = human.playerId;
-      this.host = new MatchHost({ send: (_to, out) => this.post(out), fast: msg.fast ?? false });
+      const fast = msg.fast ?? false;
+      // Match stats (2026-10-17): this device's player, never the bots; fast e2e matches don't count.
+      const stats = msg.stats && !fast ? { mode: 'offline' as const, version: msg.stats.version, keys: { [human.playerId]: msg.stats.playerKey }, onStats: (s: MatchStats) => this.post({ type: 'stats', stats: s }) } : undefined;
+      this.host = new MatchHost({ send: (_to, out) => this.post(out), fast, ...(stats ? { stats } : {}) });
       this.host.create(msg.seats, msg.seed, msg.rngSeed);
       return;
     }

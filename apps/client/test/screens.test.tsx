@@ -212,6 +212,12 @@ describe('SettingsDialog (spec #2 §7.1, §9.2)', () => {
     expect(about.textContent).toContain('Made by Feiralabs');
   });
 
+  it('says that anonymous match stats are kept, and why (2026-10-17)', () => {
+    const prefs = createPrefsStore(null, { prefersReducedMotion: false });
+    render(<SettingsDialog prefs={prefs} device={{ coarsePointer: false, shortSide: 900 }} onClose={() => {}} />);
+    expect(screen.getByRole('contentinfo').textContent).toContain('Anonymous match stats help us balance the game.');
+  });
+
   it("shows Low right now once Auto has lowered the quality in this match (2026-10-15)", () => {
     const prefs = createPrefsStore(null, { prefersReducedMotion: false });
     autoStepDown.setState({ stepped: true });

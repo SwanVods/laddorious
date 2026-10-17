@@ -1,9 +1,9 @@
 import { LocalHost } from './localHost';
-import type { FromHost, ToHost } from './protocol';
+import type { FromWorker, ToHost } from './protocol';
 
 // The worker's global scope, typed by hand: the client compiles against the DOM lib, not WebWorker.
 const scope = self as unknown as {
-  postMessage(msg: FromHost): void;
+  postMessage(msg: FromWorker): void;
   onmessage: ((e: MessageEvent<ToHost>) => void) | null;
 };
 

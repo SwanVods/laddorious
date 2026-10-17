@@ -530,6 +530,12 @@
   font: 600 max(11px, 2cqh) / 1.3 var(--body);
 }
 
+/* The stats notice, on its own line under the credits (2026-10-17). */
+.about-note {
+  flex-basis: 100%;
+  font-size: 0.85em;
+}
+
 /* The version and credits at the foot of the settings (2026-10-16). */
 .about {
   display: flex;

@@ -21,6 +21,14 @@ class_name = "MatchDO"
 tag = "v1"
 new_sqlite_classes = ["LobbyDO", "MatchDO"]
 
+# Match stats (2026-10-17): real players' matches, online and offline. Tables: migrations/. Without this
+# binding nothing is recorded. The summary's key is a secret: wrangler secret put STATS_KEY.
+[[d1_databases]]
+binding = "STATS"
+database_name = "laddorious-stats"
+database_id = "5c86c900-1d8f-48a8-b3e1-8f2f9b75376f"
+migrations_dir = "migrations"
+
 [vars]
 # "1" for e2e runs: bots play every seat, with short windows (spec #2 §9.3).
 FAST = "0"
