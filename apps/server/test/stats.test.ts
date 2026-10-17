@@ -67,7 +67,8 @@ describe('match stats rows (2026-10-17)', () => {
   });
 
   it("matches the database's tables, column for column", () => {
-    const schema = readFileSync(resolve(__dirname, '../migrations/0001_match_stats.sql'), 'utf8');
+    // Windows checkouts may turn the file's line endings to CRLF.
+    const schema = readFileSync(resolve(__dirname, '../migrations/0001_match_stats.sql'), 'utf8').replace(/\r\n/g, '\n');
     const columns = (table: string) => {
       const body = schema.match(new RegExp(`CREATE TABLE ${table} \\(([\\s\\S]*?)\\);`))![1]!;
       return body.split(',\n').map((line) => line.trim().split(/\s+/)[0]);
